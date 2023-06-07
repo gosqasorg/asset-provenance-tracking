@@ -127,32 +127,6 @@ app.post('/assertions/new', async (req: Request, res: Response) => {
     }
 });
 
-// app.get('/assertion/new', async (req: Request, res: Response) => {
-//     res.render('assertion');
-// })
-
-// app.post('/assertion/new', async (req: Request, res: Response) => {
-//     const { deviceid, devicekey, assertion } = req.body;
-
-//     const key = Buffer.from(devicekey, 'hex');
-//     log
-//     const iv = crypto.randomBytes(16);
-//     const crypter = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-//     const msg = Buffer.from(assertion, 'utf8');
-//     const $1 = crypter.update(msg);
-//     const $2 = crypter.final();
-//     const encryptedAssertion = Buffer.concat([$1, $2]);
-
-//     await Assertion.create({ deviceId: deviceid, salt: iv.toString('hex'), assertion: encryptedAssertion.toString('hex') });
-
-
-
-
-
-//     res.send({ deviceid, assertion });
-// })
-
 async function main() {
     await sequelize.sync();
     app.listen(port, () => {
