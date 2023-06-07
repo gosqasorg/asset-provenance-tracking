@@ -1,0 +1,12 @@
+html
+  body 
+    h1 GOSQAS Demo Devices 
+    p 
+      span 
+        a(href="/") Home
+      span
+        a(href="/devices/new") Create New Device
+    each device in devices
+      h2 #{device.description}
+      a(href=`/assertions?deviceId=${device.deviceId}`) List Assertions
+      p #{device.deviceId}:#{device.key} 
