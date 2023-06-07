@@ -24,6 +24,7 @@
     "@types/node": "^20.2.5",
     "@types/uuid": "^9.0.1",
     "concurrently": "^8.1.0",
+    "localtunnel": "^2.0.2",
     "nodemon": "^2.0.22",
     "typescript": "^5.1.3"
   }
