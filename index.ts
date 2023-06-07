@@ -24,6 +24,7 @@ class Assertion extends Model {
     declare deviceId: string;
     declare salt: string;
     declare assertion: string;
+    declare createdAt: Date;
 }
 
 Device.init({
@@ -77,10 +78,6 @@ app.get('/devices', async (req: Request, res: Response) => {
 
 app.get('/devices/new', async (req: Request, res: Response) => {
     res.render('new-device');
-
-    // await Device.create({ deviceId: deviceId, key: deviceSecret });
-
-    // res.json({ deviceId, deviceSecret });
 });
 
 app.post('/devices/new', async (req: Request, res: Response) => {
@@ -97,32 +94,45 @@ app.post('/devices/new', async (req: Request, res: Response) => {
     res.redirect('/devices');
 });
 
-
-app.get('/assertion/new', async (req: Request, res: Response) => {
-    res.render('assertion');
+app.get('/assertions', async (req: Request, res: Response) => {
+    const deviceId = req.query.deviceId as string;
+    res.render('assertions', { deviceId, assertions: [] });
 })
 
-app.post('/assertion/new', async (req: Request, res: Response) => {
-    const { deviceid, devicekey, assertion } = req.body;
+app.post('/assertions', async (req: Request, res: Response) => {
+    const { deviceId, deviceKey } = req.body;
+    // const assertions = getAssertions(deviceId, deviceKey);
 
-    const key = Buffer.from(devicekey, 'hex');
-    log
-    const iv = crypto.randomBytes(16);
-    const crypter = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-    const msg = Buffer.from(assertion, 'utf8');
-    const $1 = crypter.update(msg);
-    const $2 = crypter.final();
-    const encryptedAssertion = Buffer.concat([$1, $2]);
-
-    await Assertion.create({ deviceId: deviceid, salt: iv.toString('hex'), assertion: encryptedAssertion.toString('hex') });
+    const assertions = await Assertion.findAll({ where: { deviceId } })
+    res.render('assertions', { deviceId, assertions: decryptAssertions(deviceKey, assertions) });
+});
 
 
+// app.get('/assertion/new', async (req: Request, res: Response) => {
+//     res.render('assertion');
+// })
+
+// app.post('/assertion/new', async (req: Request, res: Response) => {
+//     const { deviceid, devicekey, assertion } = req.body;
+
+//     const key = Buffer.from(devicekey, 'hex');
+//     log
+//     const iv = crypto.randomBytes(16);
+//     const crypter = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+//     const msg = Buffer.from(assertion, 'utf8');
+//     const $1 = crypter.update(msg);
+//     const $2 = crypter.final();
+//     const encryptedAssertion = Buffer.concat([$1, $2]);
+
+//     await Assertion.create({ deviceId: deviceid, salt: iv.toString('hex'), assertion: encryptedAssertion.toString('hex') });
 
 
 
-    res.send({ deviceid, assertion });
-})
+
+
+//     res.send({ deviceid, assertion });
+// })
 
 async function main() {
     await sequelize.sync();
@@ -132,10 +142,6 @@ async function main() {
 }
 
 main();
-
-
-
-
 
 async function createAssertion(deviceId: string, key: string, assertion: string) {
     console.log('createAssertion', deviceId, key)
@@ -154,16 +160,14 @@ async function createAssertion(deviceId: string, key: string, assertion: string)
     await Assertion.create({ deviceId, salt: iv.toString('hex'), assertion: $assertion.toString('hex') });
 }
 
-async function getAssertions(deviceId: string, key: string) {
-    const assertions = await Assertion.findAll({ where: { deviceId } })
+function decryptAssertions(key: string, assertions: readonly Assertion[]) {
     const $key = Buffer.from(key, 'hex');
     return assertions.map(a => {
-        const iv = Buffer.from(a.salt, 'hex');
-        const decrypter = crypto.createDecipheriv('aes-256-cbc', $key, iv);
-
+        const $iv = Buffer.from(a.salt, 'hex');
+        const decrypter = crypto.createDecipheriv('aes-256-cbc', $key, $iv);
         const $1 = decrypter.update(Buffer.from(a.assertion, 'hex'));
         const $2 = decrypter.final();
         const assertion = Buffer.concat([$1, $2]).toString('utf8');
-        return assertion;
-    })
+        return { assertion, createdAt: a.createdAt };
+    });
 }

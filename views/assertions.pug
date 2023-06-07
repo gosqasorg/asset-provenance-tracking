@@ -4,5 +4,10 @@ html
         a(href="/") Home
         form(action="/assertions" method="POST")
             p Device ID:
-            input(type="text" name="deviceid")
+            input(type="text" name="deviceId" value=deviceId)
+            p Device Key:
+            input(type="text" name="deviceKey")
             input(type="submit")
+        each a in assertions
+            p #{a.createdAt}
+            p #{a.assertion}
