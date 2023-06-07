@@ -96,17 +96,36 @@ app.post('/devices/new', async (req: Request, res: Response) => {
 
 app.get('/assertions', async (req: Request, res: Response) => {
     const deviceId = req.query.deviceId as string;
-    res.render('assertions', { deviceId, assertions: [] });
+    const error = req.query.error as string;
+    res.render('assertions', { deviceId, assertions: [], error });
 })
 
 app.post('/assertions', async (req: Request, res: Response) => {
     const { deviceId, deviceKey } = req.body;
     // const assertions = getAssertions(deviceId, deviceKey);
 
-    const assertions = await Assertion.findAll({ where: { deviceId } })
-    res.render('assertions', { deviceId, assertions: decryptAssertions(deviceKey, assertions) });
+    const $assertions = await Assertion.findAll({ where: { deviceId } })
+    const assertions = decryptAssertions(deviceKey, $assertions).filter(a => !!a);
+    const error = assertions.length !== $assertions.length ? 'Invalid key' : undefined;
+
+    res.render('assertions', { deviceId, assertions, error });
 });
 
+app.get('/assertions/new', async (req: Request, res: Response) => {
+    const deviceId = req.query.deviceId as string;
+    res.render('new-assertion', { deviceId });
+})
+
+app.post('/assertions/new', async (req: Request, res: Response) => {
+    const { deviceId, deviceKey, assertion } = req.body;
+    const valid = await validateKey(deviceId, deviceKey);
+    if (!valid) {
+        res.render('new-assertion', { deviceId, assertion, error: 'Invalid key' });
+    } else {
+        await createAssertion(deviceId, deviceKey, assertion);
+        res.redirect(`/assertions?deviceId=${deviceId}`);
+    }
+});
 
 // app.get('/assertion/new', async (req: Request, res: Response) => {
 //     res.render('assertion');
@@ -151,7 +170,6 @@ async function createAssertion(deviceId: string, key: string, assertion: string)
     const crypter = crypto.createCipheriv('aes-256-cbc', $key, iv);
     console.log('createAssertopm', deviceId, key, iv.toString('hex'));
 
-
     const msg = Buffer.from(assertion, 'utf8');
     const $1 = crypter.update(msg);
     const $2 = crypter.final();
@@ -163,11 +181,27 @@ async function createAssertion(deviceId: string, key: string, assertion: string)
 function decryptAssertions(key: string, assertions: readonly Assertion[]) {
     const $key = Buffer.from(key, 'hex');
     return assertions.map(a => {
-        const $iv = Buffer.from(a.salt, 'hex');
-        const decrypter = crypto.createDecipheriv('aes-256-cbc', $key, $iv);
-        const $1 = decrypter.update(Buffer.from(a.assertion, 'hex'));
-        const $2 = decrypter.final();
-        const assertion = Buffer.concat([$1, $2]).toString('utf8');
-        return { assertion, createdAt: a.createdAt };
+        const assertion = decryptAssertion($key, a);
+        return assertion ? { assertion, createdAt: a.createdAt } : undefined;
     });
+}
+
+function decryptAssertion(key: Buffer, a: Assertion) {
+    try {
+        const $iv = Buffer.from(a.salt, 'hex');
+        const $assertion = Buffer.from(a.assertion, 'hex');
+        const decrypter = crypto.createDecipheriv('aes-256-cbc', key, $iv);
+        const $1 = decrypter.update($assertion);
+        const $2 = decrypter.final();
+        return Buffer.concat([$1, $2]).toString('utf8');
+    } catch (e) {
+        return undefined;
+    }
+}
+
+async function validateKey(deviceId: string, key: string) {
+    const assertion = await Assertion.findOne({ where: { deviceId } });
+    if (!assertion) { return false; }    
+    const $key = Buffer.from(key, 'hex');
+    return decryptAssertion($key, assertion) !== undefined;
 }
