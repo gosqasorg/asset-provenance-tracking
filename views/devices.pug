@@ -9,4 +9,5 @@ html
     each device in devices
       h2 #{device.description}
       a(href=`/assertions?deviceId=${device.deviceId}`) List Assertions
-      p #{device.deviceId}:#{device.key} 
+      p device id #{device.deviceId}
+      p device key #{device.key} 
