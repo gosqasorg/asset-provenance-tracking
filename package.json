@@ -14,6 +14,8 @@
   "dependencies": {
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
+    "sequelize": "^6.32.0",
+    "sqlite3": "^5.1.6",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
