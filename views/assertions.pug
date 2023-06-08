@@ -3,10 +3,8 @@ html
         h1 GOSQAS Demo Assertions
         a(href="/") Home
         p(style={color: 'red'}) #{error}
-        a(href=`/assertions/new?deviceId=${deviceId}`) New Assertion
+        a(href=`/assertions/new`) New Assertion
         form(action="/assertions" method="POST")
-            p Device ID:
-            input(type="text" name="deviceId" value=deviceId)
             p Device Key:
             input(type="text" name="deviceKey")
             input(type="submit")

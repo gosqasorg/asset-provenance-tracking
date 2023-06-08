@@ -15,7 +15,6 @@ const sequelize = new Sequelize({
 })
 
 class Device extends Model {
-    declare deviceId: string;
     declare key: string;
     declare description: string;
 }
@@ -28,10 +27,6 @@ class Assertion extends Model {
 }
 
 Device.init({
-    deviceId: {
-        type: DataTypes.STRING(36),
-        allowNull: false
-    },
     key: {
         type: DataTypes.STRING(64),
         allowNull: false
@@ -43,7 +38,7 @@ Device.init({
 
 Assertion.init({
     deviceId: {
-        type: DataTypes.STRING(36),
+        type: DataTypes.STRING(64),
         allowNull: false,
     },
     salt: {
@@ -86,10 +81,14 @@ app.post('/devices/new', async (req: Request, res: Response) => {
         res.redirect('/devices/new');
     }
 
-    const deviceId = uuidV1();
-    const key = crypto.randomBytes(32).toString('hex');
-    await Device.create({ deviceId, key, description });
-    await createAssertion(deviceId, key, `${description} device created`);
+    const key = crypto.randomBytes(32);
+    const deviceId = crypto.createHash('sha256').update(key).digest();
+
+    const $key  = key.toString('hex')
+    const $deviceId = deviceId.toString('hex');
+    
+    await Device.create({ key: $key, description });
+    await createAssertion($deviceId, $key, `${description} device created`);
 
     res.redirect('/devices');
 });
@@ -97,15 +96,18 @@ app.post('/devices/new', async (req: Request, res: Response) => {
 app.get('/assertions', async (req: Request, res: Response) => {
     const deviceId = req.query.deviceId as string;
     const error = req.query.error as string;
-    res.render('assertions', { deviceId, assertions: [], error });
+    res.render('assertions', { assertions: [], error });
 })
 
 app.post('/assertions', async (req: Request, res: Response) => {
-    const { deviceId, deviceKey } = req.body;
-    // const assertions = getAssertions(deviceId, deviceKey);
+    const { deviceKey: $key } = req.body;
 
-    const $assertions = await Assertion.findAll({ where: { deviceId } })
-    const assertions = decryptAssertions(deviceKey, $assertions).filter(a => !!a);
+    const key = Buffer.from($key, 'hex');
+    const deviceId = crypto.createHash('sha256').update(key).digest();
+    const $deviceId = deviceId.toString('hex');
+
+    const $assertions = await Assertion.findAll({ where: { deviceId: $deviceId } })
+    const assertions = decryptAssertions($key, $assertions).filter(a => !!a);
     const error = assertions.length !== $assertions.length ? 'Invalid key' : undefined;
 
     res.render('assertions', { deviceId, assertions, error });
@@ -117,12 +119,16 @@ app.get('/assertions/new', async (req: Request, res: Response) => {
 })
 
 app.post('/assertions/new', async (req: Request, res: Response) => {
-    const { deviceId, deviceKey, assertion } = req.body;
-    const valid = await validateKey(deviceId, deviceKey);
+    const { deviceKey:$key, assertion } = req.body;
+    const key = Buffer.from($key, 'hex');
+    const deviceId = crypto.createHash('sha256').update(key).digest();
+    const $deviceId = deviceId.toString('hex');
+
+    const valid = await validateKey($deviceId, $key);
     if (!valid) {
         res.render('new-assertion', { deviceId, assertion, error: 'Invalid key' });
     } else {
-        await createAssertion(deviceId, deviceKey, assertion);
+        await createAssertion($deviceId, $key, assertion);
         res.redirect(`/assertions?deviceId=${deviceId}`);
     }
 });

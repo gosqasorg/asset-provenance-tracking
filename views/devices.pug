@@ -8,6 +8,5 @@ html
         a(href="/devices/new") Create New Device
     each device in devices
       h2 #{device.description}
-      a(href=`/assertions?deviceId=${device.deviceId}`) List Assertions
-      p device id #{device.deviceId}
+      a(href=`/assertions`) List Assertions
       p device key #{device.key} 
