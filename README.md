@@ -12,4 +12,5 @@ Clone the repo, and then execute:
 > npm run dev
 ```
 
-(You may to execute "npm run dev" twice.)
+Then point your browser at [http:\\localhost:8000](http:\\localhost:8000) for example.
+
