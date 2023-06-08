@@ -7,7 +7,9 @@ GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly protoyping this demo.
 ## Installation
 
 Clone the repo, and then execute:
+```
 > npm install
 > npm run dev
+```
 
 (You may to execute "npm run dev" twice.)
