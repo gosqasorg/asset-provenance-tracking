@@ -14,3 +14,7 @@ Clone the repo, and then execute:
 
 Then point your browser at [http:\\localhost:8000](http:\\localhost:8000) for example.
 
+## Video of Operation
+
+We have made a [short video](https://youtu.be/E5_YQV72NyY)of the cdurrent operation.
+
