@@ -9,7 +9,8 @@ GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly protoyping this demo.
 Clone the repo, and then execute:
 ```
 > npm install
-> npm run dev
+> npm run build
+> npm start
 ```
 
 Then point your browser at [http:\\localhost:8000](http:\\localhost:8000) for example.
