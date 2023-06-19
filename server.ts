@@ -2,11 +2,10 @@ import fastify from 'fastify'
 import fastifyView from '@fastify/view'
 import fastifyFormbody from '@fastify/formbody'
 import fastifyMultipart, { Multipart, MultipartFile } from '@fastify/multipart'
-import { Repository, calculateDeviceID, createProvenanceRecord } from './services';
 import * as qrcode from 'qrcode';
-import { DeviceRepository } from './services/types';
+import { DeviceRepository, ProvenanceRepository, calculateDeviceID } from './services';
 
-export function createFastifyServer(deviceRepo: DeviceRepository) {
+export function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: ProvenanceRepository) {
 
     const server = fastify({ logger: true })
     server.register(fastifyView, {
@@ -28,7 +27,7 @@ export function createFastifyServer(deviceRepo: DeviceRepository) {
 
     server.post<{ Body: { deviceName: string } }>('/devices', async (request, reply) => {
         const { deviceName } = request.body;
-        const device = await deviceRepo.createDevice(deviceName, createProvenanceRecord);
+        const device = await deviceRepo.createDevice(deviceName, recordRepo.createReport);
         reply.redirect('/devices');
     });
 
@@ -40,21 +39,20 @@ export function createFastifyServer(deviceRepo: DeviceRepository) {
         return reply.view('views/device.ejs', { device, dataURL });
     });
 
-    // server.get<{ Params: DeviceKey }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
-    //     const { deviceKey } = request.params;
-    //     const deviceID = calculateDeviceID(deviceKey);
-    //     const records = await repo.getProvenanceRecords(deviceKey);
+    server.get<{ Params: DeviceKey }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+        const { deviceKey } = request.params;
+        const deviceID = calculateDeviceID(deviceKey);
+        const reports = await recordRepo.getReports(deviceKey);
 
-    //     return reply.view('views/provenance.ejs', { deviceKey, deviceID, records });
-    // });
+        return reply.view('views/provenance.ejs', { deviceKey, deviceID, reports });
+    });
 
-    // server.post<{ Params: DeviceKey, Body: { assertion: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
-    //     const { deviceKey } = request.params;
-    //     const { assertion } = request.body;
-    //     const data = Buffer.from(assertion, 'utf8');
-    //     await repo.createProvenanceRecord(deviceKey, "text/plain", data);
-    //     reply.redirect(`/provenance/${deviceKey}`);
-    // })
+    server.post<{ Params: DeviceKey, Body: { assertion: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+        const { deviceKey } = request.params;
+        const { assertion } = request.body;
+        await recordRepo.createReport(deviceKey, assertion);
+        reply.redirect(`/provenance/${deviceKey}`);
+    })
 
     // server.post<{ Params: DeviceKey }>('/provenance/image/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
     //     const { deviceKey } = request.params;

@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 
 import { Sequelize } from 'sequelize';
-import { createDeviceRepository, createSequelizeRepository } from './services';
+import { createMemoryRepository } from './services';
 import { createFastifyServer } from './server';
 
 dotenv.config();
@@ -15,8 +15,8 @@ async function main() {
 
     // const repo = await createSequelizeRepository(sequelize);
 
-    const deviceRepo = createDeviceRepository();
-    const server = createFastifyServer(deviceRepo);
+    const repo = createMemoryRepository();
+    const server = createFastifyServer(repo, repo);
 
     server.listen({ port: port ?? 3000 }, (err, address) => {
         if (err) {
