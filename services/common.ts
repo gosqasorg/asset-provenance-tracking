@@ -1,27 +1,10 @@
-import { CreateReportOptions, ProvenanceAttachment, ProvenanceReport } from "./types";
+import { CreateRecordOptions, ProvenanceAttachment, ProvenanceRecord } from "./types";
 
 export function calculateDeviceID(key: string | Uint8Array): bigint {
     // if key is a string, convert it to a buffer 
     key = typeof key === 'string' ? Buffer.from(key, 'hex') : key;
     return fnv1(key);
 }
-
-// export async function createProvenanceRecord(key: string | Uint8Array, contents: string, options?: CreateReportOptions): Promise<ProvenanceReport> {
-//     const deviceID = calculateDeviceID(key);
-//     const createdAt = new Date();
-
-//     const attachments = options?.attachments?.map(({ type, data }) => {
-//         return <ProvenanceAttachment>{ deviceID, attachmentID: fnv1a(data), type, data, createdAt };
-//     }) ?? [];
-
-//     return <ProvenanceReport>{
-//         deviceID,
-//         contents,
-//         attachments,
-//         tags: options?.tags ?? [],
-//         createdAt,
-//     }
-// }
 
 // simple FNV implementation from https://github.com/namralkeeg/fnvjs/
 // https://github.com/tjwebb/fnv-plus may be faster, but it only works on strings
