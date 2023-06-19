@@ -27,7 +27,7 @@ export function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: Pr
 
     server.post<{ Body: { deviceName: string } }>('/devices', async (request, reply) => {
         const { deviceName } = request.body;
-        const device = await deviceRepo.createDevice(deviceName, recordRepo.createReport);
+        const device = await deviceRepo.createDevice(deviceName, recordRepo.createRecord);
         reply.redirect('/devices');
     });
 
@@ -42,7 +42,7 @@ export function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: Pr
     server.get<{ Params: DeviceKey }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
         const { deviceKey } = request.params;
         const deviceID = calculateDeviceID(deviceKey);
-        const reports = await recordRepo.getReports(deviceKey);
+        const reports = await recordRepo.getRecords(deviceKey);
 
         return reply.view('views/provenance.ejs', { deviceKey, deviceID, reports });
     });
@@ -50,7 +50,7 @@ export function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: Pr
     server.post<{ Params: DeviceKey, Body: { assertion: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
         const { deviceKey } = request.params;
         const { assertion } = request.body;
-        await recordRepo.createReport(deviceKey, assertion);
+        await recordRepo.createRecord(deviceKey, assertion);
         reply.redirect(`/provenance/${deviceKey}`);
     })
 

@@ -4,7 +4,7 @@ export interface Device {
     readonly deviceID: bigint;
 }
 
-export interface ProvenanceReport {
+export interface ProvenanceRecord {
     readonly deviceID: bigint;
     readonly contents: string;
     readonly attachments: readonly Pick<ProvenanceAttachment, 'type' | 'attachmentID'>[];
@@ -20,22 +20,22 @@ export interface ProvenanceAttachment {
     readonly createdAt: Date;
 }
 
-export interface CreateReportOptions {
+export interface CreateRecordOptions {
     readonly attachments?: readonly Pick<ProvenanceAttachment, 'type' | 'data'>[];
     readonly tags?: readonly string[];
     readonly createdAt?: Date;
 }
 
-export type ProvenanceReportFactory = (key: string | Uint8Array, contents: string, options?: CreateReportOptions) => Promise<ProvenanceReport>;
+export type ProvenanceRecordFactory = (key: string | Uint8Array, contents: string, options?: CreateRecordOptions) => Promise<ProvenanceRecord>;
 
 export interface DeviceRepository {
-    createDevice(name: string, factory: ProvenanceReportFactory): Promise<Device>;
+    createDevice(name: string, factory: ProvenanceRecordFactory): Promise<Device>;
     getDevice(key: string | Uint8Array): Promise<Device | null>;
     getDevices(): Promise<readonly Device[]>;
 }
 
 export interface ProvenanceRepository {
-    readonly createReport: ProvenanceReportFactory;
-    getReports(key: string | Uint8Array): Promise<readonly ProvenanceReport[]>;
+    createRecord(key: string | Uint8Array, contents: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord>;
+    getRecords(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]>;
     getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<readonly ProvenanceAttachment[]>;
 }
