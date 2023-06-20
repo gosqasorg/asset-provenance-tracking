@@ -4,6 +4,11 @@
     <div>
     {%- for report in reports %}
         <div>{{ report.description }}</div>
+        <div class="mb-1">
+        {% for tag in report.tags %}
+            <span class="badge bg-info text-dark">{{ tag }}</span>
+        {% endfor %}
+        </div>
         <div style="font-size: small;">{{ report.createdAt }}</div>
     {% endfor -%}
     <div>
