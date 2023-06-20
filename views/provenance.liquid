@@ -15,10 +15,10 @@
     <hr class="col-1 my-4">
     <form method="POST" class="col-6">
         <legend>Create New Provenance Records</legend>
-        <div class="text-bg-warning my-2">TODO: tags, images support</div>
         <div class="mb-3">
             <label for="provenance-description" class="form-label">Description</label>
             <input type="text" class="form-control" name="description" id="provenance-description" required>
+            {% comment %} TODO: use a tag editor component such as https://github.com/vuejs-tips/v-tag-editor {% endcomment %}
             <label for="provenance-tags" class="form-label" >Tags</label>
             <input type="text" class="form-control" name="tags" id="provenance-tags" />
         </div>

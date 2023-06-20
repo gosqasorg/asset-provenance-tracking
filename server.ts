@@ -55,10 +55,12 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         return reply.view('views/provenance', { deviceKey, deviceID, reports });
     });
 
-    server.post<{ Params: DeviceKey, Body: { description: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+    server.post<{ Params: DeviceKey, Body: { description: string, tags: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
         const { deviceKey } = request.params;
-        const { description } = request.body;
-        await recordRepo.createRecord(deviceKey, description);
+        const { description, tags } = request.body;
+        await recordRepo.createRecord(deviceKey, description, {
+            tags: tags.split(' ').map(t => t.trim()).filter(t => t.length > 0)
+        });
         reply.redirect(`/provenance/${deviceKey}`);
     })
 
