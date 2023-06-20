@@ -1,0 +1,26 @@
+{% layout "layout.liquid" %}
+{% block %}
+    <h1>GOSQAS Sample Devices</h1>
+    <div class="text-bg-warning col-6">
+        <p>
+            The prototype GOSQAS Asset Provenance Tracker stores the secret key for all devices 
+            created via the form on this page. This centralized repository of device keys is for
+            demonstration purposes only and will not be a part of the final solution.
+        </p>
+    </div>
+    <ul>
+        {% for device in devices -%}
+        <li><a href="/device/{{ device.key }}">{{ device.name }}</a></li>
+        {%- endfor %}
+    </ul>
+    <hr class="col-1 my-4">
+    <form method="POST">
+        <div class="col-8">
+            <legend>Create New Sample Device</legend>
+            <div class="mb-3">
+                <input type="text" class="form-control" name="deviceName" required placeholder="Device Name">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+{% endblock %}

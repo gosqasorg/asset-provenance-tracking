@@ -29,7 +29,7 @@ export interface CreateRecordOptions {
 export type ProvenanceRecordFactory = (key: string | Uint8Array, contents: string, options?: CreateRecordOptions) => Promise<ProvenanceRecord>;
 
 export interface DeviceRepository {
-    createDevice(name: string, factory: ProvenanceRecordFactory): Promise<Device>;
+    createDevice(name: string, factory: ProvenanceRecordFactory, key?: string | Uint8Array): Promise<Device>;
     getDevice(key: string | Uint8Array): Promise<Device | null>;
     getDevices(): Promise<readonly Device[]>;
 }
