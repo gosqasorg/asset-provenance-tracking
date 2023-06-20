@@ -16,7 +16,7 @@ async function main() {
     // const repo = await createSequelizeRepository(sequelize);
 
     const { devices, provenance } = createMemoryRepositories();
-    const server = createFastifyServer(devices, provenance);
+    const server = await createFastifyServer(devices, provenance);
 
     server.listen({ port: port ?? 3000 }, (err, address) => {
         if (err) {
