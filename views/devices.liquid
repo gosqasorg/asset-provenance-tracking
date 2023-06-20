@@ -10,7 +10,7 @@
     </div>
     <ul>
         {% for device in devices -%}
-        <li><a href="/device/{{ device.key }}">{{ device.name }}</a></li>
+        <li><a href="/device/{{ device.key }}">{{ device.name }}</a> (<a href="/provenance/{{ device.key }}">Provenance</a>)</li>
         {%- endfor %}
     </ul>
     <hr class="col-1 my-4">

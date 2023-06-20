@@ -33,7 +33,7 @@ function createProvenanceRepository(): ProvenanceRepository {
     const attachments: ProvenanceAttachment[] = [];
     const reports: ProvenanceRecord[] = [];
 
-    function createReport(key: string | Uint8Array, contents: string, options?: CreateRecordOptions): Promise<ProvenanceRecord> {
+    function createReport(key: string | Uint8Array, description: string, options?: CreateRecordOptions): Promise<ProvenanceRecord> {
         const deviceID = calculateDeviceID(key);
         const createdAt = options?.createdAt ?? new Date();
         const attachments = options?.attachments?.map(({ type, data }) => {
@@ -42,7 +42,7 @@ function createProvenanceRepository(): ProvenanceRepository {
         }) ?? [];
         const tags = options?.tags ?? [];
 
-        const report = <ProvenanceRecord>{ deviceID, contents, attachments, tags, createdAt };
+        const report = <ProvenanceRecord>{ deviceID, description, attachments, tags, createdAt };
         reports.push(report);
         attachments.push(...attachments);
         return Promise.resolve(report);

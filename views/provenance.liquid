@@ -1,10 +1,12 @@
 {% layout "layout.liquid" %}
 {% block %}
     <h1>GOSQAS Asset Provenance Records</h1>
-    {% for report in reports -%}
-        <div>{{ report.contents }}</div>
+    <div>
+    {%- for report in reports %}
+        <div>{{ report.description }}</div>
         <div style="font-size: small;">{{ report.createdAt }}</div>
-    {%- endfor %}
+    {% endfor -%}
+    <div>
     <hr class="col-1 my-4">
     <form method="POST" class="col-6">
         <legend>Create New Provenance Records</legend>
@@ -14,5 +16,4 @@
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-
 {% endblock %}
