@@ -1,7 +1,8 @@
 import fastify from 'fastify'
 import fastifyView from '@fastify/view'
 import fastifyFormbody from '@fastify/formbody'
-import fastifyMultipart, { Multipart, MultipartFile } from '@fastify/multipart'
+import fastifyMultipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
 import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
 import { DeviceRepository, ProvenanceRepository, calculateDeviceID } from './services';
@@ -13,14 +14,17 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
     // __dirname is the directory of the compiled .js file in the dist directory, 
     // so need to add the '..' to get to the root directory
-    const root = path.join(__dirname, '..', 'views')
-    const engine = new Liquid({ root });
+    const engine = new Liquid({ root: path.join(__dirname, '..', 'views') });
     const server = fastify({ logger: true })
     server.register(fastifyView, {
         engine: { liquid:engine },
     });
     server.register(fastifyFormbody);
     server.register(fastifyMultipart);
+    server.register(fastifyStatic, {
+        root: path.join(__dirname, '..', 'public'),
+        prefix: '/public/',
+    });
 
     server.get('/', async (request, reply) => {
         return reply.view('views/index', {})
