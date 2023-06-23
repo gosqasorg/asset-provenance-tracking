@@ -5,7 +5,7 @@ import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
-import { DeviceRepository, ProvenanceRepository, calculateDeviceID } from './services';
+import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID } from './services';
 import path from 'path'
 
 export async function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: ProvenanceRepository) {
@@ -20,7 +20,11 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         engine: { liquid:engine },
     });
     server.register(fastifyFormbody);
-    server.register(fastifyMultipart);
+    server.register(fastifyMultipart, {
+        limits: {
+            fileSize: 1024 * 1024 * 10, // 10MB
+        }
+    });
     server.register(fastifyStatic, {
         root: path.join(__dirname, '..', 'public'),
         prefix: '/public/',
@@ -59,25 +63,35 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         return reply.view('views/provenance', { deviceKey, deviceID, reports });
     });
 
-    server.post<{ Params: DeviceKey, Body: { description: string, tags: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+    type Attachment = Pick<ProvenanceAttachment, 'type' | 'data'>;
+    server.post<{ Params: DeviceKey }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
         const { deviceKey } = request.params;
-        const { description, tags } = request.body;
-        const tagSet = new Set(tags.toLowerCase().split(' ').map(t => t.trim()).filter(t => t.length > 0));
+        const fields = new Map<string, string | Attachment>();
+        for await (const part of request.parts()) {
+            const fieldname = part.fieldname;
+            if (part.type === 'file') {
+                const buffer = await part.toBuffer();
+                if (buffer.length === 0) continue;
+                fields.set(fieldname, { data: buffer, type: part.mimetype });
+            }  else {
+                const value = part.value!.toString();
+                if (value.length === 0) continue;
+                fields.set(fieldname, value)
+            }
+        }
+
+        const description = fields.get('description') as string;
+        const picture = fields.get('picture') as Attachment | undefined;
+        const tagField = fields.get('tags') as string ?? "";
+        const tagSet = new Set(tagField.toLowerCase().split(' ').map(t => t.trim()).filter(t => t.length > 0));
+
         await recordRepo.createRecord(deviceKey, description, {
-            tags: [...tagSet]
+            tags: [...tagSet],
+            attachments: picture ? [picture] : undefined,
         });
+
         reply.redirect(`/provenance/${deviceKey}`);
     })
-
-    // server.post<{ Params: DeviceKey }>('/provenance/image/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
-    //     const { deviceKey } = request.params;
-    //     const file = await request.file();
-    //     if (file) {
-    //         const data = await file.toBuffer();
-    //         await repo.createProvenanceRecord(deviceKey, file.mimetype, data);
-    //     }
-    //     reply.redirect(`/provenance/${deviceKey}`);
-    // });
 
     return server;
 }
