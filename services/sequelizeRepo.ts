@@ -82,7 +82,7 @@ function createProvenanceRepo(
             attachments: attachements.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
         }
 
-        const json = JSON.stringify(record, (k, v) => typeof v === 'bigint' ? v.toString() : v);
+        const json = JSON.stringify(record, (k, v) => k === 'attachmentID' ? v.toString() : v);
         const data = Buffer.from(json, 'utf8');
         const salt = crypto.randomBytes(16);
         const crypter = crypto.createCipheriv('aes-256-cbc', key, salt);
