@@ -93,5 +93,17 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         reply.redirect(`/provenance/${deviceKey}`);
     })
 
+    server.get<{ Params: { deviceKey: string, attachmentID: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})/attachment/:attachmentID', async (request, reply) => {
+        const { deviceKey, attachmentID } = request.params;
+
+        const attachment = await recordRepo.getAttachment(deviceKey, BigInt(attachmentID));
+        if (attachment) {
+            reply.header('Content-Type', attachment.type);
+            reply.send(attachment.data);
+        } else {
+            reply.status(404).send();
+        }
+    });
+
     return server;
 }

@@ -9,6 +9,13 @@
             <span class="badge bg-info text-dark">{{ tag }}</span>
         {% endfor %}
         </div>
+        {% for attachment in report.attachments %}
+            {% if attachment.type contains "image/" %}
+                <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}"><img class="img-thumbnail" style="max-width:100px;width:100%" src="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}"></a>
+            {% else %}
+                <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}">{{ attachment.attachmentID }}</a>
+            {% endif %}
+        {% endfor %}
         <div style="font-size: small;">{{ report.createdAt }}</div>
     {% endfor -%}
     </div>
