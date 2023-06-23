@@ -11,17 +11,8 @@
         </div>
         <div style="font-size: small;">{{ report.createdAt }}</div>
     {% endfor -%}
-    <div>
-    <hr class="col-1 my-4">
-    <form method="POST" class="col-6">
-        <legend>Create New Provenance Records</legend>
-        <div class="mb-3">
-            <label for="provenance-description" class="form-label">Description</label>
-            <input type="text" class="form-control" name="description" id="provenance-description" required>
-            {% comment %} TODO: use a tag editor component such as https://github.com/vuejs-tips/v-tag-editor {% endcomment %}
-            <label for="provenance-tags" class="form-label" >Tags</label>
-            <input type="text" class="form-control" name="tags" id="provenance-tags" />
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+    </div>
+    <hr class="col-1 my-4" >
+    <script src="/public/main.js" type="module"></script>
+    <div id="app"></div>
 {% endblock %}
