@@ -58,9 +58,10 @@ function createProvenanceRepository(): ProvenanceRepository {
         return Promise.resolve($reports.filter(r => r.deviceID === deviceID));
     }
 
-    function getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | undefined> {
+    function getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null> {
         const deviceID = calculateDeviceID(key);
-        return Promise.resolve($attachments.find(a => a.deviceID === deviceID && a.attachmentID === attachmentID));
+        const device = $attachments.find(a => a.deviceID === deviceID && a.attachmentID === attachmentID);
+        return Promise.resolve(device ? device : null);
     }
 
     return { createRecord: createReport, getRecords: getReports, getAttachment };

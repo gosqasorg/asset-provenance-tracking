@@ -4,19 +4,19 @@ import dotenv from 'dotenv';
 import { Sequelize } from 'sequelize';
 import { createMemoryRepositories } from './services';
 import { createFastifyServer } from './server';
+import { createSequelizeReposities } from './services/sequelizeRepo';
 
 dotenv.config();
 const port = process.env.PORT ? parseInt(process.env.PORT) : undefined;
 
 async function main() {
-    // const sequelize = new Sequelize({
-    //     dialect: 'sqlite',
-    //     storage: './database.sqlite'
-    // })
+    const sequelize = new Sequelize({
+        dialect: 'sqlite',
+        storage: './database.sqlite',
+    })
 
-    // const repo = await createSequelizeRepository(sequelize);
-
-    const { devices, provenance } = createMemoryRepositories();
+    // const { devices, provenance } = createMemoryRepositories();
+    const { devices, provenance } = await createSequelizeReposities(sequelize);
     const server = await createFastifyServer(devices, provenance);
 
     server.listen({ port: port ?? 3000, host: '0.0.0.0' }, (err, address) => {

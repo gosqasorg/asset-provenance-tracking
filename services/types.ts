@@ -37,5 +37,5 @@ export interface DeviceRepository {
 export interface ProvenanceRepository {
     createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord>;
     getRecords(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]>;
-    getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | undefined>;
+    getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null>;
 }
