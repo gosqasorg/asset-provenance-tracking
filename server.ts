@@ -10,7 +10,7 @@ import path from 'path'
 
 export async function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: ProvenanceRepository) {
 
-    await deviceRepo.createDevice('Test Device', recordRepo.createRecord, 'd92da1463cfa83cec946fe6e9d513bdb58aa38749530b0969fa2085d66ee250b');
+    // await deviceRepo.createDevice('Test Device', recordRepo.createRecord, 'd92da1463cfa83cec946fe6e9d513bdb58aa38749530b0969fa2085d66ee250b');
 
     // __dirname is the directory of the compiled .js file in the dist directory, 
     // so need to add the '..' to get to the root directory
