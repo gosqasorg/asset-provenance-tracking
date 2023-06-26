@@ -1,8 +1,9 @@
 import { CreateRecordOptions, ProvenanceAttachment, ProvenanceRecord } from "./types";
+import base58 from 'bs58';
 
 export function calculateDeviceID(key: string | Uint8Array): bigint {
     // if key is a string, convert it to a buffer 
-    key = typeof key === 'string' ? fromHex(key) : key;
+    key = typeof key === 'string' ? decodeKey(key) : key;
     return fnv1(key);
 }
 
@@ -39,26 +40,5 @@ const MAP_HEX: Record<string, number> = {
     E: 14, F: 15
 };
 
-// Fast Uint8Array to hex
-export function toHex(bytes: Uint8Array): string {
-    return Array.from(bytes || [])
-        .map((b) => HEX_STRINGS[b >> 4] + HEX_STRINGS[b & 15])
-        .join("");
-}
-
-// Mimics Buffer.from(x, 'hex') logic
-// Stops on first non-hex string and returns
-// https://github.com/nodejs/node/blob/v14.18.1/src/string_bytes.cc#L246-L261
-export function fromHex(hexString: string): Uint8Array {
-    const bytes = new Uint8Array(Math.floor((hexString || "").length / 2));
-    let i;
-    for (i = 0; i < bytes.length; i++) {
-        const a = MAP_HEX[hexString[i * 2]];
-        const b = MAP_HEX[hexString[i * 2 + 1]];
-        if (a === undefined || b === undefined) {
-            break;
-        }
-        bytes[i] = (a << 4) | b;
-    }
-    return i === bytes.length ? bytes : bytes.slice(0, i);
-}
+export function encodeKey(key: Uint8Array): string { return base58.encode(key); }
+export function decodeKey(key: string): Uint8Array { return base58.decode(key); }

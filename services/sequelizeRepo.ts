@@ -1,7 +1,8 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, ModelCtor, ModelStatic, Sequelize, Transaction } from "sequelize";
 import { CreateRecordOptions, Device, DeviceRepository, ProvenanceAttachment, ProvenanceRecord, ProvenanceRecordFactory, ProvenanceRepository } from "./types";
-import { calculateDeviceID, fnv1, fromHex, toHex } from "./common";
+import { calculateDeviceID, decodeKey, encodeKey, fnv1 } from "./common";
 import * as crypto from 'crypto';
+import base58 from 'bs58';
 
 interface DeviceModel extends Model<InferAttributes<DeviceModel>, InferCreationAttributes<DeviceModel>> {
     id: CreationOptional<number>;
@@ -29,17 +30,17 @@ interface ProvenanceAttachmentModel extends Model<InferAttributes<ProvenanceAtta
 function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
     async function createDevice(name: string, factory: ProvenanceRecordFactory, key?: string | Uint8Array | undefined): Promise<Device> {
         key = key
-            ? typeof key === 'string' ? fromHex(key) : key
-            : crypto.randomBytes(32);
+            ? typeof key === 'string' ? decodeKey(key) : key
+            : crypto.randomBytes(16);
 
-        const device = await deviceModel.create({ name, key: toHex(key) });
+        const device = await deviceModel.create({ name, key: encodeKey(key) });
         const report = await factory(key, `created ${name}`, { tags: ['creation'] });
         return mapDevice(device);
     }
 
     async function getDevice(key: string | Uint8Array): Promise<Device | null> {
-        key = typeof key === 'string' ? fromHex(key) : key;
-        const device = await deviceModel.findOne({ where: { key: toHex(key) } })
+        key = typeof key === 'string' ? decodeKey(key) : key;
+        const device = await deviceModel.findOne({ where: { key: encodeKey(key) } })
         return device ? mapDevice(device) : null;
     }
 
@@ -65,38 +66,34 @@ function createProvenanceRepo(
 ): ProvenanceRepository {
 
     async function createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord> {
-        key = typeof key === 'string' ? fromHex(key) : key;
+        const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
 
-        const attachements = (options?.attachments ?? []).map(a => {
-            const salt = crypto.randomBytes(16);
+        const attachments = (options?.attachments ?? []).map(a => {
             const attachmentID = fnv1(a.data);
-            const crypter = crypto.createCipheriv('aes-256-cbc', key, salt);
-            const encryptedData = Buffer.concat([crypter.update(a.data),  crypter.final()]);
+            const {salt, encryptedData } = encrypt($key, a.data);
             return {...a, salt, attachmentID, encryptedData}
         })
 
         const record: ProvenanceRecordJson = {
             description,
             tags: options?.tags ?? [],
-            attachments: attachements.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
+            attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
         }
 
         const json = JSON.stringify(record, (k, v) => k === 'attachmentID' ? v.toString() : v);
         const data = Buffer.from(json, 'utf8');
-        const salt = crypto.randomBytes(16);
-        const crypter = crypto.createCipheriv('aes-256-cbc', key, salt);
-        const encryptedRecord = Buffer.concat([crypter.update(data),  crypter.final()]);
+        const {salt, encryptedData } = encrypt($key, data);
 
         const createdAt = await sequelize.transaction(async tx => {
-            const record = await recordModel.create({ data: encryptedRecord, deviceID, salt: salt.toString('hex') }, { transaction: tx });
-            for (const a of attachements) {
+            const record = await recordModel.create({ data: encryptedData, deviceID, salt }, { transaction: tx });
+            for (const a of attachments) {
                 await attachmentModel.create(
                     {
                         attachmentID: a.attachmentID,
                         data: a.encryptedData,
                         mimetype: a.type,
-                        salt: a.salt.toString('hex'),
+                        salt: a.salt,
                         createdAt: record.createdAt 
                     }, { transaction: tx });
             }
@@ -107,19 +104,26 @@ function createProvenanceRepo(
             deviceID,
             description,
             tags: options?.tags ?? [],
-            attachments: attachements.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
+            attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
             createdAt
         }
     }
 
+    function encrypt(key: Uint8Array, data: Uint8Array) {
+        const salt = crypto.randomBytes(16);
+        const crypter = crypto.createCipheriv('aes-128-cbc', key, salt);
+        const encryptedData = Buffer.concat([crypter.update(data),  crypter.final()]);
+        return { salt: salt.toString('hex'), encryptedData };
+    }
+
     function decrypt(key: Uint8Array, salt: string, encryptedData: Uint8Array) {
         const $salt = Buffer.from(salt, 'hex');
-        const crypter = crypto.createDecipheriv('aes-256-cbc', key, $salt);
+        const crypter = crypto.createDecipheriv('aes-128-cbc', key, $salt);
         return Buffer.concat([crypter.update(encryptedData), crypter.final()]);
     }
 
     async function getRecords(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]> {
-        const $key = typeof key === 'string' ? Buffer.from(key, 'hex') : key;
+        const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
         const records = await recordModel.findAll({
             order: [['createdAt', 'DESC']],
@@ -139,7 +143,7 @@ function createProvenanceRepo(
     }
 
     async function getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null> {
-        const $key = typeof key === 'string' ? Buffer.from(key, 'hex') : key;
+        const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
         const attachment = await attachmentModel.findOne({ where: { attachmentID } });
         if (!attachment) return null;

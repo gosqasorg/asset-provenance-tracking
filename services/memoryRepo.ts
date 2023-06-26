@@ -1,4 +1,4 @@
-import { calculateDeviceID, fnv1, fromHex, toHex } from "./common";
+import { calculateDeviceID, decodeKey, encodeKey, fnv1 } from "./common";
 import { CreateRecordOptions, Device, DeviceRepository, ProvenanceAttachment, ProvenanceRecord, ProvenanceRecordFactory, ProvenanceRepository } from "./types";
 import * as crypto from 'crypto';
 
@@ -7,10 +7,10 @@ function createDeviceRepository(): DeviceRepository {
 
     async function createDevice(name: string, factory: ProvenanceRecordFactory, key?: string | Uint8Array): Promise<Device> {
         key = key
-            ? typeof key === 'string' ? fromHex(key) : key
+            ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(32);
         const deviceID = calculateDeviceID(key);
-        const device = { name, key: toHex(key), deviceID };
+        const device = { name, key: encodeKey(key), deviceID };
         $devices.push(device);
         const report = await factory(key, `created ${name}`, { tags: ['creation'] });
         return device;
