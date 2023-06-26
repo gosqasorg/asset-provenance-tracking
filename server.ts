@@ -47,7 +47,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         reply.redirect(`/device/${device.key}`);
     });
 
-    server.get<{ Params: DeviceKey }>('/device/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+    server.get<{ Params: DeviceKey }>('/device/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
         const device = await deviceRepo.getDevice(deviceKey);
         if (!device) throw new Error('Device not found');
@@ -55,7 +55,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         return reply.view('views/device', { device, dataURL });
     });
 
-    server.get<{ Params: DeviceKey }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+    server.get<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
         const deviceID = calculateDeviceID(deviceKey);
         const reports = await recordRepo.getRecords(deviceKey);
@@ -64,7 +64,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     });
 
     type Attachment = Pick<ProvenanceAttachment, 'type' | 'data'>;
-    server.post<{ Params: DeviceKey }>('/provenance/:deviceKey([0-9A-Fa-f]{64})', async (request, reply) => {
+    server.post<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
         const fields = new Map<string, string | Attachment>();
         for await (const part of request.parts()) {
@@ -93,7 +93,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         reply.redirect(`/provenance/${deviceKey}`);
     })
 
-    server.get<{ Params: { deviceKey: string, attachmentID: string } }>('/provenance/:deviceKey([0-9A-Fa-f]{64})/attachment/:attachmentID', async (request, reply) => {
+    server.get<{ Params: { deviceKey: string, attachmentID: string } }>('/provenance/:deviceKey/attachment/:attachmentID', async (request, reply) => {
         const { deviceKey, attachmentID } = request.params;
 
         const attachment = await recordRepo.getAttachment(deviceKey, BigInt(attachmentID));
