@@ -12,7 +12,7 @@ interface DeviceModel extends Model<InferAttributes<DeviceModel>, InferCreationA
 
 interface ProvenanceRecordModel extends Model<InferAttributes<ProvenanceRecordModel>, InferCreationAttributes<ProvenanceRecordModel>> {
     id: CreationOptional<number>;
-    deviceID: bigint;
+    deviceID: string;
     salt: string;
     data: Uint8Array; // contains encrypted JSON with description, attachements info and tags
     createdAt: CreationOptional<Date>;
@@ -20,7 +20,7 @@ interface ProvenanceRecordModel extends Model<InferAttributes<ProvenanceRecordMo
 
 interface ProvenanceAttachmentModel extends Model<InferAttributes<ProvenanceAttachmentModel>, InferCreationAttributes<ProvenanceAttachmentModel>> {
     id: CreationOptional<number>;
-    attachmentID: bigint;
+    attachmentID: string;
     salt: string;
     mimetype: string;
     data: Uint8Array;
@@ -86,11 +86,11 @@ function createProvenanceRepo(
         const {salt, encryptedData } = encrypt($key, data);
 
         const createdAt = await sequelize.transaction(async tx => {
-            const record = await recordModel.create({ data: encryptedData, deviceID, salt }, { transaction: tx });
+            const record = await recordModel.create({ data: encryptedData, deviceID: deviceID.toString(16), salt }, { transaction: tx });
             for (const a of attachments) {
                 await attachmentModel.create(
                     {
-                        attachmentID: a.attachmentID,
+                        attachmentID: a.attachmentID.toString(16),
                         data: a.encryptedData,
                         mimetype: a.type,
                         salt: a.salt,
@@ -127,7 +127,7 @@ function createProvenanceRepo(
         const deviceID = calculateDeviceID(key);
         const records = await recordModel.findAll({
             order: [['createdAt', 'DESC']],
-            where: { deviceID }
+            where: { deviceID: deviceID.toString(16) }
         });
         return records.map(record => {
             const data = decrypt($key, record.salt, record.data);
@@ -145,7 +145,7 @@ function createProvenanceRepo(
     async function getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null> {
         const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
-        const attachment = await attachmentModel.findOne({ where: { attachmentID } });
+        const attachment = await attachmentModel.findOne({ where: { attachmentID: attachmentID.toString(16) } });
         if (!attachment) return null;
         const data = decrypt($key, attachment.salt, attachment.data);
         return {
@@ -192,11 +192,11 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
             primaryKey: true
         },
         deviceID: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.STRING(64).BINARY,
             allowNull: false,
         },
         salt: {
-            type: DataTypes.STRING(32).BINARY,
+            type: DataTypes.STRING(32),
             allowNull: false
         },
         data: {
@@ -219,12 +219,12 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
             primaryKey: true
         },
         attachmentID: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.STRING(64).BINARY,
             allowNull: false,
             unique: true
         },
         salt: {
-            type: DataTypes.STRING(32).BINARY,
+            type: DataTypes.STRING(32),
             allowNull: false
         },
         mimetype: {
