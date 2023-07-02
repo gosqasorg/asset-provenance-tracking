@@ -10,10 +10,23 @@ dotenv.config();
 const port = process.env.PORT ? parseInt(process.env.PORT) : undefined;
 
 async function main() {
+
+    // const sequelize = new Sequelize({
+    //     dialect: 'sqlite',
+    //     storage: './database.sqlite',
+    // })
+
     const sequelize = new Sequelize({
-        dialect: 'sqlite',
-        storage: './database.sqlite',
-    })
+        dialect: 'postgres',
+        host: 'ec2-54-156-185-205.compute-1.amazonaws.com',
+        database: 'dflanf0ljt49a1',
+        username: 'mhlziffxlpoojm',
+        password: '38a573a03eec55a57a79387af29906de54aa7db1e5794701253df1c8bad2aa37',
+        port: 5432,
+        dialectOptions: {
+            ssl: { rejectUnauthorized: false }
+        }
+    });
 
     // const { devices, provenance } = createMemoryRepositories();
     const { devices, provenance } = await createSequelizeReposities(sequelize);
