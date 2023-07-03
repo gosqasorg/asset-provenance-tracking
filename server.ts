@@ -17,7 +17,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         .flatMap(([key, value]) => (value ?? []).map(v => ({ name: key, ...v })))
         .filter(v => v.family === 'IPv4')
         .filter(v => !v.internal)
-        .map(v => "http://" + v.address + (process.env.PORT ? `:${process.env.PORT}` : ''))[0];
+        .map(v => `http://${v.address}${process.env.PORT ? `:${process.env.PORT}` : ''}/`)[0];
 
     // __dirname is the directory of the compiled .js file in the dist directory, 
     // so need to add the '..' to get to the root directory
@@ -58,7 +58,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const { deviceKey } = request.params;
         const device = await deviceRepo.getDevice(deviceKey);
         if (!device) throw new Error('Device not found');
-        const dataURL = await qrcode.toDataURL(`${BASE_URL}/provenance/${device.key}`);
+        const dataURL = await qrcode.toDataURL(`${BASE_URL}provenance/${device.key}`);
         return reply.view('views/device', { device, dataURL });
     });
 
