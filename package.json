@@ -3,8 +3,13 @@
   "version": "0.0.0-placeholder",
   "description": "",
   "main": "dist/app.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
+    "start": "node dist/app.js",
     "build": "tsc",
+    "postinstall": "npm run build",
     "watch": "tsc --watch",
     "dev": "tsc && nodemon dist/app.js"
   },

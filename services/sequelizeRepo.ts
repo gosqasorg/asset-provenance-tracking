@@ -163,7 +163,7 @@ function createProvenanceRepo(
 export async function createSequelizeReposities(sequelize: Sequelize): Promise<{ devices: DeviceRepository, provenance: ProvenanceRepository }> {
     const device = sequelize.define<DeviceModel>('Device', {
         id: {
-            type: DataTypes.INTEGER.UNSIGNED,
+            type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true
         },
@@ -187,7 +187,7 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
 
     const provenanceRecord = sequelize.define<ProvenanceRecordModel>('ProvenanceRecord', {
         id: {
-            type: DataTypes.INTEGER.UNSIGNED,
+            type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true
         },
@@ -214,7 +214,7 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
 
     const provenanceAttachment = sequelize.define<ProvenanceAttachmentModel>('ProvenanceAttachment', {
         id: {
-            type: DataTypes.INTEGER.UNSIGNED,
+            type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true
         },
@@ -250,4 +250,3 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
     const provenance = createProvenanceRepo(sequelize, provenanceRecord, provenanceAttachment);
     return { devices, provenance}
 }
-
