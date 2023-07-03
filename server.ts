@@ -7,10 +7,17 @@ import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
 import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID } from './services';
 import path from 'path'
+import os from 'os'
+
 
 export async function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: ProvenanceRepository) {
 
-    // await deviceRepo.createDevice('Test Device', recordRepo.createRecord, 'd92da1463cfa83cec946fe6e9d513bdb58aa38749530b0969fa2085d66ee250b');
+    // the base URL is set via config var on heroku. If it's not set, generate it from the local service IP address
+    const BASE_URL = process.env.BASE_URL ?? Object.entries(os.networkInterfaces())
+        .flatMap(([key, value]) => (value ?? []).map(v => ({ name: key, ...v })))
+        .filter(v => v.family === 'IPv4')
+        .filter(v => !v.internal)
+        .map(v => "http://" + v.address + (process.env.PORT ? `:${process.env.PORT}` : ''))[0];
 
     // __dirname is the directory of the compiled .js file in the dist directory, 
     // so need to add the '..' to get to the root directory
@@ -51,7 +58,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const { deviceKey } = request.params;
         const device = await deviceRepo.getDevice(deviceKey);
         if (!device) throw new Error('Device not found');
-        const dataURL = await qrcode.toDataURL(`${process.env.BASE_URL}/provenance/${device.deviceID}`);
+        const dataURL = await qrcode.toDataURL(`${BASE_URL}/provenance/${device.key}`);
         return reply.view('views/device', { device, dataURL });
     });
 
