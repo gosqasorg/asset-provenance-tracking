@@ -7,6 +7,7 @@ GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly protoyping this demo.
 ## A Live MVP
 
 We are developing a Minimal Viable Product. Although still a work in progress, you can try it out here:
+
 [https://provenance-tracking-9c4ad2bbfaee.herokuapp.com/](https://provenance-tracking-9c4ad2bbfaee.herokuapp.com/)
 
 
