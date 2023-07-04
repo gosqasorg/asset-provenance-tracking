@@ -30,3 +30,11 @@ Then point your browser at [http:\\localhost:8000](http:\\localhost:8000) for ex
 
 We have made a [short video](https://youtu.be/E5_YQV72NyY) of [v0.1](https://github.com/gosqas/asset-provenance-tracking/releases/tag/v0.1) operation.
 
+## A Note on Our Trademarks
+
+Although all of our code is open-source, you may not user our trademarkes without written permission.
+Our trademarks include:
+1. The word GOSQAS
+2. The term "Global Open Source Quality Assurance System"
+3. The "purple hands" logo
+4. The word-ard GOSQAS with the "purple hands" symbol in the letter O.
