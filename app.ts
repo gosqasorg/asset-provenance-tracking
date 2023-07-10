@@ -9,21 +9,22 @@ import { createSequelizeReposities } from './services/sequelizeRepo';
 dotenv.config();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 80;
 
+async function getReposities() {
+    const sequelize = process.env.DATABASE_URL
+        ? new Sequelize(process.env.DATABASE_URL, {
+            dialectOptions: {
+                ssl: { rejectUnauthorized: false }
+            }
+        })
+        : new Sequelize({
+            dialect: 'sqlite',
+            storage: './database.sqlite',
+        })
+    return await createSequelizeReposities(sequelize);
+}
+
 async function main() {
-
-    // const sequelize = new Sequelize({
-    //     dialect: 'sqlite',
-    //     storage: './database.sqlite',
-    // })
-
-    const sequelize = new Sequelize(process.env.DATABASE_URL ?? "", {
-        dialectOptions: {
-            ssl: { rejectUnauthorized: false }
-        }
-    });
-        
-    // const { devices, provenance } = createMemoryRepositories();
-    const { devices, provenance } = await createSequelizeReposities(sequelize);
+    const { devices, provenance } = await getReposities();
     const server = await createFastifyServer(devices, provenance);
 
     server.listen({ port, host: '0.0.0.0' }, (err, address) => {
