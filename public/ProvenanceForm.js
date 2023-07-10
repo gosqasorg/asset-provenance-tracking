@@ -17,7 +17,7 @@ export default {
     components: { TagInput },
     render() {
         return html`
-<form method="POST" class="col-md-6" enctype="multipart/form-data">
+<form method="POST" class="col-md-8 card p-3 text-bg-secondary" enctype="multipart/form-data">
     <legend>Create New Provenance Record</legend>
     <div class="mb-3">
         <input type="text" class="form-control" name="description" id="provenance-description" required placeholder="Provenance Description" />
