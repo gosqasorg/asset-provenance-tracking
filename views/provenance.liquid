@@ -1,22 +1,24 @@
 {% layout "layout.liquid" %}
 {% block %}
-    <h1>GOSQAS Asset Provenance Records</h1>
+    <h1>Asset Provenance Records</h1>
     <div>
     {%- for report in reports %}
-        <div>{{ report.description }}</div>
-        <div class="mb-1">
-        {% for tag in report.tags %}
-            <span class="badge bg-info text-dark">{{ tag }}</span>
-        {% endfor %}
+        <div class="card p-3 my-3">
+            <div>{{ report.description }}</div>
+            <div class="mb-1">
+            {% for tag in report.tags %}
+                <span class="badge bg-info text-dark">{{ tag }}</span>
+            {% endfor %}
+            </div>
+            {% for attachment in report.attachments %}
+                {% if attachment.type contains "image/" %}
+                    <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}"><img class="img-thumbnail" style="max-width:100px;width:100%" src="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}"></a>
+                {% else %}
+                    <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}">{{ attachment.attachmentID }}</a>
+                {% endif %}
+            {% endfor %}
+            <div style="font-size: small;">{{ report.createdAt }}</div>
         </div>
-        {% for attachment in report.attachments %}
-            {% if attachment.type contains "image/" %}
-                <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}"><img class="img-thumbnail" style="max-width:100px;width:100%" src="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}"></a>
-            {% else %}
-                <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}">{{ attachment.attachmentID }}</a>
-            {% endif %}
-        {% endfor %}
-        <div style="font-size: small;">{{ report.createdAt }}</div>
     {% endfor -%}
     </div>
     <hr class="col-1 my-4" >
