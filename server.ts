@@ -41,6 +41,10 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         return reply.view('views/index', {})
     });
 
+    server.get('/info', async (request, reply) => {
+        return reply.redirect("https://github.com/gosqasorg/home");
+    });
+
     server.get('/devices', async (request, reply) => {
         const devices = await deviceRepo.getDevices();
         return reply.view('views/devices', { devices })
