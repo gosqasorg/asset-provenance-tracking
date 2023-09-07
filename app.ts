@@ -2,7 +2,6 @@ import os from 'os';
 import dotenv from 'dotenv';
 
 import { Sequelize } from 'sequelize';
-import { createMemoryRepositories } from './services';
 import { createFastifyServer } from './server';
 import { createSequelizeReposities } from './services/sequelizeRepo';
 
