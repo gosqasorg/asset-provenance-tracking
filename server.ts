@@ -99,7 +99,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const { deviceKey } = request.params;
         const deviceID = calculateDeviceID(deviceKey);
         const reports = await recordRepo.getRecords(deviceKey);
-        const deviceName = reports.findLast(r => r.name)?.name ?? "Unnamed";
+        const deviceName = reports.findLast(r => r.name)?.name ?? "";
 
         return reply.view('views/provenance', { deviceKey, deviceID, deviceName, reports });
     });
