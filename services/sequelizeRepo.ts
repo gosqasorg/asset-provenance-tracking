@@ -28,13 +28,12 @@ interface ProvenanceAttachmentModel extends Model<InferAttributes<ProvenanceAtta
 }
 
 function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
-    async function createDevice(name: string, factory: ProvenanceRecordFactory, key?: string | Uint8Array | undefined): Promise<Device> {
+    async function createDevice(name: string, key?: string | Uint8Array | undefined): Promise<Device> {
         key = key
             ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(16);
 
         const device = await deviceModel.create({ name, key: encodeKey(key) });
-        const report = await factory(key, `created ${name}`, { tags: ['creation'] });
         return mapDevice(device);
     }
 
