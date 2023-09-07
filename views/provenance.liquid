@@ -1,6 +1,7 @@
 {% layout "layout.liquid" %}
 {% block %}
-    <h1>Asset Provenance Records</h1>
+    <h1>{{ deviceName }} Asset Provenance Records</h1>
+    <div>Device ID: {{ deviceID }}</div>
     <div>
     {%- for report in reports %}
         <div class="card p-3 my-3">

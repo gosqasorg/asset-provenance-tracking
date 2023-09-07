@@ -8,7 +8,26 @@ import * as qrcode from 'qrcode';
 import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID } from './services';
 import path from 'path'
 import os from 'os'
+import { FastifyRequest } from 'fastify/types/request'
 
+type Attachment = Pick<ProvenanceAttachment, 'type' | 'data'>;
+
+async function getFormFields(request: FastifyRequest) {
+    const fields = new Map<string, string | Attachment>();
+    for await (const part of request.parts()) {
+        const fieldname = part.fieldname;
+        if (part.type === 'file') {
+            const buffer = await part.toBuffer();
+            if (buffer.length === 0) continue;
+            fields.set(fieldname, { data: buffer, type: part.mimetype });
+        }  else {
+            const value = part.value!.toString();
+            if (value.length === 0) continue;
+            fields.set(fieldname, value)
+        }
+    }
+    return fields;
+}
 
 export async function createFastifyServer(deviceRepo: DeviceRepository, recordRepo: ProvenanceRepository) {
 
@@ -52,9 +71,19 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
     type DeviceKey = { deviceKey: string };
 
-    server.post<{ Body: { deviceName: string } }>('/devices', async (request, reply) => {
-        const { deviceName } = request.body;
-        const device = await deviceRepo.createDevice(deviceName, recordRepo.createRecord);
+    server.post('/devices', async (request, reply) => {
+        const fields = await getFormFields(request);
+
+        const name = fields.get('name') as string;
+        const description = fields.get('description') as string;
+        const picture = fields.get('picture') as Attachment | undefined;
+
+        const device = await deviceRepo.createDevice(name);
+        const _record = await recordRepo.createRecord(device.key, description, {
+            name,
+            tags: ['creation'],
+            attachments: picture ? [picture] : undefined,
+        })
         reply.redirect(`/device/${device.key}`);
     });
 
@@ -70,26 +99,14 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const { deviceKey } = request.params;
         const deviceID = calculateDeviceID(deviceKey);
         const reports = await recordRepo.getRecords(deviceKey);
+        const deviceName = reports.findLast(r => r.name)?.name ?? "Unnamed";
 
-        return reply.view('views/provenance', { deviceKey, deviceID, reports });
+        return reply.view('views/provenance', { deviceKey, deviceID, deviceName, reports });
     });
 
-    type Attachment = Pick<ProvenanceAttachment, 'type' | 'data'>;
     server.post<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
-        const fields = new Map<string, string | Attachment>();
-        for await (const part of request.parts()) {
-            const fieldname = part.fieldname;
-            if (part.type === 'file') {
-                const buffer = await part.toBuffer();
-                if (buffer.length === 0) continue;
-                fields.set(fieldname, { data: buffer, type: part.mimetype });
-            }  else {
-                const value = part.value!.toString();
-                if (value.length === 0) continue;
-                fields.set(fieldname, value)
-            }
-        }
+        const fields = await getFormFields(request);
 
         const description = fields.get('description') as string;
         const picture = fields.get('picture') as Attachment | undefined;

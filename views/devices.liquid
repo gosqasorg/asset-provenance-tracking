@@ -14,13 +14,14 @@
         {%- endfor %}
     </ul>
     <hr class="col-1 my-4">
-    <form method="POST">
-        <div class="col-8">
-            <legend>Create New Sample Device</legend>
-            <div class="mb-3">
-                <input type="text" class="form-control" name="deviceName" required placeholder="Device Name">
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
+    <form method="POST" class="col-md-8 card p-3 text-bg-secondary" enctype="multipart/form-data">
+        <legend>Create New Device</legend>
+        <div class="mb-3">
+            <input type="text" class="form-control" name="name" id="device-name" required placeholder="Device Name">
+            <input type="text" class="form-control mt-3" name="description" id="device-description" required placeholder="Device Description">
+            <label class="form-label mt-2" for="file">Device Image (optional)</label>
+            <input type="file" class="form-control" accept="image/*" name="picture" capture="environment" />
         </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
 {% endblock %}
