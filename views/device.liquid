@@ -1,15 +1,23 @@
 {% layout "layout.liquid" %}
 {% block %}
+    {% if device.saved %}
     <h1>Sample Device: {{ device.name }}</h1>
-    <div class="text-bg-warning col-6">
+    <div class="text-bg-info col-6">
         <p>
-            The prototype GOSQAS Asset Provenance Tracker stores the secret key for all devices 
-            created via the form on this page. This centralized repository of device keys is for
-            demonstration purposes only and will not be a part of the final solution.
+            The key for this device has been <a href="/devices">saved</a> for demonstration purposes.
         </p>
     </div>
+    {% else %}
+    <h1>Device: {{ device.name }}</h1>
+    <div class="text-bg-warning col-6">
+    <p>
+        This device key is not stored in the GOSQAS Asset Provenance Tracker.
+        Please save the device key and QR code in order to use GOSQAS for this device.
+    </p>
+    </div>
+    {% endif %}
     <div>Device Key: {{ device.key }}</div>
-    <div>Device ID: {{ device.deviceID }}</div>
+    <div>Device ID: {{ device.id }}</div>
     <div><a href="/provenance/{{ device.key }}">View Provenance Records</a></div>
-    <div><img src="{{ dataURL }}"></img></div>
+    <div><img src="{{ device.qrCode }}"></img></div>
 {% endblock %}

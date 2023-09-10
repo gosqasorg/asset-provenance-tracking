@@ -5,9 +5,10 @@ import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
-import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID } from './services';
+import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID, encodeKey } from './services';
 import path from 'path'
 import os from 'os'
+import * as crypto from 'crypto';
 import { FastifyRequest } from 'fastify/types/request'
 
 type Attachment = Pick<ProvenanceAttachment, 'type' | 'data'>;
@@ -56,9 +57,31 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         prefix: '/public/',
     });
 
-    server.get('/', async (request, reply) => {
+    server.get('/', async (_request, reply) => {
         return reply.view('views/index', {})
     });
+
+    server.post('/', async (request, reply) => {
+        const fields = await getFormFields(request);
+
+        const name = fields.get('name') as string;
+        const description = fields.get('description') as string;
+        const picture = fields.get('picture') as Attachment | undefined;
+        const saveDeviceKey = fields.get('save-device-key') === "on";
+
+        const deviceKey = encodeKey(crypto.randomBytes(16));
+        if (saveDeviceKey) {
+            await deviceRepo.createDevice(name, deviceKey);
+        }
+        await recordRepo.createRecord(deviceKey, description, {
+            name,
+            tags: ['creation'],
+            attachments: picture ? [picture] : undefined,
+        })
+
+        reply.redirect(`/device/${deviceKey}`);
+    });
+
 
     server.get('/info', async (request, reply) => {
         return reply.redirect("https://github.com/gosqasorg/home");
@@ -71,28 +94,35 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
     type DeviceKey = { deviceKey: string };
 
-    server.post('/devices', async (request, reply) => {
-        const fields = await getFormFields(request);
-
-        const name = fields.get('name') as string;
-        const description = fields.get('description') as string;
-        const picture = fields.get('picture') as Attachment | undefined;
-
-        const device = await deviceRepo.createDevice(name);
-        const _record = await recordRepo.createRecord(device.key, description, {
-            name,
-            tags: ['creation'],
-            attachments: picture ? [picture] : undefined,
-        })
-        reply.redirect(`/device/${device.key}`);
-    });
-
     server.get<{ Params: DeviceKey }>('/device/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
-        const device = await deviceRepo.getDevice(deviceKey);
-        if (!device) throw new Error('Device not found');
-        const dataURL = await qrcode.toDataURL(`${BASE_URL}provenance/${device.key}`);
-        return reply.view('views/device', { device, dataURL });
+        const device = await getDevice(deviceKey);
+
+        return reply.view('views/device', { device });
+
+        async function getDevice(deviceKey: string) {
+            const id = calculateDeviceID(deviceKey);
+            const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
+            const $device = await deviceRepo.getDevice(deviceKey);
+            if ($device) {
+                return { 
+                    key: deviceKey,
+                    id, 
+                    qrCode,
+                    name: $device.name,
+                    saved: true 
+                };
+            } 
+
+            const records = await recordRepo.getRecords(deviceKey);
+            return { 
+                key: deviceKey,
+                id, 
+                qrCode,
+                name: records.findLast(r => r.name)?.name,
+                saved: false
+            };
+        }
     });
 
     server.get<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
