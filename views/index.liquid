@@ -11,4 +11,17 @@
     <div>
         Please see the <a href="/devices">Sample Devices</a> page to see how the GOSQAS Asset Provenance Tracker works.
     </div>
+    <hr class="col-1 my-4">
+    <form method="POST" class="col-md-8 card p-3 text-bg-secondary" enctype="multipart/form-data">
+        <legend>Create New Device</legend>
+        <div class="mb-3">
+            <input type="text" class="form-control" name="name" id="device-name" required placeholder="Device Name">
+            <input type="text" class="form-control mt-3" name="description" id="device-description" required placeholder="Device Description">
+            <label class="form-label mt-2" for="file">Device Image (optional)</label>
+            <input type="file" class="form-control" accept="image/*" name="picture" capture="environment" />
+            <input type="checkbox" id="save-device-key" name="save-device-key">
+            <label for="save-device-key">Save device key (demo devices only!)</label><br>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
 {% endblock %}

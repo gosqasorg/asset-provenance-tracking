@@ -28,13 +28,12 @@ interface ProvenanceAttachmentModel extends Model<InferAttributes<ProvenanceAtta
 }
 
 function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
-    async function createDevice(name: string, factory: ProvenanceRecordFactory, key?: string | Uint8Array | undefined): Promise<Device> {
+    async function createDevice(name: string, key?: string | Uint8Array | undefined): Promise<Device> {
         key = key
             ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(16);
 
         const device = await deviceModel.create({ name, key: encodeKey(key) });
-        const report = await factory(key, `created ${name}`, { tags: ['creation'] });
         return mapDevice(device);
     }
 
@@ -57,7 +56,7 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
     return { createDevice, getDevice, getDevices };
 }
 
-type ProvenanceRecordJson = Pick<ProvenanceRecord, 'description' | 'attachments' | 'tags'>;
+type ProvenanceRecordJson = Omit<ProvenanceRecord, 'deviceID' | 'createdAt'>;
 
 function createProvenanceRepo(
     sequelize: Sequelize,
@@ -77,6 +76,7 @@ function createProvenanceRepo(
 
         const record: ProvenanceRecordJson = {
             description,
+            name: options?.name,
             tags: options?.tags ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
         }
@@ -103,6 +103,7 @@ function createProvenanceRepo(
         return {
             deviceID,
             description,
+            name: options?.name,
             tags: options?.tags ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
             createdAt
@@ -135,6 +136,7 @@ function createProvenanceRepo(
             return <ProvenanceRecord>{
                 deviceID,
                 description: $record.description,
+                name: $record.name,
                 tags: $record.tags,
                 attachments: $record.attachments,
                 createdAt: record.createdAt
