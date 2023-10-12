@@ -39,7 +39,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         .filter(v => !v.internal)
         .map(v => `http://${v.address}${process.env.PORT ? `:${process.env.PORT}` : ''}/`)[0];
 
-    // __dirname is the directory of the compiled .js file in the dist directory, 
+    // __dirname is the directory of the compiled .js file in the dist directory,
     // so need to add the '..' to get to the root directory
     const engine = new Liquid({ root: path.join(__dirname, '..', 'views') });
     const server = fastify({ logger: true })
@@ -82,8 +82,33 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         reply.redirect(`/device/${deviceKey}`);
     });
 
+    // This is Rob, who is a noob here (and the architect, go figure...)
+    // attempting to produce a batch of keys at once.
+    // This can be tested with:
+    // curl -d "param1=value1&param2=value2" -H "Content-Type: application/x-www-form-urlencoded" -X POST http://127.0.0.1:8000/manykeys/spudbody/3
+    // And will return something like:
+    // {"keys":["6bXXFunVNY9gtsY47n1tgQ","2UsUGTNYNFWA4jsdWBFxgf","LyGoHQ7wYr9XG1oWMkgXCx"]}
+    type NumberParam = { n: number,
+                         name:   string };
+    server.post<{ Params: NumberParam }>('/manykeys/:name/:n', async (request, reply) => {
+        const { n, name } = request.params;
+        const description = "";
 
-    server.get('/info', async (request, reply) => {
+        let keys: string[] = [];
+        for (let i = 0; i < n; i++) {
+            const deviceKey = encodeKey(crypto.randomBytes(16));
+            keys.push(deviceKey);
+            await recordRepo.createRecord(deviceKey, description, {
+                name,
+                tags: ['creation'],
+                attachments: undefined,
+            })
+        }
+
+        reply.code(200).send({ keys: keys });
+    });
+
+    Server.get('/info', async (request, reply) => {
         return reply.redirect("https://github.com/gosqasorg/home");
     });
 
@@ -105,19 +130,19 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
             const $device = await deviceRepo.getDevice(deviceKey);
             if ($device) {
-                return { 
+                return {
                     key: deviceKey,
-                    id, 
+                    id,
                     qrCode,
                     name: $device.name,
-                    saved: true 
+                    saved: true
                 };
-            } 
+            }
 
             const records = await recordRepo.getRecords(deviceKey);
-            return { 
+            return {
                 key: deviceKey,
-                id, 
+                id,
                 qrCode,
                 name: records.findLast(r => r.name)?.name,
                 saved: false
