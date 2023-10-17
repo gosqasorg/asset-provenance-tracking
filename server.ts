@@ -6,6 +6,7 @@ import fastifyStatic from '@fastify/static'
 import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
 import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID, encodeKey } from './services';
+import * as fs from 'fs';
 import path from 'path'
 import os from 'os'
 import * as crypto from 'crypto';
@@ -85,9 +86,10 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     // This is Rob, who is a noob here (and the architect, go figure...)
     // attempting to produce a batch of keys at once.
     // This can be tested with:
-    // curl -d "param1=value1&param2=value2" -H "Content-Type: application/x-www-form-urlencoded" -X POST http://127.0.0.1:8000/manykeys/spudbody/3
+    // curl -H "Content-Type: application/x-www-form-urlencoded" -X POST http://127.0.0.1:8000/manykeys/spudboy/3
     // And will return something like:
     // {"keys":["6bXXFunVNY9gtsY47n1tgQ","2UsUGTNYNFWA4jsdWBFxgf","LyGoHQ7wYr9XG1oWMkgXCx"]}
+    // ...which creates 3 records and keys with the name "spudboy".
     type NumberParam = { n: number,
                          name:   string };
     server.post<{ Params: NumberParam }>('/manykeys/:name/:n', async (request, reply) => {
@@ -108,7 +110,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         reply.code(200).send({ keys: keys });
     });
 
-    Server.get('/info', async (request, reply) => {
+    server.get('/info', async (request, reply) => {
         return reply.redirect("https://github.com/gosqasorg/home");
     });
 
@@ -124,22 +126,47 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const device = await getDevice(deviceKey);
 
         return reply.view('views/device', { device });
+    });
+    // An attempt by Rob to write a utility routine that will download a QR code
+    // as a separate file for batch operations, test with:
+    // curl -H "Content-Type: application/x-www-form-urlencoded" -X GET http://127.0.0.1:8000/qrcode/6bXXFunVNY9gtsY47n1tgQc
+    // This has
+    server.get<{ Params: DeviceKey }>('/qrcode/:deviceKey', async (request, reply) => {
+        const { deviceKey } = request.params;
+        const device = await getDevice(deviceKey);
+        const $device = await deviceRepo.getDevice(deviceKey);
+        if (device) {
+            request.log.info(deviceKey + ' $device found');
 
-        async function getDevice(deviceKey: string) {
-            const id = calculateDeviceID(deviceKey);
-            const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
-            const $device = await deviceRepo.getDevice(deviceKey);
-            if ($device) {
-                return {
-                    key: deviceKey,
-                    id,
-                    qrCode,
-                    name: $device.name,
-                    saved: true
-                };
-            }
+            const filePath = "./" + deviceKey + ".png";
+            const writableStream = fs.createWriteStream(filePath);
+            qrcode.toFileStream(writableStream, `${BASE_URL}provenance/${deviceKey}`,
+                {
+                    type: 'png'
+            });
+          const stream = fs.createReadStream(filePath);
+            reply.header('Content-Type', 'image/png').send(stream);
+        } else {
+            request.log.info(deviceKey + ' $device not found');
+            reply.code(404);
+        }
+      return reply;
 
-            const records = await recordRepo.getRecords(deviceKey);
+    async function getDevice(deviceKey: string) {
+        const id = calculateDeviceID(deviceKey);
+        const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
+        const $device = await deviceRepo.getDevice(deviceKey);
+        if ($device) {
+            return {
+                key: deviceKey,
+                id,
+                qrCode,
+                name: $device.name,
+                saved: true
+            };
+        }
+
+        const records = await recordRepo.getRecords(deviceKey);
             return {
                 key: deviceKey,
                 id,
