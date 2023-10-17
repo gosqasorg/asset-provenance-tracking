@@ -82,12 +82,9 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         reply.redirect(`/device/${deviceKey}`);
     });
 
-    // This is Rob, who is a noob here (and the architect, go figure...)
-    // attempting to produce a batch of keys at once.
-    // This can be tested with:
-    // curl -H "Content-Type: application/x-www-form-urlencoded" -X POST http://127.0.0.1:8000/manykeys/spudboy/3
-    // And will return something like:
-    // {"keys":["6bXXFunVNY9gtsY47n1tgQ","2UsUGTNYNFWA4jsdWBFxgf","LyGoHQ7wYr9XG1oWMkgXCx"]}
+    // This endpoint can be invoked from the command line: curl http://127.0.0.1:8000/manykeys/spudboy/3
+    // And it will return something like:
+    //      {"keys":["6bXXFunVNY9gtsY47n1tgQ","2UsUGTNYNFWA4jsdWBFxgf","LyGoHQ7wYr9XG1oWMkgXCx"]}
     // ...which creates 3 records and keys with the name "spudboy".
     server.get<{ Params: { count: number, name: string } }>('/manykeys/:name/:count', async (request, reply) => {
         const { count, name } = request.params;
