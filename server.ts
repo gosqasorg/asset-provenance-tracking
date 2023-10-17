@@ -89,16 +89,12 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     // And will return something like:
     // {"keys":["6bXXFunVNY9gtsY47n1tgQ","2UsUGTNYNFWA4jsdWBFxgf","LyGoHQ7wYr9XG1oWMkgXCx"]}
     // ...which creates 3 records and keys with the name "spudboy".
-    type NumberParam = {
-        n: number,
-        name: string
-    };
-    server.post<{ Params: NumberParam }>('/manykeys/:name/:n', async (request, reply) => {
-        const { n, name } = request.params;
+    server.get<{ Params: { count: number, name: string } }>('/manykeys/:name/:count', async (request, reply) => {
+        const { count, name } = request.params;
         const description = "";
 
         let keys: string[] = [];
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < count; i++) {
             const deviceKey = encodeKey(crypto.randomBytes(16));
             keys.push(deviceKey);
             await recordRepo.createRecord(deviceKey, description, {
