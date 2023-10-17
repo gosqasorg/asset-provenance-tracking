@@ -6,7 +6,6 @@ import fastifyStatic from '@fastify/static'
 import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
 import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID, encodeKey } from './services';
-import * as fs from 'fs';
 import path from 'path'
 import os from 'os'
 import * as crypto from 'crypto';
@@ -22,7 +21,7 @@ async function getFormFields(request: FastifyRequest) {
             const buffer = await part.toBuffer();
             if (buffer.length === 0) continue;
             fields.set(fieldname, { data: buffer, type: part.mimetype });
-        }  else {
+        } else {
             const value = part.value!.toString();
             if (value.length === 0) continue;
             fields.set(fieldname, value)
@@ -45,7 +44,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     const engine = new Liquid({ root: path.join(__dirname, '..', 'views') });
     const server = fastify({ logger: true })
     server.register(fastifyView, {
-        engine: { liquid:engine },
+        engine: { liquid: engine },
     });
     server.register(fastifyFormbody);
     server.register(fastifyMultipart, {
@@ -90,8 +89,10 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     // And will return something like:
     // {"keys":["6bXXFunVNY9gtsY47n1tgQ","2UsUGTNYNFWA4jsdWBFxgf","LyGoHQ7wYr9XG1oWMkgXCx"]}
     // ...which creates 3 records and keys with the name "spudboy".
-    type NumberParam = { n: number,
-                         name:   string };
+    type NumberParam = {
+        n: number,
+        name: string
+    };
     server.post<{ Params: NumberParam }>('/manykeys/:name/:n', async (request, reply) => {
         const { n, name } = request.params;
         const description = "";
@@ -126,47 +127,22 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const device = await getDevice(deviceKey);
 
         return reply.view('views/device', { device });
-    });
-    // An attempt by Rob to write a utility routine that will download a QR code
-    // as a separate file for batch operations, test with:
-    // curl -H "Content-Type: application/x-www-form-urlencoded" -X GET http://127.0.0.1:8000/qrcode/6bXXFunVNY9gtsY47n1tgQc
-    // This has
-    server.get<{ Params: DeviceKey }>('/qrcode/:deviceKey', async (request, reply) => {
-        const { deviceKey } = request.params;
-        const device = await getDevice(deviceKey);
-        const $device = await deviceRepo.getDevice(deviceKey);
-        if (device) {
-            request.log.info(deviceKey + ' $device found');
 
-            const filePath = "./" + deviceKey + ".png";
-            const writableStream = fs.createWriteStream(filePath);
-            qrcode.toFileStream(writableStream, `${BASE_URL}provenance/${deviceKey}`,
-                {
-                    type: 'png'
-            });
-          const stream = fs.createReadStream(filePath);
-            reply.header('Content-Type', 'image/png').send(stream);
-        } else {
-            request.log.info(deviceKey + ' $device not found');
-            reply.code(404);
-        }
-      return reply;
+        async function getDevice(deviceKey: string) {
+            const id = calculateDeviceID(deviceKey);
+            const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
+            const $device = await deviceRepo.getDevice(deviceKey);
+            if ($device) {
+                return {
+                    key: deviceKey,
+                    id,
+                    qrCode,
+                    name: $device.name,
+                    saved: true
+                };
+            }
 
-    async function getDevice(deviceKey: string) {
-        const id = calculateDeviceID(deviceKey);
-        const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
-        const $device = await deviceRepo.getDevice(deviceKey);
-        if ($device) {
-            return {
-                key: deviceKey,
-                id,
-                qrCode,
-                name: $device.name,
-                saved: true
-            };
-        }
-
-        const records = await recordRepo.getRecords(deviceKey);
+            const records = await recordRepo.getRecords(deviceKey);
             return {
                 key: deviceKey,
                 id,
