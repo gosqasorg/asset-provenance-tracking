@@ -17,7 +17,6 @@
     </div>
     {% endif %}
     <div>Device Key: {{ device.key }}</div>
-    <div>Device ID: {{ device.id }}</div>
     <div><a href="/provenance/{{ device.key }}">View Provenance Records</a></div>
     <div><img src="{{ device.qrCode }}"></img></div>
 {% endblock %}
