@@ -1,11 +1,15 @@
 {
-  "name": "gosqas-asset-provenance-tracking",
+  "name": "gosqas-global-distributed-tracking",
   "version": "0.0.0-placeholder",
-  "description": "This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).",
-  "keywords": [],
-  "author": "",
+  "description": "TODO",
+  "keywords": ["TODO"],
+  "author": "TODO",
   "license": "AGPL-3.0-only",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
+    "legacy": "node packages/legacy/dist/app.js"
   },
   "workspaces": [
     "packages/legacy"
