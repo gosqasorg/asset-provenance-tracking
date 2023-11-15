@@ -1,0 +1,13 @@
+{
+  "name": "gosqas-asset-provenance-tracking",
+  "version": "0.0.0-placeholder",
+  "description": "This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).",
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+  },
+  "workspaces": [
+    "packages/legacy"
+  ]
+}
