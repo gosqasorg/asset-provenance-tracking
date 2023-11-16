@@ -3,12 +3,12 @@
     "tasks": [
         {
             "type": "typescript",
-            "tsconfig": "tsconfig.json",
+            "tsconfig": "packages/legacy/tsconfig.json",
             "problemMatcher": [
                 "$tsc"
             ],
             "group": "build",
-            "label": "tsc: build - tsconfig.json"
+            "label": "build legacy",
         }
     ]
 }

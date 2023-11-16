@@ -45,6 +45,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     const server = fastify({ logger: true })
     server.register(fastifyView, {
         engine: { liquid: engine },
+        root: path.join(__dirname, '..'),
     });
     server.register(fastifyFormbody);
     server.register(fastifyMultipart, {

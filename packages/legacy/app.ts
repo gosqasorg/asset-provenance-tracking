@@ -1,12 +1,11 @@
 import os from 'os';
-import dotenv from 'dotenv';
+import path from 'node:path';
 
 import { Sequelize } from 'sequelize';
 import { createFastifyServer } from './server';
 import { createSequelizeReposities } from './services/sequelizeRepo';
 
-dotenv.config();
-const port = process.env.PORT ? parseInt(process.env.PORT) : 80;
+const port = process.env.PORT ? parseInt(process.env.PORT) : 8000;
 
 async function getReposities() {
     const sequelize = process.env.DATABASE_URL
@@ -17,7 +16,7 @@ async function getReposities() {
         })
         : new Sequelize({
             dialect: 'sqlite',
-            storage: './database.sqlite',
+            storage: path.join(__dirname, '..', 'database.sqlite'),
         })
     return await createSequelizeReposities(sequelize);
 }
