@@ -1,1 +1,1 @@
-web: npm legacy
+web: npm run legacy
