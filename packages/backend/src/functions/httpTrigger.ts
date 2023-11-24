@@ -135,8 +135,8 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
     return { jsonBody: records };
 }
 
-async function getAttachement(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`getAttachement ${request.params.deviceKey}/${request.params.attachmentID}`);
+async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log(`getAttachment ${request.params.deviceKey}/${request.params.attachmentID}`);
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { status: 404 }; }
@@ -203,8 +203,8 @@ app.post("postProvenance", {
     handler: postProvenance
 })
 
-app.get("getAttachement", {
+app.get("getAttachment", {
     authLevel: 'anonymous',
     route: 'attachment/{deviceKey}/{attachmentID}',
-    handler: getAttachement
+    handler: getAttachment
 })
