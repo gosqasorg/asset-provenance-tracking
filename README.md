@@ -12,13 +12,16 @@ We are developing a Minimal Viable Product. Although still a work in progress, y
 
 ## Installation
 
-Clone the repo, and then execute:
+1. Clone the repo
+2. Install dependencies
 ```
-> npm install
-> npm run dev
+npm install
 ```
-
-Then point your browser at [http:\\localhost:8000](http:\\localhost:8000) for example.
+3. Run development environment
+```
+npm run dev
+```
+4. Then point your browser at [http://localhost:8000](http://localhost:8000) for example
 
 > Note, as of v0.2, the demo server listens on *all* networks the server is connected to.
 > While exposing server ports is always a security risk, exposing the demo server on the local network
@@ -37,12 +40,10 @@ populate the current directory directly with N files, each of which has the name
 body a .png file of the QR code that resolves to that key. An internal variable defines the full URL.
 The name in the start record is currently hard-coded to "MakerFaireBayArea" but can of course be changed.
 
-This can be executed with:
-
+For example, to generate 300 valid QR codes run the following:
 ```
-> batch-shell.sh 300
+batch-shell.sh 300
 ```
-for example, to generate 300 valid QR codes.
 
 ## A Note on Our Trademarks
 
