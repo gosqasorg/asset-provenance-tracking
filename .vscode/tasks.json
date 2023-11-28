@@ -1,14 +1,62 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "type": "typescript",
-            "tsconfig": "packages/legacy/tsconfig.json",
-            "problemMatcher": [
-                "$tsc"
-            ],
-            "group": "build",
-            "label": "build legacy",
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "typescript",
+      "tsconfig": "packages/legacy/tsconfig.json",
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "group": "build",
+      "label": "build legacy",
+    },
+    {
+      "type": "func",
+      "label": "start backend host",
+      "command": "host start",
+      "problemMatcher": "$func-node-watch",
+      "isBackground": true,
+      "dependsOn": "build backend",
+      "options": {
+        "cwd": "${workspaceFolder}/packages/backend"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "build backend",
+      "command": "npm run build",
+      "dependsOn": "clean backend",
+      "problemMatcher": "$tsc",
+      "options": {
+        "cwd": "${workspaceFolder}/packages/backend"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "install backend",
+      "command": "npm install",
+      "options": {
+        "cwd": "${workspaceFolder}/packages/backend"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "prune backend",
+      "command": "npm prune --production",
+      "dependsOn": "build backend",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/packages/backend"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "clean backend",
+      "command": "npm run clean",
+      "dependsOn": "install backend",
+      "options": {
+        "cwd": "${workspaceFolder}/packages/backend"
+      }
+    }
+  ]
 }
