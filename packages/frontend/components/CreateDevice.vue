@@ -25,7 +25,22 @@
     </form>
 </template>
 
-<script>
+<script lang="ts">
+import { encode as base58encode } from '@urlpack/base58'
+
+export async function makeDeviceKey(): Promise<Uint8Array> {
+    const key = await crypto.subtle.generateKey({
+        name: "AES-CBC",
+        length: 128
+    }, true, ['encrypt', 'decrypt']);
+    const buffer = await crypto.subtle.exportKey("raw", key);
+    return new Uint8Array(buffer).slice();
+}
+
+function encodeDeviceKey(key: Uint8Array): string {
+    return base58encode(key);
+}
+
 export default {
     data() {
         return {
@@ -48,32 +63,13 @@ export default {
             this.picture = null;
             this.saveDeviceKey = false;
 
-            const deviceKey = 
+            const deviceKey = "blahblahblah"; //TODO: change this to the actual device key
 
             //Routing to display the device QR code etc. 
             this.$router.push(`/device-birth/${deviceKey}`);
         }
     }
-    // server.post('/', async (request, reply) => {
-    //     const fields = await getFormFields(request);
-
-    //     const name = fields.get('name') as string;
-    //     const description = fields.get('description') as string;
-    //     const picture = fields.get('picture') as Attachment | undefined;
-    //     const saveDeviceKey = fields.get('save-device-key') === "on";
-
-    //     const deviceKey = encodeKey(crypto.randomBytes(16));
-    //     if (saveDeviceKey) {
-    //         await deviceRepo.createDevice(name, deviceKey);
-    //     }
-    //     await recordRepo.createRecord(deviceKey, description, {
-    //         name,
-    //         tags: ['creation'],
-    //         attachments: picture ? [picture] : undefined,
-    //     })
-
-    //     reply.redirect(`/device/${deviceKey}`);
-    // });
+    
 }
 </script>
 
