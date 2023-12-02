@@ -45,6 +45,11 @@ For example, to generate 300 valid QR codes run the following:
 batch-shell.sh 300
 ```
 
+## Contributing
+Pull requests, corrections, translations & fixes are welcome. Any contributions must be submitted under the same license that the original piece of work. Take a look at any open issues or submit new ones if there is something that needs to be fixed or added.
+
+Watch this video on how to contribute to open source for a complete overview -> [https://www.youtube.com/watch?v=UWA4wyacY2A](https://www.youtube.com/watch?v=UWA4wyacY2A)
+
 ## A Note on Our Trademarks
 
 Although all of our code is open-source, you may not use our trademarks without written permission.
