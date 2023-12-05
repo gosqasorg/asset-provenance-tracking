@@ -14,11 +14,7 @@
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <label>Device Image (optional):    </label>
-                <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" />
-            </div>
-            <div style="display: block;">
-                <input type="checkbox" v-model="saveDeviceKey">
-                <label for="save-device-key"> Save device key (demo devices only!)</label>
+                <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
             </div>
         </div>
         <button id="submit-button" type="submit">Submit</button>
@@ -27,46 +23,57 @@
 
 <script lang="ts">
 import { encode as base58encode } from '@urlpack/base58'
-
-export async function makeDeviceKey(): Promise<Uint8Array> {
-    const key = await crypto.subtle.generateKey({
-        name: "AES-CBC",
-        length: 128
-    }, true, ['encrypt', 'decrypt']);
-    const buffer = await crypto.subtle.exportKey("raw", key);
-    return new Uint8Array(buffer).slice();
-}
-
-function encodeDeviceKey(key: Uint8Array): string {
-    return base58encode(key);
-}
+const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 export default {
     data() {
         return {
             name: '',
             description: '',
-            picture: null,
-            saveDeviceKey: false
+            pictures: [] as File[] | null,
         }
     },
     methods: {
-        onFileChange(e) {
-            this.form.picture = e.target.files[0];
+        onFileChange(e: InputEvent) {
+            const target = e.target as HTMLInputElement;
+            const files = target.files;
+            if (files) {
+                this.pictures = Array.from(files);
+            }
         },
         async submitForm() {
-            // Handle form submission here
-            console.log(this.name, this.description, this.saveDeviceKey);
-            // Reset form inputs
-            this.name = '';
-            this.description = '';
-            this.picture = null;
-            this.saveDeviceKey = false;
 
-            const deviceKey = "blahblahblah"; //TODO: change this to the actual device key
+            const deviceKey = this.encodeDeviceKey(await this.makeDeviceKey()); //TODO: change this to the actual device key
+            this.postProvenance(deviceKey, {
+                name: this.name,
+                description: this.description,
+            }, this.pictures || [])
 
-            //Routing to display the device QR code etc. 
-            this.$router.push(`/device-birth/${deviceKey}`);
+            // //Routing to display the device QR code etc. 
+            // this.$router.push(`/device-birth/${deviceKey}`);
+        }, 
+        async makeDeviceKey(): Promise<Uint8Array> {
+            const key = await crypto.subtle.generateKey({
+                name: "AES-CBC",
+                length: 128
+            }, true, ['encrypt', 'decrypt']);
+            const buffer = await crypto.subtle.exportKey("raw", key);
+            return new Uint8Array(buffer).slice();
+        },
+        encodeDeviceKey(key: Uint8Array): string {
+            return base58encode(key);
+        },
+        async postProvenance(deviceKey: string, record: any, attachments: readonly Blob[]) {
+            const formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(record));
+            for (const blob of attachments) {
+                formData.append("attachment", blob);
+            }
+            const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+                method: "POST",
+                body: formData,
+            });
+            return await response.json() as { record: string, attachments?: string[] };
         }
     }
     
