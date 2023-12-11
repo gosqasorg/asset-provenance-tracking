@@ -34,7 +34,7 @@ export default {
         }
     },
     methods: {
-        onFileChange(e: InputEvent) {
+        onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
             if (files) {
@@ -49,8 +49,8 @@ export default {
                 description: this.description,
             }, this.pictures || [])
 
-            // //Routing to display the device QR code etc. 
-            // this.$router.push(`/device-birth/${deviceKey}`);
+            //Routing to display the device QR code etc. 
+            this.$router.push({ path: `/device/${deviceKey}` });
         }, 
         async makeDeviceKey(): Promise<Uint8Array> {
             const key = await crypto.subtle.generateKey({

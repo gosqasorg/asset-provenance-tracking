@@ -15,13 +15,12 @@
     </div>
 </template>
 
-<script>
-export default {
+<script setup>
+import { useRoute } from 'vue-router'
 
-    mounted() {
-        // Fetch device data and reports here
-    }
-};
+const route = useRoute()
+const deviceKey = route.params.deviceKey
+
 </script>
 
 <style>

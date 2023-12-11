@@ -2,7 +2,9 @@
   "name": "gosqas-global-distributed-tracking",
   "version": "0.0.0-placeholder",
   "description": "TODO",
-  "keywords": ["TODO"],
+  "keywords": [
+    "TODO"
+  ],
   "author": "TODO",
   "license": "AGPL-3.0-only",
   "engines": {
@@ -15,5 +17,8 @@
     "packages/backend",
     "packages/frontend",
     "packages/legacy"
-  ]
+  ],
+  "dependencies": {
+    "@urlpack/base58": "^2.0.0"
+  }
 }
