@@ -45,6 +45,9 @@ For example, to generate 300 valid QR codes run the following:
 batch-shell.sh 300
 ```
 
+## License
+As mentioned in the [Licences section](https://github.com/gosqasorg/home#licenses) of the Home repository, as this repository is software the license is under a GNU Affero GPL v3 License. See the [License](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/LICENSE) file for more details.
+
 ## A Note on Our Trademarks
 
 Although all of our code is open-source, you may not use our trademarks without written permission.
