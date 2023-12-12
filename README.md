@@ -56,3 +56,14 @@ Our trademarks include:
 2. The term "Global Open Source Quality Assurance System"
 3. The "purple hands" logo
 4. The word-ard GOSQAS with the "purple hands" symbol in the letter O.
+
+## Contributing
+
+Global Distributed Tracking is being built by volunteers, and we need and appreciate your help. In addition to coders, we need 
+artists, writers, tests, UX experts, supply chain experts and more. The best way to contribute is to email [read.robert@pubinv.org](mailto:gosqasystem@gmail.com) directly,
+where he will likely schedule a private meeting with you before introducing you to the team.
+
+But, you are welcome to enter issues and create pull requests as well. We recommend you full read our associated technical papers
+before expending significant time on this unless you have spoken to us first.
+
+
