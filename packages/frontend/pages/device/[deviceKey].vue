@@ -5,15 +5,15 @@
 <template>
   <div>
     <!-- <h1>Device: {{ device.name }} </h1> -->
-    <!-- Display your device data here -->
     <div>Device Key: {{ route.params.deviceKey }}</div>
     <div><a :href="`/provenance/${route.params.deviceKey}`">View Provenance Records</a></div>
-    <!-- <div><img :src="device.qrCode" /></div> -->
+    <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
   </div>
 </template>
 
 <script setup>
 import { useRoute } from 'vue-router'
+import GenerateQRCode from '~/components/GenerateQRCode.vue';
 
 const route = useRoute()
 const deviceKey = route.params.deviceKey
