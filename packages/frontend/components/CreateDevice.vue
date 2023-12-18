@@ -52,7 +52,7 @@ export default {
             //Routing to display the device QR code etc. 
             this.$router.push({ path: `/device/${deviceKey}` });
         }, 
-        async makeDeviceKey(): Promise<Uint8Array> {
+        async makeDeviceKey(): Promise<Uint8Array> { //TODO: use the function in azureFuncs.ts insted
             const key = await crypto.subtle.generateKey({
                 name: "AES-CBC",
                 length: 128

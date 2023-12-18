@@ -22,16 +22,31 @@
 </template>
 
 <script>
+import {getProvenance} from '~/services/azureFuncs';
 export default {
     props: {
-        reports: {
-            type: Array,
-            default: () => []
-        }, 
         deviceKey: {
             type: String,
             default: ""
-        } // TODO: will this be given sepratly or in the reports?
+        }
+    },
+    mounted() {
+        this.getProvenanceData();
+    },
+    methods: {
+        async getProvenanceData() {
+            try { //TODO: do i try catch here on in the getProvenance function?
+                const provenanceData = await getProvenance(deviceKey);
+                this.reports = provenanceData;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    },
+    data() {
+        return {
+            reports: []
+        };
     }
 };
 </script>

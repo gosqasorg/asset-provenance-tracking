@@ -1,5 +1,5 @@
 <template>
-  <form enctype="multipart/form-data">
+  <form enctype="multipart/form-data" @submit="handleSubmit">
     <legend>Create New Provenance Record</legend>
     <div>
       <input type="text" class="form-control" name="description" id="provenance-description" required placeholder="Provenance Description" />
@@ -17,9 +17,9 @@
 
 <script>
 import TagInput from './TagInput.vue';
+import { postProvenance } from '~/services/azureFuncs';
 
 export default {
-  name: 'ProvenanceForm',
   data() {
     return {
       tags: [],
@@ -32,5 +32,11 @@ export default {
     },
   },
   components: { TagInput },
+  methods: {
+    handleSubmit(event) {
+      event.preventDefault();
+      postProvenance(); // TODO:Call the postProvenance function with the nonEmptyTags data
+    },
+  },
 };
 </script>

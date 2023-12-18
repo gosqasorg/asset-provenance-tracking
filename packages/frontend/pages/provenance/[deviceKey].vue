@@ -7,7 +7,7 @@
         <h1>{{ deviceName }} Asset Provenance Records</h1>
         <div>Device ID: {{ deviceID }}</div>
         <div>
-            <ProvidenceFeed :reports="reports" :deviceKey="deviceKey"></ProvidenceFeed>
+            <ProvidenceFeed :deviceKey="deviceKey"></ProvidenceFeed>
         </div>
         <hr class="col-1 my-4">
         <CreateProvidenceRecord></CreateProvidenceRecord>
@@ -21,8 +21,6 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const deviceKey = route.params.deviceKey
 
-</script>
 
-<style>
-/* Add your custom styles here */
-</style>
+
+</script>

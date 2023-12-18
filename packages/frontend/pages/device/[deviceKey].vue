@@ -1,7 +1,3 @@
-<!-- 
-    Page that apears after you create a new device. This is where you can save 
-    the QR code etc.
--->
 <template>
   <div>
     <!-- <h1>Device: {{ device.name }} </h1> -->
@@ -11,11 +7,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute } from 'vue-router'
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 
 const route = useRoute()
 const deviceKey = route.params.deviceKey
-
 </script>
