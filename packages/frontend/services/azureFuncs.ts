@@ -1,6 +1,5 @@
 const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
-
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {

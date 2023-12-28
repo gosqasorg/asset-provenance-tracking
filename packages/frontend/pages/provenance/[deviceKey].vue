@@ -7,20 +7,20 @@
         <h1>{{ deviceName }} Asset Provenance Records</h1>
         <div>Device ID: {{ deviceID }}</div>
         <div>
-            <ProvidenceFeed :deviceKey="deviceKey"></ProvidenceFeed>
+            <ProvidenceFeed :deviceKey="deviceKey"/>
         </div>
         <hr class="col-1 my-4">
-        <CreateProvidenceRecord></CreateProvidenceRecord>
+        <ProvidenceCreateRecord :deviceKey="deviceKey"/>
         <div id="form"></div>
     </div>
 </template>
 
 <script setup>
 import { useRoute } from 'vue-router'
+import { getProvenance} from '~/services/azureFuncs.ts'
 
 const route = useRoute()
 const deviceKey = route.params.deviceKey
-
 
 
 </script>

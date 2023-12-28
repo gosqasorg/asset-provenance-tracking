@@ -22,8 +22,8 @@
 </template>
 
 <script lang="ts">
-import { encode as base58encode } from '@urlpack/base58'
-const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
+import { postProvenance } from '~/services/azureFuncs';
+import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 export default {
     data() {
@@ -43,38 +43,23 @@ export default {
         },
         async submitForm() {
 
-            const deviceKey = this.encodeDeviceKey(await this.makeDeviceKey()); //TODO: change this to the actual device key
-            this.postProvenance(deviceKey, {
-                name: this.name,
-                description: this.description,
+            const deviceKey = await makeEncodedDeviceKey();
+            postProvenance(deviceKey, {
+                deviceName: this.name,
+                deviceDescription: this.description,
             }, this.pictures || [])
+                .then(response => {
+                    // Handle the successful response here
+                    console.log('Post request successful:', response);
+                })
+                .catch(error => {
+                    // Handle the error here
+                    console.error('Error in post request:', error);
+                });
 
             //Routing to display the device QR code etc. 
             this.$router.push({ path: `/device/${deviceKey}` });
         }, 
-        async makeDeviceKey(): Promise<Uint8Array> { //TODO: use the function in azureFuncs.ts insted
-            const key = await crypto.subtle.generateKey({
-                name: "AES-CBC",
-                length: 128
-            }, true, ['encrypt', 'decrypt']);
-            const buffer = await crypto.subtle.exportKey("raw", key);
-            return new Uint8Array(buffer).slice();
-        },
-        encodeDeviceKey(key: Uint8Array): string {
-            return base58encode(key);
-        },
-        async postProvenance(deviceKey: string, record: any, attachments: readonly Blob[]) {
-            const formData = new FormData();
-            formData.append("provenanceRecord", JSON.stringify(record));
-            for (const blob of attachments) {
-                formData.append("attachment", blob);
-            }
-            const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-                method: "POST",
-                body: formData,
-            });
-            return await response.json() as { record: string, attachments?: string[] };
-        }
     }
     
 }
