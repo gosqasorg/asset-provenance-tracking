@@ -1,4 +1,5 @@
-Global Open Source Quality Assurance System Microclimate Tracking
+# Global Open Source Quality Assurance System Microclimate Tracking
+-- Anusha Shringi
 
 Microclimate monitoring involves the measurements as well as analysis of climate conditions in
 small, localized areas. They are influenced by various factors such as topography, vegetation,
