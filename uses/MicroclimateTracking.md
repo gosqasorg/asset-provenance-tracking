@@ -27,6 +27,7 @@ contribute to the study.
 microclimate studies through participants pasting the links into the database. These links
 can include articles, tutorials, or interactive content that helps students understand
 scientific principles behind their observations.
+
 Through these microclimate studies and the tracking of them through GOSQAS’s system, there
 are a myriad of benefits for high schoolers. These include interdisciplinary learning in which
 students can have an understanding of microclimate studies and the role of technology in
