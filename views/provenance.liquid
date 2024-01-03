@@ -18,7 +18,28 @@
                     <a href="/provenance/{{ deviceKey }}/attachment/{{ attachment.attachmentID }}">{{ attachment.attachmentID }}</a>
                 {% endif %}
             {% endfor %}
+
+            <div style="font-size: small;">
+
+            {% assign int = 0 %}
+            {% for child in report.children_key %}
+                {% if child.name != "" %}
+                    Added child device:
+                    <a href="/provenance/{{child}}">{{ report.children_name[int] }} </a> <br>    
+                    {% assign int = int | plus: 1%}     
+                {% endif %}
+                
+            {% endfor %}
+            </div>
+
+            <div style="font-size: small;">
+            {% for warn in report.warnings %}
+                <b> {{ warn }}  </b><br>                    
+            {% endfor %}
+            </div>
+            
             <div style="font-size: small;">{{ report.createdAt }}</div>
+
         </div>
     {% endfor -%}
     </div>
