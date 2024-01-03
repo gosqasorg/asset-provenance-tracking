@@ -24,10 +24,18 @@ export default {
         <label for="provenance-tags" class="form-label mt-3" >Tags (will be converted to lower case and duplicates removed)</label>
         <${TagInput} modelValue=${this.tags} name="tags" id="provenance-tags" class="form-control" onUpdateTags=${(value) => { this.tags = value }}/>
         <div class="my-1">${this.nonEmptyTags.map(t => html`<span class="badge bg-info text-dark mx-1">${t}</span>`)}</div>
+
+        <label class="form-label">Children Keys (optional) </label>
+        <input type="text" class="form-control" name="children" id="children-keys" />
+
+        <label class="form-label">Parent Key (optional) </label>
+        <input type="text" class="form-control" name="parent" id="parent-key" />
+        
         <label class="form-label" for="file">Add Image</label>
         <input type="file" class="form-control" accept="image/*" name="picture" capture="environment" />
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
+
 </form>
 `
     }
