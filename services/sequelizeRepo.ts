@@ -53,6 +53,14 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
         return { deviceID, key: device.key, name: device.name };
     }
 
+    // async function addChildren(parent_key: string, children_key: (string | Uint8Array)[] ): Promise<Device | null>{
+    //     const deviceID = calculateDeviceID(parent_key);
+    //     return {deviceID, key:parent_key, parent_of: children_key};
+        
+    // }
+
+    //here add function about adding children, getting children
+
     return { createDevice, getDevice, getDevices };
 }
 
@@ -65,8 +73,13 @@ function createProvenanceRepo(
 ): ProvenanceRepository {
 
     async function createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord> {
+        console.log("the description is: ", description);
         const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
+    
+        console.log("the key is: ", $key);
+        console.log("the deviceID is: ", deviceID);
+
 
         const attachments = (options?.attachments ?? []).map(a => {
             const attachmentID = fnv1(a.data);
@@ -78,6 +91,9 @@ function createProvenanceRepo(
             description,
             name: options?.name,
             tags: options?.tags ?? [],
+            children_key: options?.children_key ?? [],
+            children_name: options?.children_name ?? [],
+            warnings: options?.warnings ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
         }
 
@@ -105,6 +121,9 @@ function createProvenanceRepo(
             description,
             name: options?.name,
             tags: options?.tags ?? [],
+            children_key: options?.children_key ?? [],
+            children_name: options?.children_name ?? [],
+            warnings: options?.warnings ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
             createdAt
         }
@@ -139,9 +158,32 @@ function createProvenanceRepo(
                 name: $record.name,
                 tags: $record.tags,
                 attachments: $record.attachments,
+                children_key: $record.children_key,
+                children_name: $record.children_name,
+                warnings: $record.warnings ?? [],
                 createdAt: record.createdAt
             }
         });
+
+    }
+
+    async function getChildren(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]> {
+        const $key = typeof key === 'string' ? decodeKey(key) : key;
+        const deviceID = calculateDeviceID(key);
+        const records = await recordModel.findAll({
+            order: [['createdAt', 'DESC']],
+            where: { deviceID: deviceID.toString(16) }
+        });
+        return records.map(record => {
+            const data = decrypt($key, record.salt, record.data);
+            const $record = JSON.parse(data.toString('utf8'), (k,v) => k === 'attachmentID' ? BigInt(v) : v) as ProvenanceRecordJson;
+            return <ProvenanceRecord>{
+                children_key: $record.children_key,
+                children_name: $record.children_name,
+                createdAt: record.createdAt,
+            }
+        });
+
     }
 
     async function getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null> {
@@ -159,7 +201,9 @@ function createProvenanceRepo(
         }
     }
 
-    return { createRecord, getRecords, getAttachment };
+
+
+    return { createRecord, getRecords, getAttachment, getChildren };
 }
 
 export async function createSequelizeReposities(sequelize: Sequelize): Promise<{ devices: DeviceRepository, provenance: ProvenanceRepository }> {

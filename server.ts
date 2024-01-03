@@ -5,7 +5,7 @@ import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import { Liquid } from 'liquidjs'
 import * as qrcode from 'qrcode';
-import { DeviceRepository, ProvenanceAttachment, ProvenanceRepository, calculateDeviceID, encodeKey } from './services';
+import { DeviceRepository, ProvenanceAttachment, ProvenanceRecord, ProvenanceRepository, calculateDeviceID, encodeKey } from './services';
 import path from 'path'
 import os from 'os'
 import * as crypto from 'crypto';
@@ -77,6 +77,8 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             name,
             tags: ['creation'],
             attachments: picture ? [picture] : undefined,
+            children_key: undefined,
+            children_name: undefined,
         })
 
         reply.redirect(`/device/${deviceKey}`);
@@ -98,6 +100,8 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 name,
                 tags: ['creation'],
                 attachments: undefined,
+                children_key: undefined,
+                children_name: undefined,
             })
         }
 
@@ -163,11 +167,95 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const picture = fields.get('picture') as Attachment | undefined;
         const tagField = fields.get('tags') as string ?? "";
         const tagSet = new Set(tagField.toLowerCase().split(' ').map(t => t.trim()).filter(t => t.length > 0));
+        const childField = fields.get('children') as string ?? "";
+        const childKeySet = new Set(childField.split(',').map(t => t.trim()).filter(t => t.length > 0));
+        const parentKey = fields.get('parent') as string ?? ""; //should only get one key
+
+        const deviceProvenance = await addChildren(deviceKey,childKeySet);
+
+        if (parentKey != "") {
+            //check if parent key exi8sts
+            const parentRecords = await recordRepo.getRecords(parentKey);
+            const parentName = parentRecords.findLast(r => r.name)?.name ?? "";
+
+            if (parentName){
+                deviceProvenance.warnings.push("Added a parent to this device");
+                //should try to add some boolean that says this device already has a parent?
+    
+                const parentDeviceChildrenWarnings = await addChildren(parentKey, new Set([deviceKey]));
+                await recordRepo.createRecord(parentKey, description, {
+                    tags: [...tagSet],
+                    attachments: picture ? [picture] : undefined,
+                    children_name: [...parentDeviceChildrenWarnings.childrenNames],
+                    warnings: [...parentDeviceChildrenWarnings.warnings],
+                });    
+            }
+            else{
+                deviceProvenance.warnings.push("Parent device does not exist");
+            }
+        }
+
+        async function addChildren(parentKey: string, childKeySet: Set<string>) {
+            const childNameSet = [];
+            const warningSet = [];
+            for (var childKey of childKeySet.values()) {
+                //need to check if device has been added or not
+                const childList = await recordRepo.getChildren(parentKey);
+                const match = childList.find(({children_key}) => children_key?.includes(childKey));
+                const childRecords = await recordRepo.getRecords(childKey);
+                
+                if (match) {
+                    //if already recorded, say "child has been recorded in the past"
+                    const creationDate = childRecords.findLast(r => r.createdAt)?.createdAt;
+                    childKeySet.delete(childKey);
+                    warningSet.push(`Warning: Device with key "${childKey}" was added on ${creationDate}`);
+    
+                } else {
+                    const childName = childRecords.findLast(r => r.name)?.name ?? "";
+                    if (childName) { // if the device has not been made, the name is undefined
+                        childNameSet.push(childName);
+                    } else {
+                        childKeySet.delete(childKey);
+                        warningSet.push(`Warning: Device with key "${childKey}" does not exist!`);
+                    }
+                }                      
+            }
+            return {
+                childrenNames: childNameSet, 
+                warnings: warningSet };
+        }
+
 
         await recordRepo.createRecord(deviceKey, description, {
             tags: [...tagSet],
             attachments: picture ? [picture] : undefined,
+            children_key: [...childKeySet],
+            children_name: [...deviceProvenance.childrenNames],
+            warnings: [...deviceProvenance.warnings],
         });
+
+        // need to make this so it recalls grandchildren too
+        if (tagSet.has("recall")) {
+            await recallChildren(deviceKey);
+        }
+
+
+        async function recallChildren(deviceKey: string) {
+            const childList = await recordRepo.getChildren(deviceKey);
+            // need to obtain each provenance record, then in each key of provenance record
+            for (var child of childList) {
+                if (child.children_key) {
+                    for (var child_key of child.children_key) {
+                        await recordRepo.createRecord(child_key, description, {
+                            tags: [...tagSet],
+                            attachments: picture ? [picture] : undefined,
+                        });   
+                        await recallChildren(child_key);
+                    }
+                }
+            } 
+            return;
+        }
 
         reply.redirect(`/provenance/${deviceKey}`);
     })
