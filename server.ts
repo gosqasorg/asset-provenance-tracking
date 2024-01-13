@@ -183,9 +183,11 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 //should try to add some boolean that says this device already has a parent?
     
                 const parentDeviceChildrenWarnings = await addChildren(parentKey, new Set([deviceKey]));
+                console.log("this is the parent device: ", parentDeviceChildrenWarnings);
                 await recordRepo.createRecord(parentKey, description, {
                     tags: [...tagSet],
                     attachments: picture ? [picture] : undefined,
+                    children_key: [...parentDeviceChildrenWarnings.childKeys],
                     children_name: [...parentDeviceChildrenWarnings.childrenNames],
                     warnings: [...parentDeviceChildrenWarnings.warnings],
                 });    
@@ -221,6 +223,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 }                      
             }
             return {
+                childKeys : childKeySet,
                 childrenNames: childNameSet, 
                 warnings: warningSet };
         }
@@ -229,7 +232,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         await recordRepo.createRecord(deviceKey, description, {
             tags: [...tagSet],
             attachments: picture ? [picture] : undefined,
-            children_key: [...childKeySet],
+            children_key: [...deviceProvenance.childKeys],
             children_name: [...deviceProvenance.childrenNames],
             warnings: [...deviceProvenance.warnings],
         });

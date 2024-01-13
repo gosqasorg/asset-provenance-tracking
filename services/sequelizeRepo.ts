@@ -160,7 +160,7 @@ function createProvenanceRepo(
                 attachments: $record.attachments,
                 children_key: $record.children_key,
                 children_name: $record.children_name,
-                warnings: $record.warnings ?? [],
+                warnings: $record.warnings,
                 createdAt: record.createdAt
             }
         });
