@@ -19,6 +19,7 @@ export default {
         return html`
 <form method="POST" class="col-md-8 card p-3 text-bg-secondary" enctype="multipart/form-data">
     <legend>Create New Provenance Record</legend>
+    <p> <i>Must fill out at least one of the given fields.</i> </p>
     <div class="mb-3">
         <input type="text" class="form-control" name="description" id="provenance-description" placeholder="Provenance Description (optional)" />
         <label for="provenance-tags" class="form-label mt-3" >Tags (will be converted to lower case and duplicates removed)</label>

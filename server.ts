@@ -159,17 +159,25 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const { deviceKey } = request.params;
         const fields = await getFormFields(request);
 
-        const description = fields.get('description') as string;
+        const description = fields.get('description') as string ?? "";
         const picture = fields.get('picture') as Attachment | undefined;
         const tagField = fields.get('tags') as string ?? "";
-        const tagSet = new Set(tagField.toLowerCase().split(' ').map(t => t.trim()).filter(t => t.length > 0));
 
-        await recordRepo.createRecord(deviceKey, description, {
-            tags: [...tagSet],
-            attachments: picture ? [picture] : undefined,
-        });
+        if (description == "" && picture == undefined && tagField == "") {
+            //if nothing was entered then do not create a record
+            //try to notify user that something must be entered
+            console.log("User has not entered any inputs");
+        }
+        else{
+            const tagSet = new Set(tagField.toLowerCase().split(' ').map(t => t.trim()).filter(t => t.length > 0));
 
+            await recordRepo.createRecord(deviceKey, description, {
+                tags: [...tagSet],
+                attachments: picture ? [picture] : undefined,
+            });
+        }
         reply.redirect(`/provenance/${deviceKey}`);
+
     })
 
     server.get<{ Params: { deviceKey: string, attachmentID: string } }>('/provenance/:deviceKey/attachment/:attachmentID', async (request, reply) => {

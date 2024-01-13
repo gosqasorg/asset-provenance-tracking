@@ -7,7 +7,7 @@ export interface Device {
 export interface ProvenanceRecord {
     readonly deviceID: bigint;
     readonly name?: string;
-    readonly description: string;
+    readonly description?: string;
     readonly attachments: readonly Pick<ProvenanceAttachment, 'type' | 'attachmentID'>[];
     readonly tags: readonly string[];
     readonly createdAt: Date;
@@ -37,7 +37,7 @@ export interface DeviceRepository {
 }
 
 export interface ProvenanceRepository {
-    createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord>;
+    createRecord(key: string | Uint8Array, description?: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord>;
     getRecords(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]>;
     getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null>;
 }

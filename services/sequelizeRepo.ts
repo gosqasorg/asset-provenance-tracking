@@ -64,7 +64,7 @@ function createProvenanceRepo(
     attachmentModel: ModelStatic<ProvenanceAttachmentModel>,
 ): ProvenanceRepository {
 
-    async function createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord> {
+    async function createRecord(key: string | Uint8Array, description?: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord> {
         const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
 
@@ -75,7 +75,7 @@ function createProvenanceRepo(
         })
 
         const record: ProvenanceRecordJson = {
-            description: description ?? "",
+            description,
             name: options?.name,
             tags: options?.tags ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
@@ -102,7 +102,7 @@ function createProvenanceRepo(
 
         return {
             deviceID,
-            description: description ?? "",
+            description,
             name: options?.name,
             tags: options?.tags ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
