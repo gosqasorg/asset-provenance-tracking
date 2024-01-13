@@ -75,7 +75,7 @@ function createProvenanceRepo(
         })
 
         const record: ProvenanceRecordJson = {
-            description,
+            description: description ?? "",
             name: options?.name,
             tags: options?.tags ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID }))
@@ -102,7 +102,7 @@ function createProvenanceRepo(
 
         return {
             deviceID,
-            description,
+            description: description ?? "",
             name: options?.name,
             tags: options?.tags ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
@@ -130,6 +130,7 @@ function createProvenanceRepo(
             order: [['createdAt', 'DESC']],
             where: { deviceID: deviceID.toString(16) }
         });
+
         return records.map(record => {
             const data = decrypt($key, record.salt, record.data);
             const $record = JSON.parse(data.toString('utf8'), (k,v) => k === 'attachmentID' ? BigInt(v) : v) as ProvenanceRecordJson;
