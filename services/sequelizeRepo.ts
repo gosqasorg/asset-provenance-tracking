@@ -176,7 +176,7 @@ function createProvenanceRepo(
         });
         return records.map(record => {
             const data = decrypt($key, record.salt, record.data);
-            const $record = JSON.parse(data.toString('utf8'), (k,v) => k === 'attachmentID' ? BigInt(v) : v) as ProvenanceRecordJson;
+            const $record = JSON.parse(data.toString('utf8')) as ProvenanceRecordJson;
             return <ProvenanceRecord>{
                 children_key: $record.children_key,
                 children_name: $record.children_name,

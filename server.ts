@@ -246,9 +246,11 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         async function recallChildren(deviceKey: string) {
             const childList = await recordRepo.getChildren(deviceKey);
             // need to obtain each provenance record, then in each key of provenance record
+            const onlyChildKeys = [];
             for (var child of childList) {
                 if (child.children_key) {
                     for (var child_key of child.children_key) {
+                        onlyChildKeys.push(child_key);
                         await recordRepo.createRecord(child_key, description, {
                             tags: [...tagSet],
                             attachments: picture ? [picture] : undefined,
@@ -257,6 +259,8 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                     }
                 }
             } 
+            const json = JSON.stringify(onlyChildKeys);
+            console.log("json file of children keys ", JSON.parse(json.toString()));
             return;
         }
 
