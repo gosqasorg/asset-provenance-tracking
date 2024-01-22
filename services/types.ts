@@ -2,7 +2,6 @@ export interface Device {
     readonly name: string;
     readonly key: string;
     readonly deviceID: bigint;
-    readonly parent_of?: (string | Uint8Array)[];
 }
 
 export interface ProvenanceRecord {

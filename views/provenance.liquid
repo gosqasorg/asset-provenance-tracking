@@ -7,8 +7,13 @@
         <div class="card p-3 my-3">
             <div>{{ report.description }}</div>
             <div class="mb-1">
-            {% for tag in report.tags %}
-                <span class="badge bg-info text-dark">{{ tag }}</span>
+            {% for tag in report.tags %} 
+                {% if tag == "recall" %}
+                    <span class="badge bg-danger text-white">{{ tag }}</span>
+                {% else %}
+                    <span class="badge bg-info text-dark">{{ tag }}</span>
+                {% endif %}
+                
             {% endfor %}
             </div>
             {% for attachment in report.attachments %}

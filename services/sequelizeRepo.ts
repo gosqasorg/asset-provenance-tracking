@@ -32,7 +32,7 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
         key = key
             ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(16);
-
+        
         const device = await deviceModel.create({ name, key: encodeKey(key) });
         return mapDevice(device);
     }
@@ -73,14 +73,9 @@ function createProvenanceRepo(
 ): ProvenanceRepository {
 
     async function createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions) : Promise<ProvenanceRecord> {
-        console.log("the description is: ", description);
         const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
     
-        console.log("the key is: ", $key);
-        console.log("the deviceID is: ", deviceID);
-
-
         const attachments = (options?.attachments ?? []).map(a => {
             const attachmentID = fnv1(a.data);
             const {salt, encryptedData } = encrypt($key, a.data);
@@ -102,7 +97,7 @@ function createProvenanceRepo(
         const {salt, encryptedData } = encrypt($key, data);
 
         const createdAt = await sequelize.transaction(async tx => {
-            const record = await recordModel.create({ data: encryptedData, deviceID: deviceID.toString(16), salt }, { transaction: tx });
+            const record = await recordModel.create({ data: encryptedData, deviceID: deviceID.toString(16), salt}, { transaction: tx });
             for (const a of attachments) {
                 await attachmentModel.create(
                     {
@@ -149,6 +144,7 @@ function createProvenanceRepo(
             order: [['createdAt', 'DESC']],
             where: { deviceID: deviceID.toString(16) }
         });
+
         return records.map(record => {
             const data = decrypt($key, record.salt, record.data);
             const $record = JSON.parse(data.toString('utf8'), (k,v) => k === 'attachmentID' ? BigInt(v) : v) as ProvenanceRecordJson;
@@ -222,6 +218,10 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
             allowNull: false,
             unique: true
         }
+        // has_parent: {
+        //     type: DataTypes.BOOLEAN,
+        //     allowNull: false
+        // }
     }, {
         indexes: [
             {

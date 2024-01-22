@@ -173,12 +173,18 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
         const deviceProvenance = await addChildren(deviceKey,childKeySet);
 
+        // need to make this so it recalls grandchildren too
+        if (tagSet.has("recall")) {
+            await recallChildren(deviceKey);
+        } 
+
+        // user has entered a parent key. Add parent to this device.
         if (parentKey != "") {
             //check if parent key exi8sts
             const parentRecords = await recordRepo.getRecords(parentKey);
             const parentName = parentRecords.findLast(r => r.name)?.name ?? "";
 
-            if (parentName){
+            if (parentName){ //parent device exists
                 deviceProvenance.warnings.push("Added a parent to this device");
                 //should try to add some boolean that says this device already has a parent?
     
@@ -237,10 +243,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             warnings: [...deviceProvenance.warnings],
         });
 
-        // need to make this so it recalls grandchildren too
-        if (tagSet.has("recall")) {
-            await recallChildren(deviceKey);
-        }
+
 
 
         async function recallChildren(deviceKey: string) {
