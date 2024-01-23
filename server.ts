@@ -172,7 +172,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const parentKey = fields.get('parent') as string ?? ""; //should only get one key
 
         const deviceProvenance = await addChildren(deviceKey,childKeySet);
-
+        const reports = await recordRepo.getRecords(deviceKey);
         // need to make this so it recalls grandchildren too
         if (tagSet.has("recall")) {
             await recallChildren(deviceKey);
@@ -180,27 +180,35 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
         // user has entered a parent key. Add parent to this device.
         if (parentKey != "") {
-            //check if parent key exi8sts
-            const parentRecords = await recordRepo.getRecords(parentKey);
-            const parentName = parentRecords.findLast(r => r.name)?.name ?? "";
 
-            if (parentName){ //parent device exists
-                deviceProvenance.warnings.push("Added a parent to this device");
-                //should try to add some boolean that says this device already has a parent?
-    
-                const parentDeviceChildrenWarnings = await addChildren(parentKey, new Set([deviceKey]));
-                console.log("this is the parent device: ", parentDeviceChildrenWarnings);
-                await recordRepo.createRecord(parentKey, description, {
-                    tags: [...tagSet],
-                    attachments: picture ? [picture] : undefined,
-                    children_key: [...parentDeviceChildrenWarnings.childKeys],
-                    children_name: [...parentDeviceChildrenWarnings.childrenNames],
-                    warnings: [...parentDeviceChildrenWarnings.warnings],
-                });    
+            if (reports.find(({warnings}) => warnings?.includes("Added a parent to this device"))) {
+                console.log("parent has already been added here");
+                deviceProvenance.warnings.push("Error. This device already has a parent.")
             }
-            else{
-                deviceProvenance.warnings.push("Parent device does not exist");
+            else {
+                //check if parent key exists
+                const parentRecords = await recordRepo.getRecords(parentKey);
+                const parentName = parentRecords.findLast(r => r.name)?.name ?? "";
+
+                if (parentName){ //parent device exists
+                    deviceProvenance.warnings.push("Added a parent to this device");
+                    //should try to add some boolean that says this device already has a parent?
+        
+                    const parentDeviceChildrenWarnings = await addChildren(parentKey, new Set([deviceKey]));
+                    console.log("this is the parent device: ", parentDeviceChildrenWarnings);
+                    await recordRepo.createRecord(parentKey, description, {
+                        tags: [...tagSet],
+                        attachments: picture ? [picture] : undefined,
+                        children_key: [...parentDeviceChildrenWarnings.childKeys],
+                        children_name: [...parentDeviceChildrenWarnings.childrenNames],
+                        warnings: [...parentDeviceChildrenWarnings.warnings],
+                    });    
+                }
+                else{
+                    deviceProvenance.warnings.push("Parent device does not exist");
+                }
             }
+
         }
 
         async function addChildren(parentKey: string, childKeySet: Set<string>) {

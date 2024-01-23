@@ -3,6 +3,8 @@
     <h1>{{ deviceName }} Asset Provenance Records</h1>
     <div>Device ID: {{ deviceID }}</div>
     <div>
+
+
     {%- for report in reports %}
         <div class="card p-3 my-3">
             <div>{{ report.description }}</div>
@@ -31,7 +33,7 @@
                 {% if child.name != "" %}
                     Added child device:
                     <a href="/provenance/{{child}}">{{ report.children_name[int] }} </a> <br>    
-                    {% assign int = int | plus: 1%}     
+                    {% assign int = int | plus: 1 %}     
                 {% endif %}
                 
             {% endfor %}
