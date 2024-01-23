@@ -2,7 +2,7 @@
 
 This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).
 
-GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly protoyping this demo.
+GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly prototyping this demo.
 
 ## A Live MVP
 
@@ -12,13 +12,16 @@ We are developing a Minimal Viable Product. Although still a work in progress, y
 
 ## Installation
 
-Clone the repo, and then execute:
+1. Clone the repo
+2. Install dependencies
 ```
-> npm install
-> npm run dev
+npm install
 ```
-
-Then point your browser at [http:\\localhost:8000](http:\\localhost:8000) for example.
+3. Run development environment
+```
+npm run dev
+```
+4. Then point your browser at [http://localhost:8000](http://localhost:8000) for example
 
 > Note, as of v0.2, the demo server listens on *all* networks the server is connected to.
 > While exposing server ports is always a security risk, exposing the demo server on the local network
@@ -31,24 +34,36 @@ We have made a [short video](https://youtu.be/E5_YQV72NyY) of [v0.1](https://git
 
 ## batch-shell.sh
 
-The file batch-shell.sh can be used to produce any number of keys and QR codes at at ime.
+The file batch-shell.sh can be used to produce any number of keys and QR codes at at time.
 It takes a single argument, the number N of keys and QR codes to create. It will
 populate the current directory directly with N files, each of which has the name of a device key, and whose
 body a .png file of the QR code that resolves to that key. An internal variable defines the full URL.
-The name in the start record is currenlty hard-coded to "MakerFaireBayArea" but can of course be changed.
+The name in the start record is currently hard-coded to "MakerFaireBayArea" but can of course be changed.
 
-This can be executed with:
+For example, to generate 300 valid QR codes run the following:
+```
+batch-shell.sh 300
+```
 
-```
-> batch-shell.sh 300
-```
-for example, to generate 300 valid QR codes.
+## License
+As mentioned in the [Licences section](https://github.com/gosqasorg/home#licenses) of the Home repository, as this repository is software the license is under a GNU Affero GPL v3 License. See the [License](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/LICENSE) file for more details.
 
 ## A Note on Our Trademarks
 
-Although all of our code is open-source, you may not user our trademarkes without written permission.
+Although all of our code is open-source, you may not use our trademarks without written permission.
 Our trademarks include:
 1. The word GOSQAS
 2. The term "Global Open Source Quality Assurance System"
 3. The "purple hands" logo
 4. The word-ard GOSQAS with the "purple hands" symbol in the letter O.
+
+## Contributing
+
+Global Distributed Tracking is being built by volunteers, and we need and appreciate your help. In addition to coders, we need 
+artists, writers, tests, UX experts, supply chain experts and more. The best way to contribute is to email [read.robert@pubinv.org](mailto:gosqasystem@gmail.com) directly,
+where he will likely schedule a private meeting with you before introducing you to the team.
+
+But, you are welcome to enter issues and create pull requests as well. We recommend you full read our associated technical papers
+before expending significant time on this unless you have spoken to us first.
+
+
