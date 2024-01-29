@@ -36,11 +36,11 @@ export default {
         };
     },
     created() {
-        EventBus.on('feedRefresh', this.refreshPage); //new
+        EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
     },
-    beforeDestroy() { //new
-        EventBus.off('feedRefresh', this.refreshPage); //new
+    beforeDestroy() { 
+        EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
         fetchAttachmentData(report) {
@@ -59,8 +59,10 @@ export default {
             getProvenance(this.deviceKey)
             .then((response) => {
                 this.reports = response;
-                console.log("GET:");
-                console.log(this.reports);
+
+                // Uncomment for debugging
+                //console.log("GET:");
+                //console.log(this.reports);
             })
             .catch((error) => {
                 console.log(error);
