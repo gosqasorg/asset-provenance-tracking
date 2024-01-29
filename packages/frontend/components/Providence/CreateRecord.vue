@@ -23,10 +23,11 @@
       </div>
       <button id="submit-button" type="submit">Submit</button>
     </form>
-  </template>
+</template>
 
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';
+import { EventBus } from '~/utils/event-bus';
 const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 
@@ -37,22 +38,22 @@ export default {
             description: '',
             pictures: [] as File[] | null,
             tags: [],
-    }
-  },
-  props: {
-    deviceKey: {
-        type: String,
-        default: "",
-        required: true,
-    }
-  },
-  computed: {
-    nonEmptyTags() {
-      const tagSet = new Set(this.tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0));
-      return [...tagSet];
+        }
     },
-  },
-  methods: {
+    props: {
+        deviceKey: {
+            type: String,
+            default: "",
+            required: true,
+        },
+    },
+    computed: {
+        nonEmptyTags() {
+            const tagSet = new Set(this.tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0));
+            return [...tagSet];
+        },
+    },
+    methods: {
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -60,25 +61,27 @@ export default {
                 this.pictures = Array.from(files);
             }
         },
-      async submitForm() {
-        postProvenance(this.deviceKey, {
-            description: this.description,
-            tags: this.nonEmptyTags,
-        }, this.pictures || [])
-            .then(response => {
-                // Handle successful response here
-                console.log('Post request successful:', response);
-                console.log(this.reports);
-            })
-            .catch(error => {
-                // Handle error here
-                console.error('Error occurred during post request:', error);
-            });
+   
+        async submitForm() {
+                postProvenance(this.deviceKey, {
+                        description: this.description,
+                        tags: this.nonEmptyTags,
+                }, this.pictures || [])
+                .then(response => {
+                        // Handle successful response here
+                        console.log('Post request successful:', response);
 
-        }
+                        // Emit an event to notify the Feed.vue component
+                        EventBus.emit('feedRefresh');
+                })
+                .catch(error => {
+                        // Handle error here
+                        console.error('Error occurred during post request:', error);
+                });
+        },
     }
   
-}
+};
 </script>
 
 <style scoped>

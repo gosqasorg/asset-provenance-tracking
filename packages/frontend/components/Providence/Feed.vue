@@ -9,11 +9,8 @@
             <div class="mb-1">
                 <span v-for="tag in report.tags">{{ tag }}</span>
             </div>
-            <div v-for="attachment in report.record.attachments">
-                <a v-if="attachment.type.includes('image/')" :href="`/provenance/${this.deviceKey}/attachment/${attachment.attachmentID}`">
-                    <img style="max-width:100px;width:100%" :src="`/provenance/${this.deviceKey}/attachment/${attachment.attachmentID}`"> // TODO: call attachments properly
-                </a>
-                <a v-else :href="`/provenance/${this.deviceKey}/attachment/${attachment.attachmentID}`">{{ attachment.attachmentID }}</a>
+            <div v-for="attachmentCode in report.record.attachments">
+                <img :src="attachmentsData[attachmentCode].url" :alt="attachmentsData[attachmentCode].name">
             </div>
             <div style="font-size: small;">{{ report.createdAt }}</div>
         </div>
@@ -23,6 +20,7 @@
 
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
+import { EventBus } from '~/utils/event-bus';
 
 export default {
     props: {
@@ -34,18 +32,44 @@ export default {
     data() {
         return {
             reports: [],
+            attachments: [],
         };
     },
-    mounted() {
-        getProvenance(this.deviceKey)
-        .then((response) => {
-            this.reports = response;
-            console.log("GET:");
-            console.log(this.reports);
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-    }
+    created() {
+        EventBus.on('feedRefresh', this.refreshPage); //new
+        this.refreshPage();
+    },
+    beforeDestroy() { //new
+        EventBus.off('feedRefresh', this.refreshPage); //new
+    },
+    methods: {
+        fetchAttachmentData(report) {
+            report.attachments.forEach((attachmentCode) => {
+            getAttachment(attachmentCode)
+                .then((data) => {
+                this.$set(this.attachmentsData, attachmentCode, data);
+                })
+                .catch((error) => {
+                console.error('Error occurred during getAttachment request:', error);
+                });
+            });
+        },
+        refreshPage() {
+            console.log('Feed refresh event received');
+            getProvenance(this.deviceKey)
+            .then((response) => {
+                this.reports = response;
+                console.log("GET:");
+                console.log(this.reports);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+            
+            if (this.reports.length > 0) {
+                this.report.forEach(this.fetchAttachmentData);
+            }
+        }
+    },
 };
 </script>
