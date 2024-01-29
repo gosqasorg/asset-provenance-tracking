@@ -61,7 +61,11 @@ export default {
                 this.pictures = Array.from(files);
             }
         },
-   
+        refresh() {
+            this.description = '';
+            this.pictures = null;
+            this.tags = [];
+        },
         async submitForm() {
                 postProvenance(this.deviceKey, {
                         description: this.description,
@@ -70,9 +74,13 @@ export default {
                 .then(response => {
                         // Handle successful response here
                         console.log('Post request successful:', response);
+                        
+                        // Refresh CreateRecord component
+                        this.refresh();
 
                         // Emit an event to notify the Feed.vue component
                         EventBus.emit('feedRefresh');
+
                 })
                 .catch(error => {
                         // Handle error here
