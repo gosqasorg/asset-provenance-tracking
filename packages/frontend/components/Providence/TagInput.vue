@@ -28,14 +28,18 @@ export default {
       },
       set(value) {
         const $value = value.trim() ? value.split(this.separator) : [];
-        this.tags = $value;
-        this.$emit('updateTags', $value);
+        const uniqueValues = [...new Set($value)];
+        const transformedValues = uniqueValues.map(tag => tag.toLowerCase().trim());
+        this.tags = transformedValues;
+        // console.log('set', transformedValues); // Uncomment for debugging
+        this.$emit('updateTags', transformedValues);
       },
     },
   },
   methods: {
     onInput(event) {
       this.editableValue = event.target.value;
+      //console.log('onInput', this.editableValue); // Uncomment for debugging
     },
   },
 };

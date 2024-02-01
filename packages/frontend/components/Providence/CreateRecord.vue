@@ -14,7 +14,7 @@
         <label>Tags (will be converted to lower case and duplicates removed)</label>
         <ProvidenceTagInput v-model="tags"/>
         <div>
-          <span v-for="tag in nonEmptyTags" :key="tag">{{ tag }}</span>
+          <span v-for="tag in tags" :key="tag">{{ tag }}</span>
         </div>
         <div style="display: block;">
             <label>Add Image (optional):    </label>
@@ -47,12 +47,6 @@ export default {
             required: true,
         },
     },
-    computed: {
-        nonEmptyTags() {
-            const tagSet = new Set(this.tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0));
-            return [...tagSet];
-        },
-    },
     methods: {
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -69,7 +63,7 @@ export default {
         async submitForm() {
                 postProvenance(this.deviceKey, {
                         description: this.description,
-                        tags: this.nonEmptyTags,
+                        tags: this.tags,
                 }, this.pictures || [])
                 .then(response => {
                         // Handle successful response here
