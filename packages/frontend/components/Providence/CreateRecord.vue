@@ -1,5 +1,5 @@
 <!-- 
-    This component is a form used to create a new device that we will track the 
+    This component is a form. The form is used to create a new device that we will track the 
     providence for. 
 
     Resourses:
