@@ -12,7 +12,7 @@
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" required placeholder="Provenance Description" />
         <label>Tags (will be converted to lower case and duplicates removed)</label>
-        <ProvidenceTagInput v-model="tags"/>
+        <ProvidenceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
           <span v-for="tag in tags" :key="tag">{{ tag }}</span>
         </div>
@@ -37,7 +37,7 @@ export default {
         return {
             description: '',
             pictures: [] as File[] | null,
-            tags: [],
+            tags: [] as string[],
         }
     },
     props: {
@@ -48,6 +48,10 @@ export default {
         },
     },
     methods: {
+        handleUpdateTags(tags: string[]) {
+            console.log('handleUpdateTags', tags);
+            this.tags = tags;
+        },
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -61,6 +65,7 @@ export default {
             this.tags = [];
         },
         async submitForm() {
+            console.log(this.tags);
                 postProvenance(this.deviceKey, {
                         description: this.description,
                         tags: this.tags,

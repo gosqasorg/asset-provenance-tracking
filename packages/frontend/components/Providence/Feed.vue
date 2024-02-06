@@ -4,15 +4,15 @@
 -->
 <template>
     <div>
-        <div v-for="report in reports">
+        <div v-for="report in reports" class="report-box">
             <div>{{ report.record.description }}</div>
-            <div class="mb-1">
-                <span v-for="tag in report.tags">{{ tag }}</span>
+            <div class="mb-1 tag-container">
+                <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
             </div>
             <div v-for="attachmentCode in report.record.attachments">
                 <img :src="attachmentsData[attachmentCode].url" :alt="attachmentsData[attachmentCode].name">
             </div>
-            <div style="font-size: small;">{{ report.createdAt }}</div>
+            <div style="font-size: small;">{{ Date(report.timestamp) }}</div> <!-- using timestamp insted of createdAt -->
         </div>
     </div>
 </template>
@@ -61,17 +61,40 @@ export default {
                 this.reports = response;
 
                 // Uncomment for debugging
-                //console.log("GET:");
-                //console.log(this.reports);
+                // console.log("GET:");
+                // console.log(this.reports);
             })
             .catch((error) => {
                 console.log(error);
             });
             
             if (this.reports.length > 0) {
-                this.report.forEach(this.fetchAttachmentData);
+                this.reports.forEach(this.fetchAttachmentData);
             }
         }
     },
 };
 </script>
+
+<style scoped>
+.report-box {
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background-color: #f2f2f2;
+  color: #333;
+  padding: 5px 10px;
+  margin: 5px;
+  border-radius: 5px;
+  font-size: 14px;
+}
+</style>
