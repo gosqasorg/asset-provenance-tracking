@@ -8,6 +8,7 @@ interface DeviceModel extends Model<InferAttributes<DeviceModel>, InferCreationA
     id: CreationOptional<number>;
     name: string;
     key: string;
+    reportingKey: boolean;
 }
 
 interface ProvenanceRecordModel extends Model<InferAttributes<ProvenanceRecordModel>, InferCreationAttributes<ProvenanceRecordModel>> {
@@ -33,7 +34,7 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
             ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(16);
         
-        const device = await deviceModel.create({ name, key: encodeKey(key) });
+        const device = await deviceModel.create({ name, key: encodeKey(key), reportingKey: false });
         return mapDevice(device);
     }
 
@@ -50,16 +51,9 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
 
     function mapDevice(device: DeviceModel): Device {
         const deviceID = calculateDeviceID(device.key);
-        return { deviceID, key: device.key, name: device.name };
+        return { deviceID, key: device.key, name: device.name, reportingKey: device.reportingKey };
     }
 
-    // async function addChildren(parent_key: string, children_key: (string | Uint8Array)[] ): Promise<Device | null>{
-    //     const deviceID = calculateDeviceID(parent_key);
-    //     return {deviceID, key:parent_key, parent_of: children_key};
-        
-    // }
-
-    //here add function about adding children, getting children
 
     return { createDevice, getDevice, getDevices };
 }
@@ -217,11 +211,10 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
             type: DataTypes.STRING(64).BINARY,
             allowNull: false,
             unique: true
+        },
+        reportingKey: {
+            type: DataTypes.BOOLEAN,
         }
-        // has_parent: {
-        //     type: DataTypes.BOOLEAN,
-        //     allowNull: false
-        // }
     }, {
         indexes: [
             {

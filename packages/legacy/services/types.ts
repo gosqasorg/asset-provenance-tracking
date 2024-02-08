@@ -2,6 +2,7 @@ export interface Device {
     readonly name: string;
     readonly key: string;
     readonly deviceID: bigint;
+    readonly reportingKey: boolean;
 }
 
 export interface ProvenanceRecord {
