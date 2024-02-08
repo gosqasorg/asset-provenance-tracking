@@ -4,13 +4,13 @@
 -->
 <template>
     <div>
-        <div v-for="report in reports" class="report-box">
+        <div v-for="(report, index) in reports" class="report-box">
             <div>{{ report.record.description }}</div>
             <div class="mb-1 tag-container">
                 <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
             </div>
-            <div v-for="attachmentCode in report.record.attachments">
-                <img :src="attachmentsData[attachmentCode].url" :alt="attachmentsData[attachmentCode].name">
+            <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
+                <img v-bind:src="url" alt="Image" style="width: 500px;">
             </div>
             <div style="font-size: small;">{{ Date(report.timestamp) }}</div> <!-- using timestamp insted of createdAt -->
         </div>
@@ -32,7 +32,7 @@ export default {
     data() {
         return {
             reports: [],
-            attachments: [],
+            attachmentURLs: {},
         };
     },
     created() {
@@ -43,16 +43,19 @@ export default {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
-        fetchAttachmentData(report) {
-            report.attachments.forEach((attachmentCode) => {
-            getAttachment(attachmentCode)
-                .then((data) => {
-                this.$set(this.attachmentsData, attachmentCode, data);
-                })
-                .catch((error) => {
-                console.error('Error occurred during getAttachment request:', error);
-                });
-            });
+        async fetchAttachmentsForReport(report, index) {
+            try {
+                console.log("hi1");
+                if (report.attachments.length > 0) {
+                    console.log("hi2");
+                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(this.deviceKey, attachmentID));
+                    const attachments = await Promise.all(attachmentPromises);
+                    const urls = attachments.map(attachment => URL.createObjectURL(attachment));
+                    this.attachmentURLs[index.toString()] = urls;
+                }
+            } catch (error) {
+            console.error('Error occurred during getAttachment request:', error);
+            }
         },
         refreshPage() {
             console.log('Feed refresh event received');
@@ -60,17 +63,17 @@ export default {
             .then((response) => {
                 this.reports = response;
 
+                this.reports.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+
                 // Uncomment for debugging
                 // console.log("GET:");
                 // console.log(this.reports);
+                //console.log(this.attachmentURLs);
             })
             .catch((error) => {
                 console.log(error);
             });
-            
-            if (this.reports.length > 0) {
-                this.reports.forEach(this.fetchAttachmentData);
-            }
+        
         }
     },
 };

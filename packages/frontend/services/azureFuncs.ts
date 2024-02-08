@@ -9,10 +9,15 @@ export async function getProvenance(deviceKey: string) {
 }
 
 export async function getAttachment(deviceKey: string, attachmentID: string) {
-    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-        method: "GET",
-    });
-    return await response.blob();
+    try {
+        const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+          method: "GET",
+        });
+        return await response.blob();
+      } catch (error) {
+        console.error('Error occurred during getAttachment request:', error);
+        throw error; // re-throw the error if you want to handle it further up the call stack
+      }
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly Blob[]) {
