@@ -71,9 +71,9 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const saveDeviceKey = fields.get('save-device-key') === "on";
 
         const deviceKey = encodeKey(crypto.randomBytes(16));
-        const privateKey = encodeKey(crypto.randomBytes(16));
+        const publicKey = encodeKey(crypto.randomBytes(16));
         if (saveDeviceKey) {
-            await deviceRepo.createDevice(name, deviceKey, privateKey);
+            await deviceRepo.createDevice(name, deviceKey, publicKey);
         }
         await recordRepo.createRecord(deviceKey, description, {
             name,
@@ -81,7 +81,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             attachments: picture ? [picture] : undefined,
             children_key: undefined,
             children_name: undefined},
-            privateKey
+            publicKey
             )
 
         reply.redirect(`/device/${deviceKey}`);
@@ -133,28 +133,28 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             const qrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${deviceKey}`);
             const $device = await deviceRepo.getDevice(deviceKey);
             if ($device) {
-                const reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${$device.privateKey}`);
+                const reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${$device.publicKey}`);
                 return {
                     key: deviceKey,
                     id,
                     qrCode,
                     name: $device.name,
                     saved: true,
-                    privateKey: $device.privateKey,
+                    publicKey: $device.publicKey,
                     reportQrCode: reportQrCode
                 };
             }
 
             const records = await recordRepo.getRecords(deviceKey);
-            const privateKey = records.findLast(r => r.privateKey)?.privateKey?.toString();
-            const reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${privateKey}`);
+            const publicKey = records.findLast(r => r.publicKey)?.publicKey?.toString();
+            const reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${publicKey}`);
             return {
                 key: deviceKey,
                 id,
                 qrCode,
                 name: records.findLast(r => r.name)?.name,
                 saved: false,
-                privateKey,
+                publicKey,
                 reportQrCode
             
             };
@@ -168,7 +168,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const deviceName = reports.findLast(r => r.name)?.name ?? "";
 
         //if device name is "" then device does not exist, this perhaps might be a reporting key
-        // pass privateKey, original device ID, original device name, original records
+        // pass publicKey, original device ID, original device name, original records
 
         return reply.view('views/provenance', { deviceKey, deviceID, deviceName, reports });
     });
