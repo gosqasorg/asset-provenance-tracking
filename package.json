@@ -19,6 +19,8 @@
     "packages/legacy"
   ],
   "dependencies": {
-    "@urlpack/base58": "^2.0.0"
+    "@urlpack/base58": "^2.0.0",
+    "fastify": "^4.26.1",
+    "favicon": "^0.0.2"
   }
 }
