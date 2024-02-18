@@ -15,6 +15,8 @@ export interface ProvenanceRecord {
     readonly children_name?: readonly string[]
     readonly warnings?: readonly string[];
     readonly publicKey?: string;
+    readonly isReportingKey?: boolean;
+    readonly isRecall?: boolean;
     readonly createdAt: Date;
 }
 
@@ -33,6 +35,8 @@ export interface CreateRecordOptions {
     readonly children_key?: readonly string[];
     readonly children_name?: readonly string[];
     readonly warnings?: readonly string[];
+    readonly isReportingKey?: boolean;
+    readonly isRecall?: boolean;
     readonly createdAt?: Date;
 }
 

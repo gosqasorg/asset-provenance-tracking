@@ -80,9 +80,22 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             tags: ['creation'],
             attachments: picture ? [picture] : undefined,
             children_key: undefined,
-            children_name: undefined},
-            publicKey
+            children_name: undefined,
+            isReportingKey: true},
+            publicKey,
             )
+
+            //create same record but for the public key
+        await recordRepo.createRecord(publicKey, description, {
+            name,
+            tags: ['creation'],
+            attachments: picture ? [picture] : undefined,
+            children_key: undefined,
+            children_name: undefined,
+            isReportingKey: false},
+            )
+        
+        
 
         reply.redirect(`/device/${deviceKey}`);
     });
@@ -146,7 +159,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             }
 
             const records = await recordRepo.getRecords(deviceKey);
-            const publicKey = records.findLast(r => r.publicKey)?.publicKey?.toString();
+            const publicKey = records.findLast(r => r.publicKey)?.publicKey ?? "";
             const reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${publicKey}`);
             return {
                 key: deviceKey,
@@ -164,13 +177,18 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     server.get<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
         const deviceID = calculateDeviceID(deviceKey);
-        const reports = await recordRepo.getRecords(deviceKey);
-        const deviceName = reports.findLast(r => r.name)?.name ?? "";
-
+        const reportsReport = await recordRepo.getRecords(deviceKey);
+        const deviceName = reportsReport.findLast(r => r.name)?.name ?? "";
+        const isReportingKey = reportsReport.findLast(r => r.isReportingKey)?.isReportingKey;
+        var reports = reportsReport
+        if (isReportingKey) {
+            const publicKey = reportsReport.findLast(r=>r.publicKey)?.publicKey ?? "";
+            reports = await recordRepo.getRecords(publicKey);
+        } 
         //if device name is "" then device does not exist, this perhaps might be a reporting key
         // pass publicKey, original device ID, original device name, original records
 
-        return reply.view('views/provenance', { deviceKey, deviceID, deviceName, reports });
+        return reply.view('views/provenance', { deviceKey, deviceID, deviceName, isReportingKey, reports });
     });
 
     server.post<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
@@ -178,8 +196,9 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const fields = await getFormFields(request);
         
         const reports = await recordRepo.getRecords(deviceKey);
+        const isReportingKey = reports.findLast(r => r.isReportingKey)?.isReportingKey;
         
-
+        
         const description = fields.get('description') as string;
         const picture = fields.get('picture') as Attachment | undefined;
         const tagField = fields.get('tags') as string ?? "";
@@ -188,18 +207,30 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const childKeySet = new Set(childField.split(',').map(t => t.trim()).filter(t => t.length > 0));
         const parentKey = fields.get('parent') as string ?? ""; //should only get one key
 
-        const deviceProvenance = await addChildren(deviceKey,childKeySet);
-
-        // need to make this so it recalls grandchildren too
-        if (tagSet.has("recall")) {
-            await recallChildren(deviceKey);
+        var deviceProvenance;
+        var key;
+        var isRecall = false;
+        
+        // always use the public key to add provenance children etc
+        // reporting key is only used to gain access to recall functions
+        if (isReportingKey) { 
+            const publicKey = reports.findLast(r => r.publicKey)?.publicKey ?? "";
+            key = publicKey;
+            
+        } else { key = deviceKey; }
+        
+        deviceProvenance = await addChildren(key,childKeySet);
+        
+        if (tagSet.has("recall") && isReportingKey) {
+            console.log("there is recall and this is a reporting key");
+            await recallChildren(key);
+            isRecall = true;
         } 
 
         // user has entered a parent key. Add parent to this device.
         if (parentKey != "") {
 
             if (reports.find(({warnings}) => warnings?.includes("Added a parent to this device"))) {
-                console.log("parent has already been added here");
                 deviceProvenance.warnings.push("Error. This device already has a parent.")
             }
             else {
@@ -211,7 +242,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                     deviceProvenance.warnings.push("Added a parent to this device");
                     //should try to add some boolean that says this device already has a parent?
         
-                    const parentDeviceChildrenWarnings = await addChildren(parentKey, new Set([deviceKey]));
+                    const parentDeviceChildrenWarnings = await addChildren(parentKey, new Set([key]));
                     console.log("this is the parent device: ", parentDeviceChildrenWarnings);
                     await recordRepo.createRecord(parentKey, description, {
                         tags: [...tagSet],
@@ -227,6 +258,19 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             }
 
         }
+        
+        await recordRepo.createRecord(key, description, {
+            tags: [...tagSet],
+            attachments: picture ? [picture] : undefined,
+            children_key: [...deviceProvenance.childKeys],
+            children_name: [...deviceProvenance.childrenNames],
+            warnings: [...deviceProvenance.warnings],
+            isRecall: isRecall,
+        });
+
+
+
+
 
         async function addChildren(parentKey: string, childKeySet: Set<string>) {
             const childNameSet = [];
@@ -234,24 +278,32 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             for (var childKey of childKeySet.values()) {
                 //need to check if device has been added or not
                 const childList = await recordRepo.getChildren(parentKey);
-                const match = childList.find(({children_key}) => children_key?.includes(childKey));
                 const childRecords = await recordRepo.getRecords(childKey);
+                const isChildReportingKey = childRecords.findLast(r => r.isReportingKey)?.isReportingKey;
                 
-                if (match) {
-                    //if already recorded, say "child has been recorded in the past"
-                    const creationDate = childRecords.findLast(r => r.createdAt)?.createdAt;
+                // if this is child's reporting key, then make it invalid
+                if (isChildReportingKey) {
                     childKeySet.delete(childKey);
-                    warningSet.push(`Warning: Device with key "${childKey}" was added on ${creationDate}`);
-    
-                } else {
-                    const childName = childRecords.findLast(r => r.name)?.name ?? "";
-                    if (childName) { // if the device has not been made, the name is undefined
-                        childNameSet.push(childName);
-                    } else {
+                    warningSet.push(`Warning: Device with key "${childKey}" not valid`);
+                } else { //if this is not a reporting key, proceed to add
+
+                     const match = childList.find(({children_key}) => children_key?.includes(childKey));
+                    if (match) {
+                        //if already recorded, say "child has been recorded in the past"
+                        const creationDate = childRecords.findLast(r => r.createdAt)?.createdAt;
                         childKeySet.delete(childKey);
-                        warningSet.push(`Warning: Device with key "${childKey}" does not exist!`);
-                    }
-                }                      
+                        warningSet.push(`Warning: Device with key "${childKey}" was added on ${creationDate}`);
+
+                    } else {
+                        const childName = childRecords.findLast(r => r.name)?.name ?? "";
+                        if (childName) { // if the device has not been made, the name is undefined
+                            childNameSet.push(childName);
+                        } else {
+                            childKeySet.delete(childKey);
+                            warningSet.push(`Warning: Device with key "${childKey}" does not exist!`);
+                        }
+                    }                      
+                }
             }
             return {
                 childKeys : childKeySet,
@@ -260,14 +312,26 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         }
 
 
-        await recordRepo.createRecord(deviceKey, description, {
-            tags: [...tagSet],
-            attachments: picture ? [picture] : undefined,
-            children_key: [...deviceProvenance.childKeys],
-            children_name: [...deviceProvenance.childrenNames],
-            warnings: [...deviceProvenance.warnings],
-        });
 
+        // if (isReportingKey){
+        //     await recordRepo.createRecord(publicKey, description, {
+        //         tags: [...tagSet],
+        //         attachments: picture ? [picture] : undefined,
+        //         children_key: [...deviceProvenance.childKeys],
+        //         children_name: [...deviceProvenance.childrenNames],
+        //         warnings: [...deviceProvenance.warnings],
+        //         isRecall: isRecall,
+        //     });
+        // } else {
+        //     await recordRepo.createRecord(deviceKey, description, {
+        //         tags: [...tagSet],
+        //         attachments: picture ? [picture] : undefined,
+        //         children_key: [...deviceProvenance.childKeys],
+        //         children_name: [...deviceProvenance.childrenNames],
+        //         warnings: [...deviceProvenance.warnings],
+        //         isRecall: isRecall,
+        //     });
+        // }
 
 
 
@@ -275,14 +339,17 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             const childList = await recordRepo.getChildren(deviceKey);
             // need to obtain each provenance record, then in each key of provenance record
             const onlyChildKeys = [];
-            for (var child of childList) {
+            for (var child of childList) { 
                 if (child.children_key) {
-                    for (var child_key of child.children_key) {
+                    for (var child_key of child.children_key) { //for every child, get their key
                         onlyChildKeys.push(child_key);
+                        console.log("child key is ", child_key)
                         await recordRepo.createRecord(child_key, description, {
                             tags: [...tagSet],
                             attachments: picture ? [picture] : undefined,
+                            isRecall: true,
                         });   
+                        console.log("record created");
                         await recallChildren(child_key);
                     }
                 }

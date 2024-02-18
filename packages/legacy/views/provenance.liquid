@@ -2,12 +2,16 @@
 {% block %}
     <h1>{{ deviceName }} Asset Provenance Records</h1>
     <div>Device ID: {{ deviceID }}</div>
+    {% if isReportingKey %}  
+        <b>This is the reporting key.</b>
+    {% endif %}
+
     <div>
 
     {% assign recall_report = '' | split:'' %}
     {% assign no_recall= '' | split:'' %}
     {% for report in reports %}
-        {% if report.tags contains "recall" %}
+        {% if report.isRecall%}
             {% assign recall_report = recall_report | concat: report %}
         {% else %}
             {% assign no_recall = no_recall | concat: report %}
@@ -21,7 +25,7 @@
             <div>{{ report.description }}</div>
             <div class="mb-1">
             {% for tag in report.tags %} 
-                {% if tag == "recall" %}
+                {% if tag == "recall" and report.isRecall%}
                     <span class="badge bg-danger text-white">{{ tag }}</span>
                 {% else %}
                     <span class="badge bg-info text-dark">{{ tag }}</span>

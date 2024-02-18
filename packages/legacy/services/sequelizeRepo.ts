@@ -95,7 +95,9 @@ function createProvenanceRepo(
             children_name: options?.children_name ?? [],
             warnings: options?.warnings ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
-            publicKey: publicKey
+            publicKey: publicKey,
+            isReportingKey: options?.isReportingKey,
+            isRecall: options?.isRecall,
         }
 
         const json = JSON.stringify(record, (k, v) => k === 'attachmentID' ? v.toString() : v);
@@ -171,7 +173,9 @@ function createProvenanceRepo(
                 children_name: $record.children_name,
                 warnings: $record.warnings,
                 createdAt: record.createdAt,
-                publicKey: $record.publicKey
+                publicKey: $record.publicKey,
+                isReportingKey: $record.isReportingKey,
+                isRecall: $record.isRecall
             }
         });
 
