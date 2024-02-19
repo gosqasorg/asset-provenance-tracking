@@ -17,10 +17,10 @@
     </div>
     {% endif %}
     <div> Reporting Key: {{ device.key }}</div>
-    <div><a href="/provenance/{{ device.key }}">View Provenance Records from Reporting Key</a></div>
+    <div><a href="/provenance/{{ device.key }}">View Provenance Records from Secret Key</a></div>
     <div><img src="{{ device.qrCode }}"></img></div>
 
     <div> Public Key: {{device.publicKey}} </div>
-    <div><a href="/provenance/{{device.publicKey}}">View Provenance Records from Public Key</a></div>
+    <div><a href="/provenance/{{device.publicKey}}">View Provenance Records from Reporting Key</a></div>
     <div><imgsrc= "{{device.reportQrCode}}" </img></div>
 {% endblock %}

@@ -71,7 +71,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const saveDeviceKey = fields.get('save-device-key') === "on";
 
         const deviceKey = encodeKey(crypto.randomBytes(16));
-        const publicKey = encodeKey(crypto.randomBytes(16));
+        const publicKey = encodeKey(crypto.randomBytes(16)); //reporting key = public key
         if (saveDeviceKey) {
             await deviceRepo.createDevice(name, deviceKey, publicKey);
         }
@@ -81,18 +81,18 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             attachments: picture ? [picture] : undefined,
             children_key: undefined,
             children_name: undefined,
-            isReportingKey: true},
+            isReportingKey: false},
             publicKey,
             )
 
-            //create same record but for the public key
+            //create same record but for the public key (reporting key)
         await recordRepo.createRecord(publicKey, description, {
             name,
             tags: ['creation'],
             attachments: picture ? [picture] : undefined,
             children_key: undefined,
             children_name: undefined,
-            isReportingKey: false},
+            isReportingKey: true},
             )
         
         
@@ -160,7 +160,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
             const records = await recordRepo.getRecords(deviceKey);
             const publicKey = records.findLast(r => r.publicKey)?.publicKey ?? "";
-            const reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${publicKey}`);
+            const reportingQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${publicKey}`);
             return {
                 key: deviceKey,
                 id,
@@ -168,7 +168,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 name: records.findLast(r => r.name)?.name,
                 saved: false,
                 publicKey,
-                reportQrCode
+                reportQrCode: reportingQrCode
             
             };
         }
@@ -181,7 +181,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const deviceName = reportsReport.findLast(r => r.name)?.name ?? "";
         const isReportingKey = reportsReport.findLast(r => r.isReportingKey)?.isReportingKey;
         var reports = reportsReport
-        if (isReportingKey) {
+        if (!isReportingKey) {
             const publicKey = reportsReport.findLast(r=>r.publicKey)?.publicKey ?? "";
             reports = await recordRepo.getRecords(publicKey);
         } 
@@ -195,7 +195,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const { deviceKey } = request.params;
         const fields = await getFormFields(request);
         
-        const reports = await recordRepo.getRecords(deviceKey);
+        var reports = await recordRepo.getRecords(deviceKey);
         const isReportingKey = reports.findLast(r => r.isReportingKey)?.isReportingKey;
         
         
@@ -212,17 +212,19 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         var isRecall = false;
         
         // always use the public key to add provenance children etc
-        // reporting key is only used to gain access to recall functions
+        // if it is not reporting key (meaning it is private key) get the reporting key from it
         if (isReportingKey) { 
             const publicKey = reports.findLast(r => r.publicKey)?.publicKey ?? "";
             key = publicKey;
+            reports = await recordRepo.getRecords(key);
             
         } else { key = deviceKey; }
         
         deviceProvenance = await addChildren(key,childKeySet);
         
-        if (tagSet.has("recall") && isReportingKey) {
-            console.log("there is recall and this is a reporting key");
+        if (tagSet.has("recall") && (!isReportingKey)) {
+            console.log("current key is not reporting, meaning its private")
+            console.log("there is recall and this is a private key");
             await recallChildren(key);
             isRecall = true;
         } 
@@ -281,8 +283,8 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 const childRecords = await recordRepo.getRecords(childKey);
                 const isChildReportingKey = childRecords.findLast(r => r.isReportingKey)?.isReportingKey;
                 
-                // if this is child's reporting key, then make it invalid
-                if (isChildReportingKey) {
+                // if this is child's private key, then make it invalid
+                if (!isChildReportingKey) {
                     childKeySet.delete(childKey);
                     warningSet.push(`Warning: Device with key "${childKey}" not valid`);
                 } else { //if this is not a reporting key, proceed to add

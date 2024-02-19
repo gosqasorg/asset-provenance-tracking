@@ -2,8 +2,8 @@
 {% block %}
     <h1>{{ deviceName }} Asset Provenance Records</h1>
     <div>Device ID: {{ deviceID }}</div>
-    {% if isReportingKey %}  
-        <b>This is the reporting key.</b>
+    {% if not isReportingKey %}  
+        <b>This is the secret key. You can recall devices with this key.</b>
     {% endif %}
 
     <div>
@@ -21,7 +21,7 @@
     {% assign sorted_reports = recall_report | concat: no_recall %}
 
     {%- for report in sorted_reports %}
-        <div class="card p-3 my-3">
+        <div class="card p-3 my-3"> 
             <div>{{ report.description }}</div>
             <div class="mb-1">
             {% for tag in report.tags %} 
