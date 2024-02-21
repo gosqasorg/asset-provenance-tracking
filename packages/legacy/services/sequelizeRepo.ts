@@ -9,7 +9,7 @@ interface DeviceModel extends Model<InferAttributes<DeviceModel>, InferCreationA
     id: CreationOptional<number>;
     name: string;
     key: string;
-    publicKey: string;
+    reportingKey: string;
 }
 
 interface ProvenanceRecordModel extends Model<InferAttributes<ProvenanceRecordModel>, InferCreationAttributes<ProvenanceRecordModel>> {
@@ -30,16 +30,16 @@ interface ProvenanceAttachmentModel extends Model<InferAttributes<ProvenanceAtta
 }
 
 function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
-    async function createDevice(name: string, key?: string | Uint8Array | undefined, publicKey?: string|Uint8Array|undefined): Promise<Device> {
+    async function createDevice(name: string, key?: string | Uint8Array | undefined, reportingKey?: string|Uint8Array|undefined): Promise<Device> {
         key = key
             ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(16);        
-        publicKey = publicKey
-            ? typeof publicKey === 'string' ? decodeKey(publicKey) : publicKey
+        reportingKey = reportingKey
+            ? typeof reportingKey === 'string' ? decodeKey(reportingKey) : reportingKey
             : crypto.randomBytes(16);
 
         
-        const device = await deviceModel.create({ name, key: encodeKey(key), publicKey: encodeKey(publicKey) });
+        const device = await deviceModel.create({ name, key: encodeKey(key), reportingKey: encodeKey(reportingKey) });
         return mapDevice(device);
     }
 
@@ -49,9 +49,9 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
         return device ? mapDevice(device) : null;
     }
 
-    async function getDeviceFromReportKey(publicKey: string | Uint8Array): Promise<Device | null> {
-        publicKey = typeof publicKey === 'string' ? decodeKey(publicKey) : publicKey;
-        const device = await deviceModel.findOne({where: {publicKey: encodeKey(publicKey)}});
+    async function getDeviceFromReportKey(reportingKey: string | Uint8Array): Promise<Device | null> {
+        reportingKey = typeof reportingKey === 'string' ? decodeKey(reportingKey) : reportingKey;
+        const device = await deviceModel.findOne({where: {reportingKey: encodeKey(reportingKey)}});
         return device ? mapDevice(device) : null;
     }
 
@@ -62,7 +62,7 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
 
     function mapDevice(device: DeviceModel): Device {
         const deviceID = calculateDeviceID(device.key);
-        return { deviceID, key: device.key, name: device.name, publicKey: device.publicKey };
+        return { deviceID, key: device.key, name: device.name, reportingKey: device.reportingKey };
     }
 
 
@@ -77,7 +77,7 @@ function createProvenanceRepo(
     attachmentModel: ModelStatic<ProvenanceAttachmentModel>,
 ): ProvenanceRepository {
 
-    async function createRecord(key: string | Uint8Array, description: string,   options?: CreateRecordOptions, publicKey?: string |  undefined) : Promise<ProvenanceRecord> {
+    async function createRecord(key: string | Uint8Array, description: string,   options?: CreateRecordOptions, reportingKey?: string |  undefined) : Promise<ProvenanceRecord> {
         const $key = typeof key === 'string' ? decodeKey(key) : key;
         const deviceID = calculateDeviceID(key);
     
@@ -95,7 +95,7 @@ function createProvenanceRepo(
             children_name: options?.children_name ?? [],
             warnings: options?.warnings ?? [],
             attachments: attachments.map(a => ({ type: a.type, attachmentID: a.attachmentID })),
-            publicKey: publicKey,
+            reportingKey: reportingKey,
             isReportingKey: options?.isReportingKey,
             isRecall: options?.isRecall,
         }
@@ -173,7 +173,7 @@ function createProvenanceRepo(
                 children_name: $record.children_name,
                 warnings: $record.warnings,
                 createdAt: record.createdAt,
-                publicKey: $record.publicKey,
+                reportingKey: $record.reportingKey,
                 isReportingKey: $record.isReportingKey,
                 isRecall: $record.isRecall
             }
@@ -236,7 +236,7 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
             allowNull: false,
             unique: true
         },
-        publicKey: {
+        reportingKey: {
             type: DataTypes.STRING(64).BINARY,
             allowNull: false,
             unique: true

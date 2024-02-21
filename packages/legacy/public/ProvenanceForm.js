@@ -28,8 +28,8 @@ export default {
         <label class="form-label">Children Keys (optional) </label>
         <input type="text" class="form-control" name="children" id="children-keys" />
 
-        <label class="form-label">Parent Key (optional) </label>
-        <input type="text" class="form-control" name="parent" id="parent-key" />
+        <label class="form-label">Container Key (optional) </label>
+        <input type="text" class="form-control" name="container" id="container-key" />
         
         <label class="form-label" for="file">Add Image</label>
         <input type="file" class="form-control" accept="image/*" name="picture" capture="environment" />

@@ -2,7 +2,7 @@ export interface Device {
     readonly name: string;
     readonly key: string;
     readonly deviceID: bigint;
-    readonly publicKey: string;
+    readonly reportingKey: string;
 }
 
 export interface ProvenanceRecord {
@@ -14,7 +14,7 @@ export interface ProvenanceRecord {
     readonly children_key?: readonly string[];
     readonly children_name?: readonly string[]
     readonly warnings?: readonly string[];
-    readonly publicKey?: string;
+    readonly reportingKey?: string;
     readonly isReportingKey?: boolean;
     readonly isRecall?: boolean;
     readonly createdAt: Date;
@@ -43,16 +43,16 @@ export interface CreateRecordOptions {
 export type ProvenanceRecordFactory = (key: string | Uint8Array, description: string, options?: CreateRecordOptions) => Promise<ProvenanceRecord>;
 
 export interface DeviceRepository {
-    createDevice(name: string, key?: string | Uint8Array, publicKey?: string | Uint8Array): Promise<Device>;
+    createDevice(name: string, key?: string | Uint8Array, reportingKey?: string | Uint8Array): Promise<Device>;
     getDevice(key: string | Uint8Array): Promise<Device | null>;
     getDevices(): Promise<readonly Device[]>;
-    getDeviceFromReportKey(publicKey: string | Uint8Array) : Promise<Device | null>;
+    getDeviceFromReportKey(reportingKey: string | Uint8Array) : Promise<Device | null>;
 
    
 }
 
 export interface ProvenanceRepository {
-    createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions, publicKey?: string | undefined) : Promise<ProvenanceRecord>;
+    createRecord(key: string | Uint8Array, description: string, options?: CreateRecordOptions, reportingKey?: string | undefined) : Promise<ProvenanceRecord>;
     getRecords(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]>;
     getChildren(key: string | Uint8Array): Promise<readonly ProvenanceRecord[]>;
     getAttachment(key: string | Uint8Array, attachmentID: bigint): Promise<ProvenanceAttachment | null>;
