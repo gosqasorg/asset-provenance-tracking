@@ -105,7 +105,9 @@ az storage account create --name gdtteststorage --location westus2 --resource-gr
 
 az functionapp create --resource-group rg-gdt-test  --consumption-plan-location westus2 --runtime node --runtime-version 20 --functions-version 4 --name gosqasbe --storage-account gdtteststorage
 
-az functionapp config appsettings set --name gosqasbe --resource-group rg-gdt-test --settings AZURE_STORAGE_ACCOUNT_NAME=$storageName AZURE_STORAGE_ACCOUNT_KEY=$storagekey
+az functionapp config appsettings set --name gosqasbe --resource-group rg-gdt-test --settings AZURE_STORAGE_ACCOUNT_NAME=<storageName> AZURE_STORAGE_ACCOUNT_KEY=<storagekey>
 
+npm install
+npm run build
 func azure functionapp publish gosqasbe
  ```
