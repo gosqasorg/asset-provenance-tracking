@@ -12,7 +12,6 @@
     "legacy": "node packages/legacy/dist/app.js"
   },
   "workspaces": [
-    "packages/backend",
     "packages/frontend",
     "packages/legacy"
   ]
