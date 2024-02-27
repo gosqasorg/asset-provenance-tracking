@@ -49,7 +49,7 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            console.log('handleUpdateTags', tags);
+            //console.log('handleUpdateTags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -67,6 +67,7 @@ export default {
         async submitForm() {
             console.log(this.tags);
                 postProvenance(this.deviceKey, {
+                        blobType: 'deviceRecord',
                         description: this.description,
                         tags: this.tags,
                 }, this.pictures || [])

@@ -45,6 +45,7 @@ export default {
 
             const deviceKey = await makeEncodedDeviceKey();
             postProvenance(deviceKey, {
+                blobType: 'deviceInitializer',
                 deviceName: this.name,
                 deviceDescription: this.description,
             }, this.pictures || [])

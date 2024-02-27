@@ -5,14 +5,23 @@
 <template>
     <div>
         <div v-for="(report, index) in reports" class="report-box">
-            <div>{{ report.record.description }}</div>
+            <template v-if="report.record.blobType === 'deviceInitializer'">
+                <h3>Created Device: {{ report.record.deviceName }}</h3>
+                <div>{{ report.record.deviceDescription }}</div>
+                <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
+                <img v-bind:src="url" alt="Image" style="width: 500px;">
+            </div>
+            </template>
+            <template v-else>
+                <div>{{ report.record.description }}</div>
             <div class="mb-1 tag-container">
                 <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
             </div>
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
                 <img v-bind:src="url" alt="Image" style="width: 500px;">
             </div>
-            <div style="font-size: small;">{{ Date(report.timestamp) }}</div> <!-- using timestamp insted of createdAt -->
+            <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
+            </template>
         </div>
     </div>
 </template>
@@ -67,7 +76,7 @@ export default {
 
                 // Uncomment for debugging
                 // console.log("GET:");
-                // console.log(this.reports);
+                console.log(this.reports);
                 //console.log(this.attachmentURLs);
             })
             .catch((error) => {
