@@ -6,12 +6,12 @@
     <div>
         <h1>{{ deviceInfo.deviceName }} Asset Provenance Records</h1>
         <div>Device ID: {{ deviceKey }}</div>
+        <a href="#createRecord">Go to "Create New Provenance Record"</a>
         <div>
             <ProvidenceFeed :deviceKey="deviceKey"/>
         </div>
         <hr class="col-1 my-4">
-        <ProvidenceCreateRecord :deviceKey="deviceKey"/>
-        <div id="form"></div>
+        <ProvidenceCreateRecord :deviceKey="deviceKey" id="createRecord"/>
     </div>
 </template>
 
