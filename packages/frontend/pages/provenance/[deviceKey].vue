@@ -4,7 +4,7 @@
 --> 
 <template>
     <div>
-        <h1>{{ deviceInfo.deviceName }} Asset Provenance Records</h1>
+        <h1>"{{ deviceInfo.deviceName }}" Asset Provenance Records</h1>
         <div>Device ID: {{ deviceKey }}</div>
         <a href="#createRecord">Go to "Create New Provenance Record"</a>
         <div>
