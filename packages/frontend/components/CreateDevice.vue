@@ -47,7 +47,7 @@ export default {
             postProvenance(deviceKey, {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
-                deviceDescription: this.description,
+                description: this.description,
             }, this.pictures || [])
                 .then(response => {
                     // Handle the successful response here

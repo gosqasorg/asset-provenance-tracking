@@ -8,20 +8,19 @@
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3>Created Device: {{ report.record.deviceName }}</h3>
                 <div>{{ report.record.deviceDescription }}</div>
-                <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
-                <img v-bind:src="url" alt="Image" style="width: 500px;">
-            </div>
             </template>
+
             <template v-else>
-                <div>{{ report.record.description }}</div>
             <div class="mb-1 tag-container">
                 <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
             </div>
+            </template>
+
+            <div>{{ report.record.description }}</div>
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
-                <img v-bind:src="url" alt="Image" style="width: 500px;">
+                <img v-bind:src="url" alt="Image" style="width: 150px;">
             </div>
             <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
-            </template>
         </div>
     </div>
 </template>
@@ -54,9 +53,7 @@ export default {
     methods: {
         async fetchAttachmentsForReport(report, index) {
             try {
-                console.log("hi1");
                 if (report.attachments.length > 0) {
-                    console.log("hi2");
                     const attachmentPromises = report.attachments.map(attachmentID => getAttachment(this.deviceKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
                     const urls = attachments.map(attachment => URL.createObjectURL(attachment));
@@ -68,15 +65,16 @@ export default {
         },
         refreshPage() {
             console.log('Feed refresh event received');
+            // set attachmentURLs to empty object to clear out old attachment URLs
+            this.attachmentURLs = {};
             getProvenance(this.deviceKey)
             .then((response) => {
                 this.reports = response;
-
                 this.reports.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
 
                 // Uncomment for debugging
                 // console.log("GET:");
-                console.log(this.reports);
+                //console.log(this.reports);
                 //console.log(this.attachmentURLs);
             })
             .catch((error) => {

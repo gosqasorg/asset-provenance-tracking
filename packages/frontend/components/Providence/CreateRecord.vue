@@ -65,7 +65,6 @@ export default {
             this.tags = [];
         },
         async submitForm() {
-            console.log(this.tags);
                 postProvenance(this.deviceKey, {
                         blobType: 'deviceRecord',
                         description: this.description,
@@ -86,6 +85,7 @@ export default {
                         // Handle error here
                         console.error('Error occurred during post request:', error);
                 });
+                
         },
     }
   
