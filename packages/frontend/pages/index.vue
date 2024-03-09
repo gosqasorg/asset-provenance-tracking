@@ -1,8 +1,6 @@
 <!-- 
     This is the langing page where you can create a new device to track 
 -->
-import CreateDevice from '~/components/CreateDevice.vue';
-
 <template>
     <div>
         <h1>GOSQAS Asset Provenance Tracker</h1>
@@ -12,9 +10,6 @@ import CreateDevice from '~/components/CreateDevice.vue';
             To achieve this, GOSQAS has developed a “Trust Through Transparency'' (TTT) approach to ensure the safety and efficacy of medical devices made from open source designs. 
             The GOSQAS Asset Provenance Tracker allows anyone with access to an open source medical device to trace the provenance and add to it using a simple website. 
             For more information, please see our <a href="https://github.com/gosqasorg/home">Github repository</a>.
-        </p>
-        <p>
-            Please see the <a href="/devices">Sample Devices</a> page to see how the GOSQAS Asset Provenance Tracker works.
         </p>
     </div>
     <CreateDevice/>
