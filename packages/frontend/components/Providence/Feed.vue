@@ -12,7 +12,8 @@
 
             <template v-else>
             <div class="mb-1 tag-container">
-    <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+robstextcolorfunc(tag)+'; background-color: '+robscolorfunc(tag)+';'"> {{tag}}</span>
+    <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
+    {{tag}}</span>
             </div>
             </template>
 
@@ -28,7 +29,7 @@
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { robscolorfunc } from '~/utils/colorTag';
+import { textColorForTag, getColorForTag } from '~/utils/colorTag';
 
 
 export default {
