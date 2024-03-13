@@ -12,7 +12,7 @@
 
             <template v-else>
             <div class="mb-1 tag-container">
-                <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
+    <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+robstextcolorfunc(tag)+'; background-color: '+robscolorfunc(tag)+';'"> {{tag}}</span>
             </div>
             </template>
 
@@ -25,10 +25,11 @@
     </div>
 </template>
 
-
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
+import { robscolorfunc } from '~/utils/colorTag';
+
 
 export default {
     props: {
@@ -47,7 +48,7 @@ export default {
         EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
     },
-    beforeDestroy() { 
+    beforeDestroy() {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
@@ -80,7 +81,7 @@ export default {
             .catch((error) => {
                 console.log(error);
             });
-        
+
         }
     },
 };
