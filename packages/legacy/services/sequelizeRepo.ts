@@ -9,7 +9,6 @@ interface DeviceModel extends Model<InferAttributes<DeviceModel>, InferCreationA
     id: CreationOptional<number>;
     name: string;
     key: string;
-    reportingKey: string;
 }
 
 interface ProvenanceRecordModel extends Model<InferAttributes<ProvenanceRecordModel>, InferCreationAttributes<ProvenanceRecordModel>> {
@@ -30,16 +29,13 @@ interface ProvenanceAttachmentModel extends Model<InferAttributes<ProvenanceAtta
 }
 
 function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
-    async function createDevice(name: string, key?: string | Uint8Array | undefined, reportingKey?: string|Uint8Array|undefined): Promise<Device> {
+    async function createDevice(name: string, key?: string | Uint8Array | undefined): Promise<Device> {
         key = key
             ? typeof key === 'string' ? decodeKey(key) : key
             : crypto.randomBytes(16);        
-        reportingKey = reportingKey
-            ? typeof reportingKey === 'string' ? decodeKey(reportingKey) : reportingKey
-            : crypto.randomBytes(16);
 
         
-        const device = await deviceModel.create({ name, key: encodeKey(key), reportingKey: encodeKey(reportingKey) });
+        const device = await deviceModel.create({ name, key: encodeKey(key) });
         return mapDevice(device);
     }
 
@@ -49,11 +45,6 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
         return device ? mapDevice(device) : null;
     }
 
-    async function getDeviceFromReportKey(reportingKey: string | Uint8Array): Promise<Device | null> {
-        reportingKey = typeof reportingKey === 'string' ? decodeKey(reportingKey) : reportingKey;
-        const device = await deviceModel.findOne({where: {reportingKey: encodeKey(reportingKey)}});
-        return device ? mapDevice(device) : null;
-    }
 
     async function getDevices(): Promise<readonly Device[]> {
         const devices = await deviceModel.findAll();
@@ -62,11 +53,11 @@ function createDeviceRepo(deviceModel: ModelStatic<DeviceModel>) {
 
     function mapDevice(device: DeviceModel): Device {
         const deviceID = calculateDeviceID(device.key);
-        return { deviceID, key: device.key, name: device.name, reportingKey: device.reportingKey };
+        return { deviceID, key: device.key, name: device.name };
     }
 
 
-    return { createDevice, getDevice, getDevices, getDeviceFromReportKey };
+    return { createDevice, getDevice, getDevices};
 }
 
 type ProvenanceRecordJson = Omit<ProvenanceRecord, 'deviceID' | 'createdAt'>;
@@ -236,11 +227,6 @@ export async function createSequelizeReposities(sequelize: Sequelize): Promise<{
             allowNull: false,
             unique: true
         },
-        reportingKey: {
-            type: DataTypes.STRING(64).BINARY,
-            allowNull: false,
-            unique: true
-        }
     }, {
         indexes: [
             {

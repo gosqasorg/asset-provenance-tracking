@@ -16,11 +16,23 @@
     </p>
     </div>
     {% endif %}
-    <div> Reporting Key: {{ device.key }}</div>
-    <div><a href="/provenance/{{ device.key }}">View Provenance Records from Secret Key</a></div>
+    <div> Admin Key: {{ device.key }}</div>
+    <div><a href="/provenance/{{ device.key }}">View Provenance Records from Admin Key</a></div>
     <div><img src="{{ device.qrCode }}"></img></div>
 
-    <div> Public Key: {{device.publicKey}} </div>
-    <div><a href="/provenance/{{device.publicKey}}">View Provenance Records from Reporting Key</a></div>
-    <div><imgsrc= "{{device.reportQrCode}}" </img></div>
+    {% if device.reportingKey is not "" %}
+        <div> Reporting Key: {{device.reportingKey}} </div>
+        <div><a href="/provenance/{{device.reportingKey}}">View Provenance Records from Reporting Key</a></div>
+        <div><img src= "{{device.reportQrCode}}" </img></div>
+    {% endif %}
+
+
+    {% assign int = 0 %}
+    {% for child in device.childrenKeyList %}
+        <div> {{device.childrenName[int]}} Key : {{child}} </div>
+        <div> <a href="/provenance/{{child}}"> View Provenance Record from {{device.childrenName[int]}} Key </a> </div>
+        <div><img src= "{{device.childrenQrCode[int]}}" </img></div>
+        {% assign int = int | plus: 1 %}
+    {% endfor %}
+
 {% endblock %}
