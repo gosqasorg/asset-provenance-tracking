@@ -40,5 +40,5 @@ export async function getStatistics() {
     });
   console.log("ran get Statistics!")
   console.log(response);
-    return await response.json() as { record: any, timestamp: number }[];
+    return await response.json() as { record: string, timestamp: number }[];
 }

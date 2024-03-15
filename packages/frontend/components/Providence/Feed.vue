@@ -47,7 +47,7 @@ export default {
         EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
     },
-    beforeDestroy() { 
+    beforeDestroy() {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
@@ -80,7 +80,7 @@ export default {
             .catch((error) => {
                 console.log(error);
             });
-        
+
         }
     },
 };

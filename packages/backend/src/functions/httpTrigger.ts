@@ -68,6 +68,10 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
+    console.log("Uploading");
+    console.log(`${timestamp}`);
+    console.log(toHex(salt));
+
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
@@ -84,6 +88,8 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
 
 async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
     const props = await client.getProperties();
+    console.log("decyrptBlob props");
+    console.log(props);
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
     const timestamp = parseInt(props.metadata?.["gdttimestamp"]);
@@ -133,7 +139,9 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
         records.push({ ...provRecord, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
-    return { jsonBody: records };
+  return {
+    headers: { "Access-Control-Allow-Origin" : "*"},
+    jsonBody: records };
 }
 
 async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -154,7 +162,9 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     return {
         body: data,
         headers: contentType
-            ? { "Content-Type": contentType }
+        ? { "Content-Type": contentType,
+            "Access-Control-Allow-Origin" : "*"
+          }
             : undefined
     };
 };
@@ -188,27 +198,102 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
         const provRecord: ProvenanceRecord = { record, attachments };
         const data = new TextEncoder().encode(JSON.stringify(provRecord));
         const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp);
-        return { jsonBody: { record: recordID, attachments } };
+      return {
+        headers: { "Access-Control-Allow-Origin" : "*"},
+        jsonBody: { record: recordID, attachments } };
     }
+}
+// blobNames typically look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
+// where the id is that last part (before the last slash)
+function findDeviceIdFromName(blobName : string) : string {
+    return blobName.split("/",4)[3];
 }
 
 async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  context.log(`getStatistics`);
-  console.log(`getStatisticsX`);
+    context.log(`getStatistics`);
+    console.log(`getStatisticsX`);
 
-  context.log(`QQQQ`);
-  console.log(baseUrl);
-  await containerClient.createIfNotExists();
+    // page size - artificially low as example
+    const maxPageSize = 20;
 
-  const data = { "spud": "boy" };
-  const contentType = "application/json";
+    let i = 1;
+    let marker;
 
-  return {
-    //    body: data,
-    jsonBody: { record: "spudrecord" },
-    headers: { "Content-Type": contentType,
-               "Access-Control-Allow-Origin" : "*"}
-  };
+    // some options for filtering list
+    const listOptions = {
+        includeMetadata: true,
+        includeSnapshots: false,
+        includeTags: false,
+        includeVersions: false,
+        prefix: ''
+    };
+
+    let iterator = containerClient.listBlobsFlat(listOptions).byPage({ maxPageSize });
+    let response = (await iterator.next()).value;
+
+    console.log(response);
+    console.log("XXXXXXXXXXXXXXXXXXXXXX");
+    console.log(response.segment);
+
+    // Prints blob names
+    for (const blob of response.segment.blobItems) {
+        console.log(`Flat listing: ${i++}: ${blob.name}`);
+        console.log(`Metadata: ${blob.metadata}`);
+    }
+
+    // Build up a JSON return value
+    // NOTE: We seem to have to read the properties of the blob to get the
+    // metadata.  There is a field called "metadata" on the blob itself
+    // which does not contain our metadata. I don't know if this is terribly
+    // expensive, or if we could improve it. I insist we should not worry about
+    // performance until we measure it to be a problem, but this is an "orang flag"--
+    // some caution around this issue is warranted.
+    var records = [];
+    for (const blob of response.segment.blobItems) {
+        console.log(`Flat listing: ${i++}: ${blob.name}`);
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        const props = await blobClient.getProperties();
+        const metadata = props.metadata;
+        console.log("get Stats props");
+        console.log("Timestamp:",metadata.gdttimestamp);
+        // now we want to build up an object that we can return as statistics
+        // that inlcudes the id and the timestamp, though really the timestamp
+        // is enough. We would like to distinguish the additon of a device
+        // from the addition of new provenance, I supoose.
+        const id = findDeviceIdFromName(blob.name);
+        console.log("ID",id);
+        // We could do some sorting in this function, but that is more or less
+        // easily done by whomever is using this. So I think it better to just
+        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
+        // Eventually, this function may have to only look back X days or X hours,
+        // but until it gets unwieldy we can return everything.
+        // I think the proper way to test this is to build a test program that
+        // puts 1000s of objects into the database and see where performance becomes a problem.
+        records.push({ gdttimestamp: metadata.gdttimestamp, gdtid: id});
+    }
+
+    // // Gets next marker
+    // marker = response.continuationToken;
+
+    // // Passing next marker as continuationToken
+    // iterator = containerClient.listBlobsFlat().byPage({
+    //     continuationToken: marker,
+    //     maxPageSize: maxPageSize * 2
+    // });
+    // response = (await iterator.next()).value;
+
+    // // Prints next blob names
+    // for (const blob of response.segment.blobItems) {
+    //   console.log(`Flat listing: ${i++}: ${blob.name}`);
+    // }
+
+    const contentType = "application/json";
+
+    return {
+        jsonBody: records,
+        headers: { "Content-Type": contentType,
+                   "Access-Control-Allow-Origin" : "*"}
+    };
 };
 
 app.get("getProvenance", {

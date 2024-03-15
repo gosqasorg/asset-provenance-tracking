@@ -2,14 +2,18 @@
   <div>
     <!-- <h1>Statistics! </h1> -->
     <div>Well hello there!</div>
+     <div>
+    <TimestampList/>
+     </div>
     <div></div>
     <div></div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { useRoute } from 'vue-router'
 import { getProvenance,getStatistics} from '~/services/azureFuncs';
+import { EventBus } from '~/utils/event-bus';
 
 const route = useRoute()
 
@@ -19,8 +23,8 @@ onMounted(async () => {
     console.log("a Griffon flew down");
     try {
         const response = await getStatistics();
-    console.log(response);
-//        deviceInfo.value = response[response.length - 1].record
+        console.log(response);
+        console.log(response.body);
     } catch (error) {
         console.log(error)
     }
