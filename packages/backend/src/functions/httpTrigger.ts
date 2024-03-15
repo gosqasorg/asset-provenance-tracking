@@ -136,6 +136,8 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
         const provRecord = JSON.parse(json) as ProvenanceRecord;
+        const deviceID = await calculateDeviceID(deviceKey);
+        provRecord.record.deviceID = deviceID;
         records.push({ ...provRecord, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
@@ -229,7 +231,6 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     // some caution around this issue is warranted.
     var records = [];
     for await (const blob of containerClient.listBlobsFlat()) {
-//    for (const blob of response.segment.blobItems) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const props = await blobClient.getProperties();
         const metadata = props.metadata;

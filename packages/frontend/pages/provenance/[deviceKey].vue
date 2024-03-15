@@ -5,7 +5,7 @@
 <template>
     <div>
         <h1>"{{ deviceInfo.deviceName }}" Asset Provenance Records</h1>
-        <div>Device ID: {{ deviceKey }}</div>
+        <div>Device ID: {{ deviceInfo.deviceID }}</div>
         <a href="#createRecord">Go to "Create New Provenance Record"</a>
         <div>
             <ProvidenceFeed :deviceKey="deviceKey"/>
@@ -28,8 +28,10 @@ let deviceInfo = ref({})
 
 onMounted(async () => {
     try {
-        const response = await getProvenance(deviceKey)
-        deviceInfo.value = response[response.length - 1].record
+        const response = await getProvenance(deviceKey);
+        deviceInfo.value = response[response.length - 1].record;
+        console.log(deviceInfo.value);
+        console.log(deviceInfo.deviceID);
     } catch (error) {
         console.log(error)
     }
