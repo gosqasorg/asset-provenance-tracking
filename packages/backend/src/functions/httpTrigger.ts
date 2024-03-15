@@ -1,3 +1,4 @@
+import { webcrypto as crypto } from 'node:crypto';
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import bs58 = require("bs58");
@@ -42,7 +43,7 @@ function decodeKey(key: string): Uint8Array {
 }
 
 async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
-    // if key is a string, convert it to a buffer 
+    // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
     return toHex(hash);
@@ -191,6 +192,25 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
     }
 }
 
+async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+  context.log(`getStatistics`);
+  console.log(`getStatisticsX`);
+
+  context.log(`QQQQ`);
+  console.log(baseUrl);
+  await containerClient.createIfNotExists();
+
+  const data = { "spud": "boy" };
+  const contentType = "application/json";
+
+  return {
+    //    body: data,
+    jsonBody: { record: "spudrecord" },
+    headers: { "Content-Type": contentType,
+               "Access-Control-Allow-Origin" : "*"}
+  };
+};
+
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
@@ -207,4 +227,10 @@ app.get("getAttachment", {
     authLevel: 'anonymous',
     route: 'attachment/{deviceKey}/{attachmentID}',
     handler: getAttachment
+})
+
+app.get("getStatistics", {
+    authLevel: 'anonymous',
+    route: 'statistics',
+    handler: getStatistics
 })

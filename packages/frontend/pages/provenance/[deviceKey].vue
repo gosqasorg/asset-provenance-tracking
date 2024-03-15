@@ -1,7 +1,7 @@
-<!-- 
-    Page will be the fourm where users can keep track of the providence of 
+<!--
+    Page will be the fourm where users can keep track of the providence of
     their items.
---> 
+-->
 <template>
     <div>
         <h1>"{{ deviceInfo.deviceName }}" Asset Provenance Records</h1>

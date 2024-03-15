@@ -1,4 +1,5 @@
-const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
+//const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
+const baseUrl = 'http://localhost:7071/api';
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -31,4 +32,13 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         body: formData,
     });
     return await response.json() as { record: string, attachments?: string[] };
+}
+
+export async function getStatistics() {
+    const response = await fetch(`${baseUrl}/statistics`, {
+        method: "GET",
+    });
+  console.log("ran get Statistics!")
+  console.log(response);
+    return await response.json() as { record: any, timestamp: number }[];
 }
