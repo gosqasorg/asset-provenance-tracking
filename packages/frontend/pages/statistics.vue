@@ -1,7 +1,6 @@
 <template>
   <div>
-    <!-- <h1>Statistics! </h1> -->
-    <div>Well hello there!</div>
+    <div>Time-based Activitiy</div>
     <div v-if="!isLoading">
     <TimestampList v-bind:timestamppairs="myTimestampPairs"/>
   </div>
@@ -41,8 +40,11 @@ export default {
         },
     },
     async mounted(){
-        this.myTimestampPairs = await this.fetchData();
-        console.log("a Griffon flew down");
+        const pairs = await this.fetchData();
+        pairs.sort( (a,b) => {
+            return (a.gdttimestamp < b.gdttimestamp) ? 1 : -1;
+        });
+        this.myTimestampPairs = pairs;
         this.isLoading = false
     }
 }

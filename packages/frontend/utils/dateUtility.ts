@@ -1,8 +1,18 @@
 
 export function myDate(ts : string) : string {
-    console.log("ts",ts);
-    console.log(Number(ts));
     var d = new Date(Number(ts));
-    console.log(d.toString());
-    return d.toString();
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        hour12: false,
+        minute: 'numeric',
+        hour: "numeric",
+        second: "numeric",
+        timeZoneName: "short",
+        weekday: 'short',
+        timeZone: tz,
+    });
+
+    return formatter.format(d);
 }

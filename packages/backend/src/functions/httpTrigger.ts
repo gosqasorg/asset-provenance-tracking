@@ -210,15 +210,7 @@ function findDeviceIdFromName(blobName : string) : string {
 }
 
 async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`getStatistics`);
-    console.log(`getStatisticsX`);
-
-    // page size - artificially low as example
-    const maxPageSize = 20;
-
     let i = 1;
-    let marker;
-
     // some options for filtering list
     const listOptions = {
         includeMetadata: true,
@@ -228,19 +220,6 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
         prefix: ''
     };
 
-    let iterator = containerClient.listBlobsFlat(listOptions).byPage({ maxPageSize });
-    let response = (await iterator.next()).value;
-
-    console.log(response);
-    console.log("XXXXXXXXXXXXXXXXXXXXXX");
-    console.log(response.segment);
-
-    // Prints blob names
-    for (const blob of response.segment.blobItems) {
-        console.log(`Flat listing: ${i++}: ${blob.name}`);
-        console.log(`Metadata: ${blob.metadata}`);
-    }
-
     // Build up a JSON return value
     // NOTE: We seem to have to read the properties of the blob to get the
     // metadata.  There is a field called "metadata" on the blob itself
@@ -249,19 +228,16 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     // performance until we measure it to be a problem, but this is an "orang flag"--
     // some caution around this issue is warranted.
     var records = [];
-    for (const blob of response.segment.blobItems) {
-        console.log(`Flat listing: ${i++}: ${blob.name}`);
+    for await (const blob of containerClient.listBlobsFlat()) {
+//    for (const blob of response.segment.blobItems) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const props = await blobClient.getProperties();
         const metadata = props.metadata;
-        console.log("get Stats props");
-        console.log("Timestamp:",metadata.gdttimestamp);
         // now we want to build up an object that we can return as statistics
         // that inlcudes the id and the timestamp, though really the timestamp
         // is enough. We would like to distinguish the additon of a device
         // from the addition of new provenance, I supoose.
         const id = findDeviceIdFromName(blob.name);
-        console.log("ID",id);
         // We could do some sorting in this function, but that is more or less
         // easily done by whomever is using this. So I think it better to just
         // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
@@ -271,21 +247,6 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
         // puts 1000s of objects into the database and see where performance becomes a problem.
         records.push({ gdttimestamp: metadata.gdttimestamp, gdtid: id});
     }
-
-    // // Gets next marker
-    // marker = response.continuationToken;
-
-    // // Passing next marker as continuationToken
-    // iterator = containerClient.listBlobsFlat().byPage({
-    //     continuationToken: marker,
-    //     maxPageSize: maxPageSize * 2
-    // });
-    // response = (await iterator.next()).value;
-
-    // // Prints next blob names
-    // for (const blob of response.segment.blobItems) {
-    //   console.log(`Flat listing: ${i++}: ${blob.name}`);
-    // }
 
     const contentType = "application/json";
 

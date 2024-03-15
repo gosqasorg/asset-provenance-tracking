@@ -1,13 +1,7 @@
 <template>
-  <div>
-    <!-- <h1>Statistics! </h1> -->
-    <div>Time Stamp List</div>
-     <div>
-    <div v-for="event in timestamppairs">{{ event.gdttimestamp }},{{ myDate(event.gdttimestamp) }}, {{event.gdtid}}</div>
-     </div>
-    <div></div>
-    <div></div>
-  </div>
+    <div>
+    <div v-for="event in timestamppairs">{{ myDate(event.gdttimestamp) }}, {{event.gdtid}}</div>
+    </div>
 </template>
 
 <script>
