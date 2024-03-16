@@ -74,6 +74,11 @@ export default defineNuxtConfig({
 })
 ```
 
+To run locally you will also want to run "Azurite" for blob storage
+locally, which
+happily is incredibly easy to set up:
+[https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage).
+
 
 ## Production
 
