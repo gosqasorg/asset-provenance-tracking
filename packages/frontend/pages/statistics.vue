@@ -14,10 +14,11 @@
 
     <script>
 import { useRoute } from 'vue-router'
-import { getProvenance,getStatistics} from '~/services/azureFuncs';
+import { getStatistics} from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { ref, onMounted } from 'vue'
 import TimestampList from "@/components/TimestampList.vue";
+
 
 export default {
     components: {
@@ -41,11 +42,19 @@ export default {
     },
     async mounted(){
         const pairs = await this.fetchData();
-        pairs.sort( (a,b) => {
-            return (a.gdttimestamp < b.gdttimestamp) ? 1 : -1;
-        });
-        this.myTimestampPairs = pairs;
-        this.isLoading = false
+        if (!pairs) {
+            console.log("erorr fetching data");
+            return;
+        }  else {
+            pairs.sort( (a,b) => {
+                if (a && b)
+                    return (a.gdttimestamp < b.gdttimestamp) ? 1 : -1;
+                else
+                    return 0;
+            });
+            this.myTimestampPairs = pairs;
+            this.isLoading = false;
+        }
     }
 }
 

@@ -30,6 +30,8 @@
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 
+
+
 export default {
     props: {
         deviceKey: {
@@ -43,7 +45,10 @@ export default {
             attachmentURLs: {},
         };
     },
-    created() {
+
+    // This was changed from "created". We didn't have Nuxt Composabl to get useRuntimeConfig
+    // if we uesd created.
+    mounted() {
         EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
     },
@@ -54,7 +59,8 @@ export default {
         async fetchAttachmentsForReport(report, index) {
             try {
                 if (report.attachments.length > 0) {
-                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(this.deviceKey, attachmentID));
+                    const baseUrl = useRuntimeConfig().public.baseUrl;
+                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
                     const urls = attachments.map(attachment => URL.createObjectURL(attachment));
                     this.attachmentURLs[index.toString()] = urls;
@@ -63,8 +69,10 @@ export default {
             console.error('Error occurred during getAttachment request:', error);
             }
         },
+        // TODO: This is a problem because it is being called before
+        // we have a composable or a context established. we can't call useRuntimeConfig()
+        // above.
         refreshPage() {
-            console.log('Feed refresh event received');
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
             getProvenance(this.deviceKey)

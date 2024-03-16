@@ -68,9 +68,6 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
-    console.log("Uploading");
-    console.log(`${timestamp}`);
-    console.log(toHex(salt));
 
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
@@ -88,8 +85,6 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
 
 async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
     const props = await client.getProperties();
-    console.log("decyrptBlob props");
-    console.log(props);
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
     const timestamp = parseInt(props.metadata?.["gdttimestamp"]);

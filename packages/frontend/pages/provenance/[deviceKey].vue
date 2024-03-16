@@ -20,6 +20,7 @@ import { useRoute } from 'vue-router'
 import { getProvenance} from '~/services/azureFuncs.ts'
 import { ref, onMounted } from 'vue'
 
+
 const route = useRoute()
 const deviceKey = route.params.deviceKey
 
