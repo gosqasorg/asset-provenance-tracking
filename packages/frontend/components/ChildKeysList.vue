@@ -2,7 +2,7 @@
     <div>
     Child Keys:
     <div v-for="childkey in childkeys">
-     <a :href="`/provenance/{{childkey}}`">{{childkey}}</a>
+     <a :href="`/provenance/${childkey}`">{{childkey}}</a>
     </div>
     </div>
 </template>
