@@ -20,12 +20,13 @@ const deviceKey = route.params.deviceKey;
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
+    <ChildKeysList v-bind:childkeys="childKeys"/>
   </div>
 </template>
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
+import ChildKeysList from '~/components/ChildKeysList.vue';
 import { getProvenance } from '~/services/azureFuncs';
-
 
 let deviceRecord;
 
@@ -39,12 +40,14 @@ let deviceRecord;
 
 export default {
     components: {
-        GenerateQRCode
+        GenerateQRCode,
+        ChildKeysList,
     },
     data() {
         return {
             isLoading: true,
             hasReportingKey: false,
+            childKeys: [],
         }},
     async mounted() {
         try {
@@ -52,10 +55,13 @@ export default {
             const deviceKey = route.params.deviceKey;
             const response = await getProvenance(deviceKey);
             // Warning---I am not sure this works if a provenance has been added.
+
+            console.log(response);
             deviceRecord = response[response.length - 1].record;
             console.log(deviceRecord);
             this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+            this.childKeys = deviceRecord.children_key;
             console.log(this.hasReportingKey);
         } catch (error) {
             console.log(error)
