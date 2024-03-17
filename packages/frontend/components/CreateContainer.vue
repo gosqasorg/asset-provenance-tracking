@@ -48,21 +48,13 @@ export default {
             // This code is copied from Judith;
             // I am going to retain her names even though they are
             // redundant until I get this workin.
-            const hasReportingKey = this.createReportKeys;
+            const hasReportingKey = this.createReportingKey;
             const numChildren = this.childrenKeys as Number;
             const childrenDeviceList = [];
             const childrenDeviceName = [];
+            let reportingKey;
             if (hasReportingKey) {
-                const reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                // const reportingDescription = "reporting key";
-                // await recordRepo.createRecord(reportingKey, description, {
-                //     name,
-                //     tags: ['creation', 'reportingkey'],
-                //     attachments: picture ? [picture] : undefined,
-                //     children_key: undefined,
-                //     children_name: undefined,
-                //     isReportingKey: true},
-                //                              );
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
 
                 await  postProvenance(reportingKey, {
                     blobType: 'deviceInitializer',
@@ -111,6 +103,7 @@ export default {
                     childrenDeviceName.push(childName);
                 }
             };
+            console.log("reportingKey",reportingKey);
             postProvenance(deviceKey, {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,

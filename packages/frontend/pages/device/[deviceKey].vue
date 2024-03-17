@@ -14,8 +14,9 @@ const deviceKey = route.params.deviceKey;
     <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
     <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">
-      <div v-if="hasReportingKey">
-        <a :href="`/provenance/${deviceRecord.reportingKey}`">Reporting Key</a>
+    <div v-if="hasReportingKey">
+    Reporting Key:
+    <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
@@ -54,7 +55,7 @@ export default {
             deviceRecord = response[response.length - 1].record;
             console.log(deviceRecord);
             this.isLoading = false;
-            this.hasReportinKey = (deviceRecord.reportingKey ? true : false);
+            this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
             console.log(this.hasReportingKey);
         } catch (error) {
             console.log(error)
