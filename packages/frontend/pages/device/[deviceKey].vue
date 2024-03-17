@@ -16,16 +16,21 @@ const deviceKey = route.params.deviceKey;
     <div v-if="!isLoading">
     <div v-if="hasReportingKey">
     Reporting Key:
+    <div>
     <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
+    </div>
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
-    <ChildKeysList v-bind:childkeys="childKeys"/>
+    Child Keys:
+<div>
+    <KeyList v-bind:keys="childKeys"/>
+    </div>
   </div>
 </template>
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
-import ChildKeysList from '~/components/ChildKeysList.vue';
+import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 
 let deviceRecord;
@@ -41,7 +46,7 @@ let deviceRecord;
 export default {
     components: {
         GenerateQRCode,
-        ChildKeysList,
+        KeyList,
     },
     data() {
         return {
@@ -61,8 +66,15 @@ export default {
             console.log(deviceRecord);
             this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+            // We will remove the reportingKey, because although it is a child,
+            // we have already rendered it.
+            if (this.hasReportingKey) {
+                const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+                if (index > -1) {
+                    deviceRecord.children_key.splice(index, 1);
+                }
+            }
             this.childKeys = deviceRecord.children_key;
-            console.log(this.hasReportingKey);
         } catch (error) {
             console.log(error)
         }
