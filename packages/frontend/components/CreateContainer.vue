@@ -116,6 +116,7 @@ export default {
                 deviceName: this.name,
                 description: this.description,
                 tags:['creation'],
+                reportingKey: reportingKey,
                 children_key: childrenDeviceList,
                 children_name: childrenDeviceName,
                 isReportingKey: false
