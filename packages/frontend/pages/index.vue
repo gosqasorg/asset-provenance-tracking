@@ -12,5 +12,8 @@
             For more information, please see our <a href="https://github.com/gosqasorg/home">Github repository</a>.
         </p>
     </div>
-    <CreateDevice/>
+     <CreateDevice/>
+    <div>Or, if you want to create a group of keys:</div>
+    <div></div>
+    <CreateContainer/>
 </template>

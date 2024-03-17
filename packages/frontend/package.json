@@ -16,6 +16,7 @@
     "vue-router": "^4.2.5"
   },
   "dependencies": {
+    "bootstrap-vue": "^2.23.1",
     "mitt": "^3.0.1",
     "qrcode-vue3": "^1.6.8"
   }

@@ -1,6 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
+
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
     css: ['~/assets/css/main.css'],
