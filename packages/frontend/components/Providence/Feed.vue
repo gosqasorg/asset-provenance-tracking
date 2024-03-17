@@ -30,13 +30,14 @@
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 
-
-
 export default {
     props: {
         deviceKey: {
             type: String,
             default: "",
+        },
+        provenance: {
+            default: null,
         },
     },
     data() {
@@ -66,7 +67,7 @@ export default {
                     this.attachmentURLs[index.toString()] = urls;
                 }
             } catch (error) {
-            console.error('Error occurred during getAttachment request:', error);
+                console.error('Error occurred during getAttachment request:', error);
             }
         },
         // TODO: This is a problem because it is being called before
@@ -75,19 +76,10 @@ export default {
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
-            getProvenance(this.deviceKey)
-            .then((response) => {
-                this.reports = response;
-                this.reports.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
-
-                // Uncomment for debugging
-                // console.log("GET:");
-                //console.log(this.reports);
-                //console.log(this.attachmentURLs);
-            })
-            .catch((error) => {
-                console.log(error);
-            });
+            console.log("PROVENANCE",this.provenance);
+            this.reports = this.provenance;
+//            this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+            this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
 
         }
     },
