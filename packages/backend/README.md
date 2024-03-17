@@ -96,22 +96,31 @@ on `gosqasbe.azurewebsites.net` via the `--cloud/-c` command line option.
 The following commands were used to deploy a test version of GDT functions
 to a function app running on gosqasbe.azurewebsites.net.
 
-> Note, these steps assume you've logged into your Azure account via `az login`
+> Note, these steps assume you've logged into your Azure account via `az login` and have [jq](https://jqlang.github.io/jq/) installed
 
 ``` shell
-az group create --name rg-gdt-test --location westus2
+# set top level variables describing how/where function app is deployed
+export LOCATION=westus2
+export RG_NAME=rg-gdt-test
+export STG_NAME=gdtteststorage
+export FUNC_NAME=gosqasbe
 
-az storage account create --name gdtteststorage --location westus2 --resource-group rg-gdt-test --sku Standard_LRS --allow-blob-public-access true
-
-az functionapp create --resource-group rg-gdt-test  --consumption-plan-location westus2 --runtime node --runtime-version 20 --functions-version 4 --name gosqasbe --storage-account gdtteststorage
-
-az functionapp cors add --name gosqasbe --resource-group rg-gdt-test --allowed-origins "*"
-
-az functionapp config appsettings set --name gosqasbe --resource-group rg-gdt-test --settings AZURE_STORAGE_ACCOUNT_NAME=<storageName> AZURE_STORAGE_ACCOUNT_KEY=<storagekey>
-
+# build function app locally for deployment
 npm install --omit=dev
 npm run build # assumes TS installed globally
-func azure functionapp publish gosqasbe
- ```
 
- > Note, 
+# create backend storage for function app
+az group create --name $RG_NAME --location $LOCATION
+az storage account create --name $STG_NAME --location $LOCATION --resource-group $RG_NAME --sku Standard_LRS --allow-blob-public-access true
+
+# set top level variable for storage account key
+export STG_KEY=$(az storage account keys list  --account-name $STG_NAME --resource-group $RG_NAME | jq '.[0].value')
+
+# create and configure function app
+az functionapp create --resource-group $RG_NAME  --consumption-plan-location $LOCATION --runtime node --runtime-version 20 --functions-version 4 --name $FUNC_NAME --storage-account gdtteststorage
+az functionapp cors add --name $FUNC_NAME --resource-group $RG_NAME --allowed-origins "*"
+az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAME --settings AZURE_STORAGE_ACCOUNT_NAME=$STG_NAME AZURE_STORAGE_ACCOUNT_KEY=$STG_KEY
+
+# Deploy function app
+func azure functionapp publish $FUNC_NAME
+```
