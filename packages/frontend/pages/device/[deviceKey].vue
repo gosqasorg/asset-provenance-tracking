@@ -3,17 +3,21 @@ const route = useRoute()
 const deviceKey = route.params.deviceKey;
 </script>
 
-    <template>
+<template>
   <div>
-    <!-- <h1>Device: {{ device.name }} </h1> -->
+    <h1><div>Device Key: {{ route.params.deviceKey }}</div></h1>
     <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
-    <div>Device Key: {{ route.params.deviceKey }}</div>
     <div v-if="!isLoading">
-    <div>Name: {{deviceRecord.deviceName}}</div>
+      <div>Name: {{deviceRecord.deviceName}}</div>
     </div>
     <div><a :href="`/provenance/${route.params.deviceKey}`">View Provenance Records</a></div>
     <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
     <!--Put the Reporting Key here if there is one -->
+    <div v-if="!isLoading">
+      <div v-if="hasReportingKey">
+        <a :href="`/provenance/${deviceRecord.reportingKey}`">Reporting Key</a>
+      </div>
+    </div>
     <!--Put the Child List key here if there are any -->
   </div>
 </template>
@@ -39,6 +43,7 @@ export default {
     data() {
         return {
             isLoading: true,
+            hasReportingKey: false,
         }},
     async mounted() {
         try {
@@ -49,6 +54,8 @@ export default {
             deviceRecord = response[response.length - 1].record;
             console.log(deviceRecord);
             this.isLoading = false;
+            this.hasReportinKey = (deviceRecord.reportingKey ? true : false);
+            console.log(this.hasReportingKey);
         } catch (error) {
             console.log(error)
         }
