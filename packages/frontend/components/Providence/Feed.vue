@@ -4,7 +4,7 @@
 -->
 <template>
     <div>
-        <div v-for="(report, index) in reports" class="report-box">
+        <div v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3>Created Device: {{ report.record.deviceName }}</h3>
                 <div>{{ report.record.deviceDescription }}</div>
@@ -42,13 +42,9 @@ export default {
     },
     data() {
         return {
-            reports: [],
             attachmentURLs: {},
         };
     },
-
-    // This was changed from "created". We didn't have Nuxt Composabl to get useRuntimeConfig
-    // if we uesd created.
     mounted() {
         EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
@@ -70,15 +66,10 @@ export default {
                 console.error('Error occurred during getAttachment request:', error);
             }
         },
-        // TODO: This is a problem because it is being called before
-        // we have a composable or a context established. we can't call useRuntimeConfig()
-        // above.
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
             console.log("PROVENANCE",this.provenance);
-            this.reports = this.provenance;
-//            this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
 
         }
