@@ -8,9 +8,9 @@
 
 <template>
     <form enctype="multipart/form-data" @submit.prevent="submitForm">
-      <h1>Create New Provenance Record</h1>
+      <h1>Create New History Record</h1>
       <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" required placeholder="Provenance Description" />
+        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" required placeholder="History Description" />
         <label>Tags (will be converted to lower case and duplicates removed)</label>
         <ProvidenceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
