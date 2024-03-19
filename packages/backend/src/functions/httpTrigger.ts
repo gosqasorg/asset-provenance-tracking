@@ -135,9 +135,7 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
         records.push({ ...provRecord, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
-  return {
-    headers: { "Access-Control-Allow-Origin" : "*"},
-    jsonBody: records };
+  return { jsonBody: records };
 }
 
 async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -157,9 +155,7 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     return {
         body: data,
         headers: contentType
-        ? { "Content-Type": contentType,
-            "Access-Control-Allow-Origin" : "*"
-          }
+            ? { "Content-Type": contentType }
             : undefined
     };
 };
@@ -194,7 +190,6 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
         const data = new TextEncoder().encode(JSON.stringify(provRecord));
         const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp);
       return {
-        headers: { "Access-Control-Allow-Origin" : "*"},
         jsonBody: { record: recordID, attachments } };
     }
 }
@@ -246,8 +241,7 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
 
     return {
         jsonBody: records,
-        headers: { "Content-Type": contentType,
-                   "Access-Control-Allow-Origin" : "*"}
+        headers: { "Content-Type": contentType }
     };
 };
 
