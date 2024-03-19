@@ -77,6 +77,11 @@ export default {
                         // Refresh CreateRecord component
                         this.refresh();
 
+                        //Refresh the tags in the tag input
+                        this.$emit('updateTags', []);
+
+
+
                         // Emit an event to notify the Feed.vue component
                         EventBus.emit('feedRefresh');
 

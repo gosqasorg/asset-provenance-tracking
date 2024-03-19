@@ -43,7 +43,7 @@ export default {
         },
         async submitForm() {
 
-            const deviceKey = await makeEncodedDeviceKey();
+const deviceKey = await makeEncodedDeviceKey();                                 
             postProvenance(deviceKey, {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,

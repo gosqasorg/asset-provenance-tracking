@@ -4,23 +4,30 @@
 -->
 <template>
     <div>
-        <div v-for="(report, index) in reports" class="report-box">
-            <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3>Created Device: {{ report.record.deviceName }}</h3>
-                <div>{{ report.record.deviceDescription }}</div>
-            </template>
+        <div v-for="(report, index) in reports" class="p-4">
+            <UCard>
+                <template v-if="report.record.blobType === 'deviceInitializer'">
+                    <h3>Created Device: {{ report.record.deviceName }}</h3>
+                    <div>{{ report.record.deviceDescription }}</div>
+                </template>
 
-            <template v-else>
-            <div class="mb-1 tag-container">
-                <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
-            </div>
-            </template>
+                <template v-else>
+                <div class="mb-1 tag-container">
+                    <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
+                </div>
+                </template>
 
-            <div>{{ report.record.description }}</div>
-            <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
-                <img v-bind:src="url" alt="Image" style="width: 150px;">
-            </div>
-            <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
+                <div>{{ report.record.description }}</div>
+                <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
+                    <img :src="url" alt="Image" @click="isOpen = true" style="width: 150px;"/>
+                    <UModal v-model="isOpen" :overlay="false">
+                        <div class="p-4">
+                            <img :src="url" alt="Image" @click="isOpen = true"/>
+                        </div>
+                    </UModal>
+                </div>
+                <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
+            </UCard>
         </div>
     </div>
 </template>
@@ -29,6 +36,7 @@
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
+
 
 export default {
     props: {
@@ -41,6 +49,7 @@ export default {
         return {
             reports: [],
             attachmentURLs: {},
+            isOpen: false,
         };
     },
     created() {
@@ -70,30 +79,27 @@ export default {
             getProvenance(this.deviceKey)
             .then((response) => {
                 this.reports = response;
-                this.reports.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
-
+                this.reports.forEach((report, index) => {
+                                        this.fetchAttachmentsForReport(report, index);
+                                    });
                 // Uncomment for debugging
                 // console.log("GET:");
-                //console.log(this.reports);
+                // console.log(this.reports);
                 //console.log(this.attachmentURLs);
             })
             .catch((error) => {
                 console.log(error);
             });
         
+        }, 
+        openModal() {
+            this.$bvModal.show('myModal')
         }
     },
 };
 </script>
 
 <style scoped>
-.report-box {
-  border: 1px solid #ccc;
-  padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
 .tag-container {
   display: flex;
   flex-wrap: wrap;
