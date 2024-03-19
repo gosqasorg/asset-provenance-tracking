@@ -2,8 +2,8 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
-  "scripts": {
-    "build": "nuxt build",
+    "scripts": {
+     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
