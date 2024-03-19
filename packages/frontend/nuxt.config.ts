@@ -5,7 +5,8 @@ const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
-    css: ['~/assets/css/main.css'],
+//    css: ['~/assets/css/main.css'],
+    css: ['~/assets/styles/main.scss'],
     runtimeConfig: {
     // The private keys which are only available server-side
         // Keys within public are also exposed client-side
