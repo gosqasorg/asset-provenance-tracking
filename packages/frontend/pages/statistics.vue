@@ -48,7 +48,7 @@ export default {
         }  else {
             pairs.sort( (a,b) => {
                 if (a && b)
-                    return (a.gdttimestamp < b.gdttimestamp) ? 1 : -1;
+                    return (a.timestamp < b.timestamp) ? 1 : -1;
                 else
                     return 0;
             });

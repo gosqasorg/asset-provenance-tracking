@@ -131,7 +131,6 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
         const provRecord = JSON.parse(json) as ProvenanceRecord;
-        const deviceID = await calculateDeviceID(deviceKey);
         provRecord.record.deviceID = deviceID;
         records.push({ ...provRecord, timestamp });
     }
@@ -199,7 +198,7 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
         jsonBody: { record: recordID, attachments } };
     }
 }
-// blobNames typically look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
+// blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
 // where the id is that last part (before the last slash)
 function findDeviceIdFromName(blobName : string) : string {
     return blobName.split("/",4)[3];
@@ -240,7 +239,7 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
         // but until it gets unwieldy we can return everything.
         // I think the proper way to test this is to build a test program that
         // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ gdttimestamp: metadata.gdttimestamp, gdtid: id});
+        records.push({ timestamp: metadata.gdttimestamp, deviceID: id});
     }
 
     const contentType = "application/json";

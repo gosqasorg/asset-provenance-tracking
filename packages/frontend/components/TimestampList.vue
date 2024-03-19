@@ -1,6 +1,6 @@
 <template>
     <div>
-    <div v-for="event in timestamppairs">{{ myDate(event.gdttimestamp) }}, {{event.gdtid}}</div>
+    <div v-for="event in timestamppairs">{{ myDate(event.timestamp) }}, {{event.deviceID}}</div>
     </div>
 </template>
 
