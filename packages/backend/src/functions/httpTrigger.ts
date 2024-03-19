@@ -1,7 +1,8 @@
+import { webcrypto as crypto } from 'node:crypto';
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
-import bs58 = require("bs58");
-import JSON5 = require("json5");
+import * as bs58 from 'bs58';
+import * as JSON5 from 'json5';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -115,13 +116,13 @@ const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`getProvenance ${request.params.deviceKey}`);
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
 
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
 
     const records = new Array<ProvenanceRecord & { timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `gosqas/${deviceID}/prov/` })) {
@@ -136,14 +137,13 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
 }
 
 async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`getAttachment ${request.params.deviceKey}/${request.params.attachmentID}`);
-
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { status: 404 }; }
-
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
+    context.log(`getAttachment`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+
+    const containerExists = await containerClient.exists();
+    if (!containerExists) { return { status: 404 }; }
 
     const blobClient = containerClient.getBlockBlobClient(`gosqas/${deviceID}/attach/${attachmentID}`);
     const exists = await blobClient.exists();
@@ -159,11 +159,11 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
 };
 
 async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`postProvenance ${request.params.deviceKey}`);
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     await containerClient.createIfNotExists();
-
-    const deviceKey = decodeKey(request.params.deviceKey);
 
     const formData = await request.formData();
     const provenanceRecord = formData.get("provenanceRecord");
