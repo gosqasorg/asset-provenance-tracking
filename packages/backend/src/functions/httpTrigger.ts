@@ -196,20 +196,10 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
 // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
 // where the id is that last part (before the last slash)
 function findDeviceIdFromName(blobName : string) : string {
-    return blobName.split("/",4)[3];
+    return blobName.split("/",4)[1];
 }
 
 async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    let i = 1;
-    // some options for filtering list
-    const listOptions = {
-        includeMetadata: true,
-        includeSnapshots: false,
-        includeTags: false,
-        includeVersions: false,
-        prefix: ''
-    };
-
     // Build up a JSON return value
     // NOTE: We seem to have to read the properties of the blob to get the
     // metadata.  There is a field called "metadata" on the blob itself
