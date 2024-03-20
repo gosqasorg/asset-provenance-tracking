@@ -1,5 +1,5 @@
 
-export function myDate(ts : string) : string {
+export function tzDate(ts : string) : string {
     var d = new Date(Number(ts));
 
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;

@@ -1,11 +1,11 @@
 <template>
     <div>
-    <div v-for="event in timestamppairs">{{ myDate(event.timestamp) }}, {{event.deviceID}}</div>
+    <div v-for="event in timestamppairs">{{ tzDate(event.timestamp) }}, {{event.deviceID}}</div>
     </div>
 </template>
 
 <script>
-import { myDate } from '~/utils/dateUtility';
+import { tzDate } from '~/utils/dateUtility';
 
 export default {
     name: 'TimestampList',
