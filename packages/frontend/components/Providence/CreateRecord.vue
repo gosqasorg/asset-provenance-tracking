@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts">
-    import { postProvenance,getProvenance } from '~/services/azureFuncs';
+import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 

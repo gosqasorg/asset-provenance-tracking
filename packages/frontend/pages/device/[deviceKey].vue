@@ -59,9 +59,6 @@ export default {
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             const response = await getProvenance(deviceKey);
-            // Warning---I am not sure this works if a provenance has been added.
-
-            console.log(response);
             deviceRecord = response[response.length - 1].record;
             console.log(deviceRecord);
             this.isLoading = false;
