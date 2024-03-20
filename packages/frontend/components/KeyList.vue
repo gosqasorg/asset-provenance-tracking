@@ -5,7 +5,6 @@
 </template>
 
 <script>
-import { myDate } from '~/utils/dateUtility';
 
 export default {
     name: 'KeyList',
