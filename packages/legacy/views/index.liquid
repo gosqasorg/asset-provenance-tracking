@@ -21,7 +21,38 @@
             <input type="file" class="form-control" accept="image/*" name="picture" capture="environment" />
             <input type="checkbox" id="save-device-key" name="save-device-key">
             <label for="save-device-key">Save device key (demo devices only!)</label><br>
+             
+    
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+
+    <br><br>
+
+    <form method="POST" class="col-md-8 card p-3 text-bg-secondary" enctype="multipart/form-data">
+        <legend>Create New Container</legend>
+        <div class="mb-3">
+            <input type="text" class="form-control" name="name" id="device-name" required placeholder="Container Name">
+            <input type="text" class="form-control mt-3" name="description" id="device-description" required placeholder="Container Description">
+            <label class="form-label mt-2" for="file">Container Image (optional)</label>
+            <input type="file" class="form-control" accept="image/*" name="picture" capture="environment" />
+            <input type="checkbox" id="save-device-key" name="save-device-key">
+            <label for="save-device-key">Save container key (demo devices only!)</label><br>
+            
+            <label for="reporting-key">Create reporting key? </label>
+            <input type="radio" id="yes" name="reporting-key" value=true >
+            <label for="yes">Yes</label>
+            <input type="radio" id="css" name="reporting-key" value=false checked>
+            <label for="no">No</label><br>
+
+            <label for="children-keys">Number of contained devices (optional):</label> 
+            <input type="number" id="children-keys" name="children-keys" min="0" max="500">   
+    
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+
+
+
 {% endblock %}
