@@ -18,13 +18,21 @@
 
             <div>{{ report.record.description }}</div>
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
-                <img v-bind:src="url" alt="Image" style="width: 150px;">
+                <!-- Image -->
+                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
             </div>
-            <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
+            <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
         </div>
     </div>
+        <!-- The Modal to Enlarge Image -->
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                 <div class="modal-content">
+                        <img v-bind:src="modalImage" alt="Image" class="img-fluid">
+                </div>
+            </div>
+        </div>
 </template>
-
 
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
@@ -43,6 +51,7 @@ export default {
     data() {
         return {
             attachmentURLs: {},
+            modalImage: "",
         };
     },
     mounted() {
