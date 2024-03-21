@@ -1,14 +1,16 @@
-const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
+// const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "GET",
     });
     return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
 }
 
-export async function getAttachment(deviceKey: string, attachmentID: string) {
+export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
+//    const baseUrl = useRuntimeConfig().public.baseUrl;
     try {
         const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
           method: "GET",
@@ -21,6 +23,7 @@ export async function getAttachment(deviceKey: string, attachmentID: string) {
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly Blob[]) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
     for (const blob of attachments) {
@@ -31,4 +34,12 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         body: formData,
     });
     return await response.json() as { record: string, attachments?: string[] };
+}
+
+export async function getStatistics() {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/statistics`, {
+        method: "GET",
+    });
+    return await response.json() as { record: string, timestamp: number }[];
 }
