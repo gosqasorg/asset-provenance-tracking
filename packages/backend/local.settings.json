@@ -6,5 +6,8 @@
         "AzureWebJobsStorage": "",
         "AZURE_STORAGE_ACCOUNT_NAME": "",
         "AZURE_STORAGE_ACCOUNT_KEY": ""
+    },
+    "Host": {
+        "CORS": "*"
     }
 }
