@@ -1,13 +1,13 @@
-<!-- 
-    This component is a form used to create a new device that we will track the 
-    providence for. 
+<!--
+    This component is a form used to create a new device that we will track the
+    providence for.
 
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
 <template>
-    <form enctype="multipart/form-data" @submit.prevent="submitForm"> 
+    <form enctype="multipart/form-data" @submit.prevent="submitForm">
         <h3>Create New Device</h3>
         <div id="device-form">
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
@@ -58,11 +58,11 @@ export default {
                     console.error('Error in post request:', error);
                 });
 
-            //Routing to display the device QR code etc. 
+            //Routing to display the device QR code etc.
             this.$router.push({ path: `/device/${deviceKey}` });
-        }, 
+        },
     }
-    
+
 }
 </script>
 
@@ -75,7 +75,7 @@ export default {
         display: block;
         margin-left: auto;
         margin-right: auto;
-        
+
     }
     #device-form > * {
         padding: 5px;
@@ -90,9 +90,6 @@ export default {
         margin-right: auto;
         width: 50%;
         margin-top: 30px;
-        
+
     }
 </style>
-
-
-
