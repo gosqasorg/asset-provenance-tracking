@@ -33,6 +33,10 @@ If you installed Azurite on the command line, you can launch the emulator by cre
 an empty directory and running `azurite --location <directory path>`. More details are 
 available in the [Azurite documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=npm%2Cblob-storage#run-azurite)
 
+Note: Remember this directory. If you restart azurite in that directory, it will restore the 
+GDT devices produced in that directory. If you change the directory, it will look like a fresh 
+database.
+
 ### Production Azure Storage
 
 To configure GOSQAS GDT functions to connect to a production Azure Storage account,
