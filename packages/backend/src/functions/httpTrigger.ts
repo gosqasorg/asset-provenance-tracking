@@ -201,6 +201,9 @@ function findDeviceIdFromName(blobName : string) : string {
 
 async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
+    const containerExists = await containerClient.exists();
+    if (!containerExists) { return { jsonBody: [] }; }
+
     // Build up a JSON return value
     // NOTE: We seem to have to read the properties of the blob to get the
     // metadata.  There is a field called "metadata" on the blob itself
