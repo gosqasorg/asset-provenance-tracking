@@ -124,15 +124,13 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
 
-
-    const records = new Array<ProvenanceRecord & { timestamp: number }>();
+    const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `gosqas/${deviceID}/prov/` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
         const provRecord = JSON.parse(json) as ProvenanceRecord;
-        provRecord.record.deviceID = deviceID;
-        records.push({ ...provRecord, timestamp });
+        records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
   return { jsonBody: records };
