@@ -12,7 +12,8 @@
 
             <template v-else>
             <div class="mb-1 tag-container">
-                <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
+    <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
+    {{tag}}</span>
             </div>
             </template>
 
@@ -37,6 +38,8 @@
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
+import { textColorForTag, getColorForTag } from '~/utils/colorTag';
+
 
 export default {
     props: {
@@ -80,7 +83,6 @@ export default {
             this.attachmentURLs = {};
             console.log("PROVENANCE",this.provenance);
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
-
         }
     },
 };
