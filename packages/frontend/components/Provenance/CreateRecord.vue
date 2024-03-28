@@ -12,7 +12,7 @@
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Provenance Description" />
         <label>Tags (will be converted to lower case and duplicates removed)</label>
-        <ProvidenceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+        <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
           <span v-for="tag in tags" :key="tag">{{ tag }}</span>
         </div>
