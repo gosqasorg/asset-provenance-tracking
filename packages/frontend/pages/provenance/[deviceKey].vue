@@ -1,10 +1,10 @@
-<!-- 
-    Page will be the fourm where users can keep track of the providence of 
+<!--
+    Page will be the fourm where users can keep track of the providence of
     their items.
---> 
+-->
 <template>
     <div>
-        <template v-if="deviceKey">
+        <template v-if="deviceKeyFound">
             <h1>"{{ deviceInfo.deviceName }}" Asset History Records</h1>
             <div>Device ID: {{ deviceKey }}</div>
             <a href="'#createRecord/' + deviceKey">Go to "Create New History Record"</a>
@@ -16,7 +16,7 @@
         </template>
         <template v-else>
             <p>Device key not found.</p>
-        </template>    
+        </template>
     </div>
 </template>
 
@@ -27,6 +27,8 @@ import { ref, onMounted } from 'vue'
 
 const route = useRoute()
 const deviceKey = route.params.deviceKey
+
+let deviceKeyFound=true;
 
 
 let deviceInfo = ref({})
@@ -39,7 +41,10 @@ onMounted(async () => {
     try {
         const response = await getProvenance(deviceKey)
         deviceInfo.value = response[response.length - 1].record
+        deviceKeyFound = true;
     } catch (error) {
+        // we probably didn't find the deviceKey in the database...
+        deviceKeyFound = false;
         console.log(error)
     }
 })

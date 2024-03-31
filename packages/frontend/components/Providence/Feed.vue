@@ -47,7 +47,7 @@ export default {
         EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
     },
-    beforeDestroy() { 
+    beforeDestroy() {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
@@ -77,10 +77,11 @@ export default {
                 //console.log(this.reports);
                 //console.log(this.attachmentURLs);
             })
-            .catch((error) => {
+                .catch((error) => {
+
                 console.log(error);
             });
-        
+
         }
     },
 };

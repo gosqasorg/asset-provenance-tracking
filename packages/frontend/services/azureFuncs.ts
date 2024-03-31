@@ -2,10 +2,17 @@ const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
+    try {
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "GET",
     });
-    return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+        return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+    } catch (error) {
+        // probably we didn't find the key...
+        console.log(`It is likely that they key your requestd: ${deviceKey} does not exist.`);
+        console.log(error);
+        throw error;
+    }
 }
 
 export async function getAttachment(deviceKey: string, attachmentID: string) {
