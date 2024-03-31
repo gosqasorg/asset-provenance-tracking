@@ -4,8 +4,8 @@
 -->
 <template>
     <div>
-        <template v-if="deviceKeyFound">
-            <h1>"{{ deviceInfo.deviceName }}" Asset History Records</h1>
+        <template v-if="deviceInfo.deviceKeyFound">
+            <h1>"{{ deviceInfo.retrievedData.deviceName }}" Asset History Records</h1>
             <div>Device ID: {{ deviceKey }}</div>
             <a href="'#createRecord/' + deviceKey">Go to "Create New History Record"</a>
         <div>
@@ -28,10 +28,10 @@ import { ref, onMounted } from 'vue'
 const route = useRoute()
 const deviceKey = route.params.deviceKey
 
-let deviceKeyFound=true;
-
-
-let deviceInfo = ref({})
+// We want to do conditional rendering based on whether or not we find the key.
+// This is the best way I know to do it; but I am not a Vue expert - rlr
+let deviceInfo = ref({ deviceKeyFound: false,
+                       retrievedData: {}});
 
 onMounted(async () => {
     if (!deviceKey) {
@@ -40,11 +40,11 @@ onMounted(async () => {
     }
     try {
         const response = await getProvenance(deviceKey)
-        deviceInfo.value = response[response.length - 1].record
-        deviceKeyFound = true;
+        deviceInfo.value.retrievedData = response[response.length - 1].record
+        deviceInfo.value.deviceKeyFound = true;
     } catch (error) {
         // we probably didn't find the deviceKey in the database...
-        deviceKeyFound = false;
+        deviceInfo.value.deviceKeyFound = false;
         console.log(error)
     }
 })
