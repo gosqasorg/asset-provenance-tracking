@@ -11,14 +11,14 @@ const deviceKey = route.params.deviceKey;
         <h1 >"{{ deviceRecord.deviceName }}" Asset Provenance Records</h1>
         <div>Device ID: {{ deviceRecord.deviceID }}</div>
     <div>
-    <ProvidencePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
+    <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
     </div>
     <a href="#createRecord">Go to "Create New Provenance Record"</a>
         <div>
-    <ProvidenceFeed :deviceKey="deviceKey" :provenance="provenance"/>
+    <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
         </div>
         <hr class="col-1 my-4">
-    <ProvidenceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
+    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
         <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">
     <div v-if="hasReportingKey">
