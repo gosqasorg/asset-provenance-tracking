@@ -38,6 +38,48 @@ yarn dev
 bun run dev
 ```
 
+We have a clean separation between our frontend and backend.
+This means that the URL to the backend API must be specified to Nuxt.
+This is best done use an environment variable. Our Nuxt configuration
+file looks for BACKEND_URL.
+```
+    BACKEND_URL=http://localhost:7071/api
+```
+If you let this to value given by Azure when you run the backend,
+    with:
+```
+npm start
+```
+...then you will be running locally, instead of a cloud instance of
+ of Azure. If the BACKEND_URL is not set, it should default to:
+```
+https://gosqasbe.azurewebsites.net/api'
+```
+which is wired into the nuxt.config.ts:
+```
+    // https://nuxt.com/docs/api/configuration/nuxt-config
+const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
+
+export default defineNuxtConfig({
+  devtools: { enabled: true },
+    css: ['~/assets/css/main.css'],
+    runtimeConfig: {
+    // The private keys which are only available server-side
+        // Keys within public are also exposed client-side
+        public: {
+            baseUrl: process.env.BACKEND_URL ? process.env.BACKEND_URL : globalBaseUrl,
+            apiBase: '/api'
+        }
+    },
+})
+```
+
+To run locally you will also want to run "Azurite" for blob storage
+locally, which
+happily is incredibly easy to set up:
+[https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage).
+
+
 ## Production
 
 Build the application for production:

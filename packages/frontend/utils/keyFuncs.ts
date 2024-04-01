@@ -9,8 +9,8 @@ export async function makeDeviceKey(): Promise<Uint8Array> {
   return new Uint8Array(buffer).slice();
 }
 
-function encodeDeviceKey(key: Uint8Array): string { 
-    return base58encode(key); 
+function encodeDeviceKey(key: Uint8Array): string {
+    return base58encode(key);
 }
 
 export async function makeEncodedDeviceKey(): Promise<string> {

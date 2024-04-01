@@ -3,43 +3,21 @@
     It is used in the providence-fourm.vue page.
 -->
 <template>
-    <div>
-        <div v-for="(report, index) in provenance" class="report-box">
-            <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3>Created Device: {{ report.record.deviceName }}</h3>
-                <div>{{ report.record.deviceDescription }}</div>
-            </template>
-
-            <template v-else>
-            <div class="mb-1 tag-container">
-    <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
-    {{tag}}</span>
-            </div>
-            </template>
-
-            <div>{{ report.record.description }}</div>
-            <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
-                <!-- Image -->
-                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
-            </div>
-            <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
-        </div>
+  PriorityNotices:
+  <div>
+    <div  v-for="(report, index) in notices" class="report-box">
+      <div class="mb-1 tag-container">
+        <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
+      </div>
+      <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
     </div>
-        <!-- The Modal to Enlarge Image -->
-        <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                 <div class="modal-content">
-                        <img v-bind:src="modalImage" alt="Image" class="img-fluid">
-                </div>
-            </div>
-        </div>
+  </div>
 </template>
+
 
 <script>
 import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { textColorForTag, getColorForTag } from '~/utils/colorTag';
-
 
 export default {
     props: {
@@ -53,8 +31,8 @@ export default {
     },
     data() {
         return {
+            notices: [],
             attachmentURLs: {},
-            modalImage: "",
         };
     },
     mounted() {
@@ -79,18 +57,29 @@ export default {
             }
         },
         refreshPage() {
+            console.log("XXXXXXXX");
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
-            console.log("PROVENANCE",this.provenance);
-            this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+            // First, we search for the high-priority notices;
+            // at the time of this writing, recall is the only one.
+            console.log(this.provenance);
+            this.notices = this.provenance.filter(
+                (p) => p.record.tags && p.record.tags.includes("recall"));
+            console.log("NOTICES",this.notices);
+
+            this.notices.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+
         }
     },
 };
 </script>
 
-<style scoped>
+    <style scoped>
+    .div {
+  background-color: red;
+    }
 .report-box {
-  border: 1px solid #ccc;
+    border: 5px solid #f00);
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 5px;

@@ -1,7 +1,8 @@
+import { webcrypto as crypto } from 'node:crypto';
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
-import bs58 = require("bs58");
-import JSON5 = require("json5");
+import * as bs58 from 'bs58';
+import * as JSON5 from 'json5';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -42,7 +43,7 @@ function decodeKey(key: string): Uint8Array {
 }
 
 async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
-    // if key is a string, convert it to a buffer 
+    // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
     return toHex(hash);
@@ -67,6 +68,7 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
+
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
@@ -115,13 +117,13 @@ const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`getProvenance ${request.params.deviceKey}`);
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
 
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
 
     const records = new Array<ProvenanceRecord & { timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `gosqas/${deviceID}/prov/` })) {
@@ -129,21 +131,21 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
         const provRecord = JSON.parse(json) as ProvenanceRecord;
+        provRecord.record.deviceID = deviceID;
         records.push({ ...provRecord, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
-    return { jsonBody: records };
+  return { jsonBody: records };
 }
 
 async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`getAttachment ${request.params.deviceKey}/${request.params.attachmentID}`);
-
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { status: 404 }; }
-
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
+    context.log(`getAttachment`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+
+    const containerExists = await containerClient.exists();
+    if (!containerExists) { return { status: 404 }; }
 
     const blobClient = containerClient.getBlockBlobClient(`gosqas/${deviceID}/attach/${attachmentID}`);
     const exists = await blobClient.exists();
@@ -159,11 +161,11 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
 };
 
 async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`postProvenance ${request.params.deviceKey}`);
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     await containerClient.createIfNotExists();
-
-    const deviceKey = decodeKey(request.params.deviceKey);
 
     const formData = await request.formData();
     const provenanceRecord = formData.get("provenanceRecord");
@@ -187,9 +189,52 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
         const provRecord: ProvenanceRecord = { record, attachments };
         const data = new TextEncoder().encode(JSON.stringify(provRecord));
         const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp);
-        return { jsonBody: { record: recordID, attachments } };
+      return {
+        jsonBody: { record: recordID, attachments } };
     }
 }
+// blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
+// where the id is that last part (before the last slash)
+function findDeviceIdFromName(blobName : string) : string {
+    return blobName.split("/",4)[1];
+}
+
+async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    // Build up a JSON return value
+    // NOTE: We seem to have to read the properties of the blob to get the
+    // metadata.  There is a field called "metadata" on the blob itself
+    // which does not contain our metadata. I don't know if this is terribly
+    // expensive, or if we could improve it. I insist we should not worry about
+    // performance until we measure it to be a problem, but this is an "orang flag"--
+    // some caution around this issue is warranted.
+    var records = [];
+    for await (const blob of containerClient.listBlobsFlat()) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        const props = await blobClient.getProperties();
+        const metadata = props.metadata;
+        // now we want to build up an object that we can return as statistics
+        // that inlcudes the id and the timestamp, though really the timestamp
+        // is enough. We would like to distinguish the additon of a device
+        // from the addition of new provenance, I supoose.
+        const id = findDeviceIdFromName(blob.name);
+        // We could do some sorting in this function, but that is more or less
+        // easily done by whomever is using this. So I think it better to just
+        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
+        // Eventually, this function may have to only look back X days or X hours,
+        // but until it gets unwieldy we can return everything.
+        // I think the proper way to test this is to build a test program that
+        // puts 1000s of objects into the database and see where performance becomes a problem.
+        records.push({ timestamp: metadata.gdttimestamp, deviceID: id});
+    }
+
+    const contentType = "application/json";
+
+    return {
+        jsonBody: records,
+        headers: { "Content-Type": contentType }
+    };
+};
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
@@ -207,4 +252,10 @@ app.get("getAttachment", {
     authLevel: 'anonymous',
     route: 'attachment/{deviceKey}/{attachmentID}',
     handler: getAttachment
+})
+
+app.get("getStatistics", {
+    authLevel: 'anonymous',
+    route: 'statistics',
+    handler: getStatistics
 })

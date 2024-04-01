@@ -12,10 +12,12 @@
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "nuxt": "^3.8.1",
+    "sass": "^1.72.0",
     "vue": "^3.3.8",
     "vue-router": "^4.2.5"
   },
   "dependencies": {
+    "bootstrap": "^5.3.3",
     "mitt": "^3.0.1",
     "qrcode-vue3": "^1.6.8"
   }
