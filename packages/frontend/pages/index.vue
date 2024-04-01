@@ -1,5 +1,5 @@
 <!--
-    This is the langing page where you can create a new device to track
+    This is the landing page where you can create a new device to track
 -->
 <template>
     <div>
@@ -12,5 +12,8 @@
             For more information, please see our <a href="https://github.com/gosqasorg/home">Github repository</a>.
         </p>
     </div>
-    <CreateDevice/>
+     <CreateDevice/>
+    <div>Or, if you want to create a group of keys:</div>
+    <div></div>
+    <CreateContainer/>
 </template>
