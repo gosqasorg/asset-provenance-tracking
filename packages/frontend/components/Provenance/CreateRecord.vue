@@ -20,6 +20,13 @@
             <label>Add Image (optional):    </label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
+
+        <label>Container Key (optional): </label>
+        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />
+
+        <label>Contained Devices Keys (optional, separated with a coma): </label>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" />
+
       </div>
       <button id="submit-button" type="submit">Submit</button>
     </form>
@@ -38,6 +45,8 @@ export default {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
+            containerKey: '',
+            childrenKey: [] as string[],
         }
     },
     props: {
@@ -54,7 +63,7 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            //console.log('handleUpdateTags', tags);
+            console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -69,6 +78,8 @@ export default {
             this.description = '';
             this.pictures = null;
             this.tags = [];
+            this.containerKey = '';
+            this.childrenKey = [];
         },
         // we need to recursively add "recall" to the main
         // device record if it is not already added.
@@ -114,11 +125,17 @@ export default {
         },
         async submitForm() {
 
+            if (this.childrenKey != '' ) {
+                // if a child key was entered, check for any comas to separate each key
+                this.childrenKey = this.childrenKey.split(',')
+            }
+            
             // Here we post the povenance itself...
                 postProvenance(this.deviceKey, {
                         blobType: 'deviceRecord',
                         description: this.description,
                         tags: this.tags,
+                        children_key: this.childrenKey,
                 }, this.pictures || [])
                 .then(response => {
                         // Handle successful response here
@@ -136,7 +153,28 @@ export default {
                         console.error('Error occurred during post request:', error);
                 });
 
-            console.log(this.deviceRecord);
+            //here we post provenance if a container key was entered
+            if (this.containerKey != '') {
+                postProvenance(this.containerKey, {
+                    blobType: 'deviceRecord',
+                    description: this.description,
+                    tags: this.tags,
+                    children_key: [this.deviceKey],
+                }, this.pictures || [])
+                .then(response => {
+                        // Handle successful response here
+                        console.log('Post request successful on container device:', response);
+
+                        // Emit an event to notify the Feed.vue component
+                        EventBus.emit('feedRefresh');
+
+                })
+                .catch(error => {
+                        // Handle error here
+                        console.error('Error occurred during post request on container device:', error);
+                });
+            }
+
 
             const index = this.tags.indexOf("recall",0);
             // "recall" is being added....
@@ -144,6 +182,7 @@ export default {
                 console.log("calling Recall Children!");
                 await this.recursivelyRecallChildren(this.deviceRecord.children_key,"Recalled by Admin Key");
             }
+
 
         },
     }
