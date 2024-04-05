@@ -66,4 +66,7 @@ where he will likely schedule a private meeting with you before introducing you 
 But, you are welcome to enter issues and create pull requests as well. We recommend you full read our associated technical papers
 before expending significant time on this unless you have spoken to us first.
 
+Contributors will be expected to sign our [Contributors License Agreement ](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/CONTRIBUTOR%20LICENSE%20AGREEMENT.md) designed to keep your contribution forever free.
+
+
 
