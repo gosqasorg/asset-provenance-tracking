@@ -74,7 +74,8 @@ export default {
 };
 </script>
 
-    <style scoped>
+
+<style scoped>
     .div {
   background-color: red;
     }

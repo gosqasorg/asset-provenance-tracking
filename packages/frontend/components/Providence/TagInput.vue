@@ -32,6 +32,7 @@ export default {
         const transformedValues = uniqueValues.map(tag => tag.toLowerCase().trim());
         this.tags = transformedValues;
         // console.log('set', transformedValues); // Uncomment for debugging
+          
         this.$emit('updateTags', transformedValues);
       },
     },
@@ -39,7 +40,6 @@ export default {
   methods: {
     onInput(event) {
       this.editableValue = event.target.value;
-      //console.log('onInput', this.editableValue); // Uncomment for debugging
     },
   },
 };

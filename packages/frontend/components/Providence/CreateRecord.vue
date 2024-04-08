@@ -32,7 +32,6 @@ const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 
 export default {
-
     data() {
         return {
             description: '',
@@ -56,6 +55,39 @@ export default {
         handleUpdateTags(tags: string[]) {
             //console.log('handleUpdateTags', tags);
             this.tags = tags;
+        },
+        // This function sends a notification to the users based on tags
+        async sendNotification(tags: string[]) {
+            if (tags.length === 0) {
+                return
+            }
+           
+            const response = await getProvenance(this.deviceKey);
+            let deviceInitializerRecord = response[response.length - 1].record;
+            let notificationTags = deviceInitializerRecord.tags;
+            let notificationData = deviceInitializerRecord.notificationData;
+
+            if (!notificationTags) {
+                console.error('notificationTags is undefined');
+                return;
+            }
+
+            let emails: string[] = [];
+            tags.forEach(tag => {
+                if (notificationTags.includes(tag)) {
+                        console.log(notificationData[tag]);
+                        if (Array.isArray(notificationData[tag])) {
+                            emails.push(...notificationData[tag]);
+                        }
+                }
+            });
+            // Here we will send the emails to the users
+            console.log("emails" + emails);
+
+            if (emails.length > 0) { 
+                alert("Emails sent to: " + emails);
+            }
+
         },
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -113,7 +145,7 @@ export default {
             });
         },
         async submitForm() {
-
+            console.log('before post. tags:', this.tags);
             // Here we post the povenance itself...
                 postProvenance(this.deviceKey, {
                         blobType: 'deviceRecord',
@@ -123,20 +155,13 @@ export default {
                 .then(response => {
                         // Handle successful response here
                         console.log('Post request successful:', response);
-
-                        // Refresh CreateRecord component
-                        this.refresh();
-
-                        // Emit an event to notify the Feed.vue component
-                        EventBus.emit('feedRefresh');
-
                 })
                 .catch(error => {
                         // Handle error here
                         console.error('Error occurred during post request:', error);
                 });
 
-            console.log(this.deviceRecord);
+                this.sendNotification(this.tags);
 
             const index = this.tags.indexOf("recall",0);
             // "recall" is being added....
@@ -145,6 +170,11 @@ export default {
                 await this.recursivelyRecallChildren(this.deviceRecord.children_key,"Recalled by Admin Key");
             }
 
+            // Refresh CreateRecord component
+            this.refresh();
+
+            // Emit an event to notify the Feed.vue component
+            EventBus.emit('feedRefresh');
         },
     }
 

@@ -48,6 +48,8 @@ export default {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
                 description: this.description,
+                tags: ["recall", "maintenance", "other"],
+                notificationData: {"recall": ["email", "email2"], "maintenance": ["email3", "email2"], "other": []},
             }, this.pictures || [])
                 .then(response => {
                     // Handle the successful response here

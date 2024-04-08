@@ -8,6 +8,7 @@
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3>Created Device: {{ report.record.deviceName }}</h3>
                 <div>{{ report.record.deviceDescription }}</div>
+                <p>Tags: {{ report.record.tags}}</p>
             </template>
 
             <template v-else>
@@ -82,6 +83,7 @@ export default {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
             console.log("PROVENANCE",this.provenance);
+            console.log(report.record);
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
         }
     },
