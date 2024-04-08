@@ -31,16 +31,24 @@ export default {
         const uniqueValues = [...new Set($value)];
         const transformedValues = uniqueValues.map(tag => tag.toLowerCase().trim());
         this.tags = transformedValues;
+        // Call forbidden tags method.
+        const cleanArray = cleanArray(words);
         // console.log('set', transformedValues); // Uncomment for debugging
-        this.$emit('updateTags', transformedValues);
+        this.$emit ('updateTags', cleanArray);
       },
     },
   },
   methods: {
     onInput(event) {
       this.editableValue = event.target.value;
-      //console.log('onInput', this.editableValue); // Uncomment for debugging
+      // console.log('onInput', this.editableValue); // Uncomment for debugging
+      // Write method here.
     },
+    cleanArray (arr) {
+        const forbiddenWords = ['banana', 'apple', 'orange'];
+        const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
+        return cleanedArray;
+    }
   },
 };
 </script>
