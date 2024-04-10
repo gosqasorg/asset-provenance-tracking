@@ -217,7 +217,7 @@ export default {
             console.log("this is the children list obtained from get childrenkeys:" , childrenList);
 
             console.log("these are the tags: ", this.tags);
-            const index = this.tags.indexOf("recall");
+            const index = this.tags.indexOf("recall", 0);
             console.log("recalled?: ", index);
             // "recall" is being added....
             if (index > -1) {
