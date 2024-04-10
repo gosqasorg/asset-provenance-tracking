@@ -79,11 +79,15 @@ export default {
                     deviceRecord.children_key.splice(index, 1);
                 }
             }
+
             
-            let childKeysList = []
+            let childKeysList = [];
+
             for (let i=0; i < provenance.length; i++) {
-                childKeysList.push(provenance[i].record.children_key);   
+               childKeysList += provenance[i].record.children_key + ",";
             }
+
+            childKeysList= childKeysList.split(',');
 
             this.childKeys = childKeysList;
 

@@ -1,8 +1,6 @@
 <template>
-    <div v-for="keyRecord in keys">
-        <div v-for="key in keyRecord">
+    <div v-for="key in keys">
         <a :href="`/provenance/${key}`">{{key}}</a>
-        </div>
     </div>
 
 </template>
