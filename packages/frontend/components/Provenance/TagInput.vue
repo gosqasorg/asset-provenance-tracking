@@ -44,7 +44,7 @@ export default {
       // console.log('onInput', this.editableValue); // Uncomment for debugging
       // Write method here.
     },
-    cleanArray (arr) {
+    cleanArray (arr) { //check to see if correct
         const forbiddenWords = ['banana', 'apple', 'orange'];
         const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
         return cleanedArray;
