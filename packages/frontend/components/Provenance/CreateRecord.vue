@@ -64,7 +64,7 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            console.log('handle Update Tags', tags);
+            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -73,7 +73,7 @@ export default {
             if (files) {
                 this.pictures = Array.from(files);
             }
-            console.log(deviceRecord);
+            // console.log(deviceRecord);
         },
         refresh() {
             this.description = '';
@@ -116,6 +116,7 @@ export default {
             postProvenance(key, {
                 blobType: 'deviceRecord',
                 description: recallReason,
+                children_key: '',
                 tags: ["recall"],
             }, this.pictures || [])
                 .then(response => {
@@ -127,7 +128,7 @@ export default {
                     console.error('Reacall by Admein post request:', error);
                 });
 
-            let childrenList = this.getChildrenKeys(this.deviceKey);
+            let childrenList = await this.getChildrenKeys(key);
             this.recursivelyRecallChildren(childrenList, recallReason);
 
         },
@@ -140,13 +141,20 @@ export default {
             console.log("begin recursivelyRecallChildren");
             console.log("the children key is this: ", childrenkeys);
 
-            for (let key in childrenkeys) {
-                console.log("inside for loop going through each key: ", key);
-                if (key != "" ) {
-                    console.log("about to recall this: ", key);
-                    this.recursivelyRecallKey(key, recallReason);
+            // for (let key in childrenkeys) {
+            //     console.log("inside for loop going through each key: ", key);
+            //     if (key != "" ) {
+            //         console.log("about to recall this: ", key);
+            //         this.recursivelyRecallKey(key, recallReason);
+            //     }
+            // }
+            
+            childrenkeys.forEach((key) => {
+                console.log("Got KEY",key);
+                if (key != "" && key != "undefined") {
+                    this.recursivelyRecallKey(key,recallReason);
                 }
-            }
+            });
             
         },
         async submitForm() {
@@ -213,12 +221,14 @@ export default {
                 });
 
 
-            let childrenList = await this.getChildrenKeys(this.deviceKey);
-            console.log("this is the children list obtained from get childrenkeys:" , childrenList);
-
             console.log("these are the tags: ", this.tags);
             const index = this.tags.indexOf("recall", 0);
             console.log("recalled?: ", index);
+
+
+            let childrenList = await this.getChildrenKeys(this.deviceKey);
+            console.log("this is the children list obtained from get childrenkeys:" , childrenList);
+
             // "recall" is being added....
             if (index > -1) {
                 console.log("calling Recall Children!");
