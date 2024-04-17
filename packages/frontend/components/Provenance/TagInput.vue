@@ -31,15 +31,19 @@ export default {
         const uniqueValues = [...new Set($value)];
         const transformedValues = uniqueValues.map(tag => tag.toLowerCase().trim());
         this.tags = transformedValues;
-        // console.log('set', transformedValues); // Uncomment for debugging
-        this.$emit('updateTags', transformedValues);
+        const cleanArray = this.cleanArray(this.tags); // Calling forbidden tags method.
+        this.$emit ('updateTags', cleanArray);
       },
     },
   },
   methods: {
+    cleanArray(arr) { //check to see if correct
+        const forbiddenWords = ['banana', 'apple', 'orange'];
+        const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
+        return cleanedArray;
+    },
     onInput(event) {
       this.editableValue = event.target.value;
-      //console.log('onInput', this.editableValue); // Uncomment for debugging
     },
   },
 };
