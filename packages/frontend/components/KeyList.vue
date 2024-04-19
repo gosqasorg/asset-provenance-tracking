@@ -1,7 +1,8 @@
 <template>
     <div v-for="key in keys">
-     <a :href="`/provenance/${key}`">{{key}}</a>
+        <a :href="`/provenance/${key}`">{{key}}</a>
     </div>
+
 </template>
 
 <script>

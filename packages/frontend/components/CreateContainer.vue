@@ -30,6 +30,7 @@ export default {
             description: '',
             childrenKeys: 0,
             createReportingKey: false,
+            hasParent: false, // states whether this device is contained within a box/container
             pictures: [] as File[] | null,
         }
     },
@@ -42,7 +43,6 @@ export default {
             }
         },
         async submitForm() {
-            console.log("ChildrenKeys",this.childrenKeys);
             const deviceKey = await makeEncodedDeviceKey();
 
             // This code is copied from Judith;
@@ -62,8 +62,8 @@ export default {
                     // Is this a proper description? Should it say "reporting key" or something?
                     description: this.description,
                     tags: ['creation', 'reportingkey'],
-                    children_key: undefined,
-                    children_name: undefined,
+                    children_key: '',
+                    hasParent: true,
                     isReportingKey: true,
                 }, this.pictures || [])
                     .then(response => {
@@ -87,8 +87,8 @@ export default {
                         deviceName: childName,
                         description: this.description,
                         tags:['creation'],
-                        children_key: undefined,
-                        children_name: undefined,
+                        children_key: '',
+                        hasParent: true,
                         isReportingKey: false
                     }, this.pictures || [])
                         .then(response => {
@@ -112,6 +112,7 @@ export default {
                 reportingKey: reportingKey,
                 children_key: childrenDeviceList,
                 children_name: childrenDeviceName,
+                hasParent: false,
                 isReportingKey: false
             }, this.pictures || [])
                 .then(response => {

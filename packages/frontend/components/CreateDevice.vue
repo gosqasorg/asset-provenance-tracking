@@ -30,6 +30,8 @@ export default {
         return {
             name: '',
             description: '',
+            children_key: '',
+            hasParent: false, // states whether a device is contained within a box/container
             pictures: [] as File[] | null,
         }
     },
@@ -48,6 +50,8 @@ export default {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
                 description: this.description,
+                children_key: '',
+                hasParent: false,
             }, this.pictures || [])
                 .then(response => {
                     // Handle the successful response here
