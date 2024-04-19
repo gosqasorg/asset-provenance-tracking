@@ -58,7 +58,7 @@ export default {
         }},
     async mounted() {
         try {
-            console.log("hello!");
+            // console.log("hello!");
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             await getProvenance(deviceKey).then((response) => {
@@ -79,7 +79,18 @@ export default {
                     deviceRecord.children_key.splice(index, 1);
                 }
             }
-            this.childKeys = deviceRecord.children_key;
+
+            
+            let childKeysList = [];
+
+            for (let i=0; i < provenance.length; i++) {
+               childKeysList += provenance[i].record.children_key + ",";
+            }
+
+            childKeysList= childKeysList.split(',');
+
+            this.childKeys = childKeysList;
+
         } catch (error) {
             console.log(error)
         }
