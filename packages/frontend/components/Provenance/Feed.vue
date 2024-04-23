@@ -6,7 +6,7 @@
     <div>
         <div v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3>Created Device: {{ report.record.deviceName }}</h3>
+                <h3 id = "createdDevicePoint">Created Device: {{ report.record.deviceName }}</h3>
                 <div>{{ report.record.deviceDescription }}</div>
             </template>
 

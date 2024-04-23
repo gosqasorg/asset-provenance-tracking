@@ -15,7 +15,7 @@
             <input type="number" v-model="childrenKeys" min="0" max="500">
 
         </div>
-        <button id="submit-button" type="submit" >Create Container Group</button>
+        <button id="submit-button" type="submit">Create Container Group</button>
     </form>
 </template>
 

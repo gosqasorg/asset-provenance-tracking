@@ -13,7 +13,9 @@ const deviceKey = route.params.deviceKey;
     <div>
     <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
     </div>
-    <a href="#createRecord">Go to "Create New Provenance Record"</a>
+    <a href = "#createdDevicePoint"><button class = "textToLinkButton0">Click to <i><textToLink class = "textToLink">Device Creation</textToLink></i></button></a>
+    <br><a href = "#createRecord"><button class = "textToLinkButton1">Click to <i><textToLink class = "textToLink">"Create New Provenance Record"</textToLink></i></button></a>
+    <br><a href = "#childKeys"><button class = "textToLinkButton2">Click to <i><textToLink class = "textToLink">Child Keys</textToLink></i></button></a>
         <div>
     <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
         </div>
@@ -29,7 +31,7 @@ const deviceKey = route.params.deviceKey;
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
-    Child Keys:
+    <h3 id ="childKeys">Child Keys:</h3>
 <div>
     <KeyList v-bind:keys="childKeys"/>
     </div>
@@ -98,3 +100,29 @@ export default {
 };
 
 </script>
+<style>
+.textToLink {
+    color: blue;
+}
+.textToLinkButton0 {
+    border-width: 0px;
+    border-radius: 10px;
+    background-color: rgb(243, 248, 100);
+    padding: 5px;
+}
+.textToLinkButton1 {
+    border-width: 0px;
+    border-radius: 10px;
+    background-color: rgb(145, 193, 248);
+    padding: 5px;
+}
+.textToLinkButton2 {
+    border-width: 0px;
+    border-radius: 10px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+body {
+    margin: 50px;
+}
+</style>
