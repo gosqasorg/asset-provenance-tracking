@@ -5,11 +5,7 @@
     <div>
         <h1>GOSQAS Asset Provenance Tracker</h1>
         <p>
-            The Global Open Source Quality Assurance System (GOSQAS) was formed to promote trust in open source medical devices and supplies.
-            GOSQAS believes that increasing transparency around the quality and safety of these devices is necessary for global acceptance.
-            To achieve this, GOSQAS has developed a “Trust Through Transparency'' (TTT) approach to ensure the safety and efficacy of medical devices made from open source designs.
-            The GOSQAS Asset Provenance Tracker allows anyone with access to an open source medical device to trace the provenance and add to it using a simple website.
-            For more information, please see our <a href="https://github.com/gosqasorg/home">Github repository</a>.
+            The Global Open Source Quality Assurance System (GOSQAS) provides the opportunity to create truthful, transparent documentation via our open source provenance tracker, Global Distributed Tracking (GDT). Designed specifically for low-resource settings, GDT allows anyone with simple website access to securely record their project data. Our development philosophy of “Trust Through Transparency” (TTT) encourages better global communication within diverse communities- to include humanitarian response, open source hardware, and scientific research.
         </p>
     </div>
      <CreateDevice/>
