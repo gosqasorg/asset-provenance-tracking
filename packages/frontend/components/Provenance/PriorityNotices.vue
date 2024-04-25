@@ -4,13 +4,16 @@
 -->
 <template>
   PriorityNotices:
-  <div>
+  <div v-if="notices.length > 0">
     <div  v-for="(report, index) in notices" class="report-box">
       <div class="mb-1 tag-container">
         <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
       </div>
       <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
     </div>
+  </div>
+  <div v-else>
+    None.
   </div>
 </template>
 

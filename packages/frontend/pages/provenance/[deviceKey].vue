@@ -1,50 +1,55 @@
 <!--
-    Page will be the fourm where users can keep track of the providence of
+    Page will be the forum where users can keep track of the provenance of
     their items.
     -->
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
 </script>
+
 <template>
-    <div v-if="!isLoading">
-        <h1 >"{{ deviceRecord.deviceName }}" Asset Provenance Records</h1>
-        <div>Device ID: {{ deviceRecord.deviceID }}</div>
-    <div>
+  <div v-if="!isLoading">
+    <template v-if="deviceKeyFound">
+      <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
+    <div>Device ID: {{ deviceKey }}</div>
+    <p>
+    <a href="#createRecord">Go to "Create New History Record"</a>
+    </p>
     <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
-    </div>
-    <a href = "#createdDevicePoint"><button class = "textToLinkButton0">Click to <i><textToLink class = "textToLink">Device Creation</textToLink></i></button></a>
-    <br><a href = "#createRecord"><button class = "textToLinkButton1">Click to <i><textToLink class = "textToLink">"Create New Provenance Record"</textToLink></i></button></a>
+        <a href = "#createdDevicePoint"><button class = "textToLinkButton0">Click to <i><textToLink class = "textToLink">Device Creation</textToLink></i></button></a>
+    <br><a href = "#createRecord"><button class = "textToLinkButton1">Click to <i><textToLink class = "textToLink">"Create New History Record"</textToLink></i></button></a>
     <br><a href = "#childKeys"><button class = "textToLinkButton2">Click to <i><textToLink class = "textToLink">Child Keys</textToLink></i></button></a>
-        <div>
-    <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
-        </div>
-        <hr class="col-1 my-4">
+      <div>
+        <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
+      </div>
+      <hr class="col-1 my-4">
     <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
-        <!--Put the Reporting Key here if there is one -->
+    <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">
-    <div v-if="hasReportingKey">
-    Reporting Key:
-    <div>
-    <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
-    </div>
+      <div v-if="hasReportingKey">
+        Reporting Key:
+        <div>
+          <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
+        </div>
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
-    <h3 id ="childKeys">Child Keys:</h3>
-<div>
-    <KeyList v-bind:keys="childKeys"/>
+    Child Keys:
+    <div>
+      <KeyList v-bind:keys="childKeys"/>
     </div>
-    </div>
+    </template>
+    <template v-else>
+      <p>Device key not found.</p>
+    </template>
+  </div>
 </template>
 
 <script lang="ts">
 import { getProvenance} from '~/services/azureFuncs.ts'
 import { ref, onMounted } from 'vue'
 import KeyList from '~/components/KeyList.vue';
-// import Feed from '~/components/Feed.vue';
 
-// let deviceInfo = ref({})
 let deviceRecord;
 let provenance;
 
@@ -55,6 +60,7 @@ export default {
     data() {
         return {
             isLoading: true,
+            deviceKeyFound: false,
             hasReportingKey: false,
             childKeys: [],
         }},
@@ -65,6 +71,7 @@ export default {
             const deviceKey = route.params.deviceKey;
             await getProvenance(deviceKey).then((response) => {
                 provenance = response;
+                this.deviceKeyFound = true;
             });
             console.log(provenance);
             deviceRecord = provenance[provenance.length - 1].record;
@@ -82,7 +89,7 @@ export default {
                 }
             }
 
-            
+
             let childKeysList = [];
 
             for (let i=0; i < provenance.length; i++) {
@@ -94,6 +101,8 @@ export default {
             this.childKeys = childKeysList;
 
         } catch (error) {
+            this.isLoading = false;
+            this.deviceKeyFound = false;
             console.log(error)
         }
     }

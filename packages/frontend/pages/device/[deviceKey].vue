@@ -10,7 +10,7 @@ const deviceKey = route.params.deviceKey;
     <div v-if="!isLoading">
       <div>Name: {{deviceRecord.deviceName}}</div>
     </div>
-    <div><a :href="`/provenance/${route.params.deviceKey}`">View Provenance Records</a></div>
+    <div><a :href="`/provenance/${route.params.deviceKey}`">View History Records</a></div>
     <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
     <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">

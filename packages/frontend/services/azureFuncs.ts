@@ -2,11 +2,18 @@
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-        method: "GET",
-    });
-    return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+    try {
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+            method: "GET",
+        });
+        return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+    } catch (error) {
+        // probably we didn't find the key...
+        console.log(`It is likely that they key your requestd: ${deviceKey} does not exist.`);
+        console.log(error);
+        throw error;
+    }
 }
 
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
