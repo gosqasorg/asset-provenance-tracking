@@ -7,9 +7,9 @@
 
 <template>
     <form enctype="multipart/form-data" @submit.prevent="submitForm">
-      <h1>Create New Provenance Record</h1>
+      <h1>Create New History Record</h1>
       <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Provenance Description" />
+        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
         <label>Tags (will be converted to lower case and duplicates removed)&nbsp&nbsp</label>
         <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
@@ -29,7 +29,7 @@
             <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
         {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
     </span>
-        </div>  
+        </div>
     </div>
       <button id="submit-button" type="submit">Submit</button>
     </form>
@@ -99,7 +99,7 @@ export default {
 
             const response = await getProvenance(key);
             for (let i=0; i < response.length; i++) {
-            
+
                childKeysList += response[i].record.children_key + ",";
             }
 
@@ -157,14 +157,14 @@ export default {
             //         this.recursivelyRecallKey(key, recallReason);
             //     }
             // }
-            
+
             childrenkeys.forEach((key) => {
                 console.log("Got KEY",key);
                 if (key != "" && key != "undefined") {
                     this.recursivelyRecallKey(key,recallReason);
                 }
             });
-            
+
         },
         async submitForm() {
 
