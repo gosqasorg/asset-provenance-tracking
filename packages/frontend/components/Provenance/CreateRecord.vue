@@ -1,7 +1,6 @@
 <!--
     This component is a form. The form is used to create a new device that we will track the
     providence for.
-
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
@@ -11,16 +10,27 @@
       <h1>Create New History Record</h1>
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
-        <label>Tags (will be converted to lower case and duplicates removed)</label>
-        <ProvidenceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+        <label>Tags (will be converted to lower case and duplicates removed)&nbsp&nbsp</label>
+        <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
-          <span v-for="tag in tags" :key="tag">{{ tag }}</span>
+            <span v-for="(tag, index) in tags" :key="tag">
+        {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
+    </span>
         </div>
         <div style="display: block;">
             <label>Add Image (optional):    </label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
-      </div>
+        <label>Container Key (optional): </label>
+        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />
+        <label>Contained Devices Keys (optional, separated with a coma): </label>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" />
+        <div>
+            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
+        {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+    </span>
+        </div>
+    </div>
       <button id="submit-button" type="submit">Submit</button>
     </form>
 </template>
@@ -38,6 +48,9 @@ export default {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
+            containerKey: '',
+            childrenKey: [] as string[],
+            hasParent: false,
         }
     },
     props: {
@@ -52,9 +65,15 @@ export default {
             required: true,
         },
     },
+    computed: {
+    uniqueChildrenKeys() {
+        const uniqueValues = [...new Set(this.childrenKey)];
+        return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
+    }
+},
     methods: {
         handleUpdateTags(tags: string[]) {
-            //console.log('handleUpdateTags', tags);
+            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -63,13 +82,35 @@ export default {
             if (files) {
                 this.pictures = Array.from(files);
             }
-            console.log(deviceRecord);
+            // console.log(deviceRecord);
         },
         refresh() {
             this.description = '';
             this.pictures = null;
             this.tags = [];
+            this.containerKey = '';
+            this.childrenKey = [];
+            this.hasParent = false;
         },
+
+        async getChildrenKeys(key) {
+
+            let childKeysList = []
+
+            const response = await getProvenance(key);
+            for (let i=0; i < response.length; i++) {
+
+               childKeysList += response[i].record.children_key + ",";
+            }
+
+            childKeysList = childKeysList.split(',');
+
+            console.log("inside function getting all children: ", childKeysList);
+
+            return childKeysList;
+        },
+
+
         // we need to recursively add "recall" to the main
         // device record if it is not already added.
         // This should always be the addition of a provenance
@@ -80,9 +121,11 @@ export default {
         // Use this function if you have a key, but don't yet
         // have the the children_keys in hand...
         async recursivelyRecallKey(key,recallReason) {
+            console.log("inside recalling specific key: ", key);
             postProvenance(key, {
                 blobType: 'deviceRecord',
                 description: recallReason,
+                children_key: '',
                 tags: ["recall"],
             }, this.pictures || [])
                 .then(response => {
@@ -94,9 +137,9 @@ export default {
                     console.error('Reacall by Admein post request:', error);
                 });
 
-            const response = await getProvenance(key);
-            let local_deviceRecord = response[response.length - 1].record;
-            this.recursivelyRecallChildren(local_deviceRecord.children_key,recallReason);
+            let childrenList = await this.getChildrenKeys(key);
+            this.recursivelyRecallChildren(childrenList, recallReason);
+
         },
         async recursivelyRecallChildren(childrenkeys,recallReason) {
             // recalling the object is in fact supposed to be
@@ -105,20 +148,69 @@ export default {
             // here we handle the "recall" functionality.
             // first add the recall tag here...
             console.log("begin recursivelyRecallChildren");
-            if (!childrenkeys) return;
-            // now we must add a provenance record to each child...
+            console.log("the children key is this: ", childrenkeys);
+
+            // for (let key in childrenkeys) {
+            //     console.log("inside for loop going through each key: ", key);
+            //     if (key != "" ) {
+            //         console.log("about to recall this: ", key);
+            //         this.recursivelyRecallKey(key, recallReason);
+            //     }
+            // }
+
             childrenkeys.forEach((key) => {
                 console.log("Got KEY",key);
-                this.recursivelyRecallKey(key,recallReason);
+                if (key != "" && key != "undefined") {
+                    this.recursivelyRecallKey(key,recallReason);
+                }
             });
+
         },
         async submitForm() {
+
+            const response = await getProvenance(this.deviceKey);
+            let local_deviceRecord = response[0].record;
+            this.hasParent = local_deviceRecord.hasParent;
+
+            //here we post provenance if a container (parent) key was entered
+            if (this.containerKey != '') {
+
+                if (this.hasParent) {
+                    console.log("This device already has a container");
+                } else {
+
+                    postProvenance(this.containerKey, {
+                        blobType: 'deviceRecord',
+                        description: this.description,
+                        tags: this.tags,
+                        children_key: [this.deviceKey],
+                        hasParent: true,
+                    }, this.pictures || [])
+                    .then(response => {
+                            // Handle successful response here
+                            console.log('Post request successful on container device:', response);
+
+                            // Emit an event to notify the Feed.vue component
+                            EventBus.emit('feedRefresh');
+
+                    })
+                    .catch(error => {
+                            // Handle error here
+                            console.error('Error occurred during post request on container device:', error);
+                    });
+
+                    this.hasParent = true;
+                }
+            }
 
             // Here we post the povenance itself...
                 postProvenance(this.deviceKey, {
                         blobType: 'deviceRecord',
                         description: this.description,
                         tags: this.tags,
+                        children_key: [this.childrenKey],
+                        hasParent: this.hasParent,
+
                 }, this.pictures || [])
                 .then(response => {
                         // Handle successful response here
@@ -136,15 +228,21 @@ export default {
                         console.error('Error occurred during post request:', error);
                 });
 
-            console.log(this.deviceRecord);
 
-            const index = this.tags.indexOf("recall",0);
+            console.log("these are the tags: ", this.tags);
+            const index = this.tags.indexOf("recall", 0);
+            console.log("recalled?: ", index);
+
+
+            let childrenList = await this.getChildrenKeys(this.deviceKey);
+            console.log("this is the children list obtained from get childrenkeys:" , childrenList);
+
             // "recall" is being added....
             if (index > -1) {
                 console.log("calling Recall Children!");
-                await this.recursivelyRecallChildren(this.deviceRecord.children_key,"Recalled by Admin Key");
+                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
             }
-
+            window.location.reload (); // I added this so that once they submit it just reloads the entire page.
         },
     }
 

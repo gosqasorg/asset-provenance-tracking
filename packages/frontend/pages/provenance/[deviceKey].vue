@@ -1,11 +1,12 @@
 <!--
-    Page will be the fourm where users can keep track of the providence of
+    Page will be the forum where users can keep track of the provenance of
     their items.
     -->
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
 </script>
+
 <template>
   <div v-if="!isLoading">
     <template v-if="deviceKeyFound">
@@ -14,12 +15,15 @@ const deviceKey = route.params.deviceKey;
     <p>
     <a href="#createRecord">Go to "Create New History Record"</a>
     </p>
-      <ProvidencePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
+    <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
+        <a href = "#createdDevicePoint"><button class = "textToLinkButton0">Click to <i><textToLink class = "textToLink">Device Creation</textToLink></i></button></a>
+    <br><a href = "#createRecord"><button class = "textToLinkButton1">Click to <i><textToLink class = "textToLink">"Create New History Record"</textToLink></i></button></a>
+    <br><a href = "#childKeys"><button class = "textToLinkButton2">Click to <i><textToLink class = "textToLink">Child Keys</textToLink></i></button></a>
       <div>
-        <ProvidenceFeed :deviceKey="deviceKey" :provenance="provenance"/>
+        <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
       </div>
       <hr class="col-1 my-4">
-    <ProvidenceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
+    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
     <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">
       <div v-if="hasReportingKey">
@@ -62,7 +66,7 @@ export default {
         }},
     async mounted() {
         try {
-            console.log("hello!");
+            // console.log("hello!");
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             await getProvenance(deviceKey).then((response) => {
@@ -84,7 +88,18 @@ export default {
                     deviceRecord.children_key.splice(index, 1);
                 }
             }
-            this.childKeys = deviceRecord.children_key;
+
+
+            let childKeysList = [];
+
+            for (let i=0; i < provenance.length; i++) {
+               childKeysList += provenance[i].record.children_key + ",";
+            }
+
+            childKeysList= childKeysList.split(',');
+
+            this.childKeys = childKeysList;
+
         } catch (error) {
             this.isLoading = false;
             this.deviceKeyFound = false;
@@ -94,3 +109,29 @@ export default {
 };
 
 </script>
+<style>
+.textToLink {
+    color: blue;
+}
+.textToLinkButton0 {
+    border-width: 0px;
+    border-radius: 10px;
+    background-color: rgb(243, 248, 100);
+    padding: 5px;
+}
+.textToLinkButton1 {
+    border-width: 0px;
+    border-radius: 10px;
+    background-color: rgb(145, 193, 248);
+    padding: 5px;
+}
+.textToLinkButton2 {
+    border-width: 0px;
+    border-radius: 10px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+body {
+    margin: 50px;
+}
+</style>
