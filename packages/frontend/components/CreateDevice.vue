@@ -14,7 +14,8 @@
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <label>Device Image (optional):    </label>
-                <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <input type="file" class="form-control" accept=".stl, .pdf, image/*" @change="onFileChange" capture="environment" multiple />
+
             </div>
         </div>
         <button id="submit-button" type="submit">Submit</button>

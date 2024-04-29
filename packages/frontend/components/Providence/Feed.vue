@@ -20,7 +20,16 @@
             <div>{{ report.record.description }}</div>
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
-                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
+                <template v-if="isImage(url)">
+                    <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
+                </template>
+                <template v-else>
+                <!-- Provided as a download link -->
+                <a :href="url" download :alt="getFileName(url)" style="display: block; padding: 5px;">
+                    Download {{ getFileName(url) }}
+                </a>
+                </template>
+
             </div>
             <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
         </div>
