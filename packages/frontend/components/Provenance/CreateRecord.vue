@@ -1,33 +1,36 @@
 <!--
     This component is a form. The form is used to create a new device that we will track the
     providence for.
-
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
 <template>
     <form enctype="multipart/form-data" @submit.prevent="submitForm">
-      <h1>Create New Provenance Record</h1>
+      <h1>Create New History Record</h1>
       <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Provenance Description" />
-        <label>Tags (will be converted to lower case and duplicates removed)</label>
+        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
+        <label>Tags (will be converted to lower case and duplicates removed)&nbsp&nbsp</label>
         <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
-          <span v-for="tag in tags" :key="tag">{{ tag }}</span>
+            <span v-for="(tag, index) in tags" :key="tag">
+        {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
+    </span>
         </div>
         <div style="display: block;">
             <label>Add Image (optional):    </label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
-
         <label>Container Key (optional): </label>
         <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />
-
         <label>Contained Devices Keys (optional, separated with a coma): </label>
         <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" />
-
-      </div>
+        <div>
+            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
+        {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+    </span>
+        </div>
+    </div>
       <button id="submit-button" type="submit">Submit</button>
     </form>
 </template>
@@ -63,6 +66,12 @@ export default {
             required: true,
         },
     },
+    computed: {
+    uniqueChildrenKeys() {
+        const uniqueValues = [...new Set(this.childrenKey)];
+        return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
+    }
+},
     methods: {
         handleUpdateTags(tags: string[]) {
             // console.log('handle Update Tags', tags);
@@ -92,7 +101,7 @@ export default {
 
             const response = await getProvenance(key);
             for (let i=0; i < response.length; i++) {
-            
+
                childKeysList += response[i].record.children_key + ",";
             }
 
@@ -139,13 +148,24 @@ export default {
             // here we handle the "recall" functionality.
             // first add the recall tag here...
 
+            console.log("begin recursivelyRecallChildren");
+            console.log("the children key is this: ", childrenkeys);
+
+            // for (let key in childrenkeys) {
+            //     console.log("inside for loop going through each key: ", key);
+            //     if (key != "" ) {
+            //         console.log("about to recall this: ", key);
+            //         this.recursivelyRecallKey(key, recallReason);
+            //     }
+            // }
+
             childrenkeys.forEach((key) => {
                 console.log("Got KEY",key);
                 if (key != "" && key != "undefined") {
                     this.recursivelyRecallKey(key,recallReason);
                 }
             });
-            
+
         },
         async submitForm() {
 
@@ -183,7 +203,6 @@ export default {
 
                     this.hasParent = true;
                 }
-
             }
             
             const index = this.tags.indexOf("recall", 0);
@@ -228,8 +247,20 @@ export default {
                 });
 
 
+            console.log("these are the tags: ", this.tags);
+            const index = this.tags.indexOf("recall", 0);
+            console.log("recalled?: ", index);
 
 
+            let childrenList = await this.getChildrenKeys(this.deviceKey);
+            console.log("this is the children list obtained from get childrenkeys:" , childrenList);
+
+            // "recall" is being added....
+            if (index > -1) {
+                console.log("calling Recall Children!");
+                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
+            }
+            window.location.reload (); // I added this so that once they submit it just reloads the entire page.
         },
     }
 
