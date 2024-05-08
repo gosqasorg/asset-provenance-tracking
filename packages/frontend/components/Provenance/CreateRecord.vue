@@ -51,6 +51,7 @@ export default {
             containerKey: '',
             childrenKey: [] as string[],
             hasParent: false,
+            isReportingKey: false,
         }
     },
     props: {
@@ -91,9 +92,10 @@ export default {
             this.containerKey = '';
             this.childrenKey = [];
             this.hasParent = false;
+            this.isReportingKey = false;
         },
 
-        async getChildrenKeys(key) {
+        async getChildrenKeys(key: string) {
 
             let childKeysList = []
 
@@ -105,7 +107,6 @@ export default {
 
             childKeysList = childKeysList.split(',');
 
-            console.log("inside function getting all children: ", childKeysList);
 
             return childKeysList;
         },
@@ -121,7 +122,6 @@ export default {
         // Use this function if you have a key, but don't yet
         // have the the children_keys in hand...
         async recursivelyRecallKey(key,recallReason) {
-            console.log("inside recalling specific key: ", key);
             postProvenance(key, {
                 blobType: 'deviceRecord',
                 description: recallReason,
@@ -134,7 +134,7 @@ export default {
                 })
                 .catch(error => {
                     // Handle error here
-                    console.error('Reacall by Admein post request:', error);
+                    console.error('Reacall by Admin post request:', error);
                 });
 
             let childrenList = await this.getChildrenKeys(key);
@@ -147,6 +147,7 @@ export default {
             // function; I am not sure where this code should live!
             // here we handle the "recall" functionality.
             // first add the recall tag here...
+
             console.log("begin recursivelyRecallChildren");
             console.log("the children key is this: ", childrenkeys);
 
@@ -171,12 +172,13 @@ export default {
             const response = await getProvenance(this.deviceKey);
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
+            this.isReportingKey = local_deviceRecord.isReportingKey;
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
 
                 if (this.hasParent) {
-                    console.log("This device already has a container");
+                    console.log("This device already has a container.");
                 } else {
 
                     postProvenance(this.containerKey, {
@@ -202,7 +204,23 @@ export default {
                     this.hasParent = true;
                 }
             }
+            
+            const index = this.tags.indexOf("recall", 0);
 
+            let childrenList = await this.getChildrenKeys(this.deviceKey);
+
+            // "recall" is being added....
+            if (index > -1) {
+
+                if (this.isReportingKey) {
+                    // reporting keys do not have the ability to recall
+                    console.log("Recall failed. This is a reporting key.");
+                } else {
+                    await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
+                }
+                
+            }
+            
             // Here we post the povenance itself...
                 postProvenance(this.deviceKey, {
                         blobType: 'deviceRecord',
