@@ -52,6 +52,7 @@ export default {
                 description: this.description,
                 children_key: '',
                 hasParent: false,
+                isReportingKey: false,
             }, this.pictures || [])
                 .then(response => {
                     // Handle the successful response here
