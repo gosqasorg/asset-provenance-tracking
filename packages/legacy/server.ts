@@ -75,7 +75,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         const deviceKey = encodeKey(crypto.randomBytes(16));
         const childrenDeviceList = [];
         const childrenDeviceName = [];
-        
+
         if (saveDeviceKey) {
             await deviceRepo.createDevice(name, deviceKey);
         }
@@ -93,11 +93,16 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
             childrenDeviceList.push(reportingKey);
             childrenDeviceName.push(name);
-            
+
         }
 
         if (numChildren) {
-            for (let i = 0; i < Number(numChildren); i++) {
+            let nc = Number(numChildren);
+            if (nc > 100) {
+                console.log("Number of Children creatable at one time limited to 100");
+                nc  = 100;
+            }
+            for (let i = 0; i < nc; i++) {
                 const childKey = encodeKey(crypto.randomBytes(16)); //reporting key = public key
                 const childName = name + " #" + String(i + 1);
                 await recordRepo.createRecord(childKey, description, {
@@ -115,7 +120,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             }
 
         }
-        
+
         await recordRepo.createRecord(deviceKey, description, {
             name,
             tags: ['creation'],
@@ -124,7 +129,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             children_name: [...childrenDeviceName],
             isReportingKey: false},
             )
-        
+
 
         reply.redirect(`/device/${deviceKey}`);
     });
@@ -200,7 +205,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
 
             if (reportingKey) {
                 reportQrCode = await qrcode.toDataURL(`${BASE_URL}provenance/${reportingKey}`);
-            } 
+            }
 
             if ($device) {
                 return {
@@ -232,7 +237,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 childrenQrCode: childrenQrCode,
                 childrenName: childrenNameList
 
-            
+
             };
         }
     });
@@ -254,11 +259,11 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
     server.post<{ Params: DeviceKey }>('/provenance/:deviceKey', async (request, reply) => {
         const { deviceKey } = request.params;
         const fields = await getFormFields(request);
-        
+
         var reports = await recordRepo.getRecords(deviceKey);
         const isReportingKey = reports.findLast(r => r.isReportingKey)?.isReportingKey;
-        
-        
+
+
         const description = fields.get('description') as string;
         const picture = fields.get('picture') as Attachment | undefined;
         const tagField = fields.get('tags') as string ?? "";
@@ -270,26 +275,26 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
         var deviceProvenance;
         var key;
         var isRecall = false;
-        
+
         // always use the public key to add provenance children etc
         // if it is not reporting key (meaning it is private key) get the reporting key from it
-        // if (!isReportingKey) { 
+        // if (!isReportingKey) {
         //     const reportingKey = reports.findLast(r => r.reportingKey)?.reportingKey ?? "";
         //     key = reportingKey;
         //     reports = await recordRepo.getRecords(key);
-            
+
         // } else { key = deviceKey; }
-        
+
         deviceProvenance = await addChildren(deviceKey,childKeySet);
-        
+
         if (tagSet.has("recall") && (!isReportingKey)) {
             console.log("current key is not reporting, meaning its private")
             console.log("there is recall and this is a private key");
             await recallChildren(deviceKey);
             isRecall = true;
-        } 
+        }
 
-        // user has entered a container key; meaning that this device is stored 
+        // user has entered a container key; meaning that this device is stored
         // inside this container
         if (containerKey != "") {
 
@@ -304,7 +309,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 if (containerName){ //container device exists
                     deviceProvenance.warnings.push("Added a container to this device");
                     //should try to add some boolean that says this device already has a container?
-        
+
                     const containerDeviceChildrenWarnings = await addChildren(containerKey, new Set([deviceKey]));
                     console.log("this is the container device: ", containerDeviceChildrenWarnings);
                     await recordRepo.createRecord(containerKey, description, {
@@ -313,7 +318,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                         children_key: [...containerDeviceChildrenWarnings.childKeys],
                         children_name: [...containerDeviceChildrenWarnings.childrenNames],
                         warnings: [...containerDeviceChildrenWarnings.warnings],
-                    });    
+                    });
                 }
                 else{
                     deviceProvenance.warnings.push("container device does not exist");
@@ -321,7 +326,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             }
 
         }
-        
+
         await recordRepo.createRecord(deviceKey, description, {
             tags: [...tagSet],
             attachments: picture ? [picture] : undefined,
@@ -343,7 +348,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                 const childList = await recordRepo.getChildren(containerKey);
                 const childRecords = await recordRepo.getRecords(childKey);
                 const isChildReportingKey = childRecords.findLast(r => r.isReportingKey)?.isReportingKey;
-                
+
                 // if this is child's reporting key, then make it invalid
                 if (isChildReportingKey) {
                     childKeySet.delete(childKey);
@@ -365,12 +370,12 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                             childKeySet.delete(childKey);
                             warningSet.push(`Warning: Device with key "${childKey}" does not exist!`);
                         }
-                    }                      
+                    }
                 }
             }
             return {
                 childKeys : childKeySet,
-                childrenNames: childNameSet, 
+                childrenNames: childNameSet,
                 warnings: warningSet };
         }
 
@@ -381,7 +386,7 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
             const childList = await recordRepo.getChildren(deviceKey);
             // need to obtain each provenance record, then in each key of provenance record
             const onlyChildKeys = [];
-            for (var child of childList) { 
+            for (var child of childList) {
                 if (child.children_key) {
                     for (var child_key of child.children_key) { //for every child, get their key
                         onlyChildKeys.push(child_key);
@@ -390,12 +395,12 @@ export async function createFastifyServer(deviceRepo: DeviceRepository, recordRe
                             tags: [...tagSet],
                             attachments: picture ? [picture] : undefined,
                             isRecall: true,
-                        });   
+                        });
                         console.log("record created");
                         await recallChildren(child_key);
                     }
                 }
-            } 
+            }
             const json = JSON.stringify(onlyChildKeys);
             console.log("json file of children keys ", JSON.parse(json.toString()));
             return;
