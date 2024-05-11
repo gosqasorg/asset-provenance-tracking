@@ -74,13 +74,25 @@ export default {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
+        isImage(url) {
+        return /\.(jpg|jpeg|png|gif)$/.test(url);
+        },
+        isDownloadable(url) {
+        return /\.(pdf)$/.test(url);
+        },
         async fetchAttachmentsForReport(report, index) {
             try {
                 if (report.attachments.length > 0) {
                     const baseUrl = useRuntimeConfig().public.baseUrl;
                     const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
-                    const urls = attachments.map(attachment => URL.createObjectURL(attachment));
+                    const urls = attachments.map(attachment => {
+                        console.log('Attachment Type:', attachment.type); // Log the MIME type
+                        const generatedURL = URL.createObjectURL(attachment);
+                        console.log('Download URL:', generatedURL); // Add this line to log the download URL
+                        return generatedURL;
+                    });
+                    // this.attachmentURLs[index.toString()] = urls;
                     this.attachmentURLs[index.toString()] = urls;
                 }
             } catch (error) {
