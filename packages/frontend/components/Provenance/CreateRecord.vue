@@ -97,7 +97,7 @@ export default {
 
         async getChildrenKeys(key: string) {
 
-            let childKeysList = []
+            let childKeysList:string = "";
 
             const response = await getProvenance(key);
             for (let i=0; i < response.length; i++) {
@@ -105,10 +105,10 @@ export default {
                childKeysList += response[i].record.children_key + ",";
             }
 
-            childKeysList = childKeysList.split(',');
+            let newChildKeysList = childKeysList.split(',');
 
 
-            return childKeysList;
+            return newChildKeysList;
         },
 
 
@@ -121,7 +121,7 @@ export default {
 
         // Use this function if you have a key, but don't yet
         // have the the children_keys in hand...
-        async recursivelyRecallKey(key,recallReason) {
+        async recursivelyRecallKey(key:string,recallReason:string) {
             postProvenance(key, {
                 blobType: 'deviceRecord',
                 description: recallReason,
@@ -138,10 +138,11 @@ export default {
                 });
 
             let childrenList = await this.getChildrenKeys(key);
+            console.log("this is the successfully recalled key: ", key, " and these are its children: ", childrenList)
             this.recursivelyRecallChildren(childrenList, recallReason);
 
         },
-        async recursivelyRecallChildren(childrenkeys,recallReason) {
+        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string) {
             // recalling the object is in fact supposed to be
             // recursive. This should probably be done in a separate
             // function; I am not sure where this code should live!
@@ -149,15 +150,6 @@ export default {
             // first add the recall tag here...
 
             console.log("begin recursivelyRecallChildren");
-            console.log("the children key is this: ", childrenkeys);
-
-            // for (let key in childrenkeys) {
-            //     console.log("inside for loop going through each key: ", key);
-            //     if (key != "" ) {
-            //         console.log("about to recall this: ", key);
-            //         this.recursivelyRecallKey(key, recallReason);
-            //     }
-            // }
 
             childrenkeys.forEach((key) => {
                 console.log("Got KEY",key);
@@ -204,22 +196,24 @@ export default {
                     this.hasParent = true;
                 }
             }
-            
-            const index = this.tags.indexOf("recall", 0);
 
-            let childrenList = await this.getChildrenKeys(this.deviceKey);
+        const index = this.tags.indexOf("recall", 0);
+        
+        let childrenList = await this.getChildrenKeys(this.deviceKey);
 
-            // "recall" is being added....
-            if (index > -1) {
+        // "recall" is being added....
+        if (index > -1) {
 
-                if (this.isReportingKey) {
-                    // reporting keys do not have the ability to recall
-                    console.log("Recall failed. This is a reporting key.");
-                } else {
-                    await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
-                }
-                
+            if (this.isReportingKey) {
+                // reporting keys do not have the ability to recall
+                console.log("Recall failed. This is a reporting key.");
+            } else {
+                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
+                console.log("this is the children list: ", childrenList);
             }
+            
+        }
+            
             
             // Here we post the povenance itself...
                 postProvenance(this.deviceKey, {
@@ -239,30 +233,17 @@ export default {
 
                         // Emit an event to notify the Feed.vue component
                         EventBus.emit('feedRefresh');
-
-                })
-                .catch(error => {
+                        
+                    })
+                    .catch(error => {
                         // Handle error here
                         console.error('Error occurred during post request:', error);
-                });
-
-
-            console.log("these are the tags: ", this.tags);
-            const index = this.tags.indexOf("recall", 0);
-            console.log("recalled?: ", index);
-
-
-            let childrenList = await this.getChildrenKeys(this.deviceKey);
-            console.log("this is the children list obtained from get childrenkeys:" , childrenList);
-
-            // "recall" is being added....
-            if (index > -1) {
-                console.log("calling Recall Children!");
-                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
+                    });
+                    
+                    
+                    window.location.reload(); // I added this so that once they submit it just reloads the entire page.
+                },
             }
-            window.location.reload (); // I added this so that once they submit it just reloads the entire page.
-        },
-    }
 
 };
 </script>
