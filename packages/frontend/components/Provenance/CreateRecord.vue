@@ -167,6 +167,24 @@ export default {
             });
 
         },
+        async sendTagNotificationData() {
+            try {
+                const response = await fetch('tag-notification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tags: this.tags,
+                        deviceKey: this.deviceKey
+                    })
+                });
+                const data = await response.json();
+                console.log('Message received:', data);
+            } catch (error) {
+                console.error('Error occurred while sending tags and keys:', error);
+            }
+        },
         async submitForm() {
 
             const response = await getProvenance(this.deviceKey);
@@ -191,6 +209,7 @@ export default {
                     .then(response => {
                             // Handle successful response here
                             console.log('Post request successful on container device:', response);
+                            this.sendTagNotificationData();
 
                             // Emit an event to notify the Feed.vue component
                             EventBus.emit('feedRefresh');
