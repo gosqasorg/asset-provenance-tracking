@@ -73,9 +73,7 @@ export default {
                 provenance = response;
                 this.deviceKeyFound = true;
             });
-            console.log(provenance);
             deviceRecord = provenance[provenance.length - 1].record;
-            console.log(deviceRecord);
             this.isLoading = false;
 
             // This functionality could be pushed into a component...
@@ -90,7 +88,7 @@ export default {
             }
 
 
-            let childKeysList = [];
+            let childKeysList:any = [];
 
             for (let i=0; i < provenance.length; i++) {
                childKeysList += provenance[i].record.children_key + ",";

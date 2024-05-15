@@ -8,11 +8,24 @@
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
 
             <span style="display: inline">
-            <label for="checkbox">Create Reporting Key:</label>
-            <input type="checkbox" id="checkbox" v-model="createReportingKey" /> </span>
+            <label for="report-key">Create Reporting Key:</label>
+            <input type="checkbox" id="report-key" v-model="createReportingKey" /> </span>
 
             <label for="children-keys">Number of contained devices (optional):</label>
-            <input type="number" v-model="childrenKeys" min="0" max="500">
+            <input type="number" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
+
+            <!-- <br> -->
+            <span style="display: inline">
+            Customize Contained Device Names?
+            <input type="radio" id="customize-yes" name="customize"  @change="displayFields"/>Yes
+            <input type="radio" id="customize-no" name="customize"   @change="displayFields" checked/>No
+            </span>
+
+            <br><br>
+
+            <div id="num-fields" >
+                <label for="input"></label>
+            </div>
 
         </div>
         <button id="submit-button" type="submit">Create Container Group</button>
@@ -42,6 +55,43 @@ export default {
                 this.pictures = Array.from(files);
             }
         },
+        displayFields() {
+            const childrenNum = (<HTMLInputElement>document.getElementById("children-keys")).value;
+
+            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
+            const customize_no = (<HTMLInputElement>document.getElementById("customize-no"));
+            
+            var newInput, newLabel;
+            var wrapper_div = document.getElementById('num-fields') as HTMLInputElement;
+            var fieldset = document.createElement('div') as HTMLInputElement;
+
+            while (wrapper_div.hasChildNodes()) {
+                wrapper_div.removeChild(wrapper_div.firstChild!);
+            }
+
+            for (var i=0; i<Number(childrenNum); i++) {
+                    newInput = document.createElement('input');
+                    newInput.id = 'name-input-' + (i);
+                    newInput.type = 'text';
+                    newInput.required = true;
+                    newLabel =  document.createElement('label');
+                    newLabel.textContent = 'Device #'+ (i+1) +' Name:  ';
+                    fieldset.appendChild(newLabel);
+                    fieldset.appendChild(newInput);
+                    fieldset.appendChild(document.createElement('br'));
+            }
+
+            if (customize_yes.checked) {
+                wrapper_div.append(fieldset);
+                wrapper_div.style.display = "inline";
+
+            } else if (customize_no.checked) {
+                wrapper_div.style.display = "none";
+            }
+            
+            
+        },
+
         async submitForm() {
             const deviceKey = await makeEncodedDeviceKey();
 
@@ -79,13 +129,28 @@ export default {
             }
 
             if (numChildren) {
+                
+                // let input_trial = (<HTMLInputElement>document.getElementById("name-input-1")).value;
+                // console.log("this is the input trial", input_trial);
+
+                const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
+                var childName;
+
                 for (let i = 0; i < Number(numChildren); i++) {
                     const childKey =  await makeEncodedDeviceKey();
-                    const childName = this.name + " #" + String(i + 1);
+
+                    if (customize_yes.checked) {
+                        // user has selected to customize names. use the inputted names.
+                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
+                    } else {
+                        // user not customizing names. use default.                        
+                        childName = this.name + " #" + String(i + 1);
+                    }
+
                     await  postProvenance(childKey, {
                         blobType: 'deviceInitializer',
                         deviceName: childName,
-                        description: this.description,
+                        description: "",  // need to see if we want a special description when making a child
                         tags:['creation'],
                         children_key: '',
                         hasParent: true,
