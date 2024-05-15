@@ -95,6 +95,7 @@ export default {
             this.isReportingKey = false;
         },
 
+        // gets all children given a key
         async getChildrenKeys(key: string) {
 
             let childKeysList:string = "";
@@ -107,41 +108,13 @@ export default {
 
             let newChildKeysList = childKeysList.split(',');
 
+            newChildKeysList = newChildKeysList.filter(c => String(c).trim()); // filter out if key = ""
+
 
             return newChildKeysList;
         },
 
 
-        // we need to recursively add "recall" to the main
-        // device record if it is not already added.
-        // This should always be the addition of a provenance
-        // record, but should only occur if the record is not
-        // already recalled.
-        // We really need to add the type here...
-
-        // Use this function if you have a key, but don't yet
-        // have the the children_keys in hand...
-        async recursivelyRecallKey(key:string,recallReason:string) {
-            postProvenance(key, {
-                blobType: 'deviceRecord',
-                description: recallReason,
-                children_key: '',
-                tags: ["recall"],
-            }, this.pictures || [])
-                .then(response => {
-                    // Handle successful response here
-                    console.log('Recall by Admin successful:', response);
-                })
-                .catch(error => {
-                    // Handle error here
-                    console.error('Reacall by Admin post request:', error);
-                });
-
-            let childrenList = await this.getChildrenKeys(key);
-            console.log("this is the successfully recalled key: ", key, " and these are its children: ", childrenList)
-            this.recursivelyRecallChildren(childrenList, recallReason);
-
-        },
         async recursivelyRecallChildren(childrenkeys: string[],recallReason: string) {
             // recalling the object is in fact supposed to be
             // recursive. This should probably be done in a separate
@@ -149,17 +122,28 @@ export default {
             // here we handle the "recall" functionality.
             // first add the recall tag here...
 
-            console.log("begin recursivelyRecallChildren");
+            for (const key of childrenkeys) {
+                // console.log("GOT KEY", key);
 
-            childrenkeys.forEach((key) => {
-                console.log("Got KEY",key);
                 if (key != "" && key != "undefined") {
-                    this.recursivelyRecallKey(key,recallReason);
-                }
-            });
+                    // console.log("successfully did a recrusive call on ", key);
+                    let childrenList = await this.getChildrenKeys(key);
+                    // console.log("these are the children", childrenList);
+                    await this.recursivelyRecallChildren(childrenList, recallReason);
+
+                    postProvenance(key, {
+                        blobType: 'deviceRecord',
+                        description: recallReason,
+                        children_key: '',
+                        tags: ["recall"],
+                    }, this.pictures || [])
+
+                } 
+            }
+
 
         },
-        async submitForm() {
+        async submitRecord() {
 
             const response = await getProvenance(this.deviceKey);
             let local_deviceRecord = response[0].record;
@@ -180,18 +164,6 @@ export default {
                         children_key: [this.deviceKey],
                         hasParent: true,
                     }, this.pictures || [])
-                    .then(response => {
-                            // Handle successful response here
-                            console.log('Post request successful on container device:', response);
-
-                            // Emit an event to notify the Feed.vue component
-                            EventBus.emit('feedRefresh');
-
-                    })
-                    .catch(error => {
-                            // Handle error here
-                            console.error('Error occurred during post request on container device:', error);
-                    });
 
                     this.hasParent = true;
                 }
@@ -208,42 +180,53 @@ export default {
                 // reporting keys do not have the ability to recall
                 console.log("Recall failed. This is a reporting key.");
             } else {
-                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key");
-                console.log("this is the children list: ", childrenList);
+                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key")
+                .then(response => {
+                    console.log("Finished recalling");
+                })
+
             }
             
         }
-            
-            
-            // Here we post the povenance itself...
-                postProvenance(this.deviceKey, {
-                        blobType: 'deviceRecord',
-                        description: this.description,
-                        tags: this.tags,
-                        children_key: [this.childrenKey],
-                        hasParent: this.hasParent,
+                       
+        // Here we post the povenance itself...
+        postProvenance(this.deviceKey, {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: [this.childrenKey],
+                hasParent: this.hasParent,
 
-                }, this.pictures || [])
-                .then(response => {
-                        // Handle successful response here
-                        console.log('Post request successful:', response);
+        }, this.pictures || [])
+        .then(response => {
+                // Handle successful response here
+                console.log('Post request successful:', response);
 
-                        // Refresh CreateRecord component
-                        this.refresh();
+                // Refresh CreateRecord component
+                this.refresh();
 
-                        // Emit an event to notify the Feed.vue component
-                        EventBus.emit('feedRefresh');
-                        
-                    })
-                    .catch(error => {
-                        // Handle error here
-                        console.error('Error occurred during post request:', error);
-                    });
+                // Emit an event to notify the Feed.vue component
+                EventBus.emit('feedRefresh');
+                
+            })
+            .catch(error => {
+                // Handle error here
+                console.error('Error occurred during post request:', error);
+            });
                     
                     
-                    window.location.reload(); // I added this so that once they submit it just reloads the entire page.
-                },
-            }
+        },
+
+        async submitForm() {
+            this.submitRecord()
+            .then(response=> {
+                console.log("form is submitted!");
+                window.location.reload(); //once they submit it just reloads the entire page.
+
+            }); 
+
+        },
+    }
 
 };
 </script>
