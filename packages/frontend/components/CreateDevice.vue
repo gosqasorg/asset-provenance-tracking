@@ -14,8 +14,7 @@
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <label>Device Image (optional):    </label>
-                <input type="file" class="form-control" accept=".stl, .pdf, image/*" @change="onFileChange" capture="environment" multiple />
-
++                <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
         </div>
         <button id="submit-button" type="submit">Submit</button>
@@ -31,6 +30,8 @@ export default {
         return {
             name: '',
             description: '',
+            children_key: '',
+            hasParent: false, // states whether a device is contained within a box/container
             pictures: [] as File[] | null,
         }
     },
@@ -49,6 +50,9 @@ export default {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
                 description: this.description,
+                children_key: '',
+                hasParent: false,
+                isReportingKey: false,
             }, this.pictures || [])
                 .then(response => {
                     // Handle the successful response here

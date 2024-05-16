@@ -6,7 +6,7 @@
     <div>
         <div v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3>Created Device: {{ report.record.deviceName }}</h3>
+                <h3 id = "createdDevicePoint">Created Device: {{ report.record.deviceName }}</h3>
                 <div>{{ report.record.deviceDescription }}</div>
             </template>
 
@@ -20,16 +20,7 @@
             <div>{{ report.record.description }}</div>
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
-                <template v-if="isImage(url)">
-                    <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
-                </template>
-                <template v-else>
-                <!-- Provided as a download link -->
-                <a :href="url" download :alt="getFileName(url)" style="display: block; padding: 5px;">
-                    Download {{ getFileName(url) }}
-                </a>
-                </template>
-
+                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
             </div>
             <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
         </div>
@@ -74,25 +65,13 @@ export default {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
-        isImage(url) {
-        return /\.(jpg|jpeg|png|gif)$/.test(url);
-        },
-        isDownloadable(url) {
-        return /\.(pdf)$/.test(url);
-        },
         async fetchAttachmentsForReport(report, index) {
             try {
                 if (report.attachments.length > 0) {
                     const baseUrl = useRuntimeConfig().public.baseUrl;
                     const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
-                    const urls = attachments.map(attachment => {
-                        console.log('Attachment Type:', attachment.type); // Log the MIME type
-                        const generatedURL = URL.createObjectURL(attachment);
-                        console.log('Download URL:', generatedURL); // Add this line to log the download URL
-                        return generatedURL;
-                    });
-                    // this.attachmentURLs[index.toString()] = urls;
+                    const urls = attachments.map(attachment => URL.createObjectURL(attachment));
                     this.attachmentURLs[index.toString()] = urls;
                 }
             } catch (error) {

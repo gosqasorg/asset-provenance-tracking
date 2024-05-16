@@ -14,6 +14,8 @@
             :downloadOptions="{ name: 'vqr', extension: 'png' }"
           />
     </div>
+    
+
 </template>
   
 <script>
