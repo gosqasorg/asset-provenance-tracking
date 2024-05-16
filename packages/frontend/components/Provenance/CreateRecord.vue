@@ -137,7 +137,6 @@ export default {
                         children_key: '',
                         tags: ["recall"],
                     }, this.pictures || [])
-
                 }
             }
 
@@ -170,7 +169,7 @@ export default {
             }
 
         const index = this.tags.indexOf("recall", 0);
-
+        
         let childrenList = await this.getChildrenKeys(this.deviceKey);
 
         // "recall" is being added....
@@ -184,11 +183,10 @@ export default {
                 .then(response => {
                     console.log("Finished recalling");
                 })
-
             }
-
+            
         }
-
+                       
         // Here we post the povenance itself...
         postProvenance(this.deviceKey, {
                 blobType: 'deviceRecord',
@@ -196,25 +194,21 @@ export default {
                 tags: this.tags,
                 children_key: [this.childrenKey],
                 hasParent: this.hasParent,
-
         }, this.pictures || [])
         .then(response => {
                 // Handle successful response here
                 console.log('Post request successful:', response);
-
                 // Refresh CreateRecord component
                 this.refresh();
 
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
-
+                
             })
             .catch(error => {
                 // Handle error here
                 console.error('Error occurred during post request:', error);
             });
-
-
         },
 
         async submitForm() {
@@ -222,9 +216,7 @@ export default {
             .then(response=> {
                 console.log("form is submitted!");
                 window.location.reload(); //once they submit it just reloads the entire page.
-
-            });
-
+            }); 
         },
     }
 
