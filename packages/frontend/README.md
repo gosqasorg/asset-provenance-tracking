@@ -121,5 +121,5 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 ``` shell
 > npx nuxi build --preset=azure
 > npx @azure/static-web-apps-cli login --no-use-keychain
-> npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --no-use-keychain
+> npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --no-use-keychain --env production
 ```
