@@ -12,12 +12,10 @@
         <div id="device-form">
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
-            <div style="display: block;">
-                <label>Device Image (optional):    </label>
-                <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
-            </div>
+            <label for="file">Device Image (optional)</label>
+            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
-        <button id="submit-button" type="submit">Submit</button>
+        <button id="submit-button" type="submit">Created New Device</button>
     </form>
 </template>
 
@@ -73,10 +71,10 @@ export default {
 
 <style scoped>
     form {
-        background-color: rgb(145, 193, 248);
+        background-color: #e6f6ff;
+        /* background-color: rgb(60, 179, 113); /* MediumSeaGreen */
         border-radius: 10px;
         padding: 30px;
-        width: 70%;
         display: block;
         margin-left: auto;
         margin-right: auto;
@@ -87,14 +85,17 @@ export default {
         margin: 5px;
         display: flex;
         flex-direction: column;
-        width: 70%
     }
     #submit-button {
         display: block;
         margin-left: auto;
         margin-right: auto;
-        width: 50%;
+        width: 100%;
         margin-top: 30px;
-
+        border-width: 0px;
+        border-radius: 10px;
+        padding: 7px;
+        background-color: #4e3681;
+        color: white;
     }
 </style>

@@ -8,7 +8,7 @@
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
 
             <span style="display: inline">
-            <label for="checkbox">Create Reporting Key:</label>
+            <label for="checkbox">Create Reporting Key:&nbsp&nbsp</label>
             <input type="checkbox" id="checkbox" v-model="createReportingKey" /> </span>
 
             <label for="children-keys">Number of contained devices (optional):</label>
@@ -134,10 +134,9 @@ export default {
 
 <style scoped>
     form {
-        background-color: rgb(60, 179, 113); /* MediumSeaGreen */
+        background-color: #e6f6ff;
         border-radius: 10px;
         padding: 30px;
-        width: 70%;
         display: block;
         margin-left: auto;
         margin-right: auto;
@@ -148,14 +147,17 @@ export default {
         margin: 5px;
         display: flex;
         flex-direction: column;
-        width: 70%
     }
     #submit-button {
         display: block;
         margin-left: auto;
         margin-right: auto;
-        width: 50%;
+        width: 100%;
         margin-top: 30px;
-
+        border-width: 0px;
+        border-radius: 10px;
+        padding: 7px;
+        background-color: #4e3681;
+        color: white;
     }
 </style>

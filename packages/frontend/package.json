@@ -17,6 +17,7 @@
     "vue-router": "^4.2.5"
   },
   "dependencies": {
+    "@urlpack/base58": "^2.0.0",
     "bootstrap": "^5.3.3",
     "mitt": "^3.0.1",
     "qrcode-vue3": "^1.6.8"
