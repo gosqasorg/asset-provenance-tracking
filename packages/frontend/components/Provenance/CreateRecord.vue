@@ -31,7 +31,7 @@
     </span>
         </div>
     </div>
-      <button id="submit-button" type="submit">Submit</button>
+      <button id="submit-button" type="submit">Create New Record</button>
     </form>
 </template>
 
@@ -137,8 +137,7 @@ export default {
                         children_key: '',
                         tags: ["recall"],
                     }, this.pictures || [])
-
-                } 
+                }
             }
 
 
@@ -184,7 +183,6 @@ export default {
                 .then(response => {
                     console.log("Finished recalling");
                 })
-
             }
             
         }
@@ -196,12 +194,10 @@ export default {
                 tags: this.tags,
                 children_key: [this.childrenKey],
                 hasParent: this.hasParent,
-
         }, this.pictures || [])
         .then(response => {
                 // Handle successful response here
                 console.log('Post request successful:', response);
-
                 // Refresh CreateRecord component
                 this.refresh();
 
@@ -213,8 +209,6 @@ export default {
                 // Handle error here
                 console.error('Error occurred during post request:', error);
             });
-                    
-                    
         },
 
         async submitForm() {
@@ -222,9 +216,7 @@ export default {
             .then(response=> {
                 console.log("form is submitted!");
                 window.location.reload(); //once they submit it just reloads the entire page.
-
             }); 
-
         },
     }
 
