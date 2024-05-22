@@ -24,19 +24,15 @@
             </p><br>
             <!-- <container><button style="border-radius: 10px; padding: 3px; background-color: transparent; border-color: #4e3681;"><button class = "switchChoice">Create Device</button>&nbsp&nbsp<button class = "switchChoice">Create Container</button></button></container><br><br> -->
         </div>
+        <div>Create a Single Asset:</div>
         <CreateDevice /><br>
         <div style="float: center;">Or, if you want to create a group of keys:</div>
         <div></div>
         <CreateContainer />
     </div>
-    <div>Create a Single Asset:</div>
-     <CreateDevice/>
-    <div>Or, if you want to create a group of keys:</div>
-    <div></div>
-    <CreateContainer/>
 </template>
 <style>
-    
+
     body {
         font-family: 'Poppins', sans-serif;
     }
