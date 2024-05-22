@@ -1,17 +1,30 @@
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
+const deviceDescription = route.params.description;
 </script>
 
 <template>
-  <div>
-    <h1><div>Device Key: {{ route.params.deviceKey }}</div></h1>
-    <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
-    <div v-if="!isLoading">
-      <div>Name: {{deviceRecord.deviceName}}</div>
+    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <div class="navigationBar">
+        <a href="http://localhost:3000/"><img class="logohomepage" src="https://www.pubinv.org/wp-content/uploads/image.png"></a>
+        <element>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="about"><button
+                    class="navigation">About</button></a>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href = "https://gosqas.org/devices"><button
+                    class="navigation">Sample Devices</button></a>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href = "contact"><button
+                    class="navigation" style="margin-right: 100px;">Contact</button></a></element>
     </div>
-    <div><a :href="`/provenance/${route.params.deviceKey}`">View History Records</a></div>
+    <div class = "mainStuff"><br>
+  <div>
+    <h1 style = "font-weight: 1000; color:#4e3681;"><div v-if="!isLoading">{{deviceRecord.deviceName }}</div></h1>
+    <div style = "font-weight: 900;">Device Key: {{ route.params.deviceKey }}</div>
+    <div v-if="!isLoading" style = "line-height:30px;">{{ deviceRecord.description }}</div>
+    <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
+    Child Keys:
+    <div>
+    <KeyList v-bind:keys="childKeys"/>
+    </div>
     <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
+    <a :href="`/provenance/${route.params.deviceKey}`"><button class = "viewRecordsButton">View Provenance Records</button></a>
     <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">
     <div v-if="hasReportingKey">
@@ -22,11 +35,8 @@ const deviceKey = route.params.deviceKey;
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
-    Child Keys:
-<div>
-    <KeyList v-bind:keys="childKeys"/>
-    </div>
   </div>
+</div>
 </template>
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
@@ -80,3 +90,33 @@ export default {
 
 
 </script>
+<style>
+body {
+        font-family: 'Poppins', sans-serif;
+    }
+    .navigationBar {
+        display: flex;
+        align-items: center;
+        padding-top: 7px;
+        background-color: #e6f6ff;
+    }
+    .logohomepage {
+        width: 60px;
+        margin: 20px 20px 20px 50px;
+    }
+    element {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+    }
+    button.navigation {
+        background-color: transparent;
+        border-width: 0;
+        text-align: center;
+        margin: 0 10px;
+    }
+    .mainStuff {
+        margin: 50px;
+        margin-top: 30px;
+    }
+    </style>

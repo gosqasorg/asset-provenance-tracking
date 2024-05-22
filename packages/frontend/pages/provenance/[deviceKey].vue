@@ -8,6 +8,14 @@ const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
+  <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <div class="navigationBar">
+      <a href="http://localhost:3000/"><img class="logohomepage" src="https://www.pubinv.org/wp-content/uploads/image.png"></a>
+        <element>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href="about"><button
+                    class="navigation">About</button></a>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href = "https://gosqas.org/devices"><button
+                    class="navigation">Sample Devices</button></a>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a href = "contact"><button
+                    class="navigation" style="margin-right: 100px;">Contact</button></a></element>
+    </div>
   <div v-if="!isLoading">
     <template v-if="deviceKeyFound">
       <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
