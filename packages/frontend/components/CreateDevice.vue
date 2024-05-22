@@ -15,7 +15,7 @@
             <label for="file">Device Image (optional)</label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
-        <button id="submit-button" type="submit">Created New Device</button>
+        <button id="submit-button" type="submit">Create New Device</button>
     </form>
 </template>
 

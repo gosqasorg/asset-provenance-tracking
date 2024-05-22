@@ -46,6 +46,12 @@ const deviceKey = route.params.deviceKey;
     <div>
       <KeyList v-bind:keys="childKeys"/>
     </div>
+
+    <!-- TODO: Uncomment when  functionality is ready: -->
+    <!-- <div>
+        <ProvenanceNotificationSignUpModal/>
+    </div>   --> 
+
     </template>
     <template v-else>
       <p>Device key not found.</p>
@@ -81,9 +87,7 @@ export default {
                 provenance = response;
                 this.deviceKeyFound = true;
             });
-            console.log(provenance);
             deviceRecord = provenance[provenance.length - 1].record;
-            console.log(deviceRecord);
             this.isLoading = false;
 
             // This functionality could be pushed into a component...
@@ -98,7 +102,7 @@ export default {
             }
 
 
-            let childKeysList = [];
+            let childKeysList:any = [];
 
             for (let i=0; i < provenance.length; i++) {
                childKeysList += provenance[i].record.children_key + ",";

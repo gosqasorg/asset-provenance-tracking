@@ -29,6 +29,11 @@
         <div></div>
         <CreateContainer />
     </div>
+    <div>Create a Single Asset:</div>
+     <CreateDevice/>
+    <div>Or, if you want to create a group of keys:</div>
+    <div></div>
+    <CreateContainer/>
 </template>
 <style>
     
