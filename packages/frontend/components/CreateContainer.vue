@@ -1,35 +1,38 @@
 <template>
-    <form enctype="multipart/form-data" @submit.prevent="submitForm">
-        <h3>Create New Container</h3>
-        <div id="container-form">
+    <form enctype="multipart/form-data" class="bg-sky p-3" @submit.prevent="submitForm">
+        <p class="text-iris mt-1">Create New Container</p>
+        <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
-            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Container Description">
-            <label class="form-label mt-2" for="file">Container Image (optional)</label>
+            <input type="text" class="form-control mt-2" v-model="description" id="device-description" placeholder="Container Description">
+            <label class="text-iris form-label mt-3" for="file">Container Image (optional):</label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
 
             <span style="display: inline">
-            <label for="report-key">Create Reporting Key:</label>
+            <label class="text-iris mt-3 me-2" for="report-key">Create Reporting Key:</label>
             <input type="checkbox" id="report-key" v-model="createReportingKey" /> </span>
 
-            <label for="children-keys">Number of contained devices (optional):</label>
+            <br>
+            <label class="text-iris my-3 me-2" for="children-keys">Number of contained devices (optional):</label>
             <input type="number" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
 
-            <!-- <br> -->
-            <span style="display: inline">
+            <br>
+            <span class="text-iris mt-4">
             Customize Contained Device Names?
-            <input type="radio" id="customize-yes" name="customize"  @change="displayFields"/>Yes
-            <input type="radio" id="customize-no" name="customize"   @change="displayFields" checked/>No
+            <div class="text-black p-1" style="display:inline"> 
+                <input type="radio" id="customize-yes" name="customize"  @change="displayFields"/>Yes
+                <input class="ms-1" type="radio" id="customize-no" name="customize"   @change="displayFields" checked/>No
+            </div>
             </span>
 
-            <br><br>
 
-            <div id="num-fields" >
+            <div id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
 
         </div>
-        <button id="submit-button" type="submit">Create Container Group</button>
-    </form>
+        <div class="d-grid">        
+            <button class="btn my-3 bg-iris text-white" type="submit">Create Container</button>
+        </div>    </form>
 </template>
 
 <script lang="ts">
@@ -202,7 +205,7 @@ export default {
         background-color: rgb(60, 179, 113); /* MediumSeaGreen */
         border-radius: 10px;
         padding: 30px;
-        width: 70%;
+        width: 100%;
         display: block;
         margin-left: auto;
         margin-right: auto;
@@ -219,7 +222,7 @@ export default {
         display: block;
         margin-left: auto;
         margin-right: auto;
-        width: 50%;
+        width: 100%;
         margin-top: 30px;
 
     }

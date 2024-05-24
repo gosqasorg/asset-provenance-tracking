@@ -1,1 +1,28 @@
+// custom color variables
+
+// @import "bootstrap/scss/_utilities";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap');
+@import "bootstrap/scss/_functions";
+@import "bootstrap/scss/_variables";
+
+$custom-theme-colors: (
+    "iris" : #4e3681,
+    "sky" :#ccecfd,
+    "eggplant" : #322253,
+    "frost" : #e6f6ff,
+    "slate" :#1e2019,
+    "white" : #ffffff
+);
+
+$font-family-base: 'Poppins', sans-serif;
+$font-weight-base: 500;
+
+
+$theme-colors: map-merge($custom-theme-colors, $theme-colors);
+
+
+
+
+// import bootstrap
 @import "bootstrap/scss/bootstrap";
+

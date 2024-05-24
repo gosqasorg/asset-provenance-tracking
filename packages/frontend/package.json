@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
+    "bootstrap4-toggle": "^3.6.1",
+    "bootstrap5-toggle": "^5.1.1",
     "mitt": "^3.0.1",
     "qrcode-vue3": "^1.6.8"
   }
