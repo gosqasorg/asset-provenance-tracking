@@ -7,17 +7,19 @@
 -->
 
 <template>
-    <form enctype="multipart/form-data" @submit.prevent="submitForm">
-        <h3>Create New Device</h3>
-        <div id="device-form">
+    <form enctype="multipart/form-data" class="bg-sky p-3" @submit.prevent="submitForm">
+        <p class="text-iris mt-1">Create New Device</p>
+        <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
-            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
+            <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
-                <label>Device Image (optional):    </label>
-                <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <label class="mt-3 text-iris">Device Image (optional):    </label>
+                <input type="file" class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
             </div>
         </div>
-        <button id="submit-button" type="submit">Create Device</button>
+        <div class="d-grid">        
+            <button class="btn my-3 bg-iris text-white" type="submit">Create Device</button>
+        </div>
     </form>
 </template>
 
@@ -76,7 +78,7 @@ export default {
         background-color: rgb(145, 193, 248);
         border-radius: 10px;
         padding: 30px;
-        width: 70%;
+        width: 100%;
         display: block;
         margin-left: auto;
         margin-right: auto;
@@ -93,7 +95,7 @@ export default {
         display: block;
         margin-left: auto;
         margin-right: auto;
-        width: 50%;
+        width: 100%;
         margin-top: 30px;
 
     }
