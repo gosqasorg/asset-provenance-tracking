@@ -148,29 +148,42 @@ export default {
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
+            let childrenList = await this.getChildrenKeys(this.deviceKey);
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
 
                 if (this.hasParent) {
                     console.log("This device already has a container.");
+                    this.description = "Error: Container could not be added.";
+
                 } else {
-
-                    postProvenance(this.containerKey, {
-                        blobType: 'deviceRecord',
-                        description: this.description,
-                        tags: this.tags,
-                        children_key: [this.deviceKey],
-                        hasParent: true,
-                    }, this.pictures || [])
-
-                    this.hasParent = true;
+                    // need to check if this parent is NOT a child of the device already
+                    if (childrenList.indexOf(this.containerKey, 0) > -1) { //check if container key is among children
+                        // container is INDEED a child of this device
+                        // therefore, this relationship shouldn't be created
+                        console.log("This container is a child of this device.");
+                        this.description = "Error: Container could not be added.";
+                    } else{
+                        postProvenance(this.containerKey, {
+                            blobType: 'deviceRecord',
+                            description: this.description,
+                            tags: this.tags,
+                            children_key: [this.deviceKey],
+                            hasParent: true,
+                        }, this.pictures || [])
+    
+                        this.hasParent = true;
+                    }
                 }
             }
 
+            if (this.childrenKey.length > 1) {
+                console.log("children keys have been entered");
+            } else {console.log("empty children");}
+
         const index = this.tags.indexOf("recall", 0);
         
-        let childrenList = await this.getChildrenKeys(this.deviceKey);
 
         // "recall" is being added....
         if (index > -1) {
@@ -215,7 +228,7 @@ export default {
             this.submitRecord()
             .then(response=> {
                 console.log("form is submitted!");
-                window.location.reload(); //once they submit it just reloads the entire page.
+                // window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },
     }
