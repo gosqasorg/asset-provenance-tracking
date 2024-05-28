@@ -118,6 +118,8 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 
 ## Deployment
 
+Azure Static Web Apps CLI docs: https://azure.github.io/static-web-apps-cli/
+
 ``` shell
 > npx nuxi build --preset=azure
 > npx @azure/static-web-apps-cli login --no-use-keychain
