@@ -1,0 +1,28 @@
+name: On Push Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/frontend/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+  - name: Use Node.js 20
+    uses: actions/setup-node@v4.0.2
+    with:
+      node-version: 20
+  - name: build frontend
+    working-directory: ./packages/frontend
+    run: |
+      npm ci
+      npx nuxi build --preset=azure
+  - name: Upload build artifact
+    uses: actions/upload-artifact@v4.3.1
+    with:
+      name: packages
+      path: .output/**
