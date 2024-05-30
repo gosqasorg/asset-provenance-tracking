@@ -178,9 +178,17 @@ export default {
                 }
             }
 
-            if (this.childrenKey.length > 1) {
-                console.log("children keys have been entered");
-            } else {console.log("empty children");}
+            if (this.childrenKey.length > 1) { // if children keys have been entered
+                let string_children = this.childrenKey.toString()
+                let list_children = string_children.split(",");
+                for (let i of list_children) {
+                    // for each key, check its descendants and see if current device is a child of them
+                    let descendants = this.getChildrenKeys(i);
+                    if ((await descendants).includes(this.deviceKey)) {
+                        this.description = "Error: Child device could not be added."
+                    }
+                }
+            } 
 
         const index = this.tags.indexOf("recall", 0);
         
