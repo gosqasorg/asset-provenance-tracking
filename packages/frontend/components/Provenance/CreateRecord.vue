@@ -183,8 +183,8 @@ export default {
                 let list_children = string_children.split(",");
                 for (let i of list_children) {
                     // for each key, check its descendants and see if current device is a child of them
-                    let descendants = this.getChildrenKeys(i);
-                    if ((await descendants).includes(this.deviceKey)) {
+                    let descendants = await this.getChildrenKeys(i);
+                    if (descendants.includes(this.deviceKey)) {
                         this.description = "Error: Child device could not be added."
                     }
                 }
@@ -236,7 +236,7 @@ export default {
             this.submitRecord()
             .then(response=> {
                 console.log("form is submitted!");
-                // window.location.reload(); //once they submit it just reloads the entire page.
+                window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },
     }
