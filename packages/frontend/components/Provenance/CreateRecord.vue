@@ -115,7 +115,7 @@ export default {
         },
 
 
-        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string) {
+        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
             // recalling the object is in fact supposed to be
             // recursive. This should probably be done in a separate
             // function; I am not sure where this code should live!
@@ -129,13 +129,13 @@ export default {
                     // console.log("successfully did a recrusive call on ", key);
                     let childrenList = await this.getChildrenKeys(key);
                     // console.log("these are the children", childrenList);
-                    await this.recursivelyRecallChildren(childrenList, recallReason);
+                    await this.recursivelyRecallChildren(childrenList, recallReason, tags);
 
                     postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: recallReason,
                         children_key: '',
-                        tags: ["recall"],
+                        tags: tags,
                     }, this.pictures || [])
                 }
             }
@@ -155,7 +155,7 @@ export default {
 
                 if (this.hasParent) {
                     console.log("This device already has a container.");
-                    this.description = "Error: Container could not be added.";
+                    this.description = this.description + "\nError: Container could not be added.";
 
                 } else {
                     // need to check if this parent is NOT a child of the device already
@@ -163,7 +163,7 @@ export default {
                         // container is INDEED a child of this device
                         // therefore, this relationship shouldn't be created
                         console.log("This container is a child of this device.");
-                        this.description = "Error: Container could not be added.";
+                        this.description = this.description + `\nError: Container could not be added.`;
                     } else{
                         postProvenance(this.containerKey, {
                             blobType: 'deviceRecord',
@@ -185,24 +185,30 @@ export default {
                     // for each key, check its descendants and see if current device is a child of them
                     let descendants = await this.getChildrenKeys(i);
                     if (descendants.includes(this.deviceKey)) {
-                        this.description = "Error: Child device could not be added."
+                        this.description = this.description + `\nError: Child device could not be added.`
                     }
                 }
             } 
 
-        const index = this.tags.indexOf("recall", 0);
+        const recall = this.tags.indexOf("recall", 0);
+        const notify = this.tags.indexOf("notify_all", 0);
         
 
         // "recall" is being added....
-        if (index > -1) {
+        if (recall > -1 || notify > -1) {
+            let reason = ""
+            let tags = this.tags
+            if (recall > -1) { 
+                reason = "Recalled by Admin Key";
+            } else { reason = this.description; }
 
             if (this.isReportingKey) {
                 // reporting keys do not have the ability to recall
-                console.log("Recall failed. This is a reporting key.");
+                console.log("Action failed. This is a reporting key.");
             } else {
-                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key")
+                await this.recursivelyRecallChildren(childrenList, reason, tags)
                 .then(response => {
-                    console.log("Finished recalling");
+                    console.log("Finished recalling/notifying");
                 })
             }
             
