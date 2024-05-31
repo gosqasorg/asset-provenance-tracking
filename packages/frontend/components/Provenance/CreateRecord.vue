@@ -185,8 +185,11 @@ export default {
                     // for each key, check its descendants and see if current device is a child of them
                     let descendants = await this.getChildrenKeys(i);
                     if (descendants.includes(this.deviceKey)) {
-                        this.description = this.description + `\nError: Child device could not be added.`
+                        this.description = this.description + `\nError: Child device could not be added.`;
+                        let index = list_children.lastIndexOf(i);
+                        list_children.splice(index, 1);
                     }
+                this.childrenKey = list_children;
                 }
             } 
 
@@ -206,6 +209,7 @@ export default {
                 // reporting keys do not have the ability to recall
                 console.log("Action failed. This is a reporting key.");
             } else {
+                // console.log("begin to recall");
                 await this.recursivelyRecallChildren(childrenList, reason, tags)
                 .then(response => {
                     console.log("Finished recalling/notifying");
