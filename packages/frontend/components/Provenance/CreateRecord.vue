@@ -259,7 +259,7 @@ export default {
             this.submitRecord()
             .then(response=> {
                 console.log("form is submitted!");
-                // window.location.reload(); //once they submit it just reloads the entire page.
+                window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },
     }
