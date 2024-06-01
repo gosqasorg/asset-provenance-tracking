@@ -114,6 +114,17 @@ export default {
             return newChildKeysList;
         },
 
+        async getAllDescendants(key: string) {
+
+            let children_list = await this.getChildrenKeys(key);
+
+            for (let child_key of children_list) {
+                children_list = children_list.concat(await this.getAllDescendants(child_key));
+            }
+
+            return children_list;
+        },
+
 
         async recursivelyRecallChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
             // recalling the object is in fact supposed to be
@@ -127,9 +138,9 @@ export default {
 
                 if (key != "" && key != "undefined") {
                     // console.log("successfully did a recrusive call on ", key);
-                    let childrenList = await this.getChildrenKeys(key);
+                    // let childrenList = await this.getChildrenKeys(key);
                     // console.log("these are the children", childrenList);
-                    await this.recursivelyRecallChildren(childrenList, recallReason, tags);
+                    // await this.recursivelyRecallChildren(childrenList, recallReason, tags);
 
                     postProvenance(key, {
                         blobType: 'deviceRecord',
@@ -148,7 +159,8 @@ export default {
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
-            let childrenList = await this.getChildrenKeys(this.deviceKey);
+            // let childrenList = await this.getChildrenKeys(this.deviceKey);
+            let descendantsList = await this.getAllDescendants(this.deviceKey);
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
@@ -159,7 +171,7 @@ export default {
 
                 } else {
                     // need to check if this parent is NOT a child of the device already
-                    if (childrenList.indexOf(this.containerKey, 0) > -1) { //check if container key is among children
+                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among children
                         // container is INDEED a child of this device
                         // therefore, this relationship shouldn't be created
                         console.log("This container is a child of this device.");
@@ -179,17 +191,18 @@ export default {
             }
 
             if (this.childrenKey.length > 1) { // if children keys have been entered
-                let string_children = this.childrenKey.toString()
-                let list_children = string_children.split(",");
-                for (let i of list_children) {
+                let string_children = this.childrenKey.toString();
+                let entered_children = string_children.split(",");
+                for (let i of entered_children) {
                     // for each key, check its descendants and see if current device is a child of them
-                    let descendants = await this.getChildrenKeys(i);
+                    let descendants = await this.getAllDescendants(i);
                     if (descendants.includes(this.deviceKey)) {
+                        console.log("this device key is among descendants");
                         this.description = this.description + `\nError: Child device could not be added.`;
-                        let index = list_children.lastIndexOf(i);
-                        list_children.splice(index, 1);
+                        let index = entered_children.lastIndexOf(i);
+                        entered_children.splice(index, 1);
                     }
-                this.childrenKey = list_children;
+                this.childrenKey = entered_children;
                 }
             } 
 
@@ -210,7 +223,7 @@ export default {
                 console.log("Action failed. This is a reporting key.");
             } else {
                 // console.log("begin to recall");
-                await this.recursivelyRecallChildren(childrenList, reason, tags)
+                await this.recursivelyRecallChildren(descendantsList, reason, tags)
                 .then(response => {
                     console.log("Finished recalling/notifying");
                 })
@@ -246,7 +259,7 @@ export default {
             this.submitRecord()
             .then(response=> {
                 console.log("form is submitted!");
-                window.location.reload(); //once they submit it just reloads the entire page.
+                // window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },
     }
