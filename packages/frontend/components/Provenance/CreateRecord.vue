@@ -127,21 +127,11 @@ export default {
 
 
         async recursivelyRecallChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
-            // recalling the object is in fact supposed to be
-            // recursive. This should probably be done in a separate
-            // function; I am not sure where this code should live!
-            // here we handle the "recall" functionality.
-            // first add the recall tag here...
 
             for (const key of childrenkeys) {
                 // console.log("GOT KEY", key);
 
                 if (key != "" && key != "undefined") {
-                    // console.log("successfully did a recrusive call on ", key);
-                    // let childrenList = await this.getChildrenKeys(key);
-                    // console.log("these are the children", childrenList);
-                    // await this.recursivelyRecallChildren(childrenList, recallReason, tags);
-
                     postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: recallReason,
@@ -159,7 +149,6 @@ export default {
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
-            // let childrenList = await this.getChildrenKeys(this.deviceKey);
             let descendantsList = await this.getAllDescendants(this.deviceKey);
 
             //here we post provenance if a container (parent) key was entered
@@ -179,8 +168,8 @@ export default {
                     } else{
                         postProvenance(this.containerKey, {
                             blobType: 'deviceRecord',
-                            description: this.description,
-                            tags: this.tags,
+                            description: this.description, // keep the same description?
+                            tags: [],
                             children_key: [this.deviceKey],
                             hasParent: true,
                         }, this.pictures || [])
@@ -195,14 +184,35 @@ export default {
                 let entered_children = string_children.split(",");
                 for (let i of entered_children) {
                     // for each key, check its descendants and see if current device is a child of them
-                    let descendants = await this.getAllDescendants(i);
-                    if (descendants.includes(this.deviceKey)) {
-                        console.log("this device key is among descendants");
+                    // make sure that the entered child does not have a parent yet
+                    const child_prov = await getProvenance(i);
+                    const child_record = child_prov[0].record;
+                    let index = entered_children.lastIndexOf(i);
+
+                    if (child_record.hasParent) {
+                        console.log("Child key ", i, " already has a parent");
                         this.description = this.description + `\nError: Child device could not be added.`;
-                        let index = entered_children.lastIndexOf(i);
                         entered_children.splice(index, 1);
+                    } else {
+                        let descendants = await this.getAllDescendants(i);
+                        console.log("These are the descendants of key ", i, " : ", descendants);
+                        if (descendants.includes(this.deviceKey)) {
+                            console.log("This device key is among descendants");
+                            this.description = this.description + `\nError: Child device could not be added.`;
+                            entered_children.splice(index, 1);
+                        } else {
+                            // make sure the child has parent = true
+                            postProvenance(i, {
+                            blobType: 'deviceRecord',
+                            description: this.description, // need to discuss whether we want to have a unique description
+                            tags: [],
+                            children_key: [],
+                            hasParent: true,
+                            }, this.pictures || [])
+
+                        }
                     }
-                this.childrenKey = entered_children;
+                    this.childrenKey = entered_children;
                 }
             } 
 
@@ -259,7 +269,7 @@ export default {
             this.submitRecord()
             .then(response=> {
                 console.log("form is submitted!");
-                window.location.reload(); //once they submit it just reloads the entire page.
+                // window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },
     }
