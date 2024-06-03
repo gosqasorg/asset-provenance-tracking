@@ -185,6 +185,7 @@ export default {
                 for (let i of entered_children) {
                     // for each key, check its descendants and see if current device is a child of them
                     // make sure that the entered child does not have a parent yet
+                    // TODO: make sure the child exists
                     const child_prov = await getProvenance(i);
                     const child_record = child_prov[0].record;
                     let index = entered_children.lastIndexOf(i);
@@ -269,7 +270,7 @@ export default {
             this.submitRecord()
             .then(response=> {
                 console.log("form is submitted!");
-                // window.location.reload(); //once they submit it just reloads the entire page.
+                window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },
     }
