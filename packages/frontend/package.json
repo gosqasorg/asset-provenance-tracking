@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
+    "@azure/static-web-apps-cli": "^1.1.8",
     "@nuxt/devtools": "latest",
     "sass": "^1.77.2",
     "sass-loader": "^14.2.1"
