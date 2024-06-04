@@ -5,7 +5,8 @@
     "outDir": "dist",
     "rootDir": ".",
     "sourceMap": true,
-    "strict": false
+    "strict": false,
+    "types": ["mocha"] // Added this line
   },
   "exclude": [
     "test/**"
