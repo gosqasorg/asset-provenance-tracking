@@ -8,6 +8,7 @@ const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
+  
   <div v-if="!isLoading">
     <template v-if="deviceKeyFound">
       <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
