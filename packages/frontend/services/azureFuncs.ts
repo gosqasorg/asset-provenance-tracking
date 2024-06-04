@@ -29,12 +29,12 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
       }
 }
 
-export async function postProvenance(deviceKey: string, record: any, attachments: readonly Blob[]) {
+export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
     for (const blob of attachments) {
-        formData.append("attachment", blob);
+        formData.append(blob.name, blob);
     }
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",

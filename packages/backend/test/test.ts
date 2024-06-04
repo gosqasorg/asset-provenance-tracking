@@ -26,11 +26,11 @@ async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: s
     return await response.blob();
 }
 
-async function putProvRecord(baseUrl: string, deviceKey: string, record: any, attachments: readonly Blob[]) {
+async function putProvRecord(baseUrl: string, deviceKey: string, record: any, attachments: readonly File[]) {
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
     for (const blob of attachments) {
-        formData.append("attachment", blob);
+        formData.append(blob.name, blob as Blob);
     }
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",
@@ -94,7 +94,7 @@ program
 
 program.parse(process.argv);
 
-async function getTestImages(): Promise<readonly Blob[]> {
+async function getTestImages(): Promise<readonly File[]> {
     const images = new Array<File>();
     for (const fileName of await readdir(__dirname)) {
         const ext = extname(fileName);
@@ -104,5 +104,5 @@ async function getTestImages(): Promise<readonly Blob[]> {
         const file = new File([buffer], fileName, { type });
         images.push(file)
     }
-    return images as readonly Blob[];
+    return images;
 }
