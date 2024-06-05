@@ -159,11 +159,11 @@ export default {
                     this.description = this.description + "\nError: Container could not be added.";
 
                 } else {
-                    // need to check if this parent is NOT a child of the device already
-                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among children
-                        // container is INDEED a child of this device
+                    // need to check if this parent is NOT a descendant of the device already
+                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among descendants
+                        // container is INDEED a descendant of this device
                         // therefore, this relationship shouldn't be created
-                        console.log("This container is a child of this device.");
+                        console.log("This container is a descendant of this device.");
                         this.description = this.description + `\nError: Container could not be added.`;
                     } else{
                         postProvenance(this.containerKey, {
@@ -179,7 +179,7 @@ export default {
                 }
             }
 
-            if (this.childrenKey.length > 1) { // if children keys have been entered
+            if (this.childrenKey.length > 1) { // if user want to add children keys 
                 let string_children = this.childrenKey.toString();
                 let entered_children = string_children.split(",");
                 for (let i of entered_children) {
