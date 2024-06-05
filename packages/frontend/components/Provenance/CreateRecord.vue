@@ -218,11 +218,11 @@ export default {
             } 
 
         const recall = this.tags.indexOf("recall", 0);
-        const notify = this.tags.indexOf("notify_all", 0);
+        const inform = this.tags.indexOf("inform_all", 0);
         
 
         // "recall" is being added....
-        if (recall > -1 || notify > -1) {
+        if (recall > -1 || inform > -1) {
             let reason = ""
             let tags = this.tags
             if (recall > -1) { 
@@ -236,7 +236,7 @@ export default {
                 // console.log("begin to recall");
                 await this.recursivelyRecallChildren(descendantsList, reason, tags)
                 .then(response => {
-                    console.log("Finished recalling/notifying");
+                    console.log("Finished recalling/informing");
                 })
             }
             
