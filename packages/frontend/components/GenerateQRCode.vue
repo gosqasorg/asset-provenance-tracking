@@ -6,8 +6,12 @@
 
 <template>
     <div>
-  
-     <QRCodeVue3
+    <!-- Custom download button -->
+    <button id="new-button" class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+
+    
+
+    <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
             :height="200"
@@ -18,7 +22,7 @@
             }"
             
             :download="true"
-            downloadButton="my-button"
+            downloadButton="new-button"
             :downloadOptions="{ name: 'vqr', extension: 'png' }"
             :image-options="{ hideBackgroundDots: true, imageSize: 0.4, margin: 10, crossOrigin: 'Anonymous' }"
             :corners-square-options="{ type: 'extra-rounded', color: '#4e3681' }"
@@ -31,7 +35,7 @@
                 color: '#000000',
 
             }"
-
+            @rendered="setQrCodeDataUrl"
           />
     </div>
 </template>
@@ -50,14 +54,45 @@
             required: true,
             },
         },
-    }
+        data() {
+            return {
+                qrCodeDataUrl: '' // To store the base64 data URL of the QR code
+            };
+        },
+        methods:{
+            setQrCodeDataUrl(dataUrl) {
+                this.qrCodeDataUrl = dataUrl;
+            },
+            downloadQRCode() {
+                const link = document.createElement('a');
+                link.href = this.qrCodeDataUrl;
+                link.download = 'vqr.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    }    
+
+export function setQrCodeDataUrl(dataUrl) {
+    this.qrCodeDataUrl = dataUrl;
+}
+
+export function downloadQRCode() {
+    const link = document.createElement('a');
+    link.href = this.qrCodeDataUrl;
+    link.download = 'vqr.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 </script>
 
 
 <style>
-    #downloadbutton{
+    #new-button {
         content: "Download QR Code";
-        color: #fff;
+        color: #000;
     }
 
 </style>

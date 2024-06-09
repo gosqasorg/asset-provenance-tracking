@@ -19,7 +19,7 @@
         </div>
         <div style="display: block;">
             <label>Add Image (optional):    </label>
-            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />        
         </div>
         <label>Container Key (optional): </label>
         <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />
@@ -61,7 +61,7 @@ export default {
             required: true,
         },
         deviceRecord: {
-//            type: Any, // This needs to tighten up!
+//          type: Any, // This needs to tighten up!
             default: null,
             required: true,
         },
