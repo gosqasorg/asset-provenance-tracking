@@ -38,10 +38,10 @@ const deviceKey = route.params.deviceKey;
         
             <div>Device Key: {{ route.params.deviceKey }}</div>
             <div class="my-2" v-if="!isLoading">{{deviceRecord.description}}</div>
-        
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+
             </div>
 
         </div>
