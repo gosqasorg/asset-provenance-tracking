@@ -49,9 +49,10 @@ async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
     return toHex(hash);
 }
 
-async function encrypt(key: Uint8Array, data: BufferSource): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
+async function encrypt(key: Uint8Array, data: string | BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ['encrypt']);
-    const salt = crypto.getRandomValues(new Uint8Array(16));
+    data = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+    salt ??= crypto.getRandomValues(new Uint8Array(16));
     const encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv: salt }, $key, data);
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
@@ -62,10 +63,20 @@ async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Ar
     return new Uint8Array(result);
 }
 
-async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number): Promise<string> {
+async function upload(
+    client: ContainerClient,
+    deviceKey: Uint8Array,
+    type: 'attach' | 'prov',
+    name: string | undefined,
+    data: BufferSource,
+    contentType: string,
+    timestamp: number
+): Promise<string> {
     const dataHash = toHex(await sha256(data));
     const deviceID = await calculateDeviceID(deviceKey);
     const { salt, encryptedData } = await encrypt(deviceKey, data);
+    const { encryptedData: encryptedName } = name ? await encrypt(deviceKey, name, salt) : { encryptedData: undefined };
+
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
 
@@ -75,6 +86,7 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
             gdthash: dataHash,
             gdtsalt: toHex(salt),
             gdttimestamp: `${timestamp}`,
+            gdtname: encryptedName ? toHex(encryptedName) : "",
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
@@ -133,7 +145,7 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
-  return { jsonBody: records };
+    return { jsonBody: records };
 }
 
 async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -174,27 +186,29 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
     const timestamp = new Date().getTime();
 
     const attachments = new Array<string>();
-    {
-        for (const attach of formData.getAll("attachment")) {
-            if (typeof attach === 'string') continue;
-            const data = await attach.arrayBuffer()
-            const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.type, timestamp);
-            attachments.push(attachmentID);
-        }
+    for (const [name, entry] of formData.entries()) {
+        if (typeof entry === 'string') { continue; }
+        if (name === 'provenanceRecord') { continue; }
+        const data = await entry.arrayBuffer()
+        const attachmentID = await upload(containerClient, deviceKey, "attach", entry.name, data, entry.type, timestamp);
+        attachments.push(attachmentID);
     }
 
-    {
-        const provRecord: ProvenanceRecord = { record, attachments };
-        const data = new TextEncoder().encode(JSON.stringify(provRecord));
-        const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp);
-      return {
-        jsonBody: { record: recordID, attachments } };
-    }
+    const provRecord: ProvenanceRecord = { record, attachments };
+    const data = new TextEncoder().encode(JSON.stringify(provRecord));
+    const recordID = await upload(containerClient, deviceKey, "prov", undefined, data, "application/json", timestamp);
+    return {
+        jsonBody: {
+            record: recordID,
+            attachments
+        }
+    };
 }
+
 // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
 // where the id is that last part (before the last slash)
-function findDeviceIdFromName(blobName : string) : string {
-    return blobName.split("/",4)[1];
+function findDeviceIdFromName(blobName: string): string {
+    return blobName.split("/", 4)[1];
 }
 
 async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -226,7 +240,7 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
         // but until it gets unwieldy we can return everything.
         // I think the proper way to test this is to build a test program that
         // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ timestamp: metadata.gdttimestamp, deviceID: id});
+        records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
     }
 
     const contentType = "application/json";
