@@ -111,7 +111,11 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
         }
     }
     const contentType = props.metadata?.["gdtcontenttype"];
-    return { data, contentType, timestamp };
+    const encryptedName = props.metadata?.["gdtname"] ?? "";
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, fromHex(salt), fromHex(encryptedName)) : undefined;
+    const name = encodedName ? new TextDecoder().decode(encodedName) : undefined;
+
+    return { data, contentType, name, timestamp };
 
     function areEqual(first: Uint8Array, second: Uint8Array) {
         return first.length === second.length
@@ -161,12 +165,14 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     const exists = await blobClient.exists();
     if (!exists) { return { status: 404 }; }
 
-    const { data, contentType } = await decryptBlob(blobClient, deviceKey);
+    const { data, contentType, name } = await decryptBlob(blobClient, deviceKey);
+    const headers = new Headers();
+    if (contentType) { headers.append("Content-Type", contentType); }
+    if (name) { headers.append("Content-Disposition", `attachment; filename="${name}"`)}
+
     return {
         body: data,
-        headers: contentType
-            ? { "Content-Type": contentType }
-            : undefined
+        headers
     };
 };
 
