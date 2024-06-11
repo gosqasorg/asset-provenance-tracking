@@ -138,5 +138,6 @@ export default {
 }
 body {
     margin: 50px;
+    white-space: pre-line;
 }
 </style>
