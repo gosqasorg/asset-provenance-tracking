@@ -7,7 +7,7 @@
 <template>
     <div>
   
-     <QRCodeVue3
+    <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
             :height="200"
@@ -17,8 +17,8 @@
                 errorCorrectionLevel: 'H'
             }"
             
-            :download="true"
-            downloadButton="my-button"
+            :download="false"
+            downloadButton="new-button"
             :downloadOptions="{ name: 'vqr', extension: 'png' }"
             :image-options="{ hideBackgroundDots: true, imageSize: 0.4, margin: 10, crossOrigin: 'Anonymous' }"
             :corners-square-options="{ type: 'extra-rounded', color: '#4e3681' }"
@@ -31,13 +31,14 @@
                 color: '#000000',
 
             }"
-
+            @rendered="setQrCodeDataUrl"
           />
     </div>
 </template>
   
 <script>
     import QRCodeVue3 from "qrcode-vue3";
+    import { EventBus } from '~/utils/event-bus.ts'
   
     export default {
         components: {
@@ -50,12 +51,23 @@
             required: true,
             },
         },
-    }
+        data() {
+            return {
+                qrCodeDataUrl: ''
+            };
+        },
+        methods: {
+            setQrCodeDataUrl(dataUrl) {
+                this.qrCodeDataUrl = dataUrl;
+                EventBus.$emit('qrCodeGenerated', dataUrl);
+            },
+        },
+    };    
 </script>
 
 
 <style>
-    #downloadbutton{
+    #new-button{
         content: "Download QR Code";
         color: #fff;
     }
