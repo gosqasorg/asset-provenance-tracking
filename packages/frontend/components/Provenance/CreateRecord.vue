@@ -110,8 +110,6 @@ export default {
 
             newChildKeysList = newChildKeysList.filter(c => String(c).trim()); // filter out if key = ""
 
-
-
             return newChildKeysList;
         },
 
@@ -183,39 +181,59 @@ export default {
             if (this.childrenKey.length > 1) { // if user want to add children keys 
                 let string_children = this.childrenKey.toString();
                 let entered_children = string_children.split(",");
+                entered_children = [...new Set(entered_children)]; //removing any duplicates
+                let new_children_list = entered_children.slice(0); //copy this exact array
+                let childExists, child_prov;
                 for (let i of entered_children) {
-                    // for each key, check its descendants and see if current device is a child of them
-                    // make sure that the entered child does not have a parent yet
-                    // TODO: make sure the child exists
-                    const child_prov = await getProvenance(i);
-                    const child_record = child_prov[0].record;
-                    let index = entered_children.lastIndexOf(i);
+                    let index = new_children_list.lastIndexOf(i);
 
-                    if (child_record.hasParent) {
-                        console.log("Child key ", i, " already has a parent");
-                        this.description = this.description + `\nError: Child device could not be added.`;
-                        entered_children.splice(index, 1);
-                    } else {
-                        let descendants = await this.getAllDescendants(i);
-                        console.log("These are the descendants of key ", i, " : ", descendants);
-                        if (descendants.includes(this.deviceKey)) {
-                            console.log("This device key is among descendants");
-                            this.description = this.description + `\nError: Child device could not be added.`;
-                            entered_children.splice(index, 1);
+                    //First, check if entered child exists
+                    try { 
+                        await getProvenance(i).then((response) => {
+                            child_prov = response;
+                            childExists = true;
+                        });
+                        // console.log("Obtained provenance!");
+                    } catch(error) {
+                        // console.log("This child does not exist ", i)
+                        new_children_list.splice(index, 1);
+                        this.description = this.description + `\nError: Entered child key does not exist.`;
+                        childExists = false;
+                    }
+
+                    // If entered child exist, check if it has a parent or is already a descendant of this device
+                    if(childExists) {
+                        const child_record = child_prov[0].record;
+                        
+                        if (child_record.hasParent) {
+                            console.log("Child key ", i, " already has a parent");
+                            this.description = this.description + `\nError: Entered child key already has a container.`;
+                            new_children_list.splice(index, 1);
                         } else {
-                            // make sure the child has parent = true
-                            postProvenance(i, {
-                            blobType: 'deviceRecord',
-                            description: this.description, // need to discuss whether we want to have a unique description
-                            tags: [],
-                            children_key: [],
-                            hasParent: true,
-                            }, this.pictures || [])
-
+                            let descendants = await this.getAllDescendants(i);
+                            if (descendants.includes(this.deviceKey)) {
+                                console.log("This device key is among descendants.");
+                                this.description = this.description + `\nError: Child device could not be added.`;
+                                new_children_list.splice(index, 1);
+                            } else {
+                                // console.log("posting provenance for child");
+            
+                                postProvenance(i, {
+                                blobType: 'deviceRecord',
+                                description: "Added parent", // need to discuss whether we want to have a unique description
+                                tags: [],
+                                children_key: [],
+                                hasParent: true,  // make sure the child has parent = true
+                                }, this.pictures || [])
+    
+                            }
                         }
                     }
-                    this.childrenKey = entered_children;
+                    // console.log("The new list of children is : ", new_children_list);
+                        
                 }
+                // console.log("final list of children is ", new_children_list);
+                this.childrenKey = new_children_list;
             } 
 
         const recall = this.tags.indexOf("recall", 0);
