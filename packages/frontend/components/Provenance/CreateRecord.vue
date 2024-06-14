@@ -111,6 +111,7 @@ export default {
             newChildKeysList = newChildKeysList.filter(c => String(c).trim()); // filter out if key = ""
 
 
+
             return newChildKeysList;
         },
 
@@ -126,7 +127,7 @@ export default {
         },
 
 
-        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
+        async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
 
             for (const key of childrenkeys) {
                 // console.log("GOT KEY", key);
@@ -234,7 +235,7 @@ export default {
                 console.log("Action failed. This is a reporting key.");
             } else {
                 // console.log("begin to recall");
-                await this.recursivelyRecallChildren(descendantsList, reason, tags)
+                await this.messageChildren(descendantsList, reason, tags)
                 .then(response => {
                     console.log("Finished recalling/informing");
                 })
