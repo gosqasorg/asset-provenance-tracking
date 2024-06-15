@@ -1,4 +1,4 @@
-// colorTag.ts -- compute meaninful colors for tags
+ // colorTag.ts -- compute meaninful colors for tags
 // Copyright (C) 2024  Nora Moor and Robert L. Read
 
 // This program is free software: you can redistribute it and/or modify
@@ -11,9 +11,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+//testing 
+
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 
 // Array of 100 random colors codes.
 const colors = [
