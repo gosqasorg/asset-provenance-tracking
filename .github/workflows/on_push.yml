@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-    # paths:
-    #   - packages/frontend/**
+    paths:
+      - packages/frontend/**
   pull_request:
     branches:
       - main
