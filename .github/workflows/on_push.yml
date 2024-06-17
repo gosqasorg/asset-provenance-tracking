@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - packages/frontend/**
+    # paths:
+    #   - packages/frontend/**
   pull_request:
     branches:
       - main
@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 20
       - name: build frontend
-        working-directory: ./packages/frontend
+        working-directory: packages/frontend
         run: |
           npm ci
           npx nuxi build --preset=azure
