@@ -38,10 +38,12 @@
       <div>
         <KeyList v-bind:keys="childKeys"/>
       </div>
+
       <!-- TODO: Uncomment when  functionality is ready: -->
       <!-- <div>
           <ProvenanceNotificationSignUpModal/>
       </div>   --> 
+
     </div>
     <div v-else>
       <p>Device key not found.</p>
@@ -132,9 +134,5 @@ export default {
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 10px;
-}
-body {
-    margin: 50px;
-    white-space: pre-line;
 }
 </style>
