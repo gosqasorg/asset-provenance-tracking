@@ -25,11 +25,11 @@ jobs:
         run: |
           npm ci
           npx nuxi build --preset=azure
-      # - name: deploy frontend
-      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      #   working-directory: ./packages/frontend
-      #   run: |
-      #     npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --env production --deployment-token  ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
+      - name: deploy frontend
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ./packages/frontend
+        run: |
+          npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --env production --deployment-token  ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.3.3
         with:
