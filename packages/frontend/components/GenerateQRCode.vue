@@ -6,7 +6,11 @@
 
 <template>
     <div>
-  
+    <!-- Custom download button -->
+    <button id="new-button" class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+
+    
+
     <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
@@ -38,12 +42,15 @@
   
 <script>
     import QRCodeVue3 from "qrcode-vue3";
-    import { EventBus } from '~/utils/event-bus.ts'
+    import {EventBus} from '~/utils/event-bus.ts';
+
+
   
     export default {
         components: {
             QRCodeVue3
         },
+    
 
         props: {
             deviceKey: {
@@ -53,23 +60,33 @@
         },
         data() {
             return {
-                qrCodeDataUrl: ''
+                qrCodeDataUrl: '' // To store the base64 data URL of the QR code
             };
         },
-        methods: {
+        methods:{
             setQrCodeDataUrl(dataUrl) {
                 this.qrCodeDataUrl = dataUrl;
-                EventBus.$emit('qrCodeGenerated', dataUrl);
+                console.log('Emitting QR code URL:', dataUrl);
+                EventBus.emit('qrCodeGenerated', dataUrl);
             },
-        },
-    };    
+            downloadQRCode() {
+                const link = document.createElement('a');
+                link.href = this.qrCodeDataUrl;
+                link.download = 'vqr.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    }    
+
 </script>
 
 
 <style>
-    #new-button{
+    #new-button {
         content: "Download QR Code";
-        color: #fff;
+        color: #000;
     }
 
 </style>
