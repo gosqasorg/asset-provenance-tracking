@@ -115,3 +115,13 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Deployment to Azure
+
+Azure Static Web Apps CLI docs: https://azure.github.io/static-web-apps-cli/
+
+``` shell
+> npx nuxi build --preset=azure
+> npx @azure/static-web-apps-cli login --no-use-keychain
+> npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --no-use-keychain --env production
+```
