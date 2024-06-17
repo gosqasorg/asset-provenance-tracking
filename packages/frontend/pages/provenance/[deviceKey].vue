@@ -3,27 +3,26 @@
     their items.
     -->
 <script setup lang="ts">
-const route = useRoute()
-const deviceKey = route.params.deviceKey;
+  const route = useRoute()
+  const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
-  <div class="container-md">
-    <div v-if="!isLoading">
-      <template v-if="deviceKeyFound">
-        <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
+  <div v-if="!isLoading">
+    <div v-if="deviceKeyFound">
+      <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
       <div>Device ID: {{ deviceKey }}</div>
       <p>
-      <a href="#createRecord">Go to "Create New History Record"</a>
+        <a href="#createRecord">Go to "Create New History Record"</a>
       </p>
       <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
-          <a href = "#createdDevicePoint"><button class = "textToLinkButton0">Click to <i><textToLink class = "textToLink">Device Creation</textToLink></i></button></a>
-      <br><a href = "#createRecord"><button class = "textToLinkButton1">Click to <i><textToLink class = "textToLink">"Create New History Record"</textToLink></i></button></a>
-      <br><a href = "#childKeys"><button class = "textToLinkButton2">Click to <i><textToLink class = "textToLink">Child Keys</textToLink></i></button></a>
-        <div>
-          <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
-        </div>
-        <hr class="col-1 my-4">
+      <a href="#createdDevicePoint"><button class="textToLinkButton0">Click to <i><textToLink class="textToLink">Device Creation</textToLink></i></button></a>
+      <br><a href="#createRecord"><button class="textToLinkButton1">Click to <i><textToLink class="textToLink">"Create New History Record"</textToLink></i></button></a>
+      <br><a href="#childKeys"><button class="textToLinkButton2">Click to <i><textToLink class="textToLink">Child Keys</textToLink></i></button></a>
+      <div>
+        <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
+      </div>
+      <hr class="col-1 my-4">
       <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
       <!--Put the Reporting Key here if there is one -->
       <div v-if="!isLoading">
@@ -45,10 +44,9 @@ const deviceKey = route.params.deviceKey;
           <ProvenanceNotificationSignUpModal/>
       </div>   --> 
 
-      </template>
-      <template v-else>
-        <p>Device key not found.</p>
-      </template>
+    </div>
+    <div v-else>
+      <p>Device key not found.</p>
     </div>
   </div>
 </template>
