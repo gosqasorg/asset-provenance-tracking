@@ -49,9 +49,9 @@ async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
     return toHex(hash);
 }
 
-async function encrypt(key: Uint8Array, data: BufferSource): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
+async function encrypt(key: Uint8Array, data: BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ['encrypt']);
-    const salt = crypto.getRandomValues(new Uint8Array(16));
+    salt ??= crypto.getRandomValues(new Uint8Array(16));
     const encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv: salt }, $key, data);
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
@@ -62,12 +62,15 @@ async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Ar
     return new Uint8Array(result);
 }
 
-async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number): Promise<string> {
+async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
     const deviceID = await calculateDeviceID(deviceKey);
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
+
+    const { encryptedData: encryptedName } = fileName ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt) : undefined;
+    
 
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
@@ -75,6 +78,7 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
             gdthash: dataHash,
             gdtsalt: toHex(salt),
             gdttimestamp: `${timestamp}`,
+            // gdtname: encryptedName ? toHex(encryptedName)
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
@@ -166,19 +170,19 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    const values = Array.from(formData.values());
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
-
     const attachments = new Array<string>();
     {
-        for (const attach of formData.getAll("attachment")) {
+        for (const attach of formData.values()) {
             if (typeof attach === 'string') continue;
             const data = await attach.arrayBuffer()
-            const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.type, timestamp);
+            const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.type, timestamp, attach.name);
             attachments.push(attachmentID);
         }
     }
@@ -186,7 +190,7 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
     {
         const provRecord: ProvenanceRecord = { record, attachments };
         const data = new TextEncoder().encode(JSON.stringify(provRecord));
-        const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp);
+        const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
       return {
         jsonBody: { record: recordID, attachments } };
     }
