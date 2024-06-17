@@ -116,7 +116,7 @@ bun run preview
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
 
-## Deployment
+## Azure Deployment
 
 Azure Static Web Apps CLI docs: https://azure.github.io/static-web-apps-cli/
 
