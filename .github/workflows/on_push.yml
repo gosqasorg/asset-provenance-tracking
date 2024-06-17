@@ -18,6 +18,8 @@ jobs:
         uses: actions/setup-node@v4.0.2
         with:
           node-version: 20
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
       - name: build frontend
         working-directory: packages/frontend
         run: |
@@ -29,7 +31,7 @@ jobs:
       #   run: |
       #     npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --env production --deployment-token  ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4.3.1
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: packages
           path: .output/**
