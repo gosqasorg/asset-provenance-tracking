@@ -1,0 +1,38 @@
+name: On Push Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/frontend/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: 18
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+      - name: build frontend
+        working-directory: packages/frontend
+        run: |
+          npm ci
+          npx nuxi build --preset=azure
+      - name: deploy frontend
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ./packages/frontend
+        run: |
+          npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --env production --deployment-token  ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: packages
+          path: packages/frontend/.output/**
+
