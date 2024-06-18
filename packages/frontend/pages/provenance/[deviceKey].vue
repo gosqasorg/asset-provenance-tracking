@@ -3,18 +3,15 @@
     their items.
     -->
 <script setup lang="ts">
-const route = useRoute()
-const deviceKey = route.params.deviceKey;
+  const route = useRoute()
+  const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
-  
   <div v-if="!isLoading">
-    <template v-if="deviceKeyFound">
+    <div v-if="deviceKeyFound">
       <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
     <div>Device ID: {{ deviceKey }}</div>
-    <p>
-    </p>
     <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
         <a href = "#createdDevicePoint">
           <button class = "textToLinkButton0">Go to Device Creation Record </button>
@@ -49,15 +46,15 @@ const deviceKey = route.params.deviceKey;
       </div>
     </div>
 
-    <!-- TODO: Uncomment when  functionality is ready: -->
-    <!-- <div>
-        <ProvenanceNotificationSignUpModal/>
-    </div>   --> 
+      <!-- TODO: Uncomment when  functionality is ready: -->
+      <!-- <div>
+          <ProvenanceNotificationSignUpModal/>
+      </div>   --> 
 
-    </template>
-    <template v-else>
+    </div>
+    <div v-else>
       <p>Device key not found.</p>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -144,9 +141,5 @@ export default {
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 10px;
-}
-body {
-    margin: 50px;
-    white-space: pre-line;
 }
 </style>
