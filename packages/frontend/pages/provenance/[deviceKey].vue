@@ -19,7 +19,7 @@
       <a href="#createdDevicePoint"><button class="textToLinkButton0">Click to <i><textToLink class="textToLink">Device Creation</textToLink></i></button></a>
       <br><a href="#createRecord"><button class="textToLinkButton1">Click to <i><textToLink class="textToLink">"Create New History Record"</textToLink></i></button></a>
       <br><a href="#childKeys"><button class="textToLinkButton2">Click to <i><textToLink class="textToLink">Child Keys</textToLink></i></button></a>
-      <div>
+      <div class="provenance">
         <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
       </div>
       <hr class="col-1 my-4">
@@ -114,6 +114,9 @@ export default {
 
 </script>
 <style>
+.provenance {
+  white-space: pre-line;
+}
 .textToLink {
     color: blue;
 }
