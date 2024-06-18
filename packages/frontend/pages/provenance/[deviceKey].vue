@@ -10,7 +10,7 @@
 <template>
   <div v-if="!isLoading">
     <div v-if="deviceKeyFound">
-      <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
+      <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
     <div>Device ID: {{ deviceKey }}</div>
     <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
         <a href = "#createdDevicePoint">
@@ -121,9 +121,6 @@ export default {
 
 </script>
 <style>
-.textToLink {
-    color: blue;
-}
 .textToLinkButton0 {
     border-width: 0px;
     border-radius: 10px;
