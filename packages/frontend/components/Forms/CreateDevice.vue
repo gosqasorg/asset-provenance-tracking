@@ -14,7 +14,7 @@
             <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <label class="mt-3 text-iris">Device Image (optional):    </label>
-                <input type="file" class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <input type="file" id="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
             </div>
         </div>
         <div class="d-grid">        
@@ -84,6 +84,7 @@ export default {
         margin-right: auto;
 
     }
+    
     #device-form > * {
         padding: 5px;
         margin: 5px;
