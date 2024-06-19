@@ -1,5 +1,5 @@
 <template>
-    <form enctype="multipart/form-data" class="bg-sky p-3" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
         <p class="text-iris mt-1">Create New Container</p>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
@@ -202,7 +202,6 @@ export default {
 
 <style scoped>
     form {
-        background-color: rgb(60, 179, 113); /* MediumSeaGreen */
         border-radius: 10px;
         padding: 30px;
         width: 100%;

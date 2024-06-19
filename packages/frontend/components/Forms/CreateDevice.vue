@@ -7,14 +7,14 @@
 -->
 
 <template>
-    <form enctype="multipart/form-data" class="bg-sky p-3" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
         <p class="text-iris mt-1">Create New Device</p>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
             <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <label class="mt-3 text-iris">Device Image (optional):    </label>
-                <input type="file" id="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
             </div>
         </div>
         <div class="d-grid">        
@@ -75,7 +75,6 @@ export default {
 
 <style scoped>
     form {
-        background-color: rgb(145, 193, 248);
         border-radius: 10px;
         padding: 30px;
         width: 100%;
