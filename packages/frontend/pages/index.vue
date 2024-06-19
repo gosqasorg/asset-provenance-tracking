@@ -10,12 +10,8 @@
         <!-- create toggle for single or container  -->
         
         <div class="ms-1 mb-3">
-            <span style="display: inline">New Device
-                <div class="form-check form-switch" style="display:inline-block" >
-                    <input id="create_new" class="form-check-input" type="checkbox"  @change="displayForm" />
-                    New Container
-                </div>
-            </span>
+            <span id="new-device" class="tab-span active" @click="displayForm('device')">New Device</span>
+            <span id="new-container" class="tab-span" @click="displayForm('container')">New Container</span>
         </div>
 
         <!-- <div>Create a Single Asset:</div> -->
@@ -37,18 +33,24 @@
     export default {
 
         methods: {
-            displayForm(){
-                const create_new = (<HTMLInputElement>document.getElementById("create_new"));
-                const create_device = (<HTMLInputElement>document.getElementById("create_device"));
-                const create_container = (<HTMLInputElement>document.getElementById("create_container"));
-                if(create_new.checked) {
-                    create_device.style.display = "none";
-                    create_container.style.display = "inline";
+            displayForm(type = string){
+                const create_device = document.getElementById("create_device");
+                const create_container = document.getElementById("create_container");
+                const new_device_button = document.getElementById("new-device");
+                const new_container_button = document.getElementById("new-container");
 
-                } else{
+                if (type === 'device') {
                     create_device.style.display = "inline";
                     create_container.style.display = "none";
+                    new_device_button.classList.add('active');
+                    new_container_button.classList.remove('active');
+                } else {
+                    create_device.style.display = "none";
+                    create_container.style.display = "inline";
+                    new_device_button.classList.remove('active');
+                    new_container_button.classList.add('active');
                 }
+
             },
     
         }
@@ -58,9 +60,49 @@
 
 
 <style scoped>
+.container-md {
+    font-family: 'Poppins', sans-serif;
+}
 
-checkbox {
-    color:aqua;
+.text-iris {
+    color: #4a148c; /* Iris color */
+}
+
+.tab-span {
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+    color: black;;
+    cursor: pointer;
+    display: inline-block;
+    border: 1px solid #ddd;
+    border-radius: 5px 5px 0 0;
+    margin-right: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.tab-span:hover {
+    background-color: #e0e0e0;
+}
+
+.tab-span.active {
+    background-color: #4a148c;
+    color: white;
+}
+
+.my-4 {
+    margin: 1.5rem 0;
+}
+
+.fs-1 {
+    font-size: 2.5rem;
+}
+
+.ms-1 {
+    margin-left: 0.25rem;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
 }
 
 </style>

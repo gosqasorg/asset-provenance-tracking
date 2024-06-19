@@ -6,8 +6,8 @@
 
 <template>
     <div>
-  
-     <QRCodeVue3
+
+    <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
             :height="200"
@@ -31,7 +31,6 @@
                 color: '#000000',
 
             }"
-
           />
     </div>
 </template>
