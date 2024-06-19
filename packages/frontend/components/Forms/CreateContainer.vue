@@ -242,7 +242,7 @@ export default {
 
     }
     input[type=number] {
-        border: 1px solid #c9ccd3c3;
+        border: 0px;
         border-radius: 4px;
     }
 </style>
