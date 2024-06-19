@@ -41,7 +41,7 @@ const deviceKey = route.params.deviceKey;
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button @click="triggerDownload" class="btn mt-1 bg-sky px-5">Download QR Code</button>
+                <button @click="downloadQRCode" class="btn mt-1 bg-sky px-5">Download QR Code</button>
             </div>
 
         </div>
@@ -95,9 +95,11 @@ export default {
         GenerateQRCode,
         KeyList,
     },
-    mounted() {
-        EventBus.on('qrCodeGenerated', this.handleQrCodeGenerated);
-    },
+    //mounted() {
+      //  console.log('starting EventBus');
+      //EventBus.on('qrCodeGenerated', this.handleQrCodeGenerated);
+      //  console.log('completed');
+    //},
     beforeUnmount() {
     // Clean up the event listener
     EventBus.off('qrCodeGenerated');
@@ -112,7 +114,8 @@ export default {
     },
     async mounted() {
         try {
-
+            console.log('starting EventBus');
+            EventBus.on('qrCodeGenerated', this.handleQrCodeGenerated);
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             const response = await getProvenance(deviceKey);
@@ -136,6 +139,9 @@ export default {
     methods: {
         handleQrCodeGenerated(dataUrl) {
         this.qrCodeDataUrl = dataUrl;
+        console.log("check handleQrCodeGenerated url")
+        console.log( this.qrCodeDataUrl)
+        return this.qrCodeDataUrl;
         },
         downloadQRCode() {
                 const link = document.createElement('a');
