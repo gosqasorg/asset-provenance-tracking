@@ -9,11 +9,15 @@
 
         <!-- create toggle for single or container  -->
         
-        <div class="ms-1 mb-3">
-            <span id="new-device" class="tab-span active" @click="displayForm('device')">New Device</span>
-            <span id="new-container" class="tab-span" @click="displayForm('container')">New Container</span>
+        <div class="ms-1 mb-3 toggle-container">
+            <input type="checkbox" id="toggle" class="toggleCheckbox" @change="toggleView">
+            <label for="toggle" class="toggle-label">
+                <div class="toggle-text toggle-left">New Device</div>
+                <div class="toggle-text toggle-right">New Container</div>
+            </label>
         </div>
 
+            
         <!-- <div>Create a Single Asset:</div> -->
         <div id="create_device"><CreateDevice/></div>
         <!-- <CreateDevice/> -->
@@ -31,28 +35,20 @@
 
 <script lang="ts">
     export default {
-
         methods: {
-            displayForm(type = string){
-                const create_device = document.getElementById("create_device");
-                const create_container = document.getElementById("create_container");
-                const new_device_button = document.getElementById("new-device");
-                const new_container_button = document.getElementById("new-container");
+            toggleView() {
+                const toggle = document.getElementById("toggle") as HTMLInputElement;
+                const createDevice = document.getElementById("create_device");
+                const createContainer = document.getElementById("create_container");
 
-                if (type === 'device') {
-                    create_device.style.display = "inline";
-                    create_container.style.display = "none";
-                    new_device_button.classList.add('active');
-                    new_container_button.classList.remove('active');
+                if (toggle.checked) {
+                    createDevice.style.display = "none";
+                    createContainer.style.display = "block";
                 } else {
-                    create_device.style.display = "none";
-                    create_container.style.display = "inline";
-                    new_device_button.classList.remove('active');
-                    new_container_button.classList.add('active');
+                    createDevice.style.display = "block";
+                    createContainer.style.display = "none";
                 }
-
-            },
-    
+            }
         }
     }
 
@@ -60,35 +56,89 @@
 
 
 <style scoped>
-.container-md {
-    font-family: 'Poppins', sans-serif;
+/* General body styling for centering */
+body {
+  display: flex;
+  border: 2px;
+  align-items: left;
+  justify-content: left;
+  height: 100vh;
+  background-color: #f5f5f5; /* Light background to see the toggle clearly */
+  font-family: 'Poppins', sans-serif;
 }
 
-.text-iris {
-    color: #4a148c; /* Iris color */
+/* Hide the original checkbox */
+.toggleCheckbox {
+    display: none;
 }
 
-.tab-span {
-    padding: 10px 20px;
-    background-color: #f5f5f5;
-    color: black;;
+/* Container for the toggle switch */
+.toggle-container {
+    display: flex;
+    justify-content: left;
+    margin: 0 auto;
+    padding: 10px;
+    width: 500px;
+    height: 70px;
+    border-radius: 20px 0px 20px 0px;
+}
+
+/* Custom toggle switch */
+.toggle-label {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: fit-content;
+    border: 2px solid #4a148c;
+    border-radius: 25px;
+    background: white;
     cursor: pointer;
-    display: inline-block;
-    border: 1px solid #ddd;
-    border-radius: 5px 5px 0 0;
-    margin-right: 5px;
-    transition: background-color 0.3s, color 0.3s;
+    overflow: hidden; /* Ensure no overflow */
 }
 
-.tab-span:hover {
-    background-color: #e0e0e0;
+/* Create the toggle slider */
+.toggle-label::before {
+    content: '';
+    position: absolute;
+    width: 50%; /* Half of the label width */
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: #4a148c;
+    border-radius: 25px;
+    transition: left 0.3s;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add a shadow for better visibility */
 }
 
-.tab-span.active {
-    background-color: #4a148c;
+/* Text containers */
+.toggle-label div {
+    padding: 10px;
+    text-align: center;
+    z-index: 1;
     color: white;
+    font-weight: bold;
 }
 
+/* Adjust text colors when checked */
+.toggleCheckbox:checked + .toggle-label::before {
+    left: 50%;
+}
+
+.toggleCheckbox:checked + .toggle-label .toggle-left {
+    color: #4a148c; /* Inactive text color */
+}
+
+.toggleCheckbox:checked + .toggle-label .toggle-right {
+    color: black; /* Active text color */
+}
+
+.toggleCheckbox + .toggle-label .toggle-left {
+    color: white; /* Active text color */
+}
+
+.toggleCheckbox + .toggle-label .toggle-right {
+    color: black; /* Inactive text color */
+}
 .my-4 {
     margin: 1.5rem 0;
 }
@@ -104,6 +154,7 @@
 .mb-3 {
     margin-bottom: 1rem;
 }
+
 
 </style>
 
