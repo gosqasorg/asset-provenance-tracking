@@ -16,21 +16,6 @@
             <label class="text-iris my-3 me-2" for="children-keys">Number of contained devices (optional):</label>
             <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             
-            <!-- <br>
-            <label class="text-iris my-3 me-2">Number of contained devices (optional):</label>
-            <select class="form-inline" >
-                <option>0</option>
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-                <option>7</option>
-                <option>8</option>
-                <option>9</option>
-                <option>10</option>
-            </select> -->
 
             <br>
             <!-- <span class="text-iris mt-4">
