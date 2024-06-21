@@ -13,29 +13,33 @@
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 
             </div>
 
-            <br>
-            <span class="text-iris mt-4">
-            Create Reporting Key:
-            <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> </span>
 
             <br>
             <label class="text-iris my-3 me-2" for="children-keys">Number of contained devices (optional):</label>
             <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             
-
             <br>
-
-            <span class="text-iris mt-4">
+            <span class="text-iris mt-2">
             Customize Contained Device Names?
             <div class="text-black p-1" style="display:inline"> 
                 <input class="form-check-input" type="checkbox" id="customize-yes" name="customize"  @change="displayFields"/>
             </div>
             </span>
 
-
-            <div class="text-iris p-2" id="num-fields" style="display:none" >
+            <div class="text-iris" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
+
+            <br>
+            <span class="text-iris mt-4">
+            Create Reporting Key:
+            <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> </span>
+
+            <br>
+            <span class="text-iris mt-4">
+            Notify all children?
+            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> </span>
+
 
         </div>
         
@@ -123,6 +127,12 @@ export default {
             const childrenDeviceList = [];
             const childrenDeviceName = [];
             let reportingKey;
+
+            if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
+                console.log("notifying all children");
+                this.tags = (this.tags).concat(['notify_all'])
+            } 
+
             if (hasReportingKey) {
                 reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
                 let tag_set = (this.tags).concat(['reportingkey']);
@@ -171,7 +181,7 @@ export default {
                     await  postProvenance(childKey, {
                         blobType: 'deviceInitializer',
                         deviceName: childName,
-                        description: "",  // need to see if we want a special description when making a child
+                        description: this.description,  // need to see if we want a special description when making a child
                         tags:this.tags,
                         children_key: '',
                         hasParent: true,
