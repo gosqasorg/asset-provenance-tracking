@@ -7,6 +7,12 @@
             <label class="text-iris form-label mt-3" for="file">Container Image (optional):</label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
             
+            <label class="mt-3 text-iris">Add Tags (optional):</label>
+            <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <div>
+                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 
+            </div>
+
             <br>
             <span class="text-iris mt-4">
             Create Reporting Key:
@@ -18,13 +24,6 @@
             
 
             <br>
-            <!-- <span class="text-iris mt-4">
-            Customize Contained Device Names?
-            <div class="text-black p-1" style="display:inline"> 
-                <input type="radio" id="customize-yes" name="customize"  @change="displayFields"/>Yes
-                <input class="ms-1" type="radio" id="customize-no" name="customize"   @change="displayFields" checked/>No
-            </div>
-            </span> -->
 
             <span class="text-iris mt-4">
             Customize Contained Device Names?
@@ -54,6 +53,7 @@ export default {
         return {
             name: '',
             description: '',
+            tags: [] as string[],
             childrenKeys: 0,
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/container
@@ -61,6 +61,10 @@ export default {
         }
     },
     methods: {
+        handleUpdateTags(tags: string[]) {
+            // console.log('handle Update Tags', tags);
+            this.tags = tags;
+        },
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -121,13 +125,14 @@ export default {
             let reportingKey;
             if (hasReportingKey) {
                 reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
 
                 await  postProvenance(reportingKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     // Is this a proper description? Should it say "reporting key" or something?
                     description: this.description,
-                    tags: ['creation', 'reportingkey'],
+                    tags: tag_set,
                     children_key: '',
                     hasParent: true,
                     isReportingKey: true,
@@ -167,7 +172,7 @@ export default {
                         blobType: 'deviceInitializer',
                         deviceName: childName,
                         description: "",  // need to see if we want a special description when making a child
-                        tags:['creation'],
+                        tags:this.tags,
                         children_key: '',
                         hasParent: true,
                         isReportingKey: false
@@ -184,12 +189,11 @@ export default {
                     childrenDeviceName.push(childName);
                 }
             };
-            console.log("reportingKey",reportingKey);
             postProvenance(deviceKey, {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
                 description: this.description,
-                tags:['creation'],
+                tags:this.tags,
                 reportingKey: reportingKey,
                 children_key: childrenDeviceList,
                 children_name: childrenDeviceName,
