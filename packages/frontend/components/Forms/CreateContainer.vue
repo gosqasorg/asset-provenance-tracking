@@ -6,10 +6,11 @@
             <input type="text" class="form-control mt-2" v-model="description" id="device-description" placeholder="Container Description">
             <label class="text-iris form-label mt-3" for="file">Container Image (optional):</label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
-
-            <span style="display: inline">
-            <label class="text-iris mt-3 me-2" for="report-key">Create Reporting Key:</label>
-            <input type="checkbox" id="report-key" v-model="createReportingKey" /> </span>
+            
+            <br>
+            <span class="text-iris mt-4">
+            Create Reporting Key:
+            <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> </span>
 
             <br>
             <label class="text-iris my-3 me-2" for="children-keys">Number of contained devices (optional):</label>
@@ -32,20 +33,28 @@
             </select> -->
 
             <br>
-            <span class="text-iris mt-4">
+            <!-- <span class="text-iris mt-4">
             Customize Contained Device Names?
             <div class="text-black p-1" style="display:inline"> 
                 <input type="radio" id="customize-yes" name="customize"  @change="displayFields"/>Yes
                 <input class="ms-1" type="radio" id="customize-no" name="customize"   @change="displayFields" checked/>No
             </div>
+            </span> -->
+
+            <span class="text-iris mt-4">
+            Customize Contained Device Names?
+            <div class="text-black p-1" style="display:inline"> 
+                <input class="form-check-input" type="checkbox" id="customize-yes" name="customize"  @change="displayFields"/>
+            </div>
             </span>
 
 
-            <div id="num-fields" style="display:none" >
+            <div class="text-iris p-2" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
 
         </div>
+        
         <div class="d-grid">        
             <button class="btn my-3 bg-iris text-white" type="submit">Create Container</button>
         </div>    </form>
@@ -92,6 +101,9 @@ export default {
                     newInput = document.createElement('input');
                     newInput.id = 'name-input-' + (i);
                     newInput.type = 'text';
+                    newInput.style.border = "0px";
+                    newInput.style.borderRadius = "4px";
+                    newInput.style.margin = "3px"
                     newInput.required = true;
                     newLabel =  document.createElement('label');
                     newLabel.textContent = 'Device #'+ (i+1) +' Name:  ';
@@ -104,7 +116,7 @@ export default {
                 wrapper_div.append(fieldset);
                 wrapper_div.style.display = "inline";
 
-            } else if (customize_no.checked) {
+            } else {
                 wrapper_div.style.display = "none";
             }
             
@@ -244,5 +256,18 @@ export default {
     input[type=number] {
         border: 0px;
         border-radius: 4px;
+    }
+    input[type=checkbox] {
+        width:15px;
+        border: 0px;
+    }
+    .num-fields {
+        border: 0px;
+        border-radius: 4px;
+        border-color:red;
+    }
+    input[type=text] {
+        border:5px;
+        border-color:red;
     }
 </style>
