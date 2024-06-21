@@ -1,7 +1,7 @@
 <template>
     <div>
         <nav class="navbar navbar-expand-md navbar-light bg-sky custom-nav">
-            <div class="container-fluid">
+            <div class="container-fluid p-0">
                 <a href="/" class="navbar-brand" >
                     <img src="../assets/styles/gosqas_logo.png" height="42px">
                 </a>
@@ -20,7 +20,7 @@
                         <li class="nav-item pe-4">
                             <a class="nav-link" href="#">Sample Devices</a>
                         </li>
-                        <li class="nav-item p-0 m-0">
+                        <li class="nav-item">
                             <a class="nav-link" href="#">Contact</a>
                         </li>
                     </ul>
