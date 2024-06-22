@@ -8,16 +8,8 @@
         <div class="my-4 text-iris fs-1">Global Distributed Tracking</div>
 
         <!-- create toggle for single or container  -->
-        
-        <div class="ms-1 mb-3 toggle-container">
-            <input type="checkbox" id="toggle" class="toggleCheckbox" @change="toggleView">
-            <label for="toggle" class="toggle-label">
-                <div class="toggle-text toggle-left">New Device</div>
-                <div class="toggle-text toggle-right">New Container</div>
-            </label>
-        </div>
-
-            
+        <ButtonsLargeToggle @toggle-change="toggleView" />
+    
         <!-- <div>Create a Single Asset:</div> -->
         <div id="create_device"><CreateDevice/></div>
         <!-- <CreateDevice/> -->
@@ -34,23 +26,24 @@
 </template>
 
 <script lang="ts">
-    export default {
-        methods: {
-            toggleView() {
-                const toggle = document.getElementById("toggle") as HTMLInputElement;
-                const createDevice = document.getElementById("create_device");
-                const createContainer = document.getElementById("create_container");
 
-                if (toggle.checked) {
-                    createDevice.style.display = "none";
-                    createContainer.style.display = "block";
-                } else {
-                    createDevice.style.display = "block";
-                    createContainer.style.display = "none";
-                }
+export default {
+    
+    methods: {
+        toggleView() {
+            const toggle = document.getElementById("toggle") as HTMLInputElement;
+            const createDevice = document.getElementById("create_device");
+            const createContainer = document.getElementById("create_container");
+            if (toggle.checked) {
+                createDevice.style.display = "none";
+                createContainer.style.display = "block";
+            } else {
+                createDevice.style.display = "block";
+                createContainer.style.display = "none";
             }
         }
     }
+}
 
 </script>
 
@@ -157,4 +150,3 @@ body {
 
 
 </style>
-
