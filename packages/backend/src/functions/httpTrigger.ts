@@ -69,16 +69,17 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
 
-    const { encryptedData: encryptedName } = fileName ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt) : undefined;
+    const { encryptedData: encryptedName } = fileName 
+        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt) 
+        : { encryptedData: undefined };
     
-
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
             gdtsalt: toHex(salt),
             gdttimestamp: `${timestamp}`,
-            // gdtname: encryptedName ? toHex(encryptedName)
+            gdtname: encryptedName ? toHex(encryptedName) : ""
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
@@ -170,7 +171,6 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
-    const values = Array.from(formData.values());
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
@@ -191,8 +191,7 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
         const provRecord: ProvenanceRecord = { record, attachments };
         const data = new TextEncoder().encode(JSON.stringify(provRecord));
         const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-      return {
-        jsonBody: { record: recordID, attachments } };
+      return { jsonBody: { record: recordID, attachments } };
     }
 }
 // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
