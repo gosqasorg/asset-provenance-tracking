@@ -21,6 +21,9 @@
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
                 <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
+                <a :href="url" download style="display: block; padding: 5px; text-align: left;">
+                    Download Image
+                </a>
             </div>
             <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
         </div>
