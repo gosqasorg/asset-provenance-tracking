@@ -14,11 +14,11 @@
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
             <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
-                <label class="mt-3 text-iris">Device Image (optional):    </label>
+                <label class="mt-3 mb-2 text-iris">Device Image (optional)   </label>
                 <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
             </div>
 
-            <label class="mt-3 text-iris">Add Tags (optional):</label>
+            <label class="mt-3 mb-2 text-iris">Add Tags (optional)</label>
             <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 

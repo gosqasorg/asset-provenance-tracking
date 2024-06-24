@@ -4,41 +4,42 @@
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
             <input type="text" class="form-control mt-2" v-model="description" id="device-description" placeholder="Container Description">
-            <label class="text-iris form-label mt-3" for="file">Container Image (optional):</label>
+            <label class="text-iris form-label mt-3 mb-2" for="file">Container Image (optional)</label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
             
-            <label class="mt-3 text-iris">Add Tags (optional):</label>
+            <label class="mt-3 mb-2 text-iris">Add Tags (optional)</label>
             <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 
             </div>
 
 
-            <br>
-            <label class="text-iris my-3 me-2" for="children-keys">Number of contained devices (optional):</label>
+            <label class="text-iris my-4 me-2" for="children-keys">Number of contained devices (optional)</label>
             <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             
             <br>
-            <span class="text-iris mt-2">
-            Customize Contained Device Names?
-            <div class="text-black p-1" style="display:inline"> 
-                <input class="form-check-input" type="checkbox" id="customize-yes" name="customize"  @change="displayFields"/>
+            <div class="text-iris mt-1 ">
+                Customize Contained Device Names?
+                <div class="text-black p-1" style="display:inline"> 
+                    <input class="form-check-input" type="checkbox" id="customize-yes" name="customize"  @change="displayFields"/>
+                </div>
             </div>
-            </span>
 
             <div class="text-iris" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
 
             <br>
-            <span class="text-iris mt-4">
-            Create Reporting Key:
-            <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> </span>
+            <div class="text-iris mt-1 ">
+                Create Reporting Key?
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> 
+            </div>
 
             <br>
-            <span class="text-iris mt-4">
-            Notify all children?
-            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> </span>
+            <div class="text-iris mt-1">
+                Notify all children?
+                <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> 
+            </div>
 
 
         </div>
