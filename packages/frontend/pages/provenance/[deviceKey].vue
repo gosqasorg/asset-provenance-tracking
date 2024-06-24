@@ -3,28 +3,32 @@
     their items.
     -->
 <script setup lang="ts">
-const route = useRoute()
-const deviceKey = route.params.deviceKey;
+  const route = useRoute()
+  const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
-  
   <div v-if="!isLoading">
-    <template v-if="deviceKeyFound">
-      <h1>"{{ deviceRecord.deviceName }}" Asset History Records</h1>
+    <div v-if="deviceKeyFound">
+      <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
     <div>Device ID: {{ deviceKey }}</div>
-    <p>
-    <a href="#createRecord">Go to "Create New History Record"</a>
-    </p>
     <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
-        <a href = "#createdDevicePoint"><button class = "textToLinkButton0">Click to <i><textToLink class = "textToLink">Device Creation</textToLink></i></button></a>
-    <br><a href = "#createRecord"><button class = "textToLinkButton1">Click to <i><textToLink class = "textToLink">"Create New History Record"</textToLink></i></button></a>
-    <br><a href = "#childKeys"><button class = "textToLinkButton2">Click to <i><textToLink class = "textToLink">Child Keys</textToLink></i></button></a>
+        <a href = "#createdDevicePoint">
+          <button class = "textToLinkButton0">Go to Device Creation Record </button>
+        </a>
+    <br>
+        <a href = "#createRecordPoint">
+          <button class = "textToLinkButton1">Go to Create New History Record </button>
+        </a>
+    <br>
+      <a href = "#childKeysPoint">
+        <button class = "textToLinkButton2">Go to Child Keys </button>
+      </a>
       <div>
         <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
       </div>
       <hr class="col-1 my-4">
-    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecord"/>
+    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecordPoint"/>
     <!--Put the Reporting Key here if there is one -->
     <div v-if="!isLoading">
       <div v-if="hasReportingKey">
@@ -35,20 +39,22 @@ const deviceKey = route.params.deviceKey;
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
-    Child Keys:
-    <div>
-      <KeyList v-bind:keys="childKeys"/>
+    <div id="childKeysPoint">
+        Child Keys:
+      <div>
+        <KeyList v-bind:keys="childKeys"/>
+      </div>
     </div>
 
-    <!-- TODO: Uncomment when  functionality is ready: -->
-    <!-- <div>
-        <ProvenanceNotificationSignUpModal/>
-    </div>   --> 
+      <!-- TODO: Uncomment when  functionality is ready: -->
+      <!-- <div>
+          <ProvenanceNotificationSignUpModal/>
+      </div>   --> 
 
-    </template>
-    <template v-else>
+    </div>
+    <div v-else>
       <p>Device key not found.</p>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -115,9 +121,6 @@ export default {
 
 </script>
 <style>
-.textToLink {
-    color: blue;
-}
 .textToLinkButton0 {
     border-width: 0px;
     border-radius: 10px;
@@ -135,8 +138,5 @@ export default {
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 10px;
-}
-body {
-    margin: 50px;
 }
 </style>

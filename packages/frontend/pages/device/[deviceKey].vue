@@ -4,40 +4,15 @@ const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
-    <nav class="navbar navbar-expand-md navbar-light bg-sky">
-    <div class="container">
-        <a href="/" class="navbar-brand">
-            <img src="../../assets/styles/gosqas_logo.png" width="300">
-        </a>
-
-        <!-- toggle button for mobile -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav" aria-controls="main-nav" 
-        aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button> 
-
-        <div class="collapse navbar-collapse justify-content-end align-center " id="main-nav">
-            <ul class="navbar-nav ms-2">
-                <li class="nav-item pe-4">
-                    <a class="nav-link" href="#">About</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Contact</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-    </nav>
-
-  <div class="container-md my-4">
+  <div class="container-md my-4" v-if="!isLoading">
     <div class="row justify-content-between">
         <div class="col-sm-6 col-lg-9">
 
-            <div class="mt-4 mb-2 text-iris fs-1" v-if="!isLoading">{{deviceRecord.deviceName}}</div>
+            <div class="mt-4 mb-2 text-iris fs-1" >{{deviceRecord.deviceName}}</div>
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
             <div>Device Key: {{ route.params.deviceKey }}</div>
-            <div class="my-2" v-if="!isLoading">{{deviceRecord.description}}</div>
+            <div class="my-2" >{{deviceRecord.description}}</div>
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
@@ -58,7 +33,7 @@ const deviceKey = route.params.deviceKey;
 
 
     <!--Put the Reporting Key here if there is one -->
-    <div v-if="!isLoading">
+    <div>
         <div v-if="hasReportingKey" class="mt-4 mb-2 text-iris fs-2">
         Reporting Key:
         </div>

@@ -114,28 +114,29 @@ export default {
             return newChildKeysList;
         },
 
+        async getAllDescendants(key: string) {
 
-        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string) {
-            // recalling the object is in fact supposed to be
-            // recursive. This should probably be done in a separate
-            // function; I am not sure where this code should live!
-            // here we handle the "recall" functionality.
-            // first add the recall tag here...
+            let children_list = await this.getChildrenKeys(key);
+
+            for (let child_key of children_list) {
+                children_list = children_list.concat(await this.getAllDescendants(child_key));
+            }
+
+            return children_list;
+        },
+
+
+        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
 
             for (const key of childrenkeys) {
                 // console.log("GOT KEY", key);
 
                 if (key != "" && key != "undefined") {
-                    // console.log("successfully did a recrusive call on ", key);
-                    let childrenList = await this.getChildrenKeys(key);
-                    // console.log("these are the children", childrenList);
-                    await this.recursivelyRecallChildren(childrenList, recallReason);
-
                     postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: recallReason,
                         children_key: '',
-                        tags: ["recall"],
+                        tags: tags,
                     }, this.pictures || [])
                 }
             }
@@ -148,40 +149,94 @@ export default {
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
+            let descendantsList = await this.getAllDescendants(this.deviceKey);
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
 
                 if (this.hasParent) {
                     console.log("This device already has a container.");
+                    this.description = this.description + "\nError: Container could not be added.";
+
                 } else {
-
-                    postProvenance(this.containerKey, {
-                        blobType: 'deviceRecord',
-                        description: this.description,
-                        tags: this.tags,
-                        children_key: [this.deviceKey],
-                        hasParent: true,
-                    }, this.pictures || [])
-
-                    this.hasParent = true;
+                    // need to check if this parent is NOT a descendant of the device already
+                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among descendants
+                        // container is INDEED a descendant of this device
+                        // therefore, this relationship shouldn't be created
+                        console.log("This container is a descendant of this device.");
+                        this.description = this.description + `\nError: Container could not be added.`;
+                    } else{
+                        postProvenance(this.containerKey, {
+                            blobType: 'deviceRecord',
+                            description: this.description, // keep the same description?
+                            tags: [],
+                            children_key: [this.deviceKey],
+                            hasParent: true,
+                        }, this.pictures || [])
+    
+                        this.hasParent = true;
+                    }
                 }
             }
 
-        const index = this.tags.indexOf("recall", 0);
+            if (this.childrenKey.length > 1) { // if user want to add children keys 
+                let string_children = this.childrenKey.toString();
+                let entered_children = string_children.split(",");
+                for (let i of entered_children) {
+                    // for each key, check its descendants and see if current device is a child of them
+                    // make sure that the entered child does not have a parent yet
+                    // TODO: make sure the child exists
+                    const child_prov = await getProvenance(i);
+                    const child_record = child_prov[0].record;
+                    let index = entered_children.lastIndexOf(i);
+
+                    if (child_record.hasParent) {
+                        console.log("Child key ", i, " already has a parent");
+                        this.description = this.description + `\nError: Child device could not be added.`;
+                        entered_children.splice(index, 1);
+                    } else {
+                        let descendants = await this.getAllDescendants(i);
+                        console.log("These are the descendants of key ", i, " : ", descendants);
+                        if (descendants.includes(this.deviceKey)) {
+                            console.log("This device key is among descendants");
+                            this.description = this.description + `\nError: Child device could not be added.`;
+                            entered_children.splice(index, 1);
+                        } else {
+                            // make sure the child has parent = true
+                            postProvenance(i, {
+                            blobType: 'deviceRecord',
+                            description: this.description, // need to discuss whether we want to have a unique description
+                            tags: [],
+                            children_key: [],
+                            hasParent: true,
+                            }, this.pictures || [])
+
+                        }
+                    }
+                    this.childrenKey = entered_children;
+                }
+            } 
+
+        const recall = this.tags.indexOf("recall", 0);
+        const inform = this.tags.indexOf("inform_all", 0);
         
-        let childrenList = await this.getChildrenKeys(this.deviceKey);
 
         // "recall" is being added....
-        if (index > -1) {
+        if (recall > -1 || inform > -1) {
+            let reason = ""
+            let tags = this.tags
+            if (recall > -1) { 
+                reason = "Recalled by Admin Key";
+            } else { reason = this.description; }
 
             if (this.isReportingKey) {
                 // reporting keys do not have the ability to recall
-                console.log("Recall failed. This is a reporting key.");
+                console.log("Action failed. This is a reporting key.");
             } else {
-                await this.recursivelyRecallChildren(childrenList,"Recalled by Admin Key")
+                // console.log("begin to recall");
+                await this.recursivelyRecallChildren(descendantsList, reason, tags)
                 .then(response => {
-                    console.log("Finished recalling");
+                    console.log("Finished recalling/informing");
                 })
             }
             
