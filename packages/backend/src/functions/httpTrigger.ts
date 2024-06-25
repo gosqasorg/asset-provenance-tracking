@@ -88,7 +88,14 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     return blobID;
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
+interface DecryptedBlob {
+    data: Uint8Array;
+    contentType: string;
+    timestamp: number;
+    filename?: string;
+}
+
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
@@ -96,15 +103,21 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
     if (isNaN(timestamp) || !isFinite(timestamp)) throw new Error(`Invalid Timestamp ${client.name}`);
 
     const buffer = await client.downloadToBuffer();
-    const data = await decrypt(deviceKey, fromHex(salt), buffer);
+    const saltBuffer = fromHex(salt);
+    const data = await decrypt(deviceKey, saltBuffer, buffer);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
             throw new Error(`Invalid Hash ${client.name}`);
         }
     }
+
     const contentType = props.metadata?.["gdtcontenttype"];
-    return { data, contentType, timestamp };
+    const encryptedName = props.metadata?.["gdtname"] ?? "";
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer, fromHex(encryptedName)) : undefined;
+    const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
+
+    return { data, contentType, timestamp, filename };
 
     function areEqual(first: Uint8Array, second: Uint8Array) {
         return first.length === second.length
@@ -154,13 +167,12 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     const exists = await blobClient.exists();
     if (!exists) { return { status: 404 }; }
 
-    const { data, contentType } = await decryptBlob(blobClient, deviceKey);
-    return {
-        body: data,
-        headers: contentType
-            ? { "Content-Type": contentType }
-            : undefined
-    };
+    const { data, contentType, filename } = await decryptBlob(blobClient, deviceKey);
+    const headers = new Headers();
+    if (contentType) { headers.append("Content-Type", contentType); }
+    if (filename) { headers.append("Content-Disposition", `attachment; filename="${filename}"`)}
+
+    return { body: data, headers };
 };
 
 async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
