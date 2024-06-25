@@ -29,5 +29,21 @@
             required: true,
             },
         },
+        methods: {
+        handleQrCodeGenerated(dataUrl) {
+        this.qrCodeDataUrl = dataUrl;
+        console.log("check handleQrCodeGenerated url")
+        console.log( this.qrCodeDataUrl)
+        return this.qrCodeDataUrl;
+        },
+        downloadQRCode() {
+                const link = document.createElement('a');
+                link.href = this.qrCodeDataUrl;
+                link.download = 'vqr.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+        }
+    }
     }
 </script>
