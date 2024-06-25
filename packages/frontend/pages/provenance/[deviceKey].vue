@@ -25,7 +25,7 @@
       <a href = "#childKeysPoint">
         <button class = "textToLinkButton2">Go to Child Keys </button>
       </a>
-      <div>
+      <div class="provenance">
 
         <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
       </div>
