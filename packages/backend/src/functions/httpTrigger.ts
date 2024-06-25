@@ -170,7 +170,10 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     const { data, contentType, filename } = await decryptBlob(blobClient, deviceKey);
     const headers = new Headers();
     if (contentType) { headers.append("Content-Type", contentType); }
-    if (filename) { headers.append("Content-Disposition", `attachment; filename="${filename}"`)}
+    if (filename) { 
+        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+        headers.append("Attachment-Name", filename);
+    }
 
     return { body: data, headers };
 };
