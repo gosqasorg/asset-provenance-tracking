@@ -117,9 +117,6 @@ export default {
 .provenance {
   white-space: pre-line;
 }
-.textToLink {
-    color: blue;
-}
 .textToLinkButton0 {
     border-width: 0px;
     border-radius: 10px;
