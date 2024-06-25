@@ -38,7 +38,7 @@
             <br>
             <div class="text-iris mt-1">
                 Notify all children?
-                <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> 
+                <input type="checkbox" class="form-check-input" id="notify-all"/> 
             </div>
 
 
