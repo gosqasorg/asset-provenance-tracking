@@ -20,10 +20,9 @@ async function getProvRecords(baseUrl: string, deviceKey: string) {
 }
 
 async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
-    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+    return await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
         method: "GET",
     });
-    return await response.blob();
 }
 
 async function putProvRecord(baseUrl: string, deviceKey: string, record: any, attachments: readonly File[]) {
@@ -87,7 +86,10 @@ program
             const attachment = json[0]?.attachments?.[0];
             if (attachment) {
                 console.log(`Downloading ${attachment}`);
-                await getAttachment(baseUrl, testDeviceKey, attachment!);
+                const resp = await getAttachment(baseUrl, testDeviceKey, attachment!);
+                console.log(resp.headers);
+                const name = resp.headers.get("Attachment-Name")
+                console.log({name})
             }
         }
     })
