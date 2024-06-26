@@ -19,15 +19,21 @@ export async function getProvenance(deviceKey: string) {
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
 //    const baseUrl = useRuntimeConfig().public.baseUrl;
     try {
-        const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-          method: "GET",
-        });
-        return await response.blob();
-      } catch (error) {
-        console.error('Error occurred during getAttachment request:', error);
-        throw error; // re-throw the error if you want to handle it further up the call stack
-      }
+    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+      method: "GET",
+    });
+    const fileName = response.headers.get('Attachment-Name') || "not-getting-attachment-name";
+
+    const blob = await response.blob();
+        return { blob, fileName };
+} catch (error) {
+    console.error('Error occurred during getAttachment request:', error);
+    throw error; // re-throw the error if you want to handle it further up the call stack
+  }
+   
+      
 }
+
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
     const baseUrl = useRuntimeConfig().public.baseUrl;

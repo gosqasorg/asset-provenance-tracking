@@ -18,10 +18,10 @@
             </template>
 
             <div>{{ report.record.description }}</div>
-            <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
+            <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
-                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
-                <a :href="url" download style="display: block; padding: 5px; text-align: left;">
+                <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                <a :href="attachment.url" :download="attachment.fileName" style="display: block; padding: 5px; text-align: left;">
                     Download Image
                 </a>
             </div>
@@ -74,8 +74,17 @@ export default {
                     const baseUrl = useRuntimeConfig().public.baseUrl;
                     const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
-                    const urls = attachments.map(attachment => URL.createObjectURL(attachment));
+
+                    // Create object URLs for attachments and include filenames
+                    const urls = attachments.map(attachment => ({
+                    url: URL.createObjectURL(attachment.blob),
+                    fileName: attachment.fileName
+                    }));                
+
                     this.attachmentURLs[index.toString()] = urls;
+                    console.log(`Attachment URLs for report ${index}:`, this.attachmentURLs[index.toString()]); // Debugging line
+
+
                 }
             } catch (error) {
                 console.error('Error occurred during getAttachment request:', error);
