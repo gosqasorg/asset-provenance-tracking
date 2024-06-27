@@ -7,15 +7,12 @@
         <div v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3 id = "createdDevicePoint">Created Device: {{ report.record.deviceName }}</h3>
-                <div>{{ report.record.deviceDescription }}</div>
             </template>
 
-            <template v-else>
             <div class="mb-1 tag-container">
     <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
     {{tag}}</span>
             </div>
-            </template>
 
             <div>{{ report.record.description }}</div>
             <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
