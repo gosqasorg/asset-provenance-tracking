@@ -8,11 +8,11 @@ const deviceKey = route.params.deviceKey;
     <div class="row justify-content-between">
         <div class="col-sm-6 col-lg-9">
 
-            <div class="mt-4 mb-2 text-iris fs-1" >{{deviceRecord.deviceName}}</div>
+            <h1 class="mt-4 mb-2 text-iris">{{deviceRecord.deviceName}}</h1>
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
-            <div>Device Key: {{ route.params.deviceKey }}</div>
-            <div class="my-2" >{{deviceRecord.description}}</div>
+            <h5>Device Key: {{ route.params.deviceKey }}</h5>
+            <div class="my-2 font-family-base" >{{deviceRecord.description}}</div>
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>

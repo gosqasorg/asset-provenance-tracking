@@ -17,12 +17,28 @@ $custom-theme-colors: (
 $font-family-base: 'Poppins', sans-serif;
 $font-weight-base: 500;
 
-
 $theme-colors: map-merge($custom-theme-colors, $theme-colors);
-
-
 
 
 // import bootstrap
 @import "bootstrap/scss/bootstrap";
 
+
+//// Custom styles implementation:
+
+// Apply custom font size to h1 elements
+h1 {
+    font-size: 48px;
+    font-weight: 600;
+}
+
+// Apply custom font size to h5 elements
+h5 {
+    font-size: 20px;
+    font-weight: $font-weight-base;
+}
+* {
+    font-family: $font-family-base;
+    font-weight: $font-weight-base;
+    font-size: 18px;
+}
