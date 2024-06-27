@@ -4,7 +4,7 @@ const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
-  <div class="container-md my-4" v-if="!isLoading">
+  <div class="container-md my-4" v-if="!isLoading" :key="loadingKey">
     <div class="row justify-content-between">
         <div class="col-sm-6 col-lg-9">
 
@@ -54,7 +54,7 @@ import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 
-let deviceRecord;
+let deviceRecord: any;
 
  // Here we are are going to want to read the device,
  //    but not all the provenance. We will use this to load
@@ -74,7 +74,14 @@ export default {
             isLoading: true,
             hasReportingKey: false,
             childKeys: [],
+            loadingKey: 0,
         }},
+    methods: {
+        //This method helps rerendering the site
+        forceRerender() { 
+            this.loadingKey += 1;
+        }
+    },
     async mounted() {
         try {
             const route = useRoute();
