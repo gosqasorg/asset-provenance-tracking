@@ -12,7 +12,7 @@ const deviceKey = route.params.deviceKey;
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
             <h5>Device Key: {{ route.params.deviceKey }}</h5>
-            <div class="my-2 font-family-base" >{{deviceRecord.description}}</div>
+            <div class="my-2" >{{deviceRecord.description}}</div>
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
