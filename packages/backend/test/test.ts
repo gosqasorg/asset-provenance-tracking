@@ -25,6 +25,12 @@ async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: s
     });
 }
 
+async function getAttachmentName(baseUrl: string, deviceKey: string, attachmentID: string) {
+    return await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+        method: "GET",
+    });
+}
+
 async function putProvRecord(baseUrl: string, deviceKey: string, record: any, attachments: readonly File[]) {
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
@@ -86,10 +92,14 @@ program
             const attachment = json[0]?.attachments?.[0];
             if (attachment) {
                 console.log(`Downloading ${attachment}`);
-                const resp = await getAttachment(baseUrl, testDeviceKey, attachment!);
-                console.log(resp.headers);
-                const name = resp.headers.get("Attachment-Name")
-                console.log({name})
+                const resp = await getAttachment(baseUrl, testDeviceKey, attachment);
+                console.log("Headers");
+                for (const [key, value] of resp.headers) {
+                    console.log(`  ${key}: ${value}`);
+                }
+                const resp2 = await getAttachmentName(baseUrl, testDeviceKey, attachment);
+                const name = await resp2.text();
+                console.log({name});
             }
         }
     })

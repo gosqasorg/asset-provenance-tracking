@@ -154,21 +154,29 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
   return { jsonBody: records };
 }
 
-async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
-    context.log(`getAttachment`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
 
     const containerExists = await containerClient.exists();
-    if (!containerExists) { return { status: 404 }; }
+    if (!containerExists) { return undefined; }
 
     const blobClient = containerClient.getBlockBlobClient(`gosqas/${deviceID}/attach/${attachmentID}`);
     const exists = await blobClient.exists();
-    if (!exists) { return { status: 404 }; }
+    if (!exists) { return undefined; }
 
-    const { data, contentType, filename } = await decryptBlob(blobClient, deviceKey);
+    return await decryptBlob(blobClient, deviceKey);
+}
+
+async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { data, contentType, filename } = decryptedBlob;
     const headers = new Headers();
+    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
     if (contentType) { headers.append("Content-Type", contentType); }
     if (filename) { 
         headers.append("Content-Disposition", `attachment; filename="${filename}"`);
@@ -176,6 +184,14 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     }
 
     return { body: data, headers };
+};
+
+async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { filename } = decryptedBlob;
+    return { body: filename };
 };
 
 async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -270,7 +286,13 @@ app.post("postProvenance", {
 app.get("getAttachment", {
     authLevel: 'anonymous',
     route: 'attachment/{deviceKey}/{attachmentID}',
-    handler: getAttachment
+    handler: getAttachment,
+})
+
+app.get("getAttachmentName", {
+    authLevel: 'anonymous',
+    route: 'attachment/{deviceKey}/{attachmentID}/name',
+    handler: getAttachmentName,
 })
 
 app.get("getStatistics", {
