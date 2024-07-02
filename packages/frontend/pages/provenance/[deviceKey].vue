@@ -10,6 +10,7 @@
 <template>
   <div v-if="!isLoading">
     <div v-if="deviceKeyFound">
+
       <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
     <div>Device ID: {{ deviceKey }}</div>
     <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
@@ -24,7 +25,8 @@
       <a href = "#childKeysPoint">
         <button class = "textToLinkButton2">Go to Child Keys </button>
       </a>
-      <div>
+      <div class="provenance">
+
         <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
       </div>
       <hr class="col-1 my-4">
@@ -121,6 +123,11 @@ export default {
 
 </script>
 <style>
+
+.provenance {
+  white-space: pre-line;
+}
+
 .textToLinkButton0 {
     border-width: 0px;
     border-radius: 10px;
