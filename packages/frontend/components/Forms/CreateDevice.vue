@@ -7,16 +7,24 @@
 -->
 
 <template>
-    <form enctype="multipart/form-data" class="bg-sky p-3" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
         <p class="text-iris mt-1">Create New Device</p>
+
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
             <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
-                <label class="mt-3 text-iris">Device Image (optional):    </label>
-                <input type="file" class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <label class="mt-3 mb-2 text-iris">Device Image (optional)   </label>
+                <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+            </div>
+
+            <label class="mt-3 mb-2 text-iris">Add Tags (optional)</label>
+            <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <div>
+                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 
             </div>
         </div>
+
         <div class="d-grid">        
             <button class="btn my-3 bg-iris text-white" type="submit">Create Device</button>
         </div>
@@ -32,12 +40,17 @@ export default {
         return {
             name: '',
             description: '',
+            tags: [] as string[],
             children_key: '',
             hasParent: false, // states whether a device is contained within a box/container
             pictures: [] as File[] | null,
         }
     },
     methods: {
+        handleUpdateTags(tags: string[]) {
+            // console.log('handle Update Tags', tags);
+            this.tags = tags;
+        },
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -52,6 +65,7 @@ export default {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
                 description: this.description,
+                tags: this.tags,
                 children_key: '',
                 hasParent: false,
                 isReportingKey: false,
@@ -75,7 +89,6 @@ export default {
 
 <style scoped>
     form {
-        background-color: rgb(145, 193, 248);
         border-radius: 10px;
         padding: 30px;
         width: 100%;
@@ -84,6 +97,7 @@ export default {
         margin-right: auto;
 
     }
+    
     #device-form > * {
         padding: 5px;
         margin: 5px;

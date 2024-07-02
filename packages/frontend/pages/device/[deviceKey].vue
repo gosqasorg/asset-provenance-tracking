@@ -28,10 +28,6 @@ const deviceKey = route.params.deviceKey;
 
     </div>
 
-
-    <!-- <div><a :href="`/provenance/${route.params.deviceKey}`">View History Records</a></div> -->
-
-
     <!--Put the Reporting Key here if there is one -->
     <div>
         <div v-if="hasReportingKey" class="mt-4 mb-2 text-iris fs-2">
