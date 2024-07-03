@@ -1,35 +1,49 @@
 <template>
-    <form enctype="multipart/form-data" class="bg-sky p-3" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
         <p class="text-iris mt-1">Create New Container</p>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
             <input type="text" class="form-control mt-2" v-model="description" id="device-description" placeholder="Container Description">
-            <label class="text-iris form-label mt-3" for="file">Container Image (optional):</label>
+            <label class="text-iris form-label mt-3 mb-2" for="file">Container Image (optional)</label>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
-
-            <span style="display: inline">
-            <label class="text-iris mt-3 me-2" for="report-key">Create Reporting Key:</label>
-            <input type="checkbox" id="report-key" v-model="createReportingKey" /> </span>
-
-            <br>
-            <label class="text-iris my-3 me-2" for="children-keys">Number of contained devices (optional):</label>
-            <input type="number" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
-
-            <br>
-            <span class="text-iris mt-4">
-            Customize Contained Device Names?
-            <div class="text-black p-1" style="display:inline"> 
-                <input type="radio" id="customize-yes" name="customize"  @change="displayFields"/>Yes
-                <input class="ms-1" type="radio" id="customize-no" name="customize"   @change="displayFields" checked/>No
+            
+            <label class="mt-3 mb-2 text-iris">Add Tags (optional)</label>
+            <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <div>
+                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 
             </div>
-            </span>
 
 
-            <div id="num-fields" style="display:none" >
+            <label class="text-iris my-4 me-2" for="children-keys">Number of contained devices (optional)</label>
+            <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
+            
+            <br>
+            <div class="text-iris mt-1 ">
+                Customize Contained Device Names?
+                <div class="text-black p-1" style="display:inline"> 
+                    <input class="form-check-input" type="checkbox" id="customize-yes" name="customize"  @change="displayFields"/>
+                </div>
+            </div>
+
+            <div class="text-iris" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
 
+            <br>
+            <div class="text-iris mt-1 ">
+                Create Reporting Key?
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> 
+            </div>
+
+            <br>
+            <div class="text-iris mt-1">
+                Notify all children?
+                <input type="checkbox" class="form-check-input" id="notify-all"/> 
+            </div>
+
+
         </div>
+        
         <div class="d-grid">        
             <button class="btn my-3 bg-iris text-white" type="submit">Create Container</button>
         </div>    </form>
@@ -44,6 +58,7 @@ export default {
         return {
             name: '',
             description: '',
+            tags: [] as string[],
             childrenKeys: 0,
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/container
@@ -51,6 +66,10 @@ export default {
         }
     },
     methods: {
+        handleUpdateTags(tags: string[]) {
+            // console.log('handle Update Tags', tags);
+            this.tags = tags;
+        },
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -76,6 +95,9 @@ export default {
                     newInput = document.createElement('input');
                     newInput.id = 'name-input-' + (i);
                     newInput.type = 'text';
+                    newInput.style.border = "0px";
+                    newInput.style.borderRadius = "4px";
+                    newInput.style.margin = "3px"
                     newInput.required = true;
                     newLabel =  document.createElement('label');
                     newLabel.textContent = 'Device #'+ (i+1) +' Name:  ';
@@ -88,7 +110,7 @@ export default {
                 wrapper_div.append(fieldset);
                 wrapper_div.style.display = "inline";
 
-            } else if (customize_no.checked) {
+            } else {
                 wrapper_div.style.display = "none";
             }
             
@@ -106,15 +128,22 @@ export default {
             const childrenDeviceList = [];
             const childrenDeviceName = [];
             let reportingKey;
+
+            if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
+                console.log("notifying all children");
+                this.tags = (this.tags).concat(['notify_all'])
+            } 
+
             if (hasReportingKey) {
                 reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
 
                 await  postProvenance(reportingKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     // Is this a proper description? Should it say "reporting key" or something?
                     description: this.description,
-                    tags: ['creation', 'reportingkey'],
+                    tags: tag_set,
                     children_key: '',
                     hasParent: true,
                     isReportingKey: true,
@@ -153,8 +182,8 @@ export default {
                     await  postProvenance(childKey, {
                         blobType: 'deviceInitializer',
                         deviceName: childName,
-                        description: "",  // need to see if we want a special description when making a child
-                        tags:['creation'],
+                        description: this.description,  // need to see if we want a special description when making a child
+                        tags:this.tags,
                         children_key: '',
                         hasParent: true,
                         isReportingKey: false
@@ -171,12 +200,11 @@ export default {
                     childrenDeviceName.push(childName);
                 }
             };
-            console.log("reportingKey",reportingKey);
             postProvenance(deviceKey, {
                 blobType: 'deviceInitializer',
                 deviceName: this.name,
                 description: this.description,
-                tags:['creation'],
+                tags:this.tags,
                 reportingKey: reportingKey,
                 children_key: childrenDeviceList,
                 children_name: childrenDeviceName,
@@ -202,7 +230,6 @@ export default {
 
 <style scoped>
     form {
-        background-color: rgb(60, 179, 113); /* MediumSeaGreen */
         border-radius: 10px;
         padding: 30px;
         width: 100%;
@@ -225,5 +252,22 @@ export default {
         width: 100%;
         margin-top: 30px;
 
+    }
+    input[type=number] {
+        border: 0px;
+        border-radius: 4px;
+    }
+    input[type=checkbox] {
+        width:15px;
+        border: 0px;
+    }
+    .num-fields {
+        border: 0px;
+        border-radius: 4px;
+        border-color:red;
+    }
+    input[type=text] {
+        border:5px;
+        border-color:red;
     }
 </style>
