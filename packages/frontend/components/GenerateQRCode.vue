@@ -37,7 +37,7 @@
 </template>
   
 <script>
-    import QRCodeVue3 from "../qrcode-vue3/src/index";
+    import QRCodeVue3 from "../qrcode-vue3/src/QRCodeVue3.vue";
   
     export default {
         components: {
