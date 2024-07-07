@@ -22,10 +22,16 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
     const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
       method: "GET",
     });
-    const fileName = response.headers.get('Attachment-Name') || "not-getting-attachment-name";
 
     const blob = await response.blob();
-        return { blob, fileName };
+
+    // Fetch the attachment name
+    const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+        method: "GET",
+    });
+    const fileName = await nameResponse.text();
+
+    return { blob, fileName };
 } catch (error) {
     console.error('Error occurred during getAttachment request:', error);
     throw error; // re-throw the error if you want to handle it further up the call stack
