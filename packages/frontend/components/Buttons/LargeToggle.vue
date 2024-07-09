@@ -1,24 +1,33 @@
 <!-- LargeToggle.vue -->
 <template>
-  <div class="ms-1 mb-3 toggle-container">
-            <input type="checkbox" id="toggle" class="toggleCheckbox" @change="toggleView">
-            <label for="toggle" class="toggle-label">
-                <div class="toggle-text toggle-left">New Device</div>
-                <div class="toggle-text toggle-right">New Container</div>
-            </label>
-        </div>
-</template>
-
-<script lang="ts">
-export default {
+    <div class="ms-1 mb-3 toggle-border">
+      <input type="checkbox" id="toggle" class="toggleCheckbox" @change="toggleView">
+      <label for="toggle" class="toggle-label">
+        <div class="toggle-text toggle-left">{{ leftLabel }}</div>
+        <div class="toggle-text toggle-right">{{ rightLabel }}</div>
+      </label>
+    </div>
+  </template>
+  
+  <script lang="ts">
+  export default {
+    props: {
+      leftLabel: {
+        type: String,
+        required: true
+      },
+      rightLabel: {
+        type: String,
+        required: true
+      }
+    },
     methods: {
-        toggleView() {
-            this.$emit('toggle-change');
-        }
+      toggleView() {
+        this.$emit('toggle-change');
+      }
     }
-}
-</script>
-
+  }
+  </script>
 
 <style scoped>
 /* Hide the original checkbox */
@@ -26,29 +35,25 @@ export default {
     display: none;
 }
 
-/* Container for the toggle switch */
-.toggle-container {
-    display: flex;
-    justify-content: left;
-    margin: 0 auto;
-    padding: 10px;
-    width: 500px;
-    height: 70px;
-    border-radius: 20px 0px 20px 0px;
+.toggle-border {
+  width: fit-content;
+  border: 2px solid #4a148c;
+  border-radius: 12px;
+  padding: 4px;
 }
 
-/* Custom toggle switch */
+/* Toggle Border and Layout */
 .toggle-label {
     position: relative;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     width: fit-content;
-    border: 2px solid #4a148c;
-    border-radius: 25px;
     background: white;
     cursor: pointer;
-    overflow: hidden; /* Ensure no overflow */
+    
 }
+
+
 
 /* Create the toggle slider */
 .toggle-label::before {
@@ -59,9 +64,9 @@ export default {
     top: 0;
     left: 0;
     background: #4a148c;
-    border-radius: 25px;
+    border-radius: 10px;
+    padding: 14px 18px;
     transition: left 0.3s;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add a shadow for better visibility */
 }
 
 /* Text containers */
@@ -69,7 +74,6 @@ export default {
     padding: 10px;
     text-align: center;
     z-index: 1;
-    color: white;
     font-weight: bold;
 }
 
@@ -79,27 +83,18 @@ export default {
 }
 
 .toggleCheckbox:checked + .toggle-label .toggle-left {
-    color: #4a148c; /* Inactive text color */
+  color: black; /* Inactive text color */
 }
 
 .toggleCheckbox:checked + .toggle-label .toggle-right {
-    color: black; /* Active text color */
+  color: white; /* Active text color */
 }
 
 .toggleCheckbox + .toggle-label .toggle-left {
-    color: white; /* Active text color */
+  color: white; /* Active text color */
 }
 
 .toggleCheckbox + .toggle-label .toggle-right {
-    color: black; /* Inactive text color */
+  color: black; /* Inactive text color */
 }
-
-.ms-1 {
-    margin-left: 0.25rem;
-}
-
-.mb-3 {
-    margin-bottom: 1rem;
-}
-
 </style>

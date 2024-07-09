@@ -24,7 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  
  
         <!-- create toggle for single or container  -->
-        <ButtonsLargeToggle @toggle-change="toggleView" />
+        <ButtonsLargeToggle 
+            @toggle-change="toggleView" 
+            :left-label="'New Device'" 
+            :right-label="'New Container'"
+        />
     
         <!-- <div>Create a Single Asset:</div> -->
         <div id="create_device"><FormsCreateDevice/></div>
