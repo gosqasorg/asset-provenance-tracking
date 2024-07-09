@@ -1,0 +1,3 @@
+[submodule "packages/frontend/qrcode-vue3"]
+	path = packages/frontend/qrcode-vue3
+	url = https://github.com/judithweng/qrcode-vue3.git
