@@ -8,7 +8,11 @@
         <div class="my-4 text-iris fs-1">Global Distributed Tracking</div>
 
         <!-- create toggle for single or container  -->
-        <ButtonsLargeToggle @toggle-change="toggleView" />
+        <ButtonsLargeToggle 
+            @toggle-change="toggleView" 
+            :left-label="'New Device'" 
+            :right-label="'New Container'"
+        />
     
         <!-- <div>Create a Single Asset:</div> -->
         <div id="create_device"><CreateDevice/></div>
