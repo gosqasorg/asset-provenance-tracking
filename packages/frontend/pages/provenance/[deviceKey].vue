@@ -45,6 +45,7 @@
         Child Keys:
       <div>
         <KeyList v-bind:keys="childKeys"/>
+        <br> <CsvFile :deviceKey="deviceKey"></CsvFile>
       </div>
     </div>
 
@@ -61,12 +62,11 @@
 </template>
 
 <script lang="ts">
-import { getProvenance} from '~/services/azureFuncs.ts'
+import { getProvenance} from '~/services/azureFuncs';
 import { ref, onMounted } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord;
-let provenance;
+let deviceRecord, provenance;
 
 export default {
     components: {
