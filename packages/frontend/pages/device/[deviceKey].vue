@@ -39,8 +39,7 @@ const deviceKey = route.params.deviceKey;
     </div>
 
     <!--Put the Child List key here if there are any -->
-    <div v-if="childKeys" class="mt-4 mb-2 text-iris fs-3"> ChildKeys: </div>
-    <div> 
+    <div v-if="childKeys" class="mt-4 mb-2 text-iris fs-3"> ChildKeys: 
     <KeyList v-bind:keys="childKeys"/>
     <br> <CsvFile :deviceKey="route.params.deviceKey"></CsvFile>
     </div>
