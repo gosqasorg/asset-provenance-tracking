@@ -41,12 +41,12 @@
       </div>
     </div>
     <!--Put the Child List key here if there are any -->
-    <div id="childKeysPoint">
+    <div v-if=" childKeys.length > 0 " id="childKeysPoint">
         Child Keys:
-      <div>
         <KeyList v-bind:keys="childKeys"/>
+    </div>
+    <div v-if="(childKeys.length > 0) || hasReportingKey ">
         <br> <CsvFile :deviceKey="deviceKey"></CsvFile>
-      </div>
     </div>
 
       <!-- TODO: Uncomment when  functionality is ready: -->
