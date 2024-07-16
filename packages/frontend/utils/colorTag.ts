@@ -118,18 +118,6 @@ const colors = [
   "#eb1d1a",
 ];
 
-// interface AssociativeArray {
-//   [key: string]: string
-// }
-
-// var designedTags: AssociativeArray[] = []
-// designedTags['recall'] = "#ff0000"; // Red
-// designedTags['good'] = "#00ff00"; // Green
-// designedTags['bad'] = "#dc143c"; // Crimson
-// designedTags['received'] = "#0000cd"; // MediumBlue
-// designedTags['inspected'] = "#6495ed"; // CornflowerBlue
-// designedTags['sent'] = "#ffff00"; // Yellow
-
 let designedTags : { [key:string]: string } = {
   "recall": "#ff0000", // Red
   "good": "#00ff00", //Green
