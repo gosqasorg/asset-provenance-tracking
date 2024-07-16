@@ -22,28 +22,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
-        <p class="text-iris mt-1">Create New Device</p>
-
+        <h4 class="text-iris mt-1 mb-3">Create New Device</h4>
+ 
+ 
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
-            <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
+            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
-                <label class="mt-3 mb-2 text-iris">Device Image (optional)   </label>
+                <h4 class="mt-3 mb-3 text-iris">Device Image (optional)   </h4>
                 <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
             </div>
-
-            <label class="mt-3 mb-2 text-iris">Add Tags (optional)</label>
+ 
+ 
+            <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
             <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span> 
+                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
         </div>
-
-        <div class="d-grid">        
-            <button class="btn my-3 bg-iris text-white" type="submit">Create Device</button>
+ 
+ 
+        <div class="d-grid">       
+            <button class="btn my-3 bg-iris text-white mb-0" type="submit">Create Device</button>
         </div>
     </form>
-</template>
+ </template>
 
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';
