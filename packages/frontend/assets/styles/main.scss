@@ -50,19 +50,98 @@ $form-file-button-hover-bg: #322253;
 
 //// Custom styles implementation:
 
+//// Mobile
 // Apply custom font size to h1 elements
 h1 {
-    font-size: 48px;
+    font-size: 32px;
     font-weight: 600;
-}
-
-// Apply custom font size to h5 elements
-h5 {
-    font-size: 20px;
+    line-height: 50px;
+ }
+ 
+ 
+ // Apply custom font size to h2 elements
+ h2 {
+    font-size: 28px;
     font-weight: $font-weight-base;
-}
-* {
-    font-family: $font-family-base;
+    line-height: 42px;
+ }
+ 
+ 
+ // Apply custom font size to h3 elements
+ h3 {
+    font-size: 24px;
     font-weight: $font-weight-base;
-    font-size: 18px;
-}
+    line-height: 36px;
+ }
+ 
+ 
+ // Apply custom font size to h4 elements
+ h4 {
+    font-size: 22px;
+    font-weight: $font-weight-base;
+    line-height: 33px;
+ }
+ 
+ 
+ // Apply h4 style font to buttons and inputs
+ .form-control {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 33px;
+ }
+ .btn {
+    font-size: 22px;
+    font-weight: 350;
+    line-height: 33px;
+ }
+ 
+ 
+ //// Desktop
+ @media (min-width:768px) {
+    h1 {
+        font-size: 48px;
+        font-weight: 600;
+        line-height: 72px;
+    }
+ 
+ 
+    h3 {
+        font-size: 32px;
+        line-height: 50px;
+    }
+ 
+ 
+    h4 {
+        font-size: 24px;
+        line-height: 36px;
+    }
+ 
+ 
+    .form-control {
+        font-size: 24px;
+        font-weight: 400;
+        line-height: 36px;
+    }
+    .btn {
+        font-size: 24px;
+        font-weight: 350;
+        line-height: 36px;
+    }
+    // h4 style on nav-links
+    .nav-link {
+        font-size: 24px;
+    }
+ 
+ 
+    h5 {
+        font-size: 20px;
+        font-weight: $font-weight-base;
+        line-height: 30px;
+    }
+    * {
+        font-family: $font-family-base;
+        font-weight: $font-weight-base;
+        font-size: 18px;
+    }
+ }
+ 
