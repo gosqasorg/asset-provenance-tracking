@@ -6,7 +6,10 @@ on:
       - main
     paths:
       - packages/backend/**
-
+  pull_request:
+    branches:
+      - main
+    
 # Docs: https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=linux%2Cjavascript&pivots=method-manual
 
 env:
@@ -36,6 +39,7 @@ jobs:
 
     - name: 'Run Azure Functions Action'
       uses: Azure/functions-action@v1
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       id: fa
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
