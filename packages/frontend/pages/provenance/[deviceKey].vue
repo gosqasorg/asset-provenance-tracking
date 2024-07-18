@@ -26,36 +26,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   <div v-if="!isLoading">
     <div v-if="deviceKeyFound">
 
-      <div class="row">
-        <div class="col-md-4">
+      <div class="row pt-5 pb-6 mx-4">
+        <div class="col-md-2">
         <!-- Scrollspy -->
-          <div id="jump-to" class="sticky-top">
+          <div id="jump-to" class="sticky-top text-slate">
             <p>Jump to section</p>
-            <ul class="nav flex-column nav-pills menu-sidebar">
-              <li class="nav-item">
-                <a class="nav-link" href="#device-details">Device details</a>
+            <ul class="nav flex-column nav-pills menu-sidebar ps-2 border-start border-2 border-iris">
+              <li class="nav-item py-2">
+                <a  class="text-slate" href="#device-details">Device details</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#priority-notices">Priority notices</a>
+              <li class="nav-item py-2">
+                <a class="text-slate" href="#priority-notices">Priority notices</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#recent">Most recent update</a>
+              <li class="nav-item py-2">
+                <a class="text-slate" href="#recent">Most recent update</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#device-creation">Device creation</a>
+              <li class="nav-item py-2">
+                <a class="text-slate" href="#device-creation">Device creation</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#create-record">Create new history record</a>
+              <li class="nav-item py-2">
+                <a class="text-slate" href="#create-record">Create new history record</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#child-keys">Child keys</a>
+              <li class="nav-item py-2">
+                <a class="text-slate" href="#child-keys">Child keys</a>
               </li>
             </ul>
           </div>
     <!-- Scrollspy -->
         </div>
 
-        <div class="col-md-8">
+        <div class="col-md-10">
           <!-- Spied element -->
           <div data-mdb-scrollspy-init data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
@@ -228,4 +228,17 @@ export default {
     padding: 5px;
     margin-bottom: 10px;
 } */
+
+a:link {
+      text-decoration: none;
+}
+
+a:visited {
+      text-decoration: none;
+}
+
+a:active {
+  font-weight: bold;
+}
+
 </style>
