@@ -26,10 +26,77 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   <div v-if="!isLoading">
     <div v-if="deviceKeyFound">
 
-      <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
-    <div>Device ID: {{ deviceKey }}</div>
-    <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
-        <a href = "#createdDevicePoint">
+      <div class="row">
+        <div class="col-md-4">
+        <!-- Scrollspy -->
+          <div id="jump-to" class="sticky-top">
+            <p>Jump to section</p>
+            <ul class="nav flex-column nav-pills menu-sidebar">
+              <li class="nav-item">
+                <a class="nav-link" href="#device-details">Device details</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#priority-notices">Priority notices</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#recent">Most recent update</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#device-creation">Device creation</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#create-record">Create new history record</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#child-keys">Child keys</a>
+              </li>
+            </ul>
+          </div>
+    <!-- Scrollspy -->
+        </div>
+
+        <div class="col-md-8">
+          <!-- Spied element -->
+          <div data-mdb-scrollspy-init data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+            <section id="device-details">
+              <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
+              <div>Device ID: {{ deviceKey }}</div>
+              <div>{{ deviceRecord.description }}</div>
+            </section>
+
+            <section id="priority-notices">
+              <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
+            </section>
+
+            <section id="recent">
+              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
+            </section>
+            <section id="device-creation">
+              
+            </section>
+            <section id="create-record">
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecordPoint"/>
+            </section>
+            <section id="child-keys">
+              <div v-if="hasReportingKey"> Reporting Key:
+                <div> <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a></div>
+              </div>
+              <div> Child Keys:
+                <div> <KeyList v-bind:keys="childKeys"/> </div>
+              </div>
+            </section>
+            
+          </div>
+          <!-- Spied element -->
+        </div>
+
+      </div>
+
+
+      <!-- <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
+    <div>Device ID: {{ deviceKey }}</div> -->
+    <!-- <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/> -->
+        <!-- <a href = "#createdDevicePoint">
           <button class = "textToLinkButton0">Go to Device Creation Record </button>
         </a>
     <br>
@@ -39,29 +106,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <br>
       <a href = "#childKeysPoint">
         <button class = "textToLinkButton2">Go to Child Keys </button>
-      </a>
-      <div class="provenance">
+      </a> -->
+      <!-- <div class="provenance">
 
         <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
-      </div>
-      <hr class="col-1 my-4">
-    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecordPoint"/>
+      </div> -->
+      <!-- <hr class="col-1 my-4">
+    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecordPoint"/> -->
     <!--Put the Reporting Key here if there is one -->
-    <div v-if="!isLoading">
+    <!-- <div v-if="!isLoading">
       <div v-if="hasReportingKey">
         Reporting Key:
         <div>
           <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
         </div>
       </div>
-    </div>
+    </div> -->
     <!--Put the Child List key here if there are any -->
-    <div id="childKeysPoint">
+    <!-- <div id="childKeysPoint">
         Child Keys:
       <div>
         <KeyList v-bind:keys="childKeys"/>
       </div>
-    </div>
+    </div> -->
 
       <!-- TODO: Uncomment when  functionality is ready: -->
       <!-- <div>
@@ -142,7 +209,7 @@ export default {
 .provenance {
   white-space: pre-line;
 }
-
+/* 
 .textToLinkButton0 {
     border-width: 0px;
     border-radius: 10px;
@@ -160,5 +227,5 @@ export default {
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 10px;
-}
+} */
 </style>
