@@ -1,3 +1,18 @@
+// main.scss -- logo styling 
+// Copyright (C) 2024 GOSQAS Team 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 // custom color variables
 
 // @import "bootstrap/scss/_utilities";
@@ -17,12 +32,116 @@ $custom-theme-colors: (
 $font-family-base: 'Poppins', sans-serif;
 $font-weight-base: 500;
 
-
 $theme-colors: map-merge($custom-theme-colors, $theme-colors);
 
+$input-placeholder-color: #1e2019;
+$input-font-weight: $font-weight-base;
+$input-border-width: 0;
+
+$form-file-button-color: #ffffff;
+$form-file-button-bg: #4e3681 ;
+$form-file-button-hover-bg: #322253;
 
 
 
 // import bootstrap
 @import "bootstrap/scss/bootstrap";
 
+
+//// Custom styles implementation:
+
+//// Mobile
+// Apply custom font size to h1 elements
+h1 {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 50px;
+ }
+ 
+ 
+ // Apply custom font size to h2 elements
+ h2 {
+    font-size: 28px;
+    font-weight: $font-weight-base;
+    line-height: 42px;
+ }
+ 
+ 
+ // Apply custom font size to h3 elements
+ h3 {
+    font-size: 24px;
+    font-weight: $font-weight-base;
+    line-height: 36px;
+ }
+ 
+ 
+ // Apply custom font size to h4 elements
+ h4 {
+    font-size: 22px;
+    font-weight: $font-weight-base;
+    line-height: 33px;
+ }
+ 
+ 
+ // Apply h4 style font to buttons and inputs
+ .form-control {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 33px;
+ }
+ .btn {
+    font-size: 22px;
+    font-weight: 350;
+    line-height: 33px;
+ }
+ 
+ 
+ //// Desktop
+ @media (min-width:768px) {
+    h1 {
+        font-size: 48px;
+        font-weight: 600;
+        line-height: 72px;
+    }
+ 
+ 
+    h3 {
+        font-size: 32px;
+        line-height: 50px;
+    }
+ 
+ 
+    h4 {
+        font-size: 24px;
+        line-height: 36px;
+    }
+ 
+ 
+    .form-control {
+        font-size: 24px;
+        font-weight: 400;
+        line-height: 36px;
+    }
+    .btn {
+        font-size: 24px;
+        font-weight: 350;
+        line-height: 36px;
+    }
+    // h4 style on nav-links
+    .nav-link {
+        font-size: 24px;
+    }
+ 
+ 
+    h5 {
+        font-size: 20px;
+        font-weight: $font-weight-base;
+        line-height: 30px;
+    }
+    * {
+        font-family: $font-family-base;
+        font-weight: $font-weight-base;
+        font-size: 18px;
+    }
+ }
+ 

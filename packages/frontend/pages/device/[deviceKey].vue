@@ -1,17 +1,31 @@
+<!-- deviceKey.vue -- Adjustment for Device
+Copyright (C) 2024 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
 </script>
 
 <template>
-  <div class="container-md my-4" v-if="!isLoading">
+  <div class="container-md my-4" v-if="!isLoading" :key="loadingKey">
     <div class="row justify-content-between">
         <div class="col-sm-6 col-lg-9">
 
-            <div class="mt-4 mb-2 text-iris fs-1" >{{deviceRecord.deviceName}}</div>
+            <h1 class="mt-4 mb-2 text-iris">{{deviceRecord.deviceName}}</h1>
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
-            <div>Device Key: {{ route.params.deviceKey }}</div>
+            <h5>Device Key: {{ route.params.deviceKey }}</h5>
             <div class="my-2" >{{deviceRecord.description}}</div>
         
             <div> 
@@ -28,10 +42,6 @@ const deviceKey = route.params.deviceKey;
 
     </div>
 
-
-    <!-- <div><a :href="`/provenance/${route.params.deviceKey}`">View History Records</a></div> -->
-
-
     <!--Put the Reporting Key here if there is one -->
     <div>
         <div v-if="hasReportingKey" class="mt-4 mb-2 text-iris fs-2">
@@ -43,9 +53,10 @@ const deviceKey = route.params.deviceKey;
     </div>
 
     <!--Put the Child List key here if there are any -->
-    <div v-if="childKeys" class="mt-4 mb-2 text-iris fs-3"> ChildKeys: </div>
-    <div> 
-    <KeyList v-bind:keys="childKeys"/>
+    <div v-if="childKeys.length > 0 " class="mt-4 mb-2 text-iris fs-3"> ChildKeys: 
+    <KeyList v-bind:keys="childKeys"/> </div>
+    <div v-if="(childKeys.length > 0) || hasReportingKey "> 
+    <br> <CsvFile :deviceKey="route.params.deviceKey"></CsvFile>
     </div>
   </div>
 </template>
@@ -54,7 +65,7 @@ import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 
-let deviceRecord;
+let deviceRecord: any;
 
  // Here we are are going to want to read the device,
  //    but not all the provenance. We will use this to load
@@ -74,7 +85,14 @@ export default {
             isLoading: true,
             hasReportingKey: false,
             childKeys: [],
+            loadingKey: 0,
         }},
+    methods: {
+        //This method helps rerendering the site
+        forceRerender() { 
+            this.loadingKey += 1;
+        }
+    },
     async mounted() {
         try {
             const route = useRoute();
