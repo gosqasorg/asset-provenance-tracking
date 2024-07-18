@@ -34,22 +34,38 @@ export async function getProvenance(deviceKey: string) {
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
 //    const baseUrl = useRuntimeConfig().public.baseUrl;
     try {
-        const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-          method: "GET",
-        });
-        return await response.blob();
-      } catch (error) {
-        console.error('Error occurred during getAttachment request:', error);
-        throw error; // re-throw the error if you want to handle it further up the call stack
-      }
+    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+      method: "GET",
+    });
+
+    const blob = await response.blob();
+
+    // Check for the attachment name
+    let fileName = response.headers.get('Attachment-Name');
+    // If the header is not present, fetch the attachment name
+    if(!fileName) {
+        // Fetch the attachment name
+        const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+        method: "GET",
+    });
+        fileName = await nameResponse.text();
+    }
+    return { blob, fileName };
+} catch (error) {
+    console.error('Error occurred during getAttachment request:', error);
+    throw error; // re-throw the error if you want to handle it further up the call stack
+  }
+   
+      
 }
 
-export async function postProvenance(deviceKey: string, record: any, attachments: readonly Blob[]) {
+
+export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
     for (const blob of attachments) {
-        formData.append("attachment", blob);
+        formData.append(blob.name, blob);
     }
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",

@@ -20,17 +20,22 @@ async function getProvRecords(baseUrl: string, deviceKey: string) {
 }
 
 async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
-    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+    return await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
         method: "GET",
     });
-    return await response.blob();
 }
 
-async function putProvRecord(baseUrl: string, deviceKey: string, record: any, attachments: readonly Blob[]) {
+async function getAttachmentName(baseUrl: string, deviceKey: string, attachmentID: string) {
+    return await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+        method: "GET",
+    });
+}
+
+async function putProvRecord(baseUrl: string, deviceKey: string, record: any, attachments: readonly File[]) {
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
     for (const blob of attachments) {
-        formData.append("attachment", blob);
+        formData.append(blob.name, blob as Blob);
     }
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",
@@ -87,14 +92,21 @@ program
             const attachment = json[0]?.attachments?.[0];
             if (attachment) {
                 console.log(`Downloading ${attachment}`);
-                await getAttachment(baseUrl, testDeviceKey, attachment!);
+                const resp = await getAttachment(baseUrl, testDeviceKey, attachment);
+                console.log("Headers");
+                for (const [key, value] of resp.headers) {
+                    console.log(`  ${key}: ${value}`);
+                }
+                const resp2 = await getAttachmentName(baseUrl, testDeviceKey, attachment);
+                const name = await resp2.text();
+                console.log({name});
             }
         }
     })
 
 program.parse(process.argv);
 
-async function getTestImages(): Promise<readonly Blob[]> {
+async function getTestImages(): Promise<readonly File[]> {
     const images = new Array<File>();
     for (const fileName of await readdir(__dirname)) {
         const ext = extname(fileName);
@@ -104,5 +116,5 @@ async function getTestImages(): Promise<readonly Blob[]> {
         const file = new File([buffer], fileName, { type });
         images.push(file)
     }
-    return images as readonly Blob[];
+    return images;
 }
