@@ -84,6 +84,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <div> Child Keys:
                 <div> <KeyList v-bind:keys="childKeys"/> </div>
               </div>
+              <div v-if="(childKeys.length > 0) || hasReportingKey ">
+                <CsvFile :deviceKey="deviceKey"></CsvFile>
+              </div>
             </section>
             
           </div>
@@ -125,12 +128,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <!--Put the Child List key here if there are any -->
     <!-- <div id="childKeysPoint">
         Child Keys:
-      <div>
         <KeyList v-bind:keys="childKeys"/>
-      </div>
-    </div> -->
+    </div>
+    <div v-if="(childKeys.length > 0) || hasReportingKey ">
+        <br> <CsvFile :deviceKey="deviceKey"></CsvFile>
+    </div>
 
-      <!-- TODO: Uncomment when  functionality is ready: -->
+      TODO: Uncomment when  functionality is ready: -->
       <!-- <div>
           <ProvenanceNotificationSignUpModal/>
       </div>   --> 
@@ -143,12 +147,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-import { getProvenance} from '~/services/azureFuncs.ts'
+import { getProvenance} from '~/services/azureFuncs';
 import { ref, onMounted } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord;
-let provenance;
+let deviceRecord, provenance;
 
 export default {
     components: {

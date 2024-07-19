@@ -49,9 +49,9 @@ async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
     return toHex(hash);
 }
 
-async function encrypt(key: Uint8Array, data: BufferSource): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
+async function encrypt(key: Uint8Array, data: BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ['encrypt']);
-    const salt = crypto.getRandomValues(new Uint8Array(16));
+    salt ??= crypto.getRandomValues(new Uint8Array(16));
     const encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv: salt }, $key, data);
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
@@ -62,19 +62,24 @@ async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Ar
     return new Uint8Array(result);
 }
 
-async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number): Promise<string> {
+async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
     const deviceID = await calculateDeviceID(deviceKey);
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
     const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
 
+    const { encryptedData: encryptedName } = fileName 
+        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt) 
+        : { encryptedData: undefined };
+    
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
             gdtsalt: toHex(salt),
             gdttimestamp: `${timestamp}`,
+            gdtname: encryptedName ? toHex(encryptedName) : ""
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
@@ -83,7 +88,14 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     return blobID;
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
+interface DecryptedBlob {
+    data: Uint8Array;
+    contentType: string;
+    timestamp: number;
+    filename?: string;
+}
+
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
@@ -91,15 +103,21 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array) {
     if (isNaN(timestamp) || !isFinite(timestamp)) throw new Error(`Invalid Timestamp ${client.name}`);
 
     const buffer = await client.downloadToBuffer();
-    const data = await decrypt(deviceKey, fromHex(salt), buffer);
+    const saltBuffer = fromHex(salt);
+    const data = await decrypt(deviceKey, saltBuffer, buffer);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
             throw new Error(`Invalid Hash ${client.name}`);
         }
     }
+
     const contentType = props.metadata?.["gdtcontenttype"];
-    return { data, contentType, timestamp };
+    const encryptedName = props.metadata?.["gdtname"] ?? "";
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer, fromHex(encryptedName)) : undefined;
+    const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
+
+    return { data, contentType, timestamp, filename };
 
     function areEqual(first: Uint8Array, second: Uint8Array) {
         return first.length === second.length
@@ -136,26 +154,44 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
   return { jsonBody: records };
 }
 
-async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
-    context.log(`getAttachment`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
 
     const containerExists = await containerClient.exists();
-    if (!containerExists) { return { status: 404 }; }
+    if (!containerExists) { return undefined; }
 
     const blobClient = containerClient.getBlockBlobClient(`gosqas/${deviceID}/attach/${attachmentID}`);
     const exists = await blobClient.exists();
-    if (!exists) { return { status: 404 }; }
+    if (!exists) { return undefined; }
 
-    const { data, contentType } = await decryptBlob(blobClient, deviceKey);
-    return {
-        body: data,
-        headers: contentType
-            ? { "Content-Type": contentType }
-            : undefined
-    };
+    return await decryptBlob(blobClient, deviceKey);
+}
+
+async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { data, contentType, filename } = decryptedBlob;
+    const headers = new Headers();
+    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
+    if (contentType) { headers.append("Content-Type", contentType); }
+    if (filename) { 
+        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+        headers.append("Attachment-Name", filename);
+    }
+
+    return { body: data, headers };
+};
+
+async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { filename } = decryptedBlob;
+    return { body: filename };
 };
 
 async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -172,13 +208,12 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
-
     const attachments = new Array<string>();
     {
-        for (const attach of formData.getAll("attachment")) {
+        for (const attach of formData.values()) {
             if (typeof attach === 'string') continue;
             const data = await attach.arrayBuffer()
-            const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.type, timestamp);
+            const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.type, timestamp, attach.name);
             attachments.push(attachmentID);
         }
     }
@@ -186,9 +221,8 @@ async function postProvenance(request: HttpRequest, context: InvocationContext):
     {
         const provRecord: ProvenanceRecord = { record, attachments };
         const data = new TextEncoder().encode(JSON.stringify(provRecord));
-        const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp);
-      return {
-        jsonBody: { record: recordID, attachments } };
+        const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+      return { jsonBody: { record: recordID, attachments } };
     }
 }
 // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -252,7 +286,13 @@ app.post("postProvenance", {
 app.get("getAttachment", {
     authLevel: 'anonymous',
     route: 'attachment/{deviceKey}/{attachmentID}',
-    handler: getAttachment
+    handler: getAttachment,
+})
+
+app.get("getAttachmentName", {
+    authLevel: 'anonymous',
+    route: 'attachment/{deviceKey}/{attachmentID}/name',
+    handler: getAttachmentName,
 })
 
 app.get("getStatistics", {

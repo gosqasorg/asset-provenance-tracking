@@ -118,17 +118,14 @@ const colors = [
   "#eb1d1a",
 ];
 
-interface AssociativeArray {
-  [key: string]: string
+let designedTags : { [key:string]: string } = {
+  "recall": "#ff0000", // Red
+  "good": "#00ff00", //Green
+  'bad': "#dc143c", // Crimson
+  'received':"#0000cd", // MediumBlue
+  'inspected': "#6495ed", // CornflowerBlue
+  'sent': "#ffff00" // Yellow
 }
-
-var designedTags: AssociativeArray[] = []
-designedTags['recall'] = "#ff0000"; // Red
-designedTags['good'] = "#00ff00"; // Green
-designedTags['bad'] = "#dc143c"; // Crimson
-designedTags['received'] = "#0000cd"; // MediumBlue
-designedTags['inspected'] = "#6495ed"; // CornflowerBlue
-designedTags['sent'] = "#ffff00"; // Yellow
 
 
 // Function to generate hash.
