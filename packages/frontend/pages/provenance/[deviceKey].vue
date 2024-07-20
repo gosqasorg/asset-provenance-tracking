@@ -29,42 +29,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div class="row pt-5 pb-6 mx-4">
         <div class="col-md-2">
         <!-- Scrollspy -->
-          <div id="jump-to" class="sticky-top text-slate">
+
+          <nav id="jump-to" class="sticky-top text-slate">
             <p>Jump to section</p>
-            <ul class="nav flex-column nav-pills menu-sidebar ps-2 border-start border-2 border-iris">
-              <li class="nav-item py-2">
-                <a  class="text-slate" href="#device-details">Device details</a>
-              </li>
-              <li class="nav-item py-2">
-                <a class="text-slate" href="#priority-notices">Priority notices</a>
-              </li>
-              <li class="nav-item py-2">
-                <a class="text-slate" href="#recent">Most recent update</a>
-              </li>
-              <li class="nav-item py-2">
-                <a class="text-slate" href="#device-creation">Device creation</a>
-              </li>
-              <li class="nav-item py-2">
-                <a class="text-slate" href="#create-record">Create new history record</a>
-              </li>
-              <li class="nav-item py-2">
-                <a class="text-slate" href="#child-keys">Child keys</a>
+            <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
+              <li id="item" class="py-2"
+                v-for="header in headers"
+                :key="header"
+                :class="{ active: header.id === currentSection }"
+              >
+                <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
-          </div>
+          </nav>
+
     <!-- Scrollspy -->
         </div>
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <div data-mdb-scrollspy-init data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+          <body  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
               <div>Device ID: {{ deviceKey }}</div>
               <div>{{ deviceRecord.description }}</div>
             </section>
 
-            <section id="priority-notices">
+            <section ref= "section" id="priority-notices">
               <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
             </section>
 
@@ -89,11 +80,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </div>
             </section>
             
-          </div>
+          </body>
           <!-- Spied element -->
         </div>
 
       </div>
+
 
 
       <!-- <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
@@ -148,25 +140,102 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { getProvenance} from '~/services/azureFuncs';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
 import KeyList from '~/components/KeyList.vue';
+// import { registerScrollSpy } from 'vue3-scroll-spy';
+// var bootstrap = typeof window !== `undefined` && import( 'bootstrap' );
+// import { ScrollSpy } from 'bootstrap';
 
 let deviceRecord, provenance;
+const currentSection = ref();
+let section = ref();
+
+const headers = [
+  { id: "device-details", name: "Device details" },
+  { id: "priority-notices", name: "Priority notices" },
+  { id: "recent", name: "Most recent updates" },
+  { id: "device-creation", name: "Device creation" },
+  { id: "create-record", name: "Create history record" },
+  { id: "child-keys", name: "Children keys" }
+];
+
 
 export default {
-    components: {
-        KeyList,
-    },
-    data() {
-        return {
-            isLoading: true,
-            deviceKeyFound: false,
-            hasReportingKey: false,
-            childKeys: [],
-        }},
+  components: {
+    KeyList,
+  },
+  data() {
+    return {
+      isLoading: true,
+      deviceKeyFound: false,
+      hasReportingKey: false,
+      childKeys: [],
+    }},
     async mounted() {
-        try {
+      try {
+
+          // content.querySelectorAll('#section');
+          // console.log("this is the content obtained", content);
             // console.log("hello!");
+            
+            // let sections= document.querySelectorAll('.section') as NodeListOf<HTMLElement>;
+            // let navLi = document.querySelectorAll('nav ul li a') as HtmlHTMLAttributes;
+            // console.log("this is the child", content);
+
+            window.addEventListener('scroll', () => {
+              for(let num in headers) {
+                // console.log("this is the section ", headers[num].id);
+                let current_id = headers[num].id;
+                let sec = document.getElementById(current_id);
+                // console.log("section ", sec);
+
+                let top = window.scrollY;
+                let offset = sec.offsetTop +30; // can customize how far from the section to become active
+                let height = sec.offsetHeight;
+                // console.log("offset ", offset, "height ", height);
+                if (top >= offset && top < offset + height) {
+                  currentSection.value = current_id;
+                }
+              }
+            });
+
+
+            
+            // section.value = document.querySelectorAll("section");
+
+            // window.addEventListener("scroll", () => {
+            //   console.log("the section value is ", section.value);
+              // for(let sec in section.value) {
+
+                // console.log("this is sec: ", sec);
+                // let top = window.scrollY;
+                // let offset = sec.offsetTop - 150;
+            //     let height = sec.offsetHeight;
+            //     let id = sec.getAttribute("id");
+
+            //     if (top >= offset && top < offset + height) {
+            //       currentSection.value = id;
+            //     }
+              
+            // }   
+          // });
+            
+
+            // function updateScroll() {
+            //   section.value.forEach((sec) => {
+            //     console.log("this is sec: ", sec);
+            //     let top = window.scrollY;
+            //     let offset = sec.offsetTop - 150;
+            //     let height = sec.offsetHeight;
+            //     let id = sec.getAttribute("id");
+
+            //     if (top >= offset && top < offset + height) {
+            //       currentSection.value = id;
+            //     }
+            //   });
+            // }
+                        
+
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             await getProvenance(deviceKey).then((response) => {
@@ -240,8 +309,27 @@ a:visited {
       text-decoration: none;
 }
 
-a:active {
+#item {
+  border-left: 2px solid #4e3681;
+}
+
+
+#item > a{
+  padding-left: 20px;
+  box-decoration-break: clone;
+}
+
+
+#item > a:hover {
+  padding-left: 20px;
   font-weight: bold;
 }
+
+.active > a {
+  border-left: 3px solid #4e3681;
+  padding-left: 20px;
+  font-weight: bold;
+}
+
 
 </style>
