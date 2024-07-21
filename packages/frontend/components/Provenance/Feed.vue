@@ -36,10 +36,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             {{tag}}</span>
             </div>
             
-            <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
-                <!-- Image -->
-                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
-            </div>    
             
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
