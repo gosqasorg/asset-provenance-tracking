@@ -1,3 +1,17 @@
+<!-- deviceKey.vue -- Adjustment for Device
+Copyright (C) 2024 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
@@ -39,9 +53,10 @@ const deviceKey = route.params.deviceKey;
     </div>
 
     <!--Put the Child List key here if there are any -->
-    <div v-if="childKeys" class="mt-4 mb-2 text-iris fs-3"> ChildKeys: </div>
-    <div> 
-    <KeyList v-bind:keys="childKeys"/>
+    <div v-if="childKeys.length > 0 " class="mt-4 mb-2 text-iris fs-3"> ChildKeys: 
+    <KeyList v-bind:keys="childKeys"/> </div>
+    <div v-if="(childKeys.length > 0) || hasReportingKey "> 
+    <br> <CsvFile :deviceKey="route.params.deviceKey"></CsvFile>
     </div>
   </div>
 </template>

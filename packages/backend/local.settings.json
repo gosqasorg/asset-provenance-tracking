@@ -1,13 +1,14 @@
+
 {
-    "IsEncrypted": false,
-    "Values": {
-        "FUNCTIONS_WORKER_RUNTIME": "node",
-        "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
-        "AzureWebJobsStorage": "",
-        "AZURE_STORAGE_ACCOUNT_NAME": "",
-        "AZURE_STORAGE_ACCOUNT_KEY": ""
-    },
-    "Host": {
-        "CORS": "*"
-    }
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AZURE_STORAGE_ACCOUNT_NAME": "",
+    "AZURE_STORAGE_ACCOUNT_KEY": ""
+  },
+  "Host": {
+    "CORS": "*"
+  }
 }
