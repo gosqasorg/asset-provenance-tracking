@@ -27,24 +27,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div v-if="deviceKeyFound">
 
       <div class="row pt-5 pb-6 mx-4">
-        <div class="col-md-2">
+        <div class="col-md-2 d-none d-md-block">
         <!-- Scrollspy -->
+         <!-- When the screen size is md (>= 768px) and up  -->
+            <nav id="jump-to" class="sticky-top text-slate">
+              <p>Jump to section</p>
+              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
+                <li id="item" class="py-2"
+                  v-for="header in headers"
+                  :key="header"
+                  :class="{ active: header.id === currentSection }"
+                >
+                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
 
-          <nav id="jump-to" class="sticky-top text-slate">
-            <p>Jump to section</p>
-            <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
-              <li id="item" class="py-2"
-                v-for="header in headers"
-                :key="header"
-                :class="{ active: header.id === currentSection }"
-              >
-                <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
-              </li>
+          <!-- When the screen size is less than md (< 768px ) -->
+          <div class="dropdown d-md-none" >
+            <button class="btn w-100 text-left" 
+                    type="button" id="jump-to" data-bs-toggle="dropdown" aria-expanded="false"
+                    style="font-size: 18px; text-align: left;">
+              Jump to section
+            </button>
+            <ul class="dropdown-menu w-100" style="padding: 7px 34px; background-color:#F1F5F9 "aria-labelledby="dropdownMenuButton">
+              <li id="dropdown-item" style="padding: 7px"
+                  v-for="header in headers"
+                  :key="header"
+                >
+                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+                </li>
             </ul>
-          </nav>
+          </div>
+
 
     <!-- Scrollspy -->
-        </div>
 
         <div class="col-md-10">
           <!-- Spied element -->
@@ -60,13 +78,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
 
             <section id="recent">
-              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
+              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance_noRecord"/>
             </section>
             <section id="device-creation">
-              
+              <ProvenanceFeed :deviceKey="deviceKey" :provenance="deviceCreationRecord"/>
             </section>
             <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecordPoint"/>
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey"/>
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
@@ -86,48 +104,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       </div>
 
-
-
-      <!-- <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
-    <div>Device ID: {{ deviceKey }}</div> -->
-    <!-- <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/> -->
-        <!-- <a href = "#createdDevicePoint">
-          <button class = "textToLinkButton0">Go to Device Creation Record </button>
-        </a>
-    <br>
-        <a href = "#createRecordPoint">
-          <button class = "textToLinkButton1">Go to Create New History Record </button>
-        </a>
-    <br>
-      <a href = "#childKeysPoint">
-        <button class = "textToLinkButton2">Go to Child Keys </button>
-      </a> -->
-      <!-- <div class="provenance">
-
-        <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance"/>
-      </div> -->
-      <!-- <hr class="col-1 my-4">
-    <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey" id="createRecordPoint"/> -->
-    <!--Put the Reporting Key here if there is one -->
-    <!-- <div v-if="!isLoading">
-      <div v-if="hasReportingKey">
-        Reporting Key:
-        <div>
-          <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
-        </div>
-      </div>
-    </div> -->
-    <!--Put the Child List key here if there are any -->
-    <!-- <div id="childKeysPoint">
-        Child Keys:
-        <KeyList v-bind:keys="childKeys"/>
-    </div>
-    <div v-if="(childKeys.length > 0) || hasReportingKey ">
-        <br> <CsvFile :deviceKey="deviceKey"></CsvFile>
-    </div>
-
-      TODO: Uncomment when  functionality is ready: -->
-      <!-- <div>
+      <!-- TODO: Uncomment when  functionality is ready: 
+      <div>
           <ProvenanceNotificationSignUpModal/>
       </div>   --> 
 
@@ -142,11 +120,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { getProvenance} from '~/services/azureFuncs';
 import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
 import KeyList from '~/components/KeyList.vue';
-// import { registerScrollSpy } from 'vue3-scroll-spy';
-// var bootstrap = typeof window !== `undefined` && import( 'bootstrap' );
-// import { ScrollSpy } from 'bootstrap';
 
-let deviceRecord, provenance;
+let deviceRecord, provenance, deviceCreationRecord, provenance_noRecord;
 const currentSection = ref();
 let section = ref();
 
@@ -174,104 +149,63 @@ export default {
     async mounted() {
       try {
 
-          // content.querySelectorAll('#section');
-          // console.log("this is the content obtained", content);
-            // console.log("hello!");
-            
-            // let sections= document.querySelectorAll('.section') as NodeListOf<HTMLElement>;
-            // let navLi = document.querySelectorAll('nav ul li a') as HtmlHTMLAttributes;
-            // console.log("this is the child", content);
+        // When user scrolls, the nav bar is updated
+        window.addEventListener('scroll', () => {
+          for(let num in headers) {
+            // console.log("this is the section ", headers[num].id);
+            let current_id = headers[num].id;
+            let sec = document.getElementById(current_id);
+            // console.log("section ", sec);
 
-            window.addEventListener('scroll', () => {
-              for(let num in headers) {
-                // console.log("this is the section ", headers[num].id);
-                let current_id = headers[num].id;
-                let sec = document.getElementById(current_id);
-                // console.log("section ", sec);
-
-                let top = window.scrollY;
-                let offset = sec.offsetTop +30; // can customize how far from the section to become active
-                let height = sec.offsetHeight;
-                // console.log("offset ", offset, "height ", height);
-                if (top >= offset && top < offset + height) {
-                  currentSection.value = current_id;
-                }
-              }
-            });
-
-
-            
-            // section.value = document.querySelectorAll("section");
-
-            // window.addEventListener("scroll", () => {
-            //   console.log("the section value is ", section.value);
-              // for(let sec in section.value) {
-
-                // console.log("this is sec: ", sec);
-                // let top = window.scrollY;
-                // let offset = sec.offsetTop - 150;
-            //     let height = sec.offsetHeight;
-            //     let id = sec.getAttribute("id");
-
-            //     if (top >= offset && top < offset + height) {
-            //       currentSection.value = id;
-            //     }
-              
-            // }   
-          // });
-            
-
-            // function updateScroll() {
-            //   section.value.forEach((sec) => {
-            //     console.log("this is sec: ", sec);
-            //     let top = window.scrollY;
-            //     let offset = sec.offsetTop - 150;
-            //     let height = sec.offsetHeight;
-            //     let id = sec.getAttribute("id");
-
-            //     if (top >= offset && top < offset + height) {
-            //       currentSection.value = id;
-            //     }
-            //   });
-            // }
-                        
-
-            const route = useRoute();
-            const deviceKey = route.params.deviceKey;
-            await getProvenance(deviceKey).then((response) => {
-                provenance = response;
-                this.deviceKeyFound = true;
-            });
-            deviceRecord = provenance[provenance.length - 1].record;
-            this.isLoading = false;
-
-            // This functionality could be pushed into a component...
-            this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
-            // We will remove the reportingKey, because although it is a child,
-            // we have already rendered it.
-            if (this.hasReportingKey) {
-                const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-                if (index > -1) {
-                    deviceRecord.children_key.splice(index, 1);
-                }
+            let top = window.scrollY;
+            let offset = sec.offsetTop - 30; // can customize how far from the section to become active
+            let height = sec.offsetHeight;
+            // console.log("offset ", offset, "height ", height);
+            if (top >= offset && top < offset + height) {
+              currentSection.value = current_id;
             }
+          }
+        });
+                
 
+        const route = useRoute();
+        const deviceKey = route.params.deviceKey;
+        await getProvenance(deviceKey).then((response) => {
+            provenance = response;
+            this.deviceKeyFound = true;
+        });
+        provenance_noRecord = provenance.slice(0, -1); // get the provenance without device creation
+        deviceCreationRecord = [provenance.at(-1)]; //the last record in the list should be the device creation
+        deviceRecord = provenance[provenance.length - 1].record;
+        this.isLoading = false;
 
-            let childKeysList:any = [];
-
-            for (let i=0; i < provenance.length; i++) {
-               childKeysList += provenance[i].record.children_key + ",";
+        // This functionality could be pushed into a component...
+        this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+        // We will remove the reportingKey, because although it is a child,
+        // we have already rendered it.
+        if (this.hasReportingKey) {
+            const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+            if (index > -1) {
+                deviceRecord.children_key.splice(index, 1);
             }
-
-            childKeysList= childKeysList.split(',');
-
-            this.childKeys = childKeysList;
-
-        } catch (error) {
-            this.isLoading = false;
-            this.deviceKeyFound = false;
-            console.log(error)
         }
+
+
+        let childKeysList:any = [];
+
+        for (let i=0; i < provenance.length; i++) {
+            childKeysList += provenance[i].record.children_key + ",";
+        }
+
+        childKeysList= childKeysList.split(',');
+
+        this.childKeys = childKeysList;
+
+      } catch (error) {
+          this.isLoading = false;
+          this.deviceKeyFound = false;
+          console.log(error)
+      }
     }
 };
 
@@ -281,33 +215,14 @@ export default {
 .provenance {
   white-space: pre-line;
 }
-/* 
-.textToLinkButton0 {
-    border-width: 0px;
-    border-radius: 10px;
-    background-color: rgb(243, 248, 100);
-    padding: 5px;
-}
-.textToLinkButton1 {
-    border-width: 0px;
-    border-radius: 10px;
-    background-color: rgb(145, 193, 248);
-    padding: 5px;
-}
-.textToLinkButton2 {
-    border-width: 0px;
-    border-radius: 10px;
-    padding: 5px;
-    margin-bottom: 10px;
-} */
 
-a:link {
+a:link, a:visited {
       text-decoration: none;
 }
-
+/* 
 a:visited {
       text-decoration: none;
-}
+} */
 
 #item {
   border-left: 2px solid #4e3681;
@@ -329,6 +244,18 @@ a:visited {
   border-left: 3px solid #4e3681;
   padding-left: 20px;
   font-weight: bold;
+}
+
+#dropdown-item > a:hover {
+  font-weight: bold;
+}
+
+/* .first-toggle {
+  left: 80%;
+} */
+
+.button #jump-to > a {
+  background-color: aqua;
 }
 
 
