@@ -1,6 +1,6 @@
-<!-- 
-Feed.vue -- Display the feed of reports for a device  
-Copyright (C) 2024 GOSQAS Team 
+<!--
+Feed.vue -- Display the feed of reports for a device
+Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
@@ -92,7 +92,7 @@ export default {
                     const urls = attachments.map(attachment => ({
                     url: URL.createObjectURL(attachment.blob),
                     fileName: attachment.fileName
-                    }));                
+                    }));
 
                     this.attachmentURLs[index.toString()] = urls;
                     console.log(`Attachment URLs for report ${index}:`, this.attachmentURLs[index.toString()]); // Debugging line
