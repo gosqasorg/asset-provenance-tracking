@@ -23,6 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <template>
+  <!-- This link is for the icon in mobile dropdown menu -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <div v-if="!isLoading">
     <div v-if="deviceKeyFound">
 
@@ -34,10 +36,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <p>Jump to section</p>
               <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
                 <li id="item" class="py-2"
+                  style= "border-left: 2px solid #4e3681;"
                   v-for="header in headers"
                   :key="header"
-                  :class="{ active: header.id === currentSection }"
-                >
+                  :class="{ active: header.id === currentSection }">
                   <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
                 </li>
               </ul>
@@ -45,19 +47,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           </div>
 
           <!-- When the screen size is less than md (< 768px ) -->
-          <div class="dropdown d-md-none" >
-            <button class="btn w-100 text-left" 
-                    type="button" id="jump-to" data-bs-toggle="dropdown" aria-expanded="false"
-                    style="font-size: 18px; text-align: left;">
+          <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
+            <button class="btn text-left rounded-0" 
+                    type="button" id="jump-to-mobile" data-bs-toggle="dropdown" aria-controls="toggle" aria-expanded="false"
+                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;"> 
+              <i id="toggle-right" class="fa fa-angle-right"></i>
+              <i id="toggle-down" class="fa fa-angle-down"></i>
               Jump to section
             </button>
-            <ul class="dropdown-menu w-100" style="padding: 7px 34px; background-color:#F1F5F9 "aria-labelledby="dropdownMenuButton">
+
+            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px; 
+                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
               <li id="dropdown-item" style="padding: 7px"
                   v-for="header in headers"
-                  :key="header"
-                >
-                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
-                </li>
+                  :key="header">
+                <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+              </li>
             </ul>
           </div>
 
@@ -152,15 +157,12 @@ export default {
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
           for(let num in headers) {
-            // console.log("this is the section ", headers[num].id);
             let current_id = headers[num].id;
             let sec = document.getElementById(current_id);
-            // console.log("section ", sec);
 
             let top = window.scrollY;
-            let offset = sec.offsetTop - 30; // can customize how far from the section to become active
+            let offset = sec.offsetTop + 150; // can customize how far from the section to become active
             let height = sec.offsetHeight;
-            // console.log("offset ", offset, "height ", height);
             if (top >= offset && top < offset + height) {
               currentSection.value = current_id;
             }
@@ -219,17 +221,8 @@ export default {
 a:link, a:visited {
       text-decoration: none;
 }
-/* 
-a:visited {
-      text-decoration: none;
-} */
 
-#item {
-  border-left: 2px solid #4e3681;
-}
-
-
-#item > a{
+#item > a {
   padding-left: 20px;
   box-decoration-break: clone;
 }
@@ -250,12 +243,22 @@ a:visited {
   font-weight: bold;
 }
 
-/* .first-toggle {
-  left: 80%;
-} */
+#jump-to-mobile[aria-expanded="true"] {
+  #toggle-down {
+    display:inline-block;
+  }
+  #toggle-right {
+    display: none;
+  }
+}
 
-.button #jump-to > a {
-  background-color: aqua;
+#jump-to-mobile[aria-expanded="false"] {
+  #toggle-down {
+    display:none;
+  }
+  #toggle-right {
+    display: inline-block;
+  }
 }
 
 
