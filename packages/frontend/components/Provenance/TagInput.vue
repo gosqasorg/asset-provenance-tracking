@@ -1,6 +1,6 @@
-<!-- 
-TagInput.vue -- Analyzing User Tag  
-Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS Team 
+<!--
+TagInput.vue -- Analyzing User Tag
+Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
@@ -20,6 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script>
+import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
+
 export default {
   name: 'TagInput',
   props: {
@@ -55,7 +57,7 @@ export default {
   },
   methods: {
     cleanArray(arr) { //check to see if correct
-        const forbiddenWords = ['banana', 'apple', 'orange'];
+        const forbiddenWords = getDecipheredForbiddenTags();
         const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
         return cleanedArray;
     },
