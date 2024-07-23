@@ -1,4 +1,20 @@
 <!--
+Feed.vue -- Display the feed of reports for a device
+Copyright (C) 2024 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
+<!--
     This component is used to display the feed of reports for a device.
     It is used in the providence-fourm.vue page.
 -->
@@ -7,20 +23,20 @@
         <div v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3 id = "createdDevicePoint">Created Device: {{ report.record.deviceName }}</h3>
-                <div>{{ report.record.deviceDescription }}</div>
             </template>
 
-            <template v-else>
             <div class="mb-1 tag-container">
     <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
     {{tag}}</span>
             </div>
-            </template>
 
             <div>{{ report.record.description }}</div>
-            <div v-for="(url, i) in attachmentURLs[index.toString()]" :key="i">
+            <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
-                <img v-bind:src="url" alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = url">
+                <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                <a :href="attachment.url" :download="attachment.fileName" style="display: block; padding: 5px; text-align: left;">
+                    Download Image
+                </a>
             </div>
             <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
         </div>
@@ -71,8 +87,17 @@ export default {
                     const baseUrl = useRuntimeConfig().public.baseUrl;
                     const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
-                    const urls = attachments.map(attachment => URL.createObjectURL(attachment));
+
+                    // Create object URLs for attachments and include filenames
+                    const urls = attachments.map(attachment => ({
+                    url: URL.createObjectURL(attachment.blob),
+                    fileName: attachment.fileName
+                    }));
+
                     this.attachmentURLs[index.toString()] = urls;
+                    console.log(`Attachment URLs for report ${index}:`, this.attachmentURLs[index.toString()]); // Debugging line
+
+
                 }
             } catch (error) {
                 console.error('Error occurred during getAttachment request:', error);

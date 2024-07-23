@@ -1,0 +1,12 @@
+# IDEA
+.idea
+
+# Lib folder
+/lib
+/dist
+
+# npm modules
+/node_modules
+
+# Tests coverage results
+/coverage

@@ -1,6 +1,27 @@
+<!-- GenerateQRCode.vue -- QR Code for the Record
+Copyright (C) 2024 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+<!-- 
+    Generates a QR code for the device based on the device key.
+    
+    Learn more about the QR Code Library here: https://www.npmjs.com/package/qrcode-vue3 
+-->
+
 <template>
     <div>
-        <QRCodeVue3
+  
+     <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
             :height="200"
@@ -9,7 +30,8 @@
                 mode: 'Byte',
                 errorCorrectionLevel: 'H'
             }"
-            :download="false"
+            
+            :download="true"
             downloadButton="my-button"
             :downloadOptions="{ name: 'vqr', extension: 'png' }"
             :image-options="{ hideBackgroundDots: true, imageSize: 0.4, margin: 10, crossOrigin: 'Anonymous' }"
@@ -21,49 +43,35 @@
             :dots-options="{
                 type: 'square',
                 color: '#000000',
+
             }"
-            
-        />
+
+          />
     </div>
-    <button id="downloadbutton" class="btn my-3 bg-iris text-white" @click="downloadQRCode">Download QR Code</button>
 </template>
-
+  
 <script>
-import QRCodeVue3 from "qrcode-vue3";
+    import QRCodeVue3 from  "../qrcode/src/QRCodeVue3.vue";
+  
+    export default {
+        components: {
+            QRCodeVue3
+        },
 
-export default {
-    components: {
-        QRCodeVue3
-    },
-    props: {
-        deviceKey: {
+        props: {
+            deviceKey: {
             type: String,
             required: true,
+            },
         },
-    },
-    data() {
-        return {
-            qrCodeDataUrl: ''
-        };
-    },
-    methods: {
-        
     }
-}
 </script>
 
+
 <style>
-#downloadbutton{
+    #downloadbutton{
         content: "Download QR Code";
         color: #fff;
-        background-color: #91c1f8; /* Match the blue color */
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
-    width: 100%;
-    text-align: center;
-    transition: background-color 0.3s ease;
     }
+
 </style>

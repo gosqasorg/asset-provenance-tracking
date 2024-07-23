@@ -1,3 +1,19 @@
+<!-- 
+CreateRecord.vue -- Creation of provenance record  
+Copyright (C) 2024 GOSQAS Team 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
 <!--
     This component is a form. The form is used to create a new device that we will track the
     providence for.
@@ -28,7 +44,11 @@
         <div>
             <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
         {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
-    </span>
+            </span>
+        </div>
+        <div class="mt-1">
+            Notify all children?
+            <input type="checkbox" class="form-check-input" id="notify-all"/> 
         </div>
     </div>
       <button id="submit-button" type="submit">Create New Record</button>
@@ -38,6 +58,7 @@
 <script lang="ts">
 import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
+import { getAllDescendants } from '~/utils/descendantList';
 const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 
@@ -95,38 +116,7 @@ export default {
             this.isReportingKey = false;
         },
 
-        // gets all children given a key
-        async getChildrenKeys(key: string) {
-
-            let childKeysList:string = "";
-
-            const response = await getProvenance(key);
-            for (let i=0; i < response.length; i++) {
-
-               childKeysList += response[i].record.children_key + ",";
-            }
-
-            let newChildKeysList = childKeysList.split(',');
-
-            newChildKeysList = newChildKeysList.filter(c => String(c).trim()); // filter out if key = ""
-
-
-            return newChildKeysList;
-        },
-
-        async getAllDescendants(key: string) {
-
-            let children_list = await this.getChildrenKeys(key);
-
-            for (let child_key of children_list) {
-                children_list = children_list.concat(await this.getAllDescendants(child_key));
-            }
-
-            return children_list;
-        },
-
-
-        async recursivelyRecallChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
+        async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
 
             for (const key of childrenkeys) {
                 // console.log("GOT KEY", key);
@@ -149,7 +139,7 @@ export default {
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
-            let descendantsList = await this.getAllDescendants(this.deviceKey);
+            let descendantsList = await getAllDescendants(this.deviceKey);
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
@@ -182,59 +172,75 @@ export default {
             if (this.childrenKey.length > 1) { // if user want to add children keys 
                 let string_children = this.childrenKey.toString();
                 let entered_children = string_children.split(",");
+                entered_children = [...new Set(entered_children)]; //removing any duplicates
+                let new_children_list = entered_children.slice(0); //copy this exact array
+                let childExists, child_prov;
                 for (let i of entered_children) {
-                    // for each key, check its descendants and see if current device is a child of them
-                    // make sure that the entered child does not have a parent yet
-                    // TODO: make sure the child exists
-                    const child_prov = await getProvenance(i);
-                    const child_record = child_prov[0].record;
-                    let index = entered_children.lastIndexOf(i);
+                    let index = new_children_list.lastIndexOf(i);
 
-                    if (child_record.hasParent) {
-                        console.log("Child key ", i, " already has a parent");
-                        this.description = this.description + `\nError: Child device could not be added.`;
-                        entered_children.splice(index, 1);
-                    } else {
-                        let descendants = await this.getAllDescendants(i);
-                        console.log("These are the descendants of key ", i, " : ", descendants);
-                        if (descendants.includes(this.deviceKey)) {
-                            console.log("This device key is among descendants");
-                            this.description = this.description + `\nError: Child device could not be added.`;
-                            entered_children.splice(index, 1);
-                        } else {
-                            // make sure the child has parent = true
-                            postProvenance(i, {
-                            blobType: 'deviceRecord',
-                            description: this.description, // need to discuss whether we want to have a unique description
-                            tags: [],
-                            children_key: [],
-                            hasParent: true,
-                            }, this.pictures || [])
-
-                        }
+                    //First, check if entered child exists
+                    try { 
+                        await getProvenance(i).then((response) => {
+                            child_prov = response;
+                            childExists = true;
+                        });
+                        // console.log("Obtained provenance!");
+                    } catch(error) {
+                        // console.log("This child does not exist ", i)
+                        new_children_list.splice(index, 1);
+                        this.description = this.description + `\nError: Entered child key does not exist.`;
+                        childExists = false;
                     }
-                    this.childrenKey = entered_children;
+
+                    // If entered child exist, check if it has a parent or is already a descendant of this device
+                    if(childExists) {
+                        const child_record = child_prov[0].record;
+                        
+                        if (child_record.hasParent) { // Child has a parent, cannot be added
+                            console.log("Child key ", i, " already has a parent");
+                            this.description = this.description + `\nError: Entered child key already has a container.`;
+                            new_children_list.splice(index, 1);
+                        } else {
+                            let descendants = await getAllDescendants(i);
+                            if (descendants.includes(this.deviceKey)) { // Device is a descendant of entered child, cannot be added
+                                console.log("This device key is among descendants.");
+                                this.description = this.description + `\nError: Child device could not be added.`;
+                                new_children_list.splice(index, 1);
+                            } else {
+                                postProvenance(i, {
+                                blobType: 'deviceRecord',
+                                description: "Added parent", // need to discuss whether we want to have a unique description
+                                tags: [],
+                                children_key: [],
+                                hasParent: true,  // make sure the child has parent = true
+                                }, this.pictures || [])
+    
+                            }
+                        }
+                    }                        
                 }
+                this.childrenKey = new_children_list;
             } 
 
-        const recall = this.tags.indexOf("recall", 0);
-        const inform = this.tags.indexOf("inform_all", 0);
-        
+        const recall = this.tags.indexOf("recall", 0);        
 
         // "recall" is being added....
-        if (recall > -1 || inform > -1) {
+        if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
             let reason = ""
-            let tags = this.tags
+            // let tags = this.tags
             if (recall > -1) { 
                 reason = "Recalled by Admin Key";
-            } else { reason = this.description; }
+            } else { 
+                reason = this.description; 
+                this.tags = (this.tags).concat(['notify_all']);
+            }
 
             if (this.isReportingKey) {
                 // reporting keys do not have the ability to recall
                 console.log("Action failed. This is a reporting key.");
             } else {
                 // console.log("begin to recall");
-                await this.recursivelyRecallChildren(descendantsList, reason, tags)
+                await this.messageChildren(descendantsList, reason, this.tags)
                 .then(response => {
                     console.log("Finished recalling/informing");
                 })
