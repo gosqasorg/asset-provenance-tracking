@@ -22,7 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div>
   
      <QRCodeVue3
-            :value="`http://localhost:3001/provenance/${deviceKey}`"
+            :value="qrCodeValue"
+            :render-as="renderAs" 
+            
             :width="200"
             :height="200"
             :qr-options="{
@@ -45,8 +47,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 color: '#000000',
 
             }"
-
+            @rendered="setQrCodeDataUrl"  
           />
+          <button @click="downloadQRCode" id="my-button">Download QR Code</button>
+          <!-- Debugging Information -->
+            <div v-if="qrCodeValue">
+            <p>QR Code Value: {{ qrCodeValue }}</p>
+          </div>
+          
     </div>
 </template>
   
@@ -57,21 +65,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         components: {
             QRCodeVue3
         },
-
+        data() {
+            return {
+                qrCodeDataUrl: '',
+            };
+        },
         props: {
             deviceKey: {
             type: String,
             required: true,
             },
         },
+        computed: {
+            qrCodeValue() {
+                return `http://localhost:3001/provenance/${this.deviceKey}`;
+            }
+        },
+        methods:{
+            setQrCodeDataUrl(dataUrl) {
+            this.qrCodeDataUrl = dataUrl;
+            console.log("QR Code Data URL:", this.qrCodeDataUrl);
+        },
+            downloadQRCode() {
+            const link = document.createElement('a');
+            link.href = this.qrCodeDataUrl;
+            link.download = 'vqr.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
+        }
     }
+    
 </script>
 
 
 <style>
-    #downloadbutton{
+    #my-button{
         content: "Download QR Code";
         color: #fff;
     }
-
+    
 </style>

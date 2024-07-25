@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 //import { computed, reactive, ref, watch } from "vue";
+import { defineProps, withDefaults, getCurrentInstance, ref, onMounted } from "vue";
+
 import QRCodeStyling from "./core/QRCodeStyling";
 
 export interface Props {
@@ -59,6 +61,9 @@ const props = withDefaults(defineProps<Props>(), {
   downloadOptions: { name: "vqr", extension: "png" }
 });
 
+const { emit } = getCurrentInstance();
+const imageUrl = ref("");
+
 const qrCode = new QRCodeStyling({
   data: props.value,
   width: props.width,
@@ -73,12 +78,17 @@ const qrCode = new QRCodeStyling({
   cornersDotOptions: props.cornersDotOptions
 });
 
-let imageUrl = await qrCode.getImageUrl(props.fileExt);
+onMounted(async () => {
+  imageUrl.value = await qrCode.getImageUrl(props.fileExt);
+  emit("rendered", imageUrl.value);
+});
 
 function onDownloadClick() {
   qrCode.download(props.downloadOptions);
 }
 </script>
+
+
 
 <template>
   <div>
@@ -92,3 +102,4 @@ function onDownloadClick() {
     </div>
   </div>
 </template>
+
