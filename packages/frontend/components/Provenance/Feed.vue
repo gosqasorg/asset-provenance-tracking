@@ -32,8 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             {{ report.record.description }}
             </div>
             <div class="mb-1 tag-container">
-            <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
-            {{tag}}</span>
+                <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
+                {{tag}}</span>
             </div>
             
             
