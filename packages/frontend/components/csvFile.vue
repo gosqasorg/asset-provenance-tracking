@@ -19,7 +19,11 @@ export default {
 
     methods: {
         async downloadCSV() {
-            const keyList = await getChildrenKeys(this.deviceKey);
+            let keyList = await getChildrenKeys(this.deviceKey);
+            // Convert key to a link
+            keyList = keyList.map(key => 'https://gosqas.org/provenance/' + key);
+            // Replace comas with new lines
+            keyList = String(keyList).replaceAll(",", "\n");
 
             const anchor = document.createElement('a');
             anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(keyList);
