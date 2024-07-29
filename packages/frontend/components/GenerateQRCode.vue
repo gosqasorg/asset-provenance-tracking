@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div>
-  
-     <QRCodeVue3
+
+    <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
             :height="200"
@@ -45,7 +45,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 color: '#000000',
 
             }"
-
           />
     </div>
 </template>
