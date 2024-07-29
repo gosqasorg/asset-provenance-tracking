@@ -114,6 +114,10 @@ export default {
         margin-right: auto;
 
     }
+    /* Style for the placeholder text */
+    .form-control::placeholder {
+    color: gray;
+    }
     
     #device-form > * {
         padding: 5px;
