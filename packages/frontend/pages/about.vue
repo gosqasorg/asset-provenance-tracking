@@ -40,9 +40,7 @@ Learn more about Global Distributed Tracking by emailing us at gosqasystem@gmail
 </template>
 <style>
 
-body {
-    font-family: 'Poppins', sans-serif;
-}
+
 div.body1 {
     margin: 50px;
 }
@@ -56,28 +54,14 @@ div.body1 {
     width: 60px;
     margin: 20px 20px 20px 50px;
 }
-element {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-}
+
 button.navigation {
     background-color: transparent;
     border-width: 0;
     text-align: center;
     margin: 0 10px;
 }
-h1 {
-    font-weight: 900;
-    text-align: center;
-    margin-top: 70px;
-    color: #4E3681;
-}
-h2 {
-    color:#4E3681;
-    line-height: 80px;
-    font-weight: 900;
-}
+
 .mainStuff {
     margin: 50px;
     margin-top: 30px;
