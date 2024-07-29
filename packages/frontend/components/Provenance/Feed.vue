@@ -25,12 +25,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h3 id = "createdDevicePoint">Created Device: {{ report.record.deviceName }}</h3>
             </template>
 
+            <div style="font-size: small; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 12px; line-height: 30px; color: #1E2019;">
+            {{ new Date(report.timestamp) }}
+            </div>
+            <div style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
+            {{ report.record.description }}
+            </div>
             <div class="mb-1 tag-container">
                 <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
                 {{tag}}</span>
             </div>
-
-            <div>{{ report.record.description }}</div>
+            
+            
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
                 <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
@@ -38,7 +44,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     Download Image
                 </a>
             </div>
-            <div style="font-size: small;">{{ new Date(report.timestamp) }}</div>
+            
+
         </div>
     </div>
         <!-- The Modal to Enlarge Image -->
@@ -115,11 +122,12 @@ export default {
 
 <style scoped>
 .report-box {
-  border: 1px solid #ccc;
+  background-color: #F1F5F9;
   padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 14px;
+  border-radius: 20px;
+  width: 70%; /* Assuming the width is to fill the container */
+
 }
 .tag-container {
   display: flex;
