@@ -79,7 +79,7 @@
 
 /* Adjust text colors when checked */
 .toggleCheckbox:checked + .toggle-label::before {
-    left: 50%;
+  left: 50%;
 }
 
 .toggleCheckbox:checked + .toggle-label .toggle-left {
