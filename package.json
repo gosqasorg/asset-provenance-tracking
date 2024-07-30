@@ -1,4 +1,3 @@
-
 {
   "name": "gosqas-global-distributed-tracking",
   "version": "0.0.0-placeholder",
@@ -13,5 +12,8 @@
   },
   "workspaces": [
     "packages/legacy"
-  ]
+  ],
+  "dependencies": {
+    "qr-code-styling": "^1.6.0-rc.1"
+  }
 }

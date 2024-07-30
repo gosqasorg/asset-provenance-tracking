@@ -64,6 +64,8 @@ const deviceKey = route.params.deviceKey;
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
+import {EventBus} from '~/utils/event-bus.ts';
+
 
 let deviceRecord: any;
 
@@ -80,6 +82,10 @@ export default {
         GenerateQRCode,
         KeyList,
     },
+    beforeUnmount() {
+    // Clean up the event listener
+    EventBus.off('getQRCode');
+    },
     data() {
         return {
             isLoading: true,
@@ -95,6 +101,7 @@ export default {
     },
     async mounted() {
         try {
+            EventBus.on('getQRCode', this.getQRCode);
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             const response = await getProvenance(deviceKey);

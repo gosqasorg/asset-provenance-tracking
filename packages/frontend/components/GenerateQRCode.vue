@@ -49,7 +49,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             }"
             @rendered="setQrCodeDataUrl"  
           />
-          <button @click="downloadQRCode" id="my-button">Download QR Code</button>
+          <button @click="getQRCode" >Download me </button>
+
           <!-- Debugging Information -->
             <div v-if="qrCodeValue">
             <p>QR Code Value: {{ qrCodeValue }}</p>
@@ -60,15 +61,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
 <script>
     import QRCodeVue3 from  "../qrcode/src/QRCodeVue3.vue";
+    import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
+    import {EventBus} from '~/utils/event-bus.ts';
+
+
   
     export default {
         components: {
             QRCodeVue3
-        },
-        data() {
-            return {
-                qrCodeDataUrl: '',
-            };
         },
         props: {
             deviceKey: {
@@ -82,20 +82,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             }
         },
         methods:{
-            setQrCodeDataUrl(dataUrl) {
-            this.qrCodeDataUrl = dataUrl;
-            console.log("QR Code Data URL:", this.qrCodeDataUrl);
+            getQRCode() {
+                const qr = new QRCodeStyling({
+                    data: this.qrCodeValue
+                });
+                qr.download({ name: 'vqr', extension: 'png' });
+            },
+            emitQRCodeEvent() { 
+                EventBus.$emit('downloadQRCode');
+            },
+        }    
+        mounted() {
+            EventBus.$on('downloadQRCode', this.getQRCode);
         },
-            downloadQRCode() {
-            const link = document.createElement('a');
-            link.href = this.qrCodeDataUrl;
-            link.download = 'vqr.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        },
-        }
+        beforeDestroy() {
+            EventBus.$off('downloadQRCode', this.getQRCode);
+            }
     }
+    
     
 </script>
 
