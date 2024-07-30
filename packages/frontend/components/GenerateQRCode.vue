@@ -20,11 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div>
-  
-     <QRCodeVue3
-            :value="qrCodeValue"
-            :render-as="renderAs" 
-            
+
+    <QRCodeVue3
+            :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="200"
             :height="200"
             :qr-options="{
@@ -47,14 +45,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 color: '#000000',
 
             }"
-            @rendered="setQrCodeDataUrl"  
+
           />
           <button @click="getQRCode" >Download me </button>
 
-          <!-- Debugging Information -->
-            <div v-if="qrCodeValue">
-            <p>QR Code Value: {{ qrCodeValue }}</p>
-          </div>
+         
           
     </div>
 </template>
