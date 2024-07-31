@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <div class="container-fluid">
 
-        <div class="row" id="try">
-            <div class="col-12 col-md-7" style="padding-top:60px; padding-left:78px;">
+        <div class="row" id="first-row">
+            <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
                 <div class="row" style="padding: 18px 22px; margin-bottom: 60px;">
                     **buttons go here**
@@ -33,10 +33,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
 
-        <div class="row bg-frost" style="padding: 70px 126px;" >
-            <div class="row gx-4">
-                <div class="col" v-for="item in second_row">
-                    <h4 class="text-iris">{{item.title}}</h4>
+        <div class="row bg-frost" id="second-row" >
+            <div class="row">
+                <div class="col" id="second-row-cols" v-for="item in second_row">
+                    <h4 class="text-iris" id="second-row-cols-h4">{{item.title}}</h4>
                     <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
             </div>
@@ -45,8 +45,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
 
-        <div class="row">
-            This is the third row
+        <div class="row" id="third-row">
+            <h3 class="text-iris"> Interested in learning more? </h3>
+            <p style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
+                <span style="font-weight: 400;" class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span> 
+                or visiting the links below.</p>
+            **buttons go here**  
         </div>
 
 
@@ -72,12 +76,50 @@ const second_row = [
 
 <style>
 
-#try {
+#first-row {
     background-image: url(../assets/images/hand-icon.png);
     background-repeat: no-repeat;
     background-position-x: 85%;
     background-position-y: bottom;
     background-size: 60%;
+}
+
+/* For screens less than 768px */
+@media (max-width: 768px) {
+    #first-row-col{
+        padding: 41px 33px;
+    }
+    #second-row{
+        padding: 40px 30px;
+    }
+    #second-row-cols{
+        min-width: 370px;
+        gap: 20px;
+    }
+    #third-row{
+        padding: 40px 30px;
+    }
+    #second-row-cols-h4 {
+        font-weight: 600;
+    }
+    
+}
+
+/* For screens greater than 768px */
+@media (min-width: 768px) {
+    #first-row-col{
+        padding: 60px 78px
+    }
+    #second-row {
+        padding: 70px 126px;
+    }
+    #second-row-cols{
+        gap: 40px;
+    }
+    #third-row{
+        padding: 70px 126px;
+    }
+    
 }
 
 
