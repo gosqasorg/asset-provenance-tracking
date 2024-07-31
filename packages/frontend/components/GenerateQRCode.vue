@@ -54,7 +54,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script>
     import QRCodeVue3 from  "../qrcode/src/QRCodeVue3.vue";
     import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
-    import {EventBus} from '~/utils/event-bus.ts';
 
   
     export default {
