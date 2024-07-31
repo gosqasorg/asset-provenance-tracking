@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 errorCorrectionLevel: 'H'
             }"
             
-            :download="true"
+            :download="false"
             downloadButton="my-button"
             :downloadOptions="{ name: 'vqr', extension: 'png' }"
             :image-options="{ hideBackgroundDots: true, imageSize: 0.4, margin: 10, crossOrigin: 'Anonymous' }"
@@ -45,26 +45,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 color: '#000000',
 
             }"
-
           />
-          <button @click="getQRCode" >Download me </button>
 
-         
-          
     </div>
 </template>
+  
   
 <script>
     import QRCodeVue3 from  "../qrcode/src/QRCodeVue3.vue";
     import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
     import {EventBus} from '~/utils/event-bus.ts';
 
-
   
     export default {
         components: {
             QRCodeVue3
         },
+
         props: {
             deviceKey: {
             type: String,
@@ -76,33 +73,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 return `http://localhost:3001/provenance/${this.deviceKey}`;
             }
         },
-        methods:{
-            getQRCode() {
-                const qr = new QRCodeStyling({
-                    data: this.qrCodeValue
-                });
-                qr.download({ name: 'vqr', extension: 'png' });
-            },
-            emitQRCodeEvent() { 
-                EventBus.$emit('downloadQRCode');
-            },
-        }    
-        mounted() {
-            EventBus.$on('downloadQRCode', this.getQRCode);
-        },
-        beforeDestroy() {
-            EventBus.$off('downloadQRCode', this.getQRCode);
-            }
     }
+        
     
     
 </script>
 
 
 <style>
-    #my-button{
+    #downloadbutton{
         content: "Download QR Code";
         color: #fff;
     }
-    
+
 </style>

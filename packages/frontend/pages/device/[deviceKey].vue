@@ -30,7 +30,7 @@ const deviceKey = route.params.deviceKey;
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
             </div>
 
         </div>
@@ -65,6 +65,8 @@ import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 import {EventBus} from '~/utils/event-bus.ts';
+import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
+
 
 
 let deviceRecord: any;
@@ -82,26 +84,34 @@ export default {
         GenerateQRCode,
         KeyList,
     },
-    beforeUnmount() {
-    // Clean up the event listener
-    EventBus.off('getQRCode');
-    },
     data() {
         return {
             isLoading: true,
             hasReportingKey: false,
             childKeys: [],
             loadingKey: 0,
-        }},
+        }
+    },
+    computed: {
+            qrCodeValue() {
+                return `http://localhost:3001/provenance/${this.deviceKey}`;
+            }
+    },
     methods: {
         //This method helps rerendering the site
         forceRerender() { 
             this.loadingKey += 1;
-        }
+        }, 
+        getQRCode() {
+                const qr = new QRCodeStyling({
+                    data: this.qrCodeValue
+                });
+                qr.download({ name: 'vqr', extension: 'png' });
+                console.log("downloadQRcode")
+        },
     },
     async mounted() {
         try {
-            EventBus.on('getQRCode', this.getQRCode);
             const route = useRoute();
             const deviceKey = route.params.deviceKey;
             const response = await getProvenance(deviceKey);
