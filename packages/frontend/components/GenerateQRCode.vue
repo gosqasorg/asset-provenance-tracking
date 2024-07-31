@@ -60,7 +60,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         components: {
             QRCodeVue3
         },
-
         props: {
             deviceKey: {
             type: String,
