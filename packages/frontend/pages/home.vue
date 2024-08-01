@@ -56,7 +56,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { ref, onMounted } from 'vue'
 import Learn_more from '~/layouts/learn_more.vue';
-import learn_more from '~/layouts/learn_more.vue';
 
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We belive that open-source projects should be simple to use and understand."},
