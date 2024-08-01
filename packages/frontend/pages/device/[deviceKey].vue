@@ -103,10 +103,30 @@ export default {
         }, 
         getQRCode() {
                 const qr = new QRCodeStyling({
-                    data: this.qrCodeValue
+                    width: 322, 
+                    height: 361,
+                    data: this.qrCodeValue,
+                    imageOptions: {
+                    hideBackgroundDots: true,
+                    imageSize: 0.2,  // Image size as a fraction of the QR code size
+                    margin: 40,
+                    crossOrigin: 'Anonymous'
+                    },
+                    dotsOptions: {
+                    type: 'rounded',  // Rounded dots
+                    color: '#000000'  // Color of the dots
+                },
+                cornersSquareOptions: {
+                type: 'extra-rounded',  // Extra rounded corners for squares
+                color: '#000000'        // Color of the square corners
+                },
+                cornersDotOptions: {
+                type: 'extra-rounded',  // Extra rounded corners for dots
+                color: '#4e3681'        // Color of the dot corners
+                }
                 });
-                qr.download({ name: 'vqr', extension: 'png' });
-                console.log("downloadQRcode")
+            qr.download({ name: 'vqr', extension: 'png' });
+            console.log("downloadQRcode")
         },
     },
     async mounted() {
