@@ -45,15 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
 
-        <div class="row" id="third-row">
-            <h3 class="text-iris"> Interested in learning more? </h3>
-            <p style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
-                <span style="font-weight: 400;" class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span> 
-                or visiting the links below.</p>
-            **buttons go here**  
-        </div>
-
-
+        <Learn_more></Learn_more>
 
     </div>
 
@@ -63,6 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { ref, onMounted } from 'vue'
+import Learn_more from '~/layouts/learn_more.vue';
+import learn_more from '~/layouts/learn_more.vue';
 
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We belive that open-source projects should be simple to use and understand."},
@@ -96,9 +90,6 @@ const second_row = [
         min-width: 370px;
         gap: 20px;
     }
-    #third-row{
-        padding: 40px 30px;
-    }
     #second-row-cols-h4 {
         font-weight: 600;
     }
@@ -116,10 +107,7 @@ const second_row = [
     #second-row-cols{
         gap: 40px;
     }
-    #third-row{
-        padding: 70px 126px;
-    }
-    
+
 }
 
 
