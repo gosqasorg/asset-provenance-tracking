@@ -23,25 +23,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     <QRCodeVue3
             :value="`http://localhost:3001/provenance/${deviceKey}`"
-            :width="200"
-            :height="200"
+            :width="322" 
+            :height="361" 
             :qr-options="{
                 typeNumber: 0,
                 mode: 'Byte',
-                errorCorrectionLevel: 'H'
+                errorCorrectionLevel: 'L'
             }"
-            
             :download="false"
             downloadButton="my-button"
             :downloadOptions="{ name: 'vqr', extension: 'png' }"
-            :image-options="{ hideBackgroundDots: true, imageSize: 0.4, margin: 10, crossOrigin: 'Anonymous' }"
-            :corners-square-options="{ type: 'extra-rounded', color: '#4e3681' }"
+            :image-options="{ hideBackgroundDots: true, imageSize: 0.2, margin: 40, crossOrigin: 'Anonymous' }"
+            :corners-square-options="{ type: 'extra-rounded', color: '#000000' }"
             :corners-dot-options="{
-                type: 'square',
+                type: 'extra-rounded',
                 color: '#4e3681'
             }"
             :dots-options="{
-                type: 'square',
+                type: 'rounded',
                 color: '#000000',
 
             }"
@@ -60,6 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         components: {
             QRCodeVue3
         },
+       
         props: {
             deviceKey: {
             type: String,
