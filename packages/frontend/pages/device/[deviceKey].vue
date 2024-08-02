@@ -30,7 +30,7 @@ const deviceKey = route.params.deviceKey;
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
             </div>
 
         </div>
@@ -64,6 +64,9 @@ const deviceKey = route.params.deviceKey;
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
+import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
+
+
 
 let deviceRecord: any;
 
@@ -86,12 +89,45 @@ export default {
             hasReportingKey: false,
             childKeys: [],
             loadingKey: 0,
-        }},
+        }
+    },
+    computed: {
+            qrCodeValue() {
+                return `http://localhost:3001/provenance/${this.deviceKey}`;
+            }
+    },
     methods: {
         //This method helps rerendering the site
         forceRerender() { 
             this.loadingKey += 1;
-        }
+        }, 
+        getQRCode() {
+                const qr = new QRCodeStyling({
+                    width: 322, 
+                    height: 361,
+                    data: this.qrCodeValue,
+                    imageOptions: {
+                    hideBackgroundDots: true,
+                    imageSize: 0.2,  // Image size as a fraction of the QR code size
+                    margin: 40,
+                    crossOrigin: 'Anonymous'
+                    },
+                    dotsOptions: {
+                    type: 'rounded',  // Rounded dots
+                    color: '#000000'  // Color of the dots
+                },
+                cornersSquareOptions: {
+                type: 'extra-rounded',  // Extra rounded corners for squares
+                color: '#000000'        // Color of the square corners
+                },
+                cornersDotOptions: {
+                type: 'extra-rounded',  // Extra rounded corners for dots
+                color: '#4e3681'        // Color of the dot corners
+                }
+                });
+            qr.download({ name: 'vqr', extension: 'png' });
+            console.log("downloadQRcode")
+        },
     },
     async mounted() {
         try {
