@@ -13,3 +13,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <!--
     This is the How it Works page for GOSQAS
 -->
+
+<template>
+    Testing
+
+</template>
