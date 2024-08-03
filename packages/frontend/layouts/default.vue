@@ -1,6 +1,6 @@
 <template>
     <div>
-        <nav class="navbar navbar-expand-md navbar-light bg-sky custom-nav">
+        <nav class="navbar navbar-expand-md navbar-light bg-frost custom-nav">
             <div class="container-fluid p-0">
                 <a href="/" class="navbar-brand" >
                     <img src="../assets/styles/gosqas_logo.png" height="42px">
