@@ -58,7 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row" id="overview">
-            <h2 class="text-iris" style="margin-bottom:20px">Overview</h2>
+            <h2 class="text-iris" style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
                 <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
@@ -105,7 +105,7 @@ li{
 }
 
 #learn{
-    margin-top: 48px;
+    margin-top: 20px;
 }
 
 /* For screens smaller than 768px */
