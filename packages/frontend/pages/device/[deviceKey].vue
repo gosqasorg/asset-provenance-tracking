@@ -42,6 +42,85 @@ const deviceKey = route.params.deviceKey;
 
     </div>
 
+<!--this is where I am creating a component:-->
+<button class="custom-button" @click="handleClick">
+    <slot></slot>
+  </button>
+</template>
+
+<script>
+export default {
+  name: "CustomButton",
+  props: {
+    link: {
+      type: String,
+      required: false,
+    },
+  },
+  methods: {
+    handleClick() {
+      if (this.link) {
+        window.location.href = this.link;
+      }
+    },
+  },
+};
+</script>
+
+<style scoped>
+.custom-button {
+  padding: 16px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: white;
+  border: none;
+  text-decoration: none;
+  display: inline-block;
+}
+</style>
+
+<!-- this is where i am putting the code into the existing button code-->
+
+<template>
+  <div>
+    <CustomButton :link="`/provenance/${route.params.deviceKey}`" class="bg-iris me-4">
+      View Provenance Records
+    </CustomButton>
+    <CustomButton class="bg-sky">
+      Download QR Code
+    </CustomButton>
+  </div>
+</template>
+
+<script>
+import CustomButton from './CustomButton.vue';
+
+export default {
+  components: {
+    CustomButton,
+  },
+  data() {
+    return {
+      route: {
+        params: {
+          deviceKey: 'someDeviceKey', // replace with actual device key
+        },
+      },
+    };
+  },
+};
+</script>
+
+<style scoped>
+.bg-iris {
+  background-color: #6c63ff; 
+}
+
+.bg-sky {
+  background-color: #CCECFD; 
+}
+</style>
+
     <!--Put the Reporting Key here if there is one -->
     <div>
         <div v-if="hasReportingKey" class="mt-4 mb-2 text-iris fs-2">
