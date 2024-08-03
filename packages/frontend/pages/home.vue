@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
 
-        <Learn_more></Learn_more>
+        <Learn_more  id="learn-more"></Learn_more>
 
     </div>
 
@@ -67,7 +67,7 @@ const second_row = [
 </script>
 
 
-<style>
+<style scoped>
 
 #first-row {
     background-image: url(../assets/images/hand-icon.png);
@@ -92,6 +92,9 @@ const second_row = [
     #second-row-cols-h4 {
         font-weight: 600;
     }
+    #learn-more{
+        padding: 40px 30px;
+    }
     
 }
 
@@ -105,6 +108,9 @@ const second_row = [
     }
     #second-row-cols{
         gap: 40px;
+    }
+    #learn-more{
+        padding: 70px 126px;
     }
 
 }
