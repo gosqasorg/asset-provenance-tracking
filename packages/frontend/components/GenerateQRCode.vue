@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div>
 
     <QRCodeVue3
+            :image="handIcon"
+            :imageOptions="{ hideBackgroundDots: true, imageSize: 0.4, margin: 0 }"
             :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="322" 
             :height="361" 
@@ -53,8 +55,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script>
     import QRCodeVue3 from  "../qrcode/src/QRCodeVue3.vue";
     import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
+    import { ref } from 'vue';
+    import handIconPath from '@/assets/images/hand-icon.png'; // Import the image
 
-  
     export default {
         components: {
             QRCodeVue3
@@ -70,6 +73,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             qrCodeValue() {
                 return `http://localhost:3001/provenance/${this.deviceKey}`;
             }
+        },
+        setup() {
+            const handIcon = ref(handIconPath); // Create a reactive reference to the image
+
+            return {
+                handIcon,
+            };
         },
     }
         
