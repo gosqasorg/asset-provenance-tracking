@@ -1,4 +1,4 @@
-<!-- learn_more.vue
+<!-- 
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -30,33 +30,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 
-<script>
+<script lang="ts">
     export default {
         name: "learn_more"
     }
 
 </script>
-
-<style>
-
-/* For screens less than 768px */
-@media (max-width: 768px) {
-
-    #learn-more{
-        padding: 40px 30px;
-    }
-
-    
-}
-
-/* For screens greater than 768px */
-@media (min-width: 768px) {
-
-    #learn-more{
-        padding: 70px 126px;
-    }
-    
-}
-
-
-</style>
