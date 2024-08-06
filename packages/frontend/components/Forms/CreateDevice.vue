@@ -15,7 +15,7 @@
             <input type="text" class="form-control mt-2" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <label class="mt-3 mb-2 text-iris">Device Image (optional)   </label>
-                <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <input type="file"  class="form-control " accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
 
             <label class="mt-3 mb-2 text-iris">Add Tags (optional)</label>
