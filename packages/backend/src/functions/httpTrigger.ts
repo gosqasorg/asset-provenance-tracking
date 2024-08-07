@@ -67,7 +67,14 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     const deviceID = await calculateDeviceID(deviceKey);
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
-    const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
+
+    let blobName;
+    if (type === 'prov') {
+        blobName = '${client.containerName}/prov/${deviceID}/${blobID}';
+    } else if (type === 'attach') {
+        blobName = '${client.containerName}/attach/${blobID}';
+    }
+
 
     const { encryptedData: encryptedName } = fileName 
         ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt) 
