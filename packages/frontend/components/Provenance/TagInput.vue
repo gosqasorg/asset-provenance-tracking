@@ -1,8 +1,27 @@
+<!--
+TagInput.vue -- Analyzing User Tag
+Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
+
 <template>
   <input :value="editableValue" @input="onInput" />
 </template>
 
 <script>
+import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
+
 export default {
   name: 'TagInput',
   props: {
@@ -38,7 +57,7 @@ export default {
   },
   methods: {
     cleanArray(arr) { //check to see if correct
-        const forbiddenWords = ['banana', 'apple', 'orange'];
+        const forbiddenWords = getDecipheredForbiddenTags();
         const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
         return cleanedArray;
     },

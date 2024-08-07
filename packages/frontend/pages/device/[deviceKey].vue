@@ -1,3 +1,17 @@
+<!-- deviceKey.vue -- Adjustment for Device
+Copyright (C) 2024 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
@@ -16,7 +30,7 @@ const deviceKey = route.params.deviceKey;
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
             </div>
 
         </div>
@@ -39,9 +53,10 @@ const deviceKey = route.params.deviceKey;
     </div>
 
     <!--Put the Child List key here if there are any -->
-    <div v-if="childKeys" class="mt-4 mb-2 text-iris fs-3"> ChildKeys: </div>
-    <div> 
-    <KeyList v-bind:keys="childKeys"/>
+    <div v-if="childKeys.length > 0 " class="mt-4 mb-2 text-iris fs-3"> ChildKeys: 
+    <KeyList v-bind:keys="childKeys"/> </div>
+    <div v-if="(childKeys.length > 0) || hasReportingKey "> 
+    <br> <CsvFile :deviceKey="route.params.deviceKey"></CsvFile>
     </div>
   </div>
 </template>
@@ -49,6 +64,9 @@ const deviceKey = route.params.deviceKey;
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
+import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
+
+
 
 let deviceRecord: any;
 
@@ -71,12 +89,45 @@ export default {
             hasReportingKey: false,
             childKeys: [],
             loadingKey: 0,
-        }},
+        }
+    },
+    computed: {
+            qrCodeValue() {
+                return `http://localhost:3001/provenance/${this.deviceKey}`;
+            }
+    },
     methods: {
         //This method helps rerendering the site
         forceRerender() { 
             this.loadingKey += 1;
-        }
+        }, 
+        getQRCode() {
+                const qr = new QRCodeStyling({
+                    width: 322, 
+                    height: 361,
+                    data: this.qrCodeValue,
+                    imageOptions: {
+                    hideBackgroundDots: true,
+                    imageSize: 0.2,  // Image size as a fraction of the QR code size
+                    margin: 40,
+                    crossOrigin: 'Anonymous'
+                    },
+                    dotsOptions: {
+                    type: 'rounded',  // Rounded dots
+                    color: '#000000'  // Color of the dots
+                },
+                cornersSquareOptions: {
+                type: 'extra-rounded',  // Extra rounded corners for squares
+                color: '#000000'        // Color of the square corners
+                },
+                cornersDotOptions: {
+                type: 'extra-rounded',  // Extra rounded corners for dots
+                color: '#4e3681'        // Color of the dot corners
+                }
+                });
+            qr.download({ name: 'vqr', extension: 'png' });
+            console.log("downloadQRcode")
+        },
     },
     async mounted() {
         try {
