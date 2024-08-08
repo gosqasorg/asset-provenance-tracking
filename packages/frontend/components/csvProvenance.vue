@@ -1,6 +1,6 @@
 <template>
     <button type="button" class="btn mt-1 bg-sky px-5" v-on:click="downloadCSV">
-        Download Provenance as CSV
+        Download Provenance Record as CSV
     </button>
 
 </template>
@@ -8,8 +8,6 @@
 <script>
 
 import { getProvenance, getAttachment} from '~/services/azureFuncs';
-
-
 
 export default {
     props: {
@@ -23,37 +21,29 @@ export default {
 
         async downloadCSV() {
 
+            //Code copied from Feed.vue
             async function getAttachmentName(provenance, key) {
                 const baseUrl = useRuntimeConfig().public.baseUrl;
-                // console.log("retrieve provenance, ", provenance);
                 const attachmentPromises = provenance.attachments.map(attachmentID => getAttachment(baseUrl,key, attachmentID));
                 const attachments = await Promise.all(attachmentPromises);
-                // console.log("atts ", attachments);
                 const fileName = attachments.map(att => att.fileName);
-                // console.log("this name", fileName);
-
-                // const oneLiner = (await Promise.all((provenance[0]).attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID)))).map(att => att.fi);
-                // console.log("the one liner", oneLiner);
 
                 return fileName;
             }
 
             let provenance = await getProvenance(this.deviceKey);
 
-            // console.log("calling it" , await getAttachmentName(provenance, this.deviceKey));
+            //get all the file names as these need to access backend
+            let fileNames = await Promise.all(provenance.map( x => getAttachmentName(x, this.deviceKey)));
 
-            let data = provenance.map( x =>
+            let data = provenance.map( (x, index) =>
                 ([Date(x.timestamp)]).concat(x.record.description,
-                                        // x.attachments.fileName,
-                                        // await getAttachmentName(x, this.deviceKey),
                                         JSON.stringify(x.record.tags),
+                                        JSON.stringify(fileNames[index]),
                                         JSON.stringify(x.record.children_name),
                                         JSON.stringify(x.record.children_key) )).join("\n");
 
-            // let data1 = data.map(each => each.join("\n"));
-            console.log("this is data ", data);
-
-            let headers = ["Time", "Description", "Tags", "Children Names", "Children Keys"];
+            let headers = ["Time", "Description", "Tags", "Attachment File Name", "Children Names", "Children Keys"];
             let new_data = headers + "\n" + data;
 
             console.log("new data", new_data)
