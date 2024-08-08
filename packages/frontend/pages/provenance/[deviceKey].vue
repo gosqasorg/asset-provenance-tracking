@@ -99,12 +99,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div> <KeyList v-bind:keys="childKeys"/> </div>
               </div>
               <div v-if="(childKeys.length > 0) || hasReportingKey ">
-                <CsvFile :deviceKey="deviceKey"></CsvFile>
+                <CsvChildren :deviceKey="deviceKey"></CsvChildren>
               </div>
             </section>
             
           </body>
           <!-- Spied element -->
+           <div>
+            <CsvProvenance :deviceKey="deviceKey"></CsvProvenance>
+           </div>
         </div>
 
       </div>
