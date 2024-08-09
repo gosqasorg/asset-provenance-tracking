@@ -73,6 +73,8 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
         blobName = '${client.containerName}/prov/${deviceID}/${blobID}';
     } else if (type === 'attach') {
         blobName = '${client.containerName}/attach/${blobID}';
+    } else {
+        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
     }
 
 
