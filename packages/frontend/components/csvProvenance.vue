@@ -43,7 +43,9 @@ export default {
                                         JSON.stringify(x.record.children_name),
                                         JSON.stringify(x.record.children_key) )).join("\n");
 
-            data = data.replace("[]","")
+
+            data = data.replaceAll('[]','').replaceAll('[]','') //removes any empty arrays [] or [[]] 
+
             let headers = ["Time", "Description", "Tags", "Attachment File Name", "Children Names", "Children Keys"];
             let new_data = headers + "\n" + data;
 

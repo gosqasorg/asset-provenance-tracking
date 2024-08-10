@@ -250,7 +250,7 @@ export default {
                 blobType: 'deviceRecord',
                 description: this.description,
                 tags: this.tags,
-                children_key: [this.childrenKey],
+                children_key: this.childrenKey,
                 hasParent: this.hasParent,
         }, this.pictures || [])
         .then(response => {
