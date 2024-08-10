@@ -44,12 +44,10 @@ export default {
                                         JSON.stringify(x.record.children_key) )).join("\n");
 
 
-            data = data.replaceAll('[]','').replaceAll('[]','') //removes any empty arrays [] or [[]] 
+            data = data.replaceAll('[]','') //removes any empty arrays [] 
 
             let headers = ["Time", "Description", "Tags", "Attachment File Name", "Children Names", "Children Keys"];
             let new_data = headers + "\n" + data;
-
-            console.log("new data", new_data)
 
             const anchor = document.createElement('a');
             anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(new_data);
