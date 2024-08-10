@@ -64,7 +64,7 @@ const deviceKey = route.params.deviceKey;
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
-import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
+import QRCodeStyling from "~/qrcode/src/core/QRCodeStyling";
 
 
 
