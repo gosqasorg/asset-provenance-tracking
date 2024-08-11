@@ -1,3 +1,7 @@
+© 2024 Global Open Source Quality Assurance System. All rights reserved.
+We are committed to keeping our code open source, but all GOSQUAS and GDT 
+branding, including logos, is subject to the copyright above.
+
 # GOSQAS Demo
 
 This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).
