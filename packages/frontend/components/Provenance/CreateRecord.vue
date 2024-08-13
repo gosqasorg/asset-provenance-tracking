@@ -26,11 +26,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <h5 class="text-iris">Create New History Record</h5>
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
-        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Container Key (optional)"/>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Device Keys (optional, separated with a coma)"/>
+        <label>Tags (will be converted to lower case and duplicates removed)&nbsp&nbsp</label>
+        <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
         <div>
-            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
-                {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+            <span v-for="(tag, index) in tags" :key="tag">
+        {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
+    </span>
+        </div>
+        <div style="display: block;">
+            <label>Add Image (optional):    </label>
+            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+        </div>
+        <label>Container Key (optional): </label>
+        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />
+        <label>Contained Devices Keys (optional, separated with a coma): </label>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="enteredChildKeys" />
+        <div>
+            <span v-for="(childkey1, index) in enteredChildKeys" :key="childkey1">
+        {{ childkey1 }}{{ index !== enteredChildKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
         <div>
@@ -67,7 +80,7 @@ export default {
             pictures: [] as File[] | null,
             tags: [] as string[],
             containerKey: '',
-            childrenKey: [] as string[],
+            enteredChildKeys: [] as string[],
             hasParent: false,
             isReportingKey: false,
         }
@@ -86,7 +99,7 @@ export default {
     },
     computed: {
     uniqueChildrenKeys() {
-        const uniqueValues = [...new Set(this.childrenKey)];
+        const uniqueValues = [...new Set(this.enteredChildKeys)];
         return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
     }
 },
@@ -108,7 +121,7 @@ export default {
             this.pictures = null;
             this.tags = [];
             this.containerKey = '';
-            this.childrenKey = [];
+            this.enteredChildKeys = [];
             this.hasParent = false;
             this.isReportingKey = false;
         },
@@ -122,7 +135,8 @@ export default {
                     postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: recallReason,
-                        children_key: '',
+                        children_key: [],
+                        children_name: [],
                         tags: tags,
                     }, this.pictures || [])
                 }
@@ -137,6 +151,7 @@ export default {
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
             let descendantsList = await getAllDescendants(this.deviceKey);
+            let enteredChildNames:string[] = [];
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
@@ -158,6 +173,7 @@ export default {
                             description: this.description, // keep the same description?
                             tags: [],
                             children_key: [this.deviceKey],
+                            children_name: response[response.length - 1].record.deviceName,
                             hasParent: true,
                         }, this.pictures || [])
     
@@ -166,8 +182,8 @@ export default {
                 }
             }
 
-            if (this.childrenKey.length > 1) { // if user want to add children keys 
-                let string_children = this.childrenKey.toString();
+            if (this.enteredChildKeys.length > 1) { // if user want to add children keys 
+                let string_children = this.enteredChildKeys.toString();
                 let entered_children = string_children.split(",");
                 entered_children = [...new Set(entered_children)]; //removing any duplicates
                 let new_children_list = entered_children.slice(0); //copy this exact array
@@ -203,12 +219,14 @@ export default {
                                 console.log("This device key is among descendants.");
                                 this.description = this.description + `\nError: Child device could not be added.`;
                                 new_children_list.splice(index, 1);
-                            } else {
+                            } else { // Here we finally add the child as it has passed all the requirements
+                                enteredChildNames = enteredChildNames.concat(child_prov[child_prov.length-1].record.deviceName);
                                 postProvenance(i, {
                                 blobType: 'deviceRecord',
                                 description: "Added parent", // need to discuss whether we want to have a unique description
                                 tags: [],
                                 children_key: [],
+                                children_name: [],
                                 hasParent: true,  // make sure the child has parent = true
                                 }, this.pictures || [])
     
@@ -216,7 +234,8 @@ export default {
                         }
                     }                        
                 }
-                this.childrenKey = new_children_list;
+                this.enteredChildKeys = new_children_list;
+                
             } 
 
         const recall = this.tags.indexOf("recall", 0);        
@@ -250,7 +269,8 @@ export default {
                 blobType: 'deviceRecord',
                 description: this.description,
                 tags: this.tags,
-                children_key: this.childrenKey,
+                children_key: this.enteredChildKeys,
+                children_name: enteredChildNames,
                 hasParent: this.hasParent,
         }, this.pictures || [])
         .then(response => {

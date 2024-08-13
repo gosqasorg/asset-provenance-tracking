@@ -37,11 +37,11 @@ export default {
             let fileNames = await Promise.all(provenance.map( x => getAttachmentName(x, this.deviceKey)));
 
             let data = provenance.map( (x, index) =>
-                ([new Date(x.timestamp)]).concat(x.record.description,
-                                        JSON.stringify(x.record.tags),
-                                        JSON.stringify(fileNames[index]),
-                                        JSON.stringify(x.record.children_name),
-                                        JSON.stringify(x.record.children_key) )).join("\n");
+                ([new Date(x.timestamp)]).concat(String('"' + x.record.description + '"'),
+                                        String('"'+ x.record.tags + '"'),
+                                        String('"'+fileNames[index]+'"'),
+                                        String('"'+x.record.children_name+'"'),
+                                        String('"'+x.record.children_key+'"') )).join("\n");
 
 
             data = data.replaceAll('[]','') //removes any empty arrays [] 
