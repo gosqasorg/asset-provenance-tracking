@@ -29,8 +29,10 @@ const deviceKey = route.params.deviceKey;
             <div class="my-2" >{{deviceRecord.description}}</div>
         
             <div> 
-                <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5">Download QR Code</button>
+                <!-- Didn't use button componenet here, couldn't get the link to work with it -->
+                <button class="btn mt-1 bg-iris text-white px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
+
+                <button-component buttonText="Download QR Code" backgroundColor="#E6F6FF" borderColor="#E6F6FF" color="#1e2019" margin="0px 0px 0px 30px"/>
             </div>
 
         </div>
