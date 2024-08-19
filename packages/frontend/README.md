@@ -1,4 +1,4 @@
-© 2024 Global Open Source Quality Assurance System. All rights reserved.
+Note: All icons, images, and logos are © 2024 Global Open Source Quality Assurance System. All rights reserved.
 We are committed to keeping our code open source, but all GOSQAS and GDT 
 branding, including logos, is subject to the copyright above.
 
