@@ -44,6 +44,12 @@ Learn more about Global Distributed Tracking by emailing us at gosqasystem@gmail
 
 <script lang="ts">
 import ButtonComponent from '~/components/ButtonComponent.vue';
+
+export default {
+    components: {
+        ButtonComponent
+    }
+};
 </script>
 
 <style>
