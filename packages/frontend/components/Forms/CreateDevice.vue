@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <h4 class="mt-3 mb-3 text-iris">Device Image (optional)   </h4>
-                <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <input type="file"  class="form-control " accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
  
  
@@ -115,6 +115,10 @@ export default {
         margin-left: auto;
         margin-right: auto;
 
+    }
+    /* Style for the placeholder text */
+    .form-control::placeholder {
+    color: gray;
     }
     
     #device-form > * {

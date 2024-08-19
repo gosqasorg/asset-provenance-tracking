@@ -22,7 +22,7 @@
 
 $custom-theme-colors: (
     "iris" : #4e3681,
-    "sky" :#E6F6FF,
+    "sky" :#ccecfd,
     "eggplant" : #322253,
     "frost" : #e6f6ff,
     "slate" :#1e2019,
@@ -82,6 +82,12 @@ h1 {
     line-height: 33px;
  }
  
+  //Normal Text Regular
+  p {
+    font-size: 18px;
+    line-height: 27px;
+    font-weight: 400;
+ }
  
  // Apply h4 style font to buttons and inputs
  .form-control {
