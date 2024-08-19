@@ -1,4 +1,9 @@
-<!-- index.vue -- adjusting container
+<!-- index.vue
+
+© 2024 Global Open Source Quality Assurance System. All rights reserved.
+We are committed to keeping our code open source, but all GOSQAS and GDT 
+branding, including logos, is subject to the copyright above.
+
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
