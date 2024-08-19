@@ -32,14 +32,30 @@ Our projects are created for the public good and are available either free of ch
 Learn more about Global Distributed Tracking by emailing us at gosqasystem@gmail.com or visiting the links below.
 
  <div>
-<button class = "textToLinkButton0">How It Works </button>
-<button class = "textToLinkButton0">Data & Privacy </button>
-<button class = "textToLinkButton0">GDT GitHub</button>
+
+    <button-component class="mt-3 mb-5 textToLinkButton0" buttonText="How It Works" color="#4e3681" backgroundColor="white"/>
+    <button-component class="mt-3 mb-5 textToLinkButton0" buttonText="Data & Privacy" margin="0px 0px 0px 20px" color="#4e3681" backgroundColor="white"/>
+    <button-component class="mt-3 mb-5 textToLinkButton0" buttonText="GDT GitHub" margin="0px 0px 0px 20px" color="#4e3681" backgroundColor="white"/>
+
     </div>
     </div>
 </template>
-<style>
 
+
+<script lang="ts">
+import ButtonComponent from '~/components/ButtonComponent.vue';
+
+export default {
+    components: {
+        ButtonComponent
+    }
+};
+</script>
+
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+}
 
 div.body1 {
     margin: 50px;
@@ -65,5 +81,9 @@ button.navigation {
 .mainStuff {
     margin: 50px;
     margin-top: 30px;
+}
+.buttonSpacing {
+    display: flex;
+    column-gap: 20px;
 }
 </style>

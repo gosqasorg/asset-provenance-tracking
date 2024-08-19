@@ -51,7 +51,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="checkbox" class="form-check-input" id="notify-all"/> 
         </div>
     </div>
-      <button id="submit-button" type="submit">Create New Record</button>
+    <div class="d-grid">
+        <button-component buttonText="Create New Record" margin="20px 0px 0px 0px" type="submit" />
+    </div>
     </form>
 </template>
 
