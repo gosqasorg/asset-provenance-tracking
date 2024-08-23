@@ -172,7 +172,7 @@ async function getDecryptedBlob(request: HttpRequest, context: InvocationContext
     const containerExists = await containerClient.exists();
     if (!containerExists) { return undefined; }
 
-    const blobClient = containerClient.getBlockBlobClient('gosqas/attach/${blobID}');
+    const blobClient = containerClient.getBlockBlobClient('gosqas/attach/${attachmentID}');
     const exists = await blobClient.exists();
     if (!exists) { return undefined; }
 
