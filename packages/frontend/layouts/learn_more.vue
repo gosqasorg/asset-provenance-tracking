@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <span style="font-weight: 400;" class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span> 
                     or visiting the links below.</p>
         <button-component buttonText="How It Works" color="#322253"
-            backgroundColor="#ffffff00"></button-component>                
+            backgroundColor="#ffffff00" onclick="window.location.href='how_it_works'"></button-component>                
         <button-component buttonText="Data & Privacy" color="#322253"
             backgroundColor="#ffffff00"></button-component>                
         <button-component buttonText="GDT GitHub" color="#322253"
