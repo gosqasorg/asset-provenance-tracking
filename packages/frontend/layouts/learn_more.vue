@@ -20,12 +20,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
 
     <div class="row" id="learn-more">
-                <h3 class="text-iris"> Interested in learning more? </h3>
-                <p style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
-                    <span style="font-weight: 400;" class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span> 
+        <h3 class="text-iris"> Interested in learning more? </h3>
+        <p style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
+        <span style="font-weight: 400;" class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span> 
                     or visiting the links below.</p>
-                **buttons go here**  
-            </div>
+        <button-component buttonText="How It Works" color="#322253"
+            backgroundColor="#ffffff00"></button-component>                
+        <button-component buttonText="Data & Privacy" color="#322253"
+            backgroundColor="#ffffff00"></button-component>                
+        <button-component buttonText="GDT GitHub" color="#322253"
+            backgroundColor="#ffffff00"></button-component>
+    </div>
 
 </template>
 

@@ -25,8 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
-                <div class="row" style="padding: 18px 22px; margin-bottom: 60px;">
-                    **buttons go here**
+                <div class="row" style=" margin-bottom: 60px;">
+                    <div class="col">
+                        <button-component buttonText="Track an Asset"></button-component>
+                    </div>
+                    <div class="col">
+                        <button-component buttonText="Create a Device" backgroundColor="#CCECFD" 
+                            borderColor="#CCECFD" color="#1E2019"></button-component>
+                    </div>
                 </div>
                 
             </div>
@@ -41,7 +47,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="row justify-content-center pt-3">
-                **This is where button goes.**
+                <button-component buttonText="Learn more" color="#322253"
+                    backgroundColor="#ffffff00"></button-component>
             </div>
         </div>
 
@@ -56,6 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { ref, onMounted } from 'vue'
 import Learn_more from '~/layouts/learn_more.vue';
+import ButtonComponent from '~/components/ButtonComponent.vue';
 
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We belive that open-source projects should be simple to use and understand."},
