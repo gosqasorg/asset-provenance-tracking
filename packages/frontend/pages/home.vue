@@ -25,12 +25,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
-                <div class="row" style=" margin-bottom: 60px;">
+                <div class="row" style=" margin-bottom: 60px; margin-top:30px;">
                     <div class="col">
-                        <button-component buttonText="Track an Asset"></button-component>
-                    </div>
-                    <div class="col">
-                        <button-component buttonText="Create a Device" backgroundColor="#CCECFD" 
+                        <button-component buttonText="Track an Asset" margin="0px 23px 0px 0px"></button-component>
+                        <button-component buttonText="Create a Device" backgroundColor="#CCECFD" onclick="window.location.href='/'"
                             borderColor="#CCECFD" color="#1E2019"></button-component>
                     </div>
                 </div>
@@ -46,10 +44,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
             </div>
-            <div class="row justify-content-center pt-3">
-                <button-component buttonText="Learn more" color="#322253"
+            <div class="col" style="text-align: center; margin-top: 50px;">
+                <button-component buttonText="Learn more" color="#322253" 
                     backgroundColor="#ffffff00"></button-component>
             </div>
+
         </div>
 
         <Learn_more  id="learn-more"></Learn_more>

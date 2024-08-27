@@ -1,49 +1,72 @@
+<!-- about.vue
+Copyright (C) 2024 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+<!--
+    This is the About Us page for GOSQAS
+-->
+<script setup lang="ts">
+    const route = useRoute()
+</script>
+
+
 <template>
-    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
-    <div class = "body1">
-        <h1>About Us</h1>
-The Global Open Source Quality Assurance System (GOSQAS) creates
-opportunities for better practices across the diverse humanitarian
-response, open-source hardware, and scientific research
-communities. We employ open-source tools and principles to centralize
-user solutions, despite location or resource environment.
+    <div class="container-fluid" id="about-container">
+        <h1 class="text-iris">About Us</h1>
+        <div class="row">
+            <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) creates
+                opportunities for better practices across the diverse humanitarian
+                response, open-source hardware, and scientific research
+                communities. We employ open-source tools and principles to centralize
+                user solutions, despite location or resource environment. </p>
+    
+            <p> <span class="text-iris" style="font-weight:600">Our current products</span> <br>
+                Global Distributed Tracking - an open-source provenance tracker enabling closed-loop 
+                tracking for products, information, and logistics.</p>
+        </div>
 
-<h4>Our current products</h4>
+        <div class="row">
+            <h2 class="text-iris">Our Mission: Trust Through Transparency</h2>
+            <p>As an open-source organization, GOSQAS prioritizes transparency in all projects. Because we know that 
+                openness and clarity build trust and promote wide user adoption, our commitment to Trust Through Transparency 
+                (TTT) ensures our initiatives are enacted with integrity and accountability.</p>
+        </div>
 
-    As an open-source organization, GOSQAS prioritizes transparency in all
-projects. Because we know that openness and clarity build trust and
-promote wide user adoption, our commitment to Trust Through
-Transparency (TTT) ensures our initiatives are enacted with integrity
-and accountability.
+        <div class="row">
+            <h2 class="text-iris">Our Values</h2>
+            <p> <span class="text-iris" style="font-weight:600">Data Ownership</span> <br>
+                Users maintain full ownership of the data generated within the GOSQAS flagship product, Global Distributed Tracking. 
+                We do not have access to any user data, ensuring complete privacy and independent ownership.</p>
+            <p> <span class="text-iris" style="font-weight:600">Simplicity & Accessibility</span> <br>
+                All users, especially laypersons in limited resource environments, have access to GOSQAS projects. 
+                We believe that open-source projects should be simple to use and understand.</p>
+            <p> <span class="text-iris" style="font-weight:600">Open Source</span> <br>
+                Our projects are created for the public good and are available either free of charge or at minimal cost, 
+                reinforcing our dedication to community benefit and accessibility.</p>
+        </div>
 
-
-<h2>Our Values</h2>
-
-<h5>Data Ownership</h5>
-Users maintain full ownership of the data generated within the GOSQAS flagship product, Global Distributed Tracking. We do not have access to any user data, ensuring complete privacy and independent ownership.
-
-
-<h5>Simplicity & Accessibility</h5>
-All users, especially laypersons in limited resource environments, have access to GOSQAS projects. We believe that open-source projects should be simple to use and understand.
-
-<h5>Open Source</h5>
-Our projects are created for the public good and are available either free of charge or at minimal cost, reinforcing our dedication to community benefit and accessibility.
-<h4>Interested in learning more?</h4>
-Learn more about Global Distributed Tracking by emailing us at gosqasystem@gmail.com or visiting the links below.
-
- <div>
-
-    <button-component class="mt-3 mb-5 textToLinkButton0" buttonText="How It Works" color="#4e3681" backgroundColor="white"/>
-    <button-component class="mt-3 mb-5 textToLinkButton0" buttonText="Data & Privacy" margin="0px 0px 0px 20px" color="#4e3681" backgroundColor="white"/>
-    <button-component class="mt-3 mb-5 textToLinkButton0" buttonText="GDT GitHub" margin="0px 0px 0px 20px" color="#4e3681" backgroundColor="white"/>
+        <div class="row">
+            <Learn_more></Learn_more>
+        </div>
 
     </div>
-    </div>
+
 </template>
 
 
 <script lang="ts">
 import ButtonComponent from '~/components/ButtonComponent.vue';
+import Learn_more from '~/layouts/learn_more.vue';
 
 export default {
     components: {
@@ -52,38 +75,28 @@ export default {
 };
 </script>
 
-<style>
-body {
-    font-family: 'Poppins', sans-serif;
+<style scoped>
+
+/* For screens smaller than 768px */
+@media (max-width: 768px) {
+    #about-container{
+        padding: 20px 20px 40px 20px;
+    }
+    .row{
+        margin-top:32px;
+    }
+
 }
 
-div.body1 {
-    margin: 50px;
-}
-.navigationBar {
-    display: flex;
-    align-items: center;
-    padding-top: 7px;
-    background-color: #e6f6ff;
-}
-.logohomepage {
-    width: 60px;
-    margin: 20px 20px 20px 50px;
+/* For screens larger than 768px */
+@media (min-width: 768px) {
+    #about-container{
+        padding: 80px 200px 100px 200px;
+    }
+    .row{
+        margin-top:32px;
+    }
 }
 
-button.navigation {
-    background-color: transparent;
-    border-width: 0;
-    text-align: center;
-    margin: 0 10px;
-}
 
-.mainStuff {
-    margin: 50px;
-    margin-top: 30px;
-}
-.buttonSpacing {
-    display: flex;
-    column-gap: 20px;
-}
 </style>

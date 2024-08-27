@@ -24,12 +24,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <p style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
         <span style="font-weight: 400;" class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span> 
                     or visiting the links below.</p>
-        <button-component buttonText="How It Works" color="#322253"
-            backgroundColor="#ffffff00" onclick="window.location.href='how_it_works'"></button-component>                
-        <button-component buttonText="Data & Privacy" color="#322253"
-            backgroundColor="#ffffff00"></button-component>                
-        <button-component buttonText="GDT GitHub" color="#322253"
-            backgroundColor="#ffffff00"></button-component>
+        <span>
+            <button-component buttonText="How It Works" color="#322253" margin="0px 20px 0px 0px"
+                backgroundColor="#ffffff00" onclick="window.location.href='how_it_works'"></button-component>                
+            <button-component buttonText="Data & Privacy" color="#322253" margin="0px 20px 0px 0px" onclick="window.location.href='data_privacy'"
+                backgroundColor="#ffffff00"></button-component>                
+            <button-component buttonText="GDT GitHub" color="#322253" onclick="location.href='https://github.com/gosqasorg/asset-provenance-tracking'"
+                backgroundColor="#ffffff00"></button-component>
+        </span>
     </div>
 
 </template>
