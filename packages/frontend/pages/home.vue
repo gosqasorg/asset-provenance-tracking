@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <button-component buttonText="Learn more" color="#322253" 
+                <button-component buttonText="About Us" color="#322253" onclick="window.location.href='about'"
                     backgroundColor="#ffffff00"></button-component>
             </div>
 
