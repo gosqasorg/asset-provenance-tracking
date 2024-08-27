@@ -36,14 +36,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row">
-            <h2 class="text-iris">Our Mission: Trust Through Transparency</h2>
+            <h2 class="text-iris" id="subtitle">Our Mission: Trust Through Transparency</h2>
             <p>As an open-source organization, GOSQAS prioritizes transparency in all projects. Because we know that 
                 openness and clarity build trust and promote wide user adoption, our commitment to Trust Through Transparency 
                 (TTT) ensures our initiatives are enacted with integrity and accountability.</p>
         </div>
 
         <div class="row">
-            <h2 class="text-iris">Our Values</h2>
+            <h2 class="text-iris" id="subtitle">Our Values</h2>
             <p> <span class="text-iris" style="font-weight:600">Data Ownership</span> <br>
                 Users maintain full ownership of the data generated within the GOSQAS flagship product, Global Distributed Tracking. 
                 We do not have access to any user data, ensuring complete privacy and independent ownership.</p>
@@ -85,6 +85,10 @@ export default {
     .row{
         margin-top:32px;
     }
+    #subtitle{
+        margin-bottom:16px
+    }
+
 
 }
 
@@ -96,6 +100,10 @@ export default {
     .row{
         margin-top:32px;
     }
+    #subtitle{
+        margin-bottom:20px
+    }
+
 }
 
 
