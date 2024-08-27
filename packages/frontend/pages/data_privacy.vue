@@ -21,13 +21,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <template>
-    This is the data and privacy pages
+    <div class="container-fluid" id="about-container">
+        <h1 class="text-iris">Data & Privacy</h1>
+        <div class="row"> <p>
+            Global Distributed Tracking encrypts user data and ensures its accessibility only 
+            through the unique device key, which is linked to a QR code. A cryptographic hash function 
+            securely references data via the device key. AES encryption with 128 bit keys is used along 
+            with SHA-256 for cryptographic hashing. This process is performed in a zero-knowledge manner, 
+            ensuring that the Global Distributed Tracking team never stores or knows a user device key. 
+            Only Global Distributed Tracking users and individuals with whom they share a device key have 
+            access to the History Record of a device.
+        </p> </div>
+    
+        <learn_more></learn_more>
 
-    <learn_more></learn_more>
+    </div>
 
 </template>
 
 <script lang="ts">
 import Learn_more from '~/layouts/learn_more.vue';
 </script>
+
+<style scoped>
+/* For screens smaller than 768px */
+@media (max-width: 768px) {
+    #about-container{
+        padding: 20px 20px 40px 20px;
+    }
+    .row{
+        margin-top:20px;
+    }
+
+
+}
+
+/* For screens larger than 768px */
+@media (min-width: 768px) {
+    #about-container{
+        padding: 80px 200px 100px 200px;
+    }
+    .row{
+        margin-top:32px;
+    }
+
+}
+
+</style>
 

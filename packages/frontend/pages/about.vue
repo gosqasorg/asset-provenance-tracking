@@ -55,9 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 reinforcing our dedication to community benefit and accessibility.</p>
         </div>
 
-        <div class="row">
             <Learn_more></Learn_more>
-        </div>
 
     </div>
 
