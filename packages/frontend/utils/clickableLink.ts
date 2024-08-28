@@ -14,21 +14,28 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-export async function clickableLink(description: string): Promise<string> {
+export default function clickableLink(description: string)  {
 
     // Split the description into words
     let words = description.split(' ');
 
+    const expression = '/((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z0-9\&\.\/\?\:@\-_=#])*';
+    const regEx = new RegExp(expression);
+    
+
     // Iterate over each word and check if it ends with .com or .org
     for (let i = 0; i < words.length; i++) {
-        if (words[i].endsWith('.com') || words[i].endsWith('.org')) {
+        // if (words[i].endsWith('.com') || words[i].endsWith('.org')) {
+        console.log("the word is ", words[i], " the match: ", words[i].match(regEx));
+        if (words[i].match(regEx)) { //Checks if there are links that start with https
             // Wrap the word with <a> tag
-            words[i] = `<a href="${words[i]}">${words[i]}</a>`;
+            words[i] = `<a href="${words[i]}" target="_blank">${words[i]}</a>`;
+            console.log("successful match");
         }
     }
 
     // Join the words back into a single string
-    let new_description = words.join ("");
+    let new_description = words.join(" ");
 
     return new_description;
 }
