@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
             <div style="display: block;">
                 <h4 class="mt-3 mb-3 text-iris">Device Image (optional)   </h4>
-                <input type="file"  class="form-control " accept="image/*" @change="onFileChange" capture="environment" multiple />
+                <input type="file"  class="form-control " accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
  
  
@@ -42,8 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
  
  
-        <div class="d-grid">       
-            <button class="btn my-3 bg-iris text-white mb-0" type="submit">Create Device</button>
+        <div class="d-grid">
+            <button-component class="my-4 mb-0" buttonText="Create Device" type="submit" />
         </div>
     </form>
  </template>
@@ -51,6 +51,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+
+import ButtonComponent from '../ButtonComponent.vue';
 
 export default {
     data() {
@@ -113,6 +115,10 @@ export default {
         margin-left: auto;
         margin-right: auto;
 
+    }
+    /* Style for the placeholder text */
+    .form-control::placeholder {
+    color: gray;
     }
     
     #device-form > * {
