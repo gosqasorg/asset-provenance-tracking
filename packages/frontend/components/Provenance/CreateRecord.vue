@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
-        <div style="margin: 24px 0px;">
+        <div>
             <h5 class="text-iris">Device Image (optional)    </h5>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
@@ -42,12 +42,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
-        <h5 class="text-iris" style="margin: 24px 0px;">
+        <h5 class="text-iris">
             <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
         </h5>
     </div>
-    <div class="d-grid">
-        <button-component buttonText="Create History Record" type="submit" id="submit-button"/>
+    <div class="d-grid" id="submit-button">
+        <button-component buttonText="Create History Record" type="submit" />
     </div>
     </form>
 </template>
@@ -283,8 +283,7 @@ export default {
 
 <style scoped>
   form {
-      border-radius: 10px;
-      padding: 30px;
+      border-radius: 6px;
       display: block;
   }
   /* Style for the placeholder text */
@@ -292,13 +291,7 @@ export default {
     color: gray;
     font-size: 18px;
 }
-  #device-form > * {
-      padding: 5px;
-      margin: 5px;
-      display: flex;
-      flex-direction: column;
-      width: 70%
-  }
+
   #submit-button {
       margin-top: 24px;
   }
@@ -310,7 +303,6 @@ export default {
   input[type=text] {
     height: 36px;
     font-size:18px;
-    margin-top: 16px;
   }
 
   input[type=file] {
@@ -325,8 +317,36 @@ export default {
 
   #provenanceTag{
     height: 36px;
-    border-radius: 10px;
+    border-radius: 6px;
     width: 100%;
+    font-size: 18px;
   }
+
+  /*  For screens smaller than 768px */
+  @media (max-width: 768px) {
+    h5{
+        margin-top: 20px;
+    }
+    input[type=text] {
+        margin-top: 12px;
+    }
+    form {
+        padding: 2px 17px 17px 17px;
+    }
+  }
+
+  /*  For screens larger than 768px */
+  @media (min-width: 768px) {
+    h5{
+        margin-top: 24px;
+    }
+    input[type=text] {
+        margin-top: 16px;
+    }
+    form {
+        padding: 2px 20px 20px 20px;
+    }
+  }
+
 
 </style>
