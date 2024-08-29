@@ -28,19 +28,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
         <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Container Key (optional)"/>
         <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Device Keys (optional, separated with a coma)"/>
+        <div>
+            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
+                {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+            </span>
+        </div>
         <div style="margin: 24px 0px;">
             <h5 class="text-iris">Device Image (optional)    </h5>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
         <h5 class="text-iris">Add Tags (optional)</h5>
-        <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device tag"/>
+        <ProvenanceTagInput class="form-control" id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device tag"/>
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
-        </div>
-        <div>
-            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
-                {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
-            </span>
         </div>
         <h5 class="text-iris" style="margin: 24px 0px;">
             <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
@@ -309,6 +309,7 @@ export default {
 
   input[type=text] {
     height: 36px;
+    font-size:18px;
     margin-top: 16px;
   }
 
@@ -328,10 +329,4 @@ export default {
     width: 100%;
   }
 
-  #provenanceTag::placeholder{
-    color: gray;
-    font-size: 18px;
-    font-weight: 400;
-    padding-left: 12px;
-  }
 </style>
