@@ -22,37 +22,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <form enctype="multipart/form-data" @submit.prevent="submitForm">
-      <h1>Create New History Record</h1>
+    <form enctype="multipart/form-data" class='bg-frost' @submit.prevent="submitForm">
+      <h5 class="text-iris">Create New History Record</h5>
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
-        <label>Tags (will be converted to lower case and duplicates removed)&nbsp&nbsp</label>
-        <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
-        <div>
-            <span v-for="(tag, index) in tags" :key="tag">
-        {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
-    </span>
-        </div>
-        <div style="display: block;">
-            <label>Add Image (optional):    </label>
+        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Container Key (optional)"/>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Device Keys (optional, separated with a coma)"/>
+        <div style="margin: 24px 0px;">
+            <h5 class="text-iris">Device Image (optional)    </h5>
             <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
         </div>
-        <label>Container Key (optional): </label>
-        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />
-        <label>Contained Devices Keys (optional, separated with a coma): </label>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" />
+        <h5 class="text-iris">Add Tags (optional)</h5>
+        <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device tag"/>
+        <div>
+            <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
+        </div>
         <div>
             <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
-        {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+                {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
-        <div class="mt-1">
-            Notify all children?
-            <input type="checkbox" class="form-check-input" id="notify-all"/> 
-        </div>
+        <h5 class="text-iris" style="margin: 24px 0px;">
+            <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
+        </h5>
     </div>
     <div class="d-grid">
-        <button-component buttonText="Create New Record" margin="20px 0px 0px 0px" type="submit" />
+        <button-component buttonText="Create History Record" type="submit" id="submit-button"/>
     </div>
     </form>
 </template>
@@ -288,18 +283,14 @@ export default {
 
 <style scoped>
   form {
-      background-color: rgb(145, 193, 248);
       border-radius: 10px;
       padding: 30px;
-      width: 70%;
       display: block;
-      margin-left: auto;
-      margin-right: auto;
-
   }
   /* Style for the placeholder text */
     .form-control::placeholder {
     color: gray;
+    font-size: 18px;
 }
   #device-form > * {
       padding: 5px;
@@ -309,11 +300,38 @@ export default {
       width: 70%
   }
   #submit-button {
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      width: 50%;
-      margin-top: 30px;
+      margin-top: 24px;
+  }
 
+  input {
+    border: 0;
+  }
+
+  input[type=text] {
+    height: 36px;
+    margin-top: 16px;
+  }
+
+  input[type=file] {
+    height:36px;
+    font-size: 18px;
+    line-height: 27px;
+  }
+
+  input[type=checkbox] {
+    margin-right: 10px;
+  }
+
+  #provenanceTag{
+    height: 36px;
+    border-radius: 10px;
+    width: 100%;
+  }
+
+  #provenanceTag::placeholder{
+    color: gray;
+    font-size: 18px;
+    font-weight: 400;
+    padding-left: 12px;
   }
 </style>
