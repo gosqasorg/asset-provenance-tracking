@@ -22,11 +22,8 @@ export default function clickableLink(description: string)  {
     const expression = '/((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z0-9\&\.\/\?\:@\-_=#])*';
     const regEx = new RegExp(expression);
     
-
-    // Iterate over each word and check if it ends with .com or .org
+    // Iterate over each word and check
     for (let i = 0; i < words.length; i++) {
-        // if (words[i].endsWith('.com') || words[i].endsWith('.org')) {
-        console.log("the word is ", words[i], " the match: ", words[i].match(regEx));
         if (words[i].match(regEx)) { //Checks if there are links that start with https
             // Wrap the word with <a> tag
             words[i] = `<a href="${words[i]}" target="_blank">${words[i]}</a>`;
