@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
         <div style="display: block;">
             <label>Add Image (optional):    </label>
-            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
         </div>
         <label>Container Key (optional): </label>
         <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" />

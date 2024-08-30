@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
             <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Container Description">
             <h4 class="text-iris form-label mt-3 mb-3" for="file">Container Image (optional)</h4>
-            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
            
             <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
             <ProvenanceTagInput class="form-control mt-1 " placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
