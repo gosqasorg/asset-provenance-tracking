@@ -39,9 +39,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
-                <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                 <div v-if="((attachment.fileName).toLowerCase()).endsWith('.jpg') || ((attachment.fileName).toLowerCase()).endsWith('.png')  ">
+                    <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                 </div>
                 <a :href="attachment.url" :download="attachment.fileName" style="display: block; padding: 5px; text-align: left;">
-                    Download Image
+                    Download File
                 </a>
             </div>
             
