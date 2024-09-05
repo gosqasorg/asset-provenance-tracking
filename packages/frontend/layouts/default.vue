@@ -29,9 +29,35 @@
                 </div>
             </div>
         </nav>
+
         <div>
             <slot/>
         </div>
+        <!-- Footer Section -->
+        <footer class="footer mt-auto py-3 bg-light">
+            <div class="container text-center">
+                <div class="row">
+                    <div class="col-md-6 text-md-start mb-3 mb-md-0">
+                        <a href="/">
+                            <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
+                        </a>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a href="/" class="me-3">Home</a>
+                        <a href="/about" class="me-3">About</a>
+                        <a href="#" class="me-3">How It Works</a>
+                        <a href="#" class="me-3">GDT GitHub</a>
+                        <a href="#" class="me-3">Data & Privacy</a>
+                        <a href="#">Technical Documents</a>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <p class="text-muted">© 2024 Global Open Source Quality Assurance System. All rights reserved. </p>
+                </div>
+            </div>
+        </footer>
+
+
     </div>
  </template>
  
@@ -85,5 +111,23 @@
     height: 101px;
   }
 }
- 
+.footer {
+    background-color: #E8F4FB;
+    padding: 20px 0;
+}
+
+.footer a {
+    color: #333;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.footer p {
+    margin: 0;
+    color: #666;
+}
 </style>
