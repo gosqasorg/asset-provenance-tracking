@@ -163,11 +163,24 @@
     align-items: center;      /* Center vertically */
     text-align: center;       /* Ensures text is centered */
     width: 100%;              /* Ensures the container spans the full width */
+    margin-top: 70px;  
+    margin-left: 100px;        /* Adjust this value to move it right */
+
 }
 
 .mt-3 {
     margin: 0; /* Ensures no additional margin is added */
 }
 
+
+.mt-3 {
+    margin: 0; /* Ensures no additional margin is added */
+}
+/* Smaller copyright text */
+.small-text {
+    font-size: 12px; /* Smaller font size for the copyright text */
+    margin-top: 20px; /* Add some space above the copyright text */
+    
+}
 
 </style>
