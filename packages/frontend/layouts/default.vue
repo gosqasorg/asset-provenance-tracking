@@ -31,31 +31,41 @@
         <div>
             <slot/>
         </div>
-        
         <!-- Footer Section -->
-        <footer class="footer mt-auto py-3 bg-light">
-            <div class="container-fluid d-flex align-items-center justify-content-between">
-                <a href="/" class="navbar-brand">
-                    <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
-                </a>
-            
-                <div class="text-center">
-                    <div class="row">
-                        <div class="col-md-6 text-md-end">
-                            <a href="/" class="me-3">Home</a>
+
+        <footer class="footer footer-light bg-frost">
+            <div class="container custom-container">
+                <div class="row custom-row-position">
+                    <div class="col-md-4 text-md-start mb-3 mb-md-0">
+                        <a href="/">
+                            <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
+                        </a>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="row text-md-start custom-row-home">
+                        <a href="/" class="me-3">Home</a>
+                        <a href="#" class="me-3">How It Works</a>
+                        <a href="#" class="me-3">GDT GitHub</a>
+
+                        </div>
+                    </div>
+                    <div class="col-md-4 ">
+                        <div class="row text-md-start custom-row-about">
                             <a href="/about" class="me-3">About</a>
-                            <a href="#" class="me-3">How It Works</a>
-                            <a href="#" class="me-3">GDT GitHub</a>
                             <a href="#" class="me-3">Data & Privacy</a>
                             <a href="#">Technical Documents</a>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <p class="text-muted">© 2024 Global Open Source Quality Assurance System. All rights reserved. </p>
-                    </div>
                 </div>
+                
+                <div class="row custom-copy-right">
+                    <div class="mt-8">
+                    <p class="text-muted">© 2024 Global Open Source Quality Assurance System. All rights reserved. </p>
+                    </div>
+            </div>
             </div>
         </footer>
+
     </div>
 </template>
 
@@ -114,35 +124,50 @@
 
 /* Footer Styling */
 .footer {
-    background-color: #E6F6FF; /* Frost color */
     width: 1440px;
+    width: 100%;
     height: 250px; /* Ensures the footer maintains the correct height */
     padding: 40px; /* Adds padding around the content */
     display: flex;
-    align-items: center;
     justify-content: space-between; /* Space between elements */
-    gap: 40px; /* Gap between footer items */
+    
 }
 
-.footer .container-fluid {
-    display: flex;
-    align-items: center; /* Aligns footer content vertically */
-    justify-content: space-between; /* Keeps content properly spaced */
-}
 
 .footer a {
     color: #333;
     text-decoration: none;
-    margin-right: 15px;
 }
 
-.footer a:hover {
-    text-decoration: underline;
-}
 
 .footer p {
     margin: 0;
     color: #666;
 }
+.custom-row-position {
+    margin-top: -10px; /* Moves the row upwards */
+}
+
+
+
+/* Shift the row slightly to the left */
+.custom-container {
+    padding-left: 0px; /* Remove padding to move content close to the left edge */
+    margin-left: -15px;/* Adjust the padding to move the content more to the left */
+    text-align: left; /* Ensure the content is left-aligned */
+}
+
+.custom-copy-right {
+    display: flex;
+    justify-content: center;  /* Center horizontally */
+    align-items: center;      /* Center vertically */
+    text-align: center;       /* Ensures text is centered */
+    width: 100%;              /* Ensures the container spans the full width */
+}
+
+.mt-3 {
+    margin: 0; /* Ensures no additional margin is added */
+}
+
 
 </style>
