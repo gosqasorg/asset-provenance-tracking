@@ -28,12 +28,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   <div v-if="!isLoading">
     <div v-if="deviceKeyFound">
 
-      <div class="row pt-5 pb-6 mx-4">
+      <div class="row pt-3 pb-6 mx-4">
         <div class="col-md-2 d-none d-md-block">
         <!-- Scrollspy -->
          <!-- When the screen size is md (>= 768px) and up  -->
-            <nav id="jump-to" class="sticky-top text-slate">
-              <p>Jump to section</p>
+            <nav id="jump-to test" class="sticky-top text-slate"> 
+              <p class="menu-spacing">Jump to section</p>
               <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
                 <li id="item" class="py-2"
                   style= "border-left: 2px solid #4e3681;"
@@ -213,6 +213,10 @@ export default {
 
 </script>
 <style>
+
+.menu-spacing {
+  padding-top: 34px;
+}
 
 .provenance {
   white-space: pre-line;
