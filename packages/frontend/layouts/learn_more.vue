@@ -26,11 +26,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     or visiting the links below.</p>
         <span>
             <button-component buttonText="How It Works" color="#322253" margin="0px 20px 20px 0px"
-                backgroundColor="#ffffff00" onclick="window.location.href='how_it_works'"></button-component>                
+                backgroundColor="#ffffff00" onclick="window.location.href='how_it_works'" style="font-size:18px"></button-component>                
             <button-component buttonText="Data & Privacy" color="#322253" margin="0px 20px 0px 0px" onclick="window.location.href='data_privacy'"
-                backgroundColor="#ffffff00"></button-component>                
+                backgroundColor="#ffffff00" style="font-size:18px"></button-component>                
             <button-component buttonText="GDT GitHub" color="#322253" onclick="location.href='https://github.com/gosqasorg/asset-provenance-tracking'"
-                backgroundColor="#ffffff00"></button-component>
+                backgroundColor="#ffffff00" style="font-size:18px"></button-component>
         </span>
     </div>
 

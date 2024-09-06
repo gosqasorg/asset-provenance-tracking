@@ -25,16 +25,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
-                <div class="row" style=" margin-bottom: 60px; margin-top:15px; ">
-                    <form class="col-lg-5" style="margin-bottom: 20px;" @submit.prevent="trackingForm">
-                        <button-component id="unclicked" buttonText="Track an Asset" type="submit" style="opacity:100;"></button-component>
+                <div class="row" style=" margin-bottom: 60px; margin-top:15px; display:inline-flex">
+                    <form style="margin-bottom: 20px; width:40%; min-width: 230px;" @submit.prevent="trackingForm">
+                        <button-component class="button" id="trackButton" buttonText="Track an Asset" type="submit" style="opacity:100;"
+                            padding="18px 22px"></button-component>
                     </form>
-                    <div class="col-lg-6" style="margin-bottom: 20px;">
-                        <button-component buttonText="Create a Device" backgroundColor="#CCECFD" onclick="window.location.href='/'"
-                            borderColor="#CCECFD" color="#1E2019" ></button-component>
+                    <div style="margin-bottom: 20px; width: 60%; min-width: 250px;" >
+                        <button-component class="button" buttonText="Create a Device" backgroundColor="#CCECFD" onclick="window.location.href='/'"
+                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px"></button-component>
                     </div>
                     <div id="trackAssetDiv" style="visibility: hidden;">
-                        <TrackAsset inputWidth="60%"></TrackAsset>
+                        <TrackAsset inputWidth="53%"></TrackAsset>
                     </div>
                 </div>
                 
@@ -50,7 +51,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <button-component buttonText="About Us" color="#322253" onclick="window.location.href='about'"
+                <button-component class="button" buttonText="About Us" color="#322253" onclick="window.location.href='about'"
                     backgroundColor="#ffffff00"></button-component>
             </div>
 
@@ -81,17 +82,19 @@ export default {
         // Function to have the 'Track an asset' input field appear
         async trackingForm() {
             let trackAssetDiv = <HTMLDivElement>document.getElementById("trackAssetDiv");
-            let trackButton = <HTMLDivElement>document.getElementById("unclicked");
+            let trackButton = <HTMLDivElement>document.getElementById("trackButton");
 
             if (!showTrack) { //if showTrack is false
                 showTrack = true;
                 trackAssetDiv.style.visibility="visible"; //make text input available
                 trackButton.style.backgroundColor = "#322253";
+                trackButton.style.borderColor = "#322253";
 
             } else { 
                 showTrack = false; 
                 trackAssetDiv.style.visibility="hidden";
                 trackButton.style.backgroundColor = "#4E3681";
+                trackButton.style.borderColor = "#4E3681";
             }
         },
     }
@@ -128,6 +131,9 @@ export default {
     #learn-more{
         padding: 40px 30px;
     }
+    .button{
+        font-size: 18px;
+    }
     
 }
 
@@ -144,6 +150,11 @@ export default {
     }
     #learn-more{
         padding: 70px 126px;
+    }
+    .button{
+        font-size: 20px;
+        padding: 1px;
+        
     }
 
 }
