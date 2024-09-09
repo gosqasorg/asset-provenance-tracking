@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
         <div>
             <h5 class="text-iris">Device Image (optional)    </h5>
-            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
         </div>
         <h5 class="text-iris">Add Tags (optional)</h5>
         <ProvenanceTagInput class="form-control" id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device tag"/>
