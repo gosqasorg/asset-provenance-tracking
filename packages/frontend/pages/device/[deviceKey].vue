@@ -26,7 +26,7 @@ const deviceKey = route.params.deviceKey;
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
             <h5>Device Key: {{ route.params.deviceKey }}</h5>
-            <div class="my-2" >{{deviceRecord.description}}</div>
+            <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 
 
@@ -69,6 +69,7 @@ import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 import QRCodeStyling from "~/qrcode/src/core/QRCodeStyling";
+import clickableLink from '~/utils/clickableLink';
 
 
 
