@@ -1,7 +1,7 @@
 <template>
     <div>
         <nav class="navbar navbar-expand-lg bg-frost">
-            <div class="container-fluid">
+            <div class="container-fluid" id="nav">
                 <a href="/" class="navbar-brand" >
                     <img src="../assets/styles/gosqas_logo.png" id="logo">
                 </a>
@@ -12,8 +12,8 @@
                         <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
                       </svg></span>
                 </button>
-                <div class="collapse navbar-collapse justify-content-end" id="main-nav">
-                    <ul class="navbar-nav">
+                <div class="collapse navbar-collapse flex-column" id="main-nav">
+                    <ul class="navbar-nav ms-auto">
                         <li class="nav-item mobile-nav">
                             <a class="nav-link" href="/about">Home</a>
                         </li>
@@ -35,12 +35,15 @@
                             </li>
                         </div>
                         <span>
-                            <ButtonComponent buttonText="Track an Asset" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
+                            <ButtonComponent @click="trackingForm()" id="trackButton" buttonText="Track an Asset" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
                             <div class="mobile-nav">
                                     <ButtonComponent buttonText="Create a Device" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px" style="font-size: 18px"></ButtonComponent>
                             </div>
                         </span>
                     </ul>
+                    <div class="ms-auto" id="trackAssetDiv" style="display:none;">
+                        <TrackAsset inputWidth="75%" id="trackAssetInput"></TrackAsset>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -51,6 +54,39 @@
     </div>
  </template>
  
+ 
+<script lang="ts">
+let showTrack = false;
+
+export default {
+    methods: {
+        // Function to have the 'Track an asset' input field appear
+        async trackingForm() {
+            let trackAssetDiv = <HTMLDivElement>document.getElementById("trackAssetDiv");
+            let trackButton = <HTMLDivElement>document.getElementById("trackButton");
+            let nav = <HTMLDivElement>document.getElementById("nav")
+
+            if (!showTrack) { //if showTrack is false
+                showTrack = true;
+                trackAssetDiv.style.display="inline"; //make text input available
+                trackButton.style.backgroundColor = "#322253";
+                trackButton.style.borderColor = "#322253";
+                nav.style.paddingBottom = "80px";
+
+            } else { 
+                showTrack = false; 
+                trackAssetDiv.style.display="none";
+                trackButton.style.backgroundColor = "#4E3681";
+                trackButton.style.borderColor = "#4E3681";
+                nav.style.paddingBottom = "24.5px";
+
+            }
+        },
+    }
+}
+
+</script>
+
 
  
 <style scoped>
@@ -140,6 +176,9 @@
             color: #1E2019;
             text-decoration: none;
         }
+        #trackAssetInput {
+            padding: 20px 20px 0 0;            
+        }
         
     
     }
@@ -166,7 +205,15 @@
         li {
             align-content: center;
             margin-right: 15px; /* Need a smaller margin so it does not collide with logo */
-        }    
+        }   
+
+        #trackAssetDiv {
+            min-width: 600px;
+        }
+
+        #trackAssetInput {
+            padding: 20px 20px 0 0;
+        }
     }
 
 
