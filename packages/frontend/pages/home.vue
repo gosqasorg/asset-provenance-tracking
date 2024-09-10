@@ -25,8 +25,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
-                <div class="row" style="padding: 18px 22px; margin-bottom: 60px;">
-                    **buttons go here**
+                <div class="row" style=" margin-bottom: 60px; margin-top:15px; display:inline-flex">
+                    <form style="margin-bottom: 20px; width:40%; min-width: 230px;" @submit.prevent="trackingForm">
+                        <button-component class="button" id="trackButton" buttonText="Track an Asset" type="submit" style="opacity:100;"
+                            padding="18px 22px"></button-component>
+                    </form>
+                    <div style="margin-bottom: 20px; width: 60%; min-width: 250px;" >
+                        <button-component class="button" buttonText="Create a Device" backgroundColor="#CCECFD" onclick="window.location.href='/'"
+                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px"></button-component>
+                    </div>
+                    <div id="trackAssetDiv" style="visibility: hidden;">
+                        <TrackAsset inputWidth="53%"></TrackAsset>
+                    </div>
                 </div>
                 
             </div>
@@ -40,9 +50,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
             </div>
-            <div class="row justify-content-center pt-3">
-                **This is where button goes.**
+            <div class="col" style="text-align: center; margin-top: 50px;">
+                <button-component class="button" buttonText="About Us" color="#322253" onclick="window.location.href='about'"
+                    backgroundColor="#ffffff00"></button-component>
             </div>
+
         </div>
 
         <Learn_more  id="learn-more"></Learn_more>
@@ -54,8 +66,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
 import Learn_more from '~/layouts/learn_more.vue';
+import ButtonComponent from '~/components/ButtonComponent.vue';
+let showTrack = false;
 
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We belive that open-source projects should be simple to use and understand."},
@@ -63,6 +77,28 @@ const second_row = [
     { title: "Open Source", descr:"Our projects are created for the public good and are available either free of charge or at minimal cost."}
 ];
 
+export default {
+    methods: {
+        // Function to have the 'Track an asset' input field appear
+        async trackingForm() {
+            let trackAssetDiv = <HTMLDivElement>document.getElementById("trackAssetDiv");
+            let trackButton = <HTMLDivElement>document.getElementById("trackButton");
+
+            if (!showTrack) { //if showTrack is false
+                showTrack = true;
+                trackAssetDiv.style.visibility="visible"; //make text input available
+                trackButton.style.backgroundColor = "#322253";
+                trackButton.style.borderColor = "#322253";
+
+            } else { 
+                showTrack = false; 
+                trackAssetDiv.style.visibility="hidden";
+                trackButton.style.backgroundColor = "#4E3681";
+                trackButton.style.borderColor = "#4E3681";
+            }
+        },
+    }
+}
 
 </script>
 
@@ -95,6 +131,9 @@ const second_row = [
     #learn-more{
         padding: 40px 30px;
     }
+    .button{
+        font-size: 18px;
+    }
     
 }
 
@@ -111,6 +150,11 @@ const second_row = [
     }
     #learn-more{
         padding: 70px 126px;
+    }
+    .button{
+        font-size: 20px;
+        padding: 1px;
+        
     }
 
 }
