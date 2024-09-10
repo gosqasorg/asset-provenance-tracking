@@ -35,9 +35,9 @@
                             </li>
                         </div>
                         <span>
-                            <ButtonComponent buttonText="Track an Asset" padding="12px 16px" margin="0px 20px 10px 0px"></ButtonComponent>
+                            <ButtonComponent buttonText="Track an Asset" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
                             <div class="mobile-nav">
-                                    <ButtonComponent buttonText="Create a Device" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px"></ButtonComponent>
+                                    <ButtonComponent buttonText="Create a Device" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px" style="font-size: 18px"></ButtonComponent>
                             </div>
                         </span>
                     </ul>
