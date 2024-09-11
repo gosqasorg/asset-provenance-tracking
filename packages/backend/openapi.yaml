@@ -1,0 +1,152 @@
+openapi: 3.0.0
+info:
+  title: Azure Functions API
+  version: 1.0.0
+  description: API for handling provenance records and attachments
+
+paths:
+  /provenance/{deviceKey}:
+    get:
+      summary: Get provenance records for a device
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    timestamp:
+                      type: string
+                    data:
+                      type: object
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+    post:
+      summary: Post a new provenance record
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                provenanceRecord:
+                  type: string
+                  format: binary
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recordID:
+                    type: string
+                  attachmentIDs:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      summary: Get an attachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attachmentID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /attachment/{deviceKey}/{attachmentID}/name:
+    get:
+      summary: Get the name of an attachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attachmentID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /statistics:
+    get:
+      summary: Get statistics
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp:
+                      type: string
+                    deviceID:
+                      type: string
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
