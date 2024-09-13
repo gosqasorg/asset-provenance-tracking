@@ -36,21 +36,21 @@
         <footer class="footer footer-light bg-frost">
             <div class="container custom-container">
                 <div class="row custom-row-position">
-                    <div class="col-md-4 text-md-start mb-3 mb-md-0">
+                    <div class="col-md-4 text-md-start mb-3 mb-md-0 custom-logo">
                         <a href="/">
                             <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
                         </a>
                     </div>
-                    <div class="col-md-4 ">
-                        <div class="row text-md-start custom-row-home">
+                    <div class="col-md-4 text-md-start custom-row-home">
+                        <div class="row">
                         <a href="/" class="me-3">Home</a>
                         <a href="#" class="me-3">How It Works</a>
                         <a href="#" class="me-3">GDT GitHub</a>
 
                         </div>
                     </div>
-                    <div class="col-md-4 ">
-                        <div class="row text-md-start custom-row-about">
+                    <div class="col-md-4 text-md-start custom-row-about">
+                        <div class="row">
                             <a href="/about" class="me-3">About</a>
                             <a href="#" class="me-3">Data & Privacy</a>
                             <a href="#">Technical Documents</a>
@@ -60,7 +60,8 @@
                 
                 <div class="row custom-copy-right">
                     <div class="mt-8">
-                    <p class="text-muted">© 2024 Global Open Source Quality Assurance System. All rights reserved. </p>
+                    <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. 
+                                    However, our software is open source software. </p>
                     </div>
             </div>
             </div>
@@ -108,6 +109,21 @@
     .custom-toggler {
         width: 20%;
     }
+    .footer {
+        padding: 15px;
+    }
+
+    .custom-row-home,
+    .custom-row-about {
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .footer .row {
+        flex-direction: column;
+    }
+
+    
 }
 
 .custom-nav { /* mobile view */
@@ -120,6 +136,33 @@
     padding: 0px 30px 0px 30px;
     height: 101px;
   }
+  .custom-logo {
+    width: 70%;
+    margin-left: -2085pm;
+
+  }
+  .footer {
+    width: 768;
+    width: 100%;
+    height: 450px; /* Ensures the footer maintains the correct height */
+    
+}
+
+  .footer .row {
+        flex-direction: column;
+        text-align: left;
+    }
+
+    .custom-row-home,
+    .custom-row-about {
+         width: 70%;
+    }
+
+    .custom-copy-right {
+        margin-left: 0;
+        margin-top: 30px;
+        width: 70%;
+    }
 }
 
 /* Footer Styling */
@@ -181,6 +224,29 @@
     font-size: 12px; /* Smaller font size for the copyright text */
     margin-top: 20px; /* Add some space above the copyright text */
     
+}
+.custom-row-home {
+    display: flex;
+    justify-content: flex-start; /* Align content to the left */
+    align-items: center;
+    gap: 15px; /* Adjust spacing between links */
+    margin-left: 300px; /* Add left space */
+    flex: 1; /* Allow it to take up available space */
+}
+
+.custom-row-about {
+    display: flex;
+    justify-content: flex-end; /* Align content to the right */
+    align-items: center;
+    gap: 15px; /* Adjust spacing between links */
+    flex: 1; /* Allow it to take up available space */
+    margin-left: -160; 
+}
+
+.footer .row {
+    display: flex;
+    width: 100%;
+    align-items: center;
 }
 
 </style>
