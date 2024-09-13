@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
             <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Container Description">
             <h4 class="text-iris form-label mt-3 mb-3" for="file">Container Image (optional)</h4>
-            <input type="file" class="form-control" accept="image/*" @change="onFileChange" capture="environment" multiple />
+            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
            
             <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
             <ProvenanceTagInput class="form-control mt-1 " placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
@@ -56,20 +56,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="text-iris p-1 mt-0">
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
- 
- 
- 
- 
+
         </div>
        
-        <div class="d-grid">       
+        <!--TODO: Replace this with button component!-->
+        <!-- <div class="d-grid">      
             <button class="btn my-3 bg-iris text-white mb-0" type="submit">Create Container</button>
-        </div>    </form>
+        </div> -->
+        <div class="d-grid">
+            <button-component class="my-4 mb-0" buttonText="Create Container" type="submit" />
+        </div>
+
+
+        <!--DIDNT ADD: components: { ButtonComponent, } in export default {} below-->
+    </form>
  </template>
 
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+
+import ButtonComponent from '../ButtonComponent.vue';
 
 export default {
     data() {

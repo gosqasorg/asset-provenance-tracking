@@ -26,11 +26,15 @@ const deviceKey = route.params.deviceKey;
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
             <h5>Device Key: {{ route.params.deviceKey }}</h5>
-            <div class="my-2" >{{deviceRecord.description}}</div>
+            <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 
+
+                <!-- Didn't use button componenet here, couldn't get the link to work with it -->
+
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
                 <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
+
             </div>
 
         </div>
@@ -65,6 +69,7 @@ import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 import QRCodeStyling from "~/qrcode/src/core/QRCodeStyling";
+import clickableLink from '~/utils/clickableLink';
 
 
 
