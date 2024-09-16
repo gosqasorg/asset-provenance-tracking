@@ -60,8 +60,7 @@
                 
                 <div class="row custom-copy-right">
                     <div class="mt-8">
-                    <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. 
-                                    However, our software is open source software. </p>
+                    <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. However, our software is open source software. </p>
                     </div>
             </div>
             </div>
@@ -109,21 +108,6 @@
     .custom-toggler {
         width: 20%;
     }
-    .footer {
-        padding: 15px;
-    }
-
-    .custom-row-home,
-    .custom-row-about {
-        gap: 10px;
-        flex-direction: column;
-    }
-
-    .footer .row {
-        flex-direction: column;
-    }
-
-    
 }
 
 .custom-nav { /* mobile view */
@@ -136,33 +120,6 @@
     padding: 0px 30px 0px 30px;
     height: 101px;
   }
-  .custom-logo {
-    width: 70%;
-    margin-left: -2085pm;
-
-  }
-  .footer {
-    width: 768;
-    width: 100%;
-    height: 450px; /* Ensures the footer maintains the correct height */
-    
-}
-
-  .footer .row {
-        flex-direction: column;
-        text-align: left;
-    }
-
-    .custom-row-home,
-    .custom-row-about {
-         width: 70%;
-    }
-
-    .custom-copy-right {
-        margin-left: 0;
-        margin-top: 30px;
-        width: 70%;
-    }
 }
 
 /* Footer Styling */
@@ -224,29 +181,6 @@
     font-size: 12px; /* Smaller font size for the copyright text */
     margin-top: 20px; /* Add some space above the copyright text */
     
-}
-.custom-row-home {
-    display: flex;
-    justify-content: flex-start; /* Align content to the left */
-    align-items: center;
-    gap: 15px; /* Adjust spacing between links */
-    margin-left: 300px; /* Add left space */
-    flex: 1; /* Allow it to take up available space */
-}
-
-.custom-row-about {
-    display: flex;
-    justify-content: flex-end; /* Align content to the right */
-    align-items: center;
-    gap: 15px; /* Adjust spacing between links */
-    flex: 1; /* Allow it to take up available space */
-    margin-left: -160; 
-}
-
-.footer .row {
-    display: flex;
-    width: 100%;
-    align-items: center;
 }
 
 </style>
