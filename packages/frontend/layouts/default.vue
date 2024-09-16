@@ -141,6 +141,19 @@
     padding: 0px 30px 0px 30px;
     height: 101px;
   }
+  
+  .custom-copy-right {
+        position: relative; /* Allows the use of top and left properties for positioning */
+        top: -30px; /* Moves the element upwards */
+        left: -60px; /* Moves the element to the left */
+        width: 100%;
+        text-align: left; /* Aligns text to the left */
+        margin-top: 0;  /* Remove flexbox margins */
+        margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
+
+    }
+
+
 }
 
 /* Footer Styling */
@@ -151,6 +164,7 @@
     padding: 40px; /* Adds padding around the content */
     display: flex;
     justify-content: space-between; /* Space between elements */
+    flex-wrap: wrap; 
     
 }
 
@@ -165,9 +179,6 @@
     margin: 0;
     color: #666;
 }
-.custom-row-position {
-    margin-top: -10px; /* Moves the row upwards */
-}
 
 
 
@@ -176,6 +187,10 @@
     padding-left: 0px; /* Remove padding to move content close to the left edge */
     margin-left: -15px;/* Adjust the padding to move the content more to the left */
     text-align: left; /* Ensure the content is left-aligned */
+}
+.custom-row-home {
+    position: relative;
+    left: 80px; /* Move it to the right by 20px, adjust as necessary */
 }
 
 .custom-copy-right {
