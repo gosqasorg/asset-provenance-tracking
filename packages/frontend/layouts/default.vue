@@ -59,7 +59,7 @@
                 </div>
                 
                 <div class="row custom-copy-right">
-                    <div class="mt-8">
+                    <div class="mt-10">
                     <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. However, our software is open source software. </p>
                     </div>
             </div>
@@ -108,6 +108,27 @@
     .custom-toggler {
         width: 20%;
     }
+    .custom-logo img {
+        max-width: 70%;
+        height: auto; /* Ensures the image maintains its aspect ratio */
+    }
+    .custom-row-home, .custom-row-about {
+        display: none; /* Hide the sections */
+    }
+    .text-muted {
+    font-size: 7px; /* Smaller font size for the copyright text */
+    }
+    .custom-copy-right {
+        position: relative; /* Allows the use of top and left properties for positioning */
+        top: -40px; /* Moves the element upwards */
+        left: -60px; /* Moves the element to the left */
+        width: 100%;
+        text-align: left; /* Aligns text to the left */
+        margin-top: 0;  /* Remove flexbox margins */
+        margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
+
+    }
+
 }
 
 .custom-nav { /* mobile view */
@@ -177,9 +198,8 @@
     margin: 0; /* Ensures no additional margin is added */
 }
 /* Smaller copyright text */
-.small-text {
-    font-size: 12px; /* Smaller font size for the copyright text */
-    margin-top: 20px; /* Add some space above the copyright text */
+.text-muted {
+    font-size: 15px; /* Smaller font size for the copyright text */
     
 }
 
