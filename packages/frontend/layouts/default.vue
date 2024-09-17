@@ -33,7 +33,7 @@
                                 <a class="mobile-link" href="https://github.com/gosqasorg/asset-provenance-tracking">GDT GitHub</a>
                             </li>
                             <li style="margin:10px 0px 20px 0px">
-                                <a class="mobile-link" href="#">Technical Documents</a>
+                                <a class="mobile-link" href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Technical Documents</a>
                             </li>
                         </div>
                         <span>
@@ -75,7 +75,7 @@
                         <div class="row">
                             <a href="/about" class="me-3">About</a>
                             <a href="/data_privacy" class="me-3">Data & Privacy</a>
-                            <a href="#">Technical Documents</a>
+                            <a href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Technical Documents</a>
                         </div>
                     </div>
                 </div>
