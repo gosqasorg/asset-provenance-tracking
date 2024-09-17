@@ -67,7 +67,16 @@ async function upload(client: ContainerClient, deviceKey: Uint8Array, data: Buff
     const deviceID = await calculateDeviceID(deviceKey);
     const { salt, encryptedData } = await encrypt(deviceKey, data);
     const blobID = toHex(await sha256(encryptedData));
-    const blobName = `${client.containerName}/${deviceID}/${type}/${blobID}`;
+
+    let blobName;
+    if (type === 'prov') {
+        blobName = `${client.containerName}/prov/${deviceID}/${blobID}`;
+    } else if (type === 'attach') {
+        blobName = `${client.containerName}/attach/${blobID}`;
+    } else {
+        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
+    }
+
 
     const { encryptedData: encryptedName } = fileName 
         ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt) 
@@ -143,7 +152,7 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
     if (!containerExists) { return { jsonBody: [] }; }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `gosqas/${deviceID}/prov/` })) {
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `gosqas/prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
@@ -163,7 +172,7 @@ async function getDecryptedBlob(request: HttpRequest, context: InvocationContext
     const containerExists = await containerClient.exists();
     if (!containerExists) { return undefined; }
 
-    const blobClient = containerClient.getBlockBlobClient(`gosqas/${deviceID}/attach/${attachmentID}`);
+    const blobClient = containerClient.getBlockBlobClient(`gosqas/attach/${attachmentID}`);
     const exists = await blobClient.exists();
     if (!exists) { return undefined; }
 
