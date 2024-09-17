@@ -264,17 +264,6 @@ export default {
     }
 
 
-
-
-
-
-    .custom-nav { /* mobile view */
-        padding: 0px 7px 0px 20px;
-        height: 101px;
-    }
-
-
-
     /* Footer Styling */
     @media (max-width:420px) {
         .custom-logo img {
@@ -285,7 +274,7 @@ export default {
             display: none; /* Hide the sections */
         }
         .text-muted {
-        font-size: 7px; /* Smaller font size for the copyright text */
+            font-size: 7px; /* Smaller font size for the copyright text */
         }
         .custom-copy-right {
             position: relative; /* Allows the use of top and left properties for positioning */
@@ -297,24 +286,30 @@ export default {
             margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
 
         }
+        .custom-nav { /* mobile view */
+            padding: 0px 7px 0px 20px;
+            height: 101px;
+        }
+    
     }
 
-@media (min-width: 768px) { /* desktop view */
-  .custom-nav {
-    padding: 0px 30px 0px 30px;
-    height: 101px;
-  }
-  
-  .custom-copy-right {
-        position: relative; /* Allows the use of top and left properties for positioning */
-        top: -30px; /* Moves the element upwards */
-        left: -60px; /* Moves the element to the left */
-        width: 100%;
-        text-align: left; /* Aligns text to the left */
-        margin-top: 0;  /* Remove flexbox margins */
-        margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
+    @media (min-width: 768px) { /* desktop view */
+        .custom-nav {
+            padding: 0px 30px 0px 30px;
+            height: 101px;
+        }
+        
+    .custom-copy-right {
+            position: relative; /* Allows the use of top and left properties for positioning */
+            top: -30px; /* Moves the element upwards */
+            left: -60px; /* Moves the element to the left */
+            width: 100%;
+            text-align: left; /* Aligns text to the left */
+            margin-top: 0;  /* Remove flexbox margins */
+            margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
 
-        }  
+            }  
+    }
 
     .footer {
         width: 1440px;
@@ -369,7 +364,7 @@ export default {
         font-size: 15px; /* Smaller font size for the copyright text */
         
     }
-}
+
 
 
 
