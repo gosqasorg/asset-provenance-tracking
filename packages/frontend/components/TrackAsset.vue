@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form @submit.prevent="submit">
         <input type="text" id="input" v-model="deviceKey" placeholder="Device key" style="width: inputWidth;" required/>
-        <button-component buttonText="Track asset" padding="12px 16px"
+        <button-component buttonText="Track asset" padding="12px 16px" margin="0"
             type="submit" style="font-size: 16px;"></button-component>
     </form>
 </template>
