@@ -34,8 +34,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         <button-component class="button" buttonText="Create a Device" backgroundColor="#CCECFD" onclick="window.location.href='/'"
                             borderColor="#CCECFD" color="#1E2019" padding="18px 22px"></button-component>
                     </div>
-                    <div id="trackAssetDiv" style="visibility: hidden;">
-                        <TrackAsset inputWidth="53%"></TrackAsset>
+                    <div id="homeTrackAssetDiv" style="visibility: hidden;">
+                        <TrackAsset inputWidth="75%"></TrackAsset>
                     </div>
                 </div>
                 
@@ -55,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     backgroundColor="#ffffff00"></button-component>
             </div>
 
-        </div>
+        </div> 
 
         <Learn_more  id="learn-more"></Learn_more>
 
@@ -66,13 +66,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
 import Learn_more from '~/layouts/learn_more.vue';
 import ButtonComponent from '~/components/ButtonComponent.vue';
 let showTrack = false;
 
 const second_row = [
-    { title: "Simplicity & Accessibility", descr: "We belive that open-source projects should be simple to use and understand."},
+    { title: "Simplicity & Accessibility", descr: "We believe that open-source projects should be simple to use and understand."},
     { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."},
     { title: "Open Source", descr:"Our projects are created for the public good and are available either free of charge or at minimal cost."}
 ];
@@ -81,8 +80,8 @@ export default {
     methods: {
         // Function to have the 'Track an asset' input field appear
         async trackingForm() {
-            let trackAssetDiv = <HTMLDivElement>document.getElementById("trackAssetDiv");
-            let trackButton = <HTMLDivElement>document.getElementById("trackButton");
+            let trackAssetDiv = <HTMLDivElement>document.getElementById("homeTrackAssetDiv");
+            let trackButton = <HTMLDivElement>document.getElementById("homeTrackButton");
 
             if (!showTrack) { //if showTrack is false
                 showTrack = true;
