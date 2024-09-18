@@ -40,19 +40,6 @@ All source code is in the packages/ directory.
 
 We have made a [short video](https://youtu.be/E5_YQV72NyY) of [v0.1](https://github.com/gosqas/asset-provenance-tracking/releases/tag/v0.1) operation.
 
-## batch-shell.sh
-
-The file batch-shell.sh can be used to produce any number of keys and QR codes at at time.
-It takes a single argument, the number N of keys and QR codes to create. It will
-populate the current directory directly with N files, each of which has the name of a device key, and whose
-body a .png file of the QR code that resolves to that key. An internal variable defines the full URL.
-The name in the start record is currently hard-coded to "MakerFaireBayArea" but can of course be changed.
-
-For example, to generate 300 valid QR codes run the following:
-```
-batch-shell.sh 300
-```
-
 ## License
 As mentioned in the [Licences section](https://github.com/gosqasorg/home#licenses) of the Home repository, as this repository is software the license is under a GNU Affero GPL v3 License. See the [License](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/LICENSE) file for more details.
 
@@ -75,6 +62,3 @@ But, you are welcome to enter issues and create pull requests as well. We recomm
 before expending significant time on this unless you have spoken to us first.
 
 Contributors will be expected to sign our [Contributors License Agreement ](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/CONTRIBUTOR%20LICENSE%20AGREEMENT.md) designed to keep your contribution forever free.
-
-
-
