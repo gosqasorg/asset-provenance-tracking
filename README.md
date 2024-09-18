@@ -24,23 +24,17 @@ and sent to Sudan where they are desperately needed. We thank Alex Barton for be
 
 
 
+# Project Structure
+
+All source code is in the packages/ directory.
+
 ## Installation
 
-1. Clone the repo
-2. Install dependencies
-```
-npm install
-```
-3. Run development environment
-```
-npm run dev
-```
-4. Then point your browser at [http://localhost:8000](http://localhost:8000) for example
-
-> Note, as of v0.2, the demo server listens on *all* networks the server is connected to.
-> While exposing server ports is always a security risk, exposing the demo server on the local network
-> allows other devices - mobile devices in particular - to access the demo server.
-> On startup, the server prints out a list of the IP addresses it is listening on.
+- Install the project dependencies as documented in the backend and frontend README.md.
+- Open a terminal in the packages/backend and packages/frontend directories.
+- Run `npm install` in both terminals.
+- Start the backend with `npm start`
+- Start the frontend with `npm run dev`
 
 ## Video of Operation
 
