@@ -25,7 +25,7 @@ const deviceKey = route.params.deviceKey;
             <h1 class="mt-4 mb-2 text-iris">{{deviceRecord.deviceName}}</h1>
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
-            <h5>Device Key: {{ route.params.deviceKey }}</h5>
+            <h5>Device Name: {{ route.params.deviceKey }}</h5>
             <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 
