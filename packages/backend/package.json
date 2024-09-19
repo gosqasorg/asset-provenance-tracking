@@ -9,17 +9,16 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "start": "func start",
-    "test_script": "ts-node ./test/test.ts",
+    "test": "ts-node ./test/test.ts",
     "dev": "func start",
-    "test": "vitest",
+    "vitest": "vitest",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@azure/functions": "^4.2.0",
     "@azure/storage-blob": "^12.17.0",
     "bs58": "^5.0.0",
-    "json5": "^2.2.3",
-    "vitest": "^2.1.1"
+    "json5": "^2.2.3"
   },
   "devDependencies": {
     "@types/node": "20.11.20",
@@ -29,6 +28,7 @@
     "mime-types": "^2.1.35",
     "rimraf": "^5.0.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.1"
   }
 }
