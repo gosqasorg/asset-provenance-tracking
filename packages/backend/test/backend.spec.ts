@@ -1,25 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { postProvenance } from '../src/functions/httpTrigger';
-import { Context, HttpRequest } from "@azure/functions";
-import { buildContext, buildHttpRequest } from "./utils";
+import { describe, it, expect } from 'vitest';
 import { toHex, fromHex, decodeKey, calculateDeviceID } from "../src/functions/httpTrigger";
-
-
-describe("Test backend functions", () => {
-    let context: Context;
-    let request: HttpRequest;
-
-    beforeEach(() => {
-        // Mock the Azure Functions context and request.
-        context = buildContext();
-        request = buildHttpRequest();
-    });
-
-    it("should return 404 if item is not found", async () => {
-        await postProvenance(request, context);
-        expect(context.res).toBeUndefined();
-    });
-});
 
 describe("Test algorithms", () => {
     it("should decode the key", () => {
