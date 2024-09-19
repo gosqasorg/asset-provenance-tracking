@@ -22,15 +22,15 @@ async function sha256(data: BufferSource) {
     return new Uint8Array(buffer);
 }
 
-function toHex(data: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>): string {
+export function toHex(data: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>): string {
     return Buffer.from(data).toString("hex");
 }
 
-function fromHex(hex: string): Uint8Array {
+export function fromHex(hex: string): Uint8Array {
     return new Uint8Array(Buffer.from(hex, 'hex'));
 }
 
-function decodeKey(key: string): Uint8Array {
+export function decodeKey(key: string): Uint8Array {
     const $key = bs58.decode(key);
     switch ($key.length) {
         case 16:
@@ -42,27 +42,27 @@ function decodeKey(key: string): Uint8Array {
     }
 }
 
-async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
+export async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
     // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
     return toHex(hash);
 }
 
-async function encrypt(key: Uint8Array, data: BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
+export async function encrypt(key: Uint8Array, data: BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ['encrypt']);
     salt ??= crypto.getRandomValues(new Uint8Array(16));
     const encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv: salt }, $key, data);
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
 
-async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array> {
+export async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array> {
     const $key = await crypto.subtle.importKey("raw", key, "AES-CBC", false, ["decrypt"]);
     const result = await crypto.subtle.decrypt({ name: "AES-CBC", iv: salt }, $key, encryptedData);
     return new Uint8Array(result);
 }
 
-async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
     const deviceID = await calculateDeviceID(deviceKey);
     const { salt, encryptedData } = await encrypt(deviceKey, data);
@@ -203,7 +203,7 @@ async function getAttachmentName(request: HttpRequest, context: InvocationContex
     return { body: filename };
 };
 
-async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
