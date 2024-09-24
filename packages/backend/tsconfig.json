@@ -8,6 +8,7 @@
     "strict": false
   },
   "exclude": [
-    "test/**"
+    "test/**",
+    "vitest.config.ts",
   ]
 }
