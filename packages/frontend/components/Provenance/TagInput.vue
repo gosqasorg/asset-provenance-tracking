@@ -1,6 +1,6 @@
 <!--
 TagInput.vue -- Analyzing User Tag
-Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS Team
+Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
