@@ -49,12 +49,22 @@ $form-file-button-bg: #4e3681 ;
 $form-file-button-hover-bg: #322253;
 
 
-
-// import bootstrap
+// import bootstrap after custom variables to override default bootstrap styles
 @import "bootstrap/scss/bootstrap";
 
 
 //// Custom styles implementation:
+
+// Ensure the html and body elements take up the full height of the viewport
+html, body {
+    height: 100vh;
+}
+
+body { 
+    display: flex;
+    flex-direction: column;
+}
+
 
 //// Mobile
 // Apply custom font size to h1 elements
