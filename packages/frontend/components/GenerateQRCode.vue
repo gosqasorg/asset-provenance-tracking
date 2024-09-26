@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         computed: {
             qrCodeValue() {
-                return `http://localhost:3001/provenance/${this.deviceKey}`;
+                return `https://red-stone-00f5d251e.5.azurestaticapps.net/provenance/${this.deviceKey}`;
             }
         },
     }
