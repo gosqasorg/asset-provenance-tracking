@@ -91,7 +91,7 @@ export default {
     },
     computed: {
             qrCodeValue() {
-                return `https://red-stone-00f5d251e.5.azurestaticapps.net/provenance/${this.deviceKey}`;
+                return `${window.location.origin}/provenance/${this.deviceKey}`;
             }
     },
     methods: {
