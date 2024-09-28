@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - packages/backend/**
+      - .github/workflows/be_on_push.yml
   pull_request:
     branches:
       - main
