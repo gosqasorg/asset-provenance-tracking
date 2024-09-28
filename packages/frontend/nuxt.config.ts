@@ -31,4 +31,5 @@ export default defineNuxtConfig({
             apiBase: '/api'
         }
     },
+    modules: ['@nuxt/test-utils/module']
 });
