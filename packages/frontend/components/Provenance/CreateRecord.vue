@@ -38,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
         </div>
         <h5 class="text-iris">Add Tags (optional)</h5>
-        <ProvenanceTagInput class="form-control" id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device tag"/>
+        <ProvenanceTagInput class="form-control" id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device Tag (separate with a space)"/>
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>

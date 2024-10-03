@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div> -->
                 <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;">
                 <a :href="attachment.url" :download="attachment.fileName" style="display: block; padding: 5px; text-align: left;">
-                    Download File
+                    Download Image
                 </a>
             </div>
             
