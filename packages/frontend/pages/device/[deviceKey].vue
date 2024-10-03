@@ -122,7 +122,16 @@ export default {
             });
         }
     }
+    
 };
 
 
 </script>
+<style>
+#image-hover {
+
+}
+#image-hover:o {
+    color: gray;
+}
+</style>

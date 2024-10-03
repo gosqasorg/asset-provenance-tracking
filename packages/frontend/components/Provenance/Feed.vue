@@ -41,7 +41,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <!-- Image -->
                 <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
                 <a :href="attachment.url" :download="attachment.fileName" style="display: block; padding: 5px; text-align: left;">
-                    Download File
+                    Download Image
                 </a>
             </div>
             

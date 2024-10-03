@@ -92,7 +92,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <section id="create-record">
               <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey"/>
             </section>
-            <section id="child-keys">
+            <section id="child-keys"><br>
               <div v-if="hasReportingKey"> Reporting Key:
                 <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
               </div>
@@ -102,7 +102,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>    
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
-            </section>
+            </section><br>
             
           </div>
           <!-- Spied element -->
