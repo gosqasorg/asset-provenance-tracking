@@ -1,8 +1,10 @@
 import { webcrypto as crypto } from 'node:crypto';
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
-import bs58 from 'bs58';
-import JSON5 from 'json5';
+import * as bs58 from 'bs58';
+import * as JSON5 from 'json5';
+import { EmailClient } from "@azure/communication-email";
+
 
 
 // To deploy this project from the command line, you need:
