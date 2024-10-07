@@ -76,16 +76,6 @@ export default {
 
 
 <style scoped>
-/* General body styling for centering */
-body {
-  display: flex;
-  border: 2px;
-  align-items: left;
-  justify-content: left;
-  height: 100vh;
-  background-color: #f5f5f5; /* Light background to see the toggle clearly */
-  font-family: 'Poppins', sans-serif;
-}
 
 /* Hide the original checkbox */
 .toggleCheckbox {
