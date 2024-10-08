@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <form @submit.prevent="submit">
-        <input type="text" id="input" v-model="deviceKey" placeholder="Device key" style="width: inputWidth;" required/>
-        <button-component buttonText="Track asset" padding="12px 16px" margin="0"
-            type="submit" style="font-size: 16px;"></button-component>
+        <input type="text" id="input" v-model="deviceKey" placeholder="Device Key or ID" style="width: inputWidth;" required/>
+        <button-component buttonText="Track Asset" padding="12px 11px" margin="0"
+            type="submit" style="font-size: 18px;"></button-component>
     </form>
 </template>
 

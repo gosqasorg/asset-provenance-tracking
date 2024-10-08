@@ -80,28 +80,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <section ref= "section" id="priority-notices">
               <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
-            </section>
+            </section><br>
 
             <section id="recent">
               <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance_noRecord"/>
             </section>
             <section id="device-creation">
               <ProvenanceFeed :deviceKey="deviceKey" :provenance="deviceCreationRecord"/>
-            </section>
+            </section><br>
             <section id="create-record">
               <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey"/>
             </section>
-            <section id="child-keys">
+            <section id="child-keys"><br>
               <div v-if="hasReportingKey"> Reporting Key:
                 <div> <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a></div>
               </div>
               <div> Child Keys:
                 <div> <KeyList v-bind:keys="childKeys"/> </div>
-              </div>
+              </div><br>
               <div v-if="(childKeys.length > 0) || hasReportingKey ">
                 <CsvFile :deviceKey="deviceKey"></CsvFile>
               </div>
-            </section>
+            </section><br>
             
           </body>
           <!-- Spied element -->

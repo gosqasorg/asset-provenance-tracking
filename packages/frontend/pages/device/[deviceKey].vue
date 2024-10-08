@@ -33,15 +33,14 @@ const deviceKey = route.params.deviceKey;
                 <!-- Didn't use button componenet here, couldn't get the link to work with it -->
 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
+                <!-- <button class="btn mt-1 bg-sky px-5" style="font-size:18px;" @click="getQRCode">Download QR Code</button> -->
+                <p style="padding-top: 10px;">Click the QR code to download image.</p>
 
             </div>
 
         </div>
-        <div class="col-sm-6 col-lg-3 mt-2">
-
-            <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
-
+        <div class="col-sm-6 col-lg-3 mt-2" id="image-hover">
+            <div><button style="border-width: 0; background-color: transparent;"@click="getQRCode"><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></button></div>
         </div>
 
     </div>
@@ -101,6 +100,7 @@ export default {
                 return `http://localhost:3001/provenance/${this.deviceKey}`;
             }
     },
+    
     methods: {
         //This method helps rerendering the site
         forceRerender() { 
@@ -156,7 +156,16 @@ export default {
             console.log(error)
         }
     }
+    
 };
 
 
 </script>
+<style>
+#image-hover {
+
+}
+#image-hover:o {
+    color: gray;
+}
+</style>
