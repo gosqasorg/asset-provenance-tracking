@@ -98,7 +98,7 @@ export default {
     },
     computed: {
             qrCodeValue() {
-                return `http://localhost:3001/provenance/${this.deviceKey}`;
+                return `${window.location.origin}/provenance/${this.deviceKey}`;
             }
     },
     methods: {
