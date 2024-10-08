@@ -18,6 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     their items.
     -->
 
+<script setup lang="ts">
+  const route = useRoute()
+  const deviceKey = route.params.deviceKey as string;
+</script>
+
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -69,9 +74,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <!-- Spied element -->
           <body  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
-              <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
+              <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
               <div>Device ID: {{ deviceKey }}</div>
-              <div><span v-html="clickableLink(deviceRecord.description)"></span></div>
+              <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
             </section>
 
             <section ref= "section" id="priority-notices">
@@ -91,10 +96,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <div v-if="hasReportingKey"> Reporting Key:
                 <div> <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a></div>
               </div>
-              <div> Child Keys:
-                <div> <KeyList v-bind:keys="childKeys"/> </div>
-              </div>
               <div v-if="(childKeys.length > 0) || hasReportingKey ">
+                <div> Child Keys:
+                  <div> <KeyList v-bind:keys="childKeys"/> </div>
+                </div>    
                 <CsvFile :deviceKey="deviceKey"></CsvFile>
               </div>
             </section>
@@ -180,6 +185,9 @@ export default {
         // Decompose the provenance records into parts to be rendered.
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
         
+        // console.log("provenanceNoRecord", provenanceNoRecord)
+        // console.log("deviceCreationRecord", deviceCreationRecord)
+        console.log("deviceRecord", deviceRecord)
         this.isLoading = false;
 
         // This functionality could be pushed into a component...
