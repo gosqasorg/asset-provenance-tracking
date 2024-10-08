@@ -17,10 +17,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     Page will be the forum where users can keep track of the provenance of
     their items.
     -->
-<script setup lang="ts">
-  const route = useRoute()
-  const deviceKey = route.params.deviceKey;
-</script>
 
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
@@ -83,7 +79,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
 
             <section id="recent">
-              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance_noRecord"/>
+              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenanceNoRecord"/>
             </section>
             <section id="device-creation">
               <ProvenanceFeed :deviceKey="deviceKey" :provenance="deviceCreationRecord"/>
@@ -126,7 +122,7 @@ import { getProvenance} from '~/services/azureFuncs';
 import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord, provenance, deviceCreationRecord, provenance_noRecord;
+let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
 const currentSection = ref();
 let section = ref();
 
@@ -149,7 +145,7 @@ export default {
       isLoading: true,
       deviceKeyFound: false,
       hasReportingKey: false,
-      childKeys: [],
+      childKeys: [] as string[],
     }},
     async mounted() {
       try {
@@ -171,18 +167,24 @@ export default {
                 
 
         const route = useRoute();
-        const deviceKey = route.params.deviceKey;
-        await getProvenance(deviceKey).then((response) => {
-            provenance = response;
-            this.deviceKeyFound = true;
-        });
-        provenance_noRecord = provenance.slice(0, -1); // get the provenance without device creation
-        deviceCreationRecord = [provenance.at(-1)]; //the last record in the list should be the device creation
-        deviceRecord = provenance[provenance.length - 1].record;
+        const deviceKey = route.params.deviceKey as string;
+        const provenance = await getProvenance(deviceKey);
+
+        if (!provenance) {
+          console.log("No provenance record found.")
+          return;
+        }
+
+        this.deviceKeyFound = true;
+
+        // Decompose the provenance records into parts to be rendered.
+        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+        
         this.isLoading = false;
 
         // This functionality could be pushed into a component...
         this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+        
         // We will remove the reportingKey, because although it is a child,
         // we have already rendered it.
         if (this.hasReportingKey) {
@@ -191,21 +193,11 @@ export default {
                 deviceRecord.children_key.splice(index, 1);
             }
         }
-
-
-        let childKeysList:any = [];
-
-        for (let i=0; i < provenance.length; i++) {
-            childKeysList += provenance[i].record.children_key + ",";
-        }
-
-        childKeysList= childKeysList.split(',');
-
-        this.childKeys = childKeysList;
-
+        this.childKeys = getChildKeys(provenance);
       } catch (error) {
           this.isLoading = false;
           this.deviceKeyFound = false;
+          this.hasReportingKey = false;
           console.log(error)
       }
     }

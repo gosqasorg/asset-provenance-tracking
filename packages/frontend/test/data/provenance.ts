@@ -97,7 +97,7 @@ export const fakeProvenanceWithChildren = [
                 "customer"
             ],
             "children_key": ["childkey2", "childkey3"],
-            "children_name": ["abc"], // What happens if these don't match?
+            "children_name": ["abc", "def"],
             "warnings": [],
             "isRecall": false
         },
