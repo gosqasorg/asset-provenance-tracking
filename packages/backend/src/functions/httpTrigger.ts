@@ -197,6 +197,10 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
+        if ('name' in record) {
+            const name = record['name'];
+            record["deviceName"] = name;
+        }
 
         const attachments = new Array<NamedBlob>();
         for (const attachment of attachmentIDs) {
