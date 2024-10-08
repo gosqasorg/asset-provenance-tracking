@@ -59,10 +59,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
        
-        <!--TODO: Replace this with button component!-->
-        <!-- <div class="d-grid">      
-            <button class="btn my-3 bg-iris text-white mb-0" type="submit">Create Container</button>
-        </div> -->
         <div class="d-grid">
             <button-component class="my-4 mb-0" buttonText="Create Container" type="submit" />
         </div>
