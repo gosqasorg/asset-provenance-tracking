@@ -94,7 +94,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a></div>
+                <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
               </div>
               <div v-if="(childKeys.length > 0) || hasReportingKey ">
                 <div> Child Keys:
@@ -185,9 +185,6 @@ export default {
         // Decompose the provenance records into parts to be rendered.
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
         
-        // console.log("provenanceNoRecord", provenanceNoRecord)
-        // console.log("deviceCreationRecord", deviceCreationRecord)
-        console.log("deviceRecord", deviceRecord)
         this.isLoading = false;
 
         // This functionality could be pushed into a component...
