@@ -77,6 +77,7 @@ import { postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
+import { isNavigationFailure } from 'vue-router';
 
 export default {
     data() {
@@ -225,28 +226,30 @@ export default {
                     childrenDeviceName.push(childName);
                 }
             };
-            postProvenance(deviceKey, {
-                blobType: 'deviceInitializer',
-                deviceName: this.name,
-                description: this.description,
-                tags:this.tags,
-                reportingKey: reportingKey,
-                children_key: childrenDeviceList,
-                children_name: childrenDeviceName,
-                hasParent: false,
-                isReportingKey: false
-            }, this.pictures || [])
-                .then(response => {
-                    // Handle the successful response here
-                    console.log('Post request successful:', response);
-                })
-                .catch(error => {
-                    // Handle the error here
-                    console.error('Error in post request:', error);
-                });
+            try {
+                const response = await postProvenance(deviceKey, {
+                    blobType: 'deviceInitializer',
+                    deviceName: this.name,
+                    description: this.description,
+                    tags:this.tags,
+                    reportingKey: reportingKey,
+                    children_key: childrenDeviceList,
+                    children_name: childrenDeviceName,
+                    hasParent: false,
+                    isReportingKey: false
+                }, this.pictures || [])
+                
+                console.log('Succesfully created the container:', response);
 
-            //Routing to display the device QR code etc.
-            this.$router.push({ path: `/device/${deviceKey}` });
+                // Navigate to the new container page
+                const failure = await this.$router.push({ path: `/device/${deviceKey}` });
+
+                if (isNavigationFailure(failure)) {
+                    console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
+                }
+            } catch (error) {
+                console.error('Failed to create the container:', error);
+            }
         },
     }
 
