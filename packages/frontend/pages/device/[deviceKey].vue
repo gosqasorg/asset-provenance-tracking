@@ -46,21 +46,14 @@ const deviceKey = route.params.deviceKey;
 
     </div>
 
-    <!--Put the Reporting Key here if there is one -->
-    <div>
-        <div v-if="hasReportingKey" class="mt-4 mb-2 text-iris fs-2">
-        Reporting Key:
-        </div>
-            <div>
-                <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a>
-            </div>
+    <div v-if="hasReportingKey"> Reporting Key:
+        <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
     </div>
-
-    <!--Put the Child List key here if there are any -->
-    <div v-if="childKeys.length > 0 " class="mt-4 mb-2 text-iris fs-3"> ChildKeys: 
-    <KeyList v-bind:keys="childKeys"/> </div>
-    <div v-if="(childKeys.length > 0) || hasReportingKey "> 
-    <br> <CsvFile :deviceKey="route.params.deviceKey"></CsvFile>
+    <div v-if="(childKeys?.length > 0) || hasReportingKey ">
+    <div> Child Keys:
+        <div> <KeyList v-bind:keys="childKeys"/> </div>
+    </div>    
+        <CsvFile :deviceKey="deviceKey"></CsvFile>
     </div>
   </div>
 </template>
@@ -92,7 +85,7 @@ export default {
         return {
             isLoading: true,
             hasReportingKey: false,
-            childKeys: [],
+            childKeys: [] as string[],
             loadingKey: 0,
         }
     },
