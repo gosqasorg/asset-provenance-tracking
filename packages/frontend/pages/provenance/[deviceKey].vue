@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <body  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+          <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
               <div>Device ID: {{ deviceKey }}</div>
@@ -104,7 +104,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </div>
             </section>
             
-          </body>
+          </div>
           <!-- Spied element -->
         </div>
 
@@ -114,7 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div>
           <ProvenanceNotificationSignUpModal/>
       </div>   --> 
-
+      
     </div>
     <div v-else>
       <p>Device key not found.</p>
