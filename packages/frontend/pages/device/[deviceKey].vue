@@ -50,9 +50,9 @@ const deviceKey = route.params.deviceKey;
         <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
     </div>
     <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-    <div> Child Keys:
-        <div> <KeyList v-bind:keys="childKeys"/> </div>
-    </div>    
+        <div> Child Keys:
+            <div> <KeyList v-bind:keys="childKeys"/> </div>
+        </div>    
         <CsvFile :deviceKey="deviceKey"></CsvFile>
     </div>
   </div>
