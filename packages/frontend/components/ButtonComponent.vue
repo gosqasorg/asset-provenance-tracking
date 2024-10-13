@@ -1,6 +1,7 @@
 <!--Button Component-->
 <template>
-   <button :class="[example ? 'example' : 'baseButton']" :style="styles">{{ buttonText }}</button>
+   <!-- <button :class="[example ? 'example' : 'baseButton']" :style="styles">{{ buttonText }}</button> -->
+   <button :class="buttonSize" :style="styles">{{ buttonText }}</button>
 </template>
 
 <script>
@@ -9,11 +10,8 @@ export default {
        // Sets button text
        buttonText: { type: String, default: () => "Submit" },
 
-       // Can change default button size
-       example: {
-           type: Boolean,
-           default: () => false,
-       },
+       // Sets the button size (see classes at bottom of this file to create/choose a new size)
+       buttonSize: { type: String, default: () => "baseButton" },
 
        // Sets button style
        backgroundColor: { type: String, default: () => "#4e3681" },
