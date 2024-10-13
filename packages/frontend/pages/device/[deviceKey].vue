@@ -91,7 +91,8 @@ export default {
     },
     computed: {
             qrCodeValue() {
-                return `${window.location.origin}/provenance/${this.deviceKey}`;
+                const baseUrl = useRuntimeConfig().public.baseUrl;
+                return `${baseUrl}/provenance/${this.deviceKey}`;
             }
     },
     methods: {
