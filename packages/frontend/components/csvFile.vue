@@ -23,7 +23,8 @@ export default {
     },
     computed: {
             qrCodeValue() {
-                return `http://localhost:3001/provenance/${this.deviceKey}`;
+                const baseUrl = useRuntimeConfig().public.baseUrl;
+                return `{baseUrl}/provenance/${this.deviceKey}`;
             }
     },
     methods: {
