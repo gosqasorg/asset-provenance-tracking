@@ -69,7 +69,6 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {

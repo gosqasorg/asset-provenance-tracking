@@ -56,7 +56,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { getAllDescendants } from '~/utils/descendantList';
-const baseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 
 export default {
@@ -79,7 +78,7 @@ export default {
             required: true,
         },
         deviceRecord: {
-//            type: Any, // This needs to tighten up!
+            // type: Any, // TODO: add type
             default: null,
             required: true,
         },
@@ -92,7 +91,6 @@ export default {
 },
     methods: {
         handleUpdateTags(tags: string[]) {
-            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -101,7 +99,6 @@ export default {
             if (files) {
                 this.pictures = Array.from(files);
             }
-            // console.log(deviceRecord);
         },
         refresh() {
             this.description = '';
@@ -116,8 +113,6 @@ export default {
         async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
 
             for (const key of childrenkeys) {
-                // console.log("GOT KEY", key);
-
                 if (key != "" && key != "undefined") {
                     postProvenance(key, {
                         blobType: 'deviceRecord',
@@ -181,9 +176,7 @@ export default {
                             child_prov = response;
                             childExists = true;
                         });
-                        // console.log("Obtained provenance!");
                     } catch(error) {
-                        // console.log("This child does not exist ", i)
                         new_children_list.splice(index, 1);
                         this.description = this.description + `\nError: Entered child key does not exist.`;
                         childExists = false;
@@ -194,13 +187,11 @@ export default {
                         const child_record = child_prov[0].record;
                         
                         if (child_record.hasParent) { // Child has a parent, cannot be added
-                            console.log("Child key ", i, " already has a parent");
                             this.description = this.description + `\nError: Entered child key already has a container.`;
                             new_children_list.splice(index, 1);
                         } else {
                             let descendants = await getAllDescendants(i);
                             if (descendants.includes(this.deviceKey)) { // Device is a descendant of entered child, cannot be added
-                                console.log("This device key is among descendants.");
                                 this.description = this.description + `\nError: Child device could not be added.`;
                                 new_children_list.splice(index, 1);
                             } else {
@@ -224,7 +215,6 @@ export default {
         // "recall" is being added....
         if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
             let reason = ""
-            // let tags = this.tags
             if (recall > -1) { 
                 reason = "Recalled by Admin Key";
             } else { 
@@ -236,7 +226,6 @@ export default {
                 // reporting keys do not have the ability to recall
                 console.log("Action failed. This is a reporting key.");
             } else {
-                // console.log("begin to recall");
                 await this.messageChildren(descendantsList, reason, this.tags)
                 .then(response => {
                     console.log("Finished recalling/informing");
@@ -254,8 +243,6 @@ export default {
                 hasParent: this.hasParent,
         }, this.pictures || [])
         .then(response => {
-                // Handle successful response here
-                console.log('Post request successful:', response);
                 // Refresh CreateRecord component
                 this.refresh();
 
@@ -272,7 +259,6 @@ export default {
         async submitForm() {
             this.submitRecord()
             .then(response=> {
-                console.log("form is submitted!");
                 window.location.reload(); //once they submit it just reloads the entire page.
             }); 
         },

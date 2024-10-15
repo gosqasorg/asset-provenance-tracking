@@ -59,16 +59,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
        
-        <!--TODO: Replace this with button component!-->
-        <!-- <div class="d-grid">      
-            <button class="btn my-3 bg-iris text-white mb-0" type="submit">Create Container</button>
-        </div> -->
         <div class="d-grid">
             <button-component class="my-4 mb-0" buttonText="Create Container" type="submit" />
         </div>
-
-
-        <!--DIDNT ADD: components: { ButtonComponent, } in export default {} below-->
     </form>
  </template>
 
@@ -93,7 +86,6 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -156,7 +148,6 @@ export default {
             let reportingKey;
 
             if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
-                console.log("notifying all children");
                 this.tags = (this.tags).concat(['notify_all'])
             } 
 
@@ -187,10 +178,6 @@ export default {
             }
 
             if (numChildren) {
-                
-                // let input_trial = (<HTMLInputElement>document.getElementById("name-input-1")).value;
-                // console.log("this is the input trial", input_trial);
-
                 const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
                 var childName;
 
