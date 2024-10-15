@@ -44,7 +44,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  
  
         <div class="d-grid">
-            <button-component class="my-4 mb-0" buttonText="Create Device" type="submit" />
+            <ButtonComponent class="my-4 mb-0" buttonText="Create Device" type="submit" />
         </div>
     </form>
  </template>

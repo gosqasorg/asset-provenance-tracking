@@ -60,7 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
        
         <div class="d-grid">
-            <button-component class="my-4 mb-0" buttonText="Create Container" type="submit" />
+            <ButtonComponent class="my-4 mb-0" buttonText="Create Container" type="submit" />
         </div>
     </form>
  </template>
