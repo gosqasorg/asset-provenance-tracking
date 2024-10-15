@@ -39,9 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i">
                 <!-- Image -->
-                 <div v-if="((attachment.fileName).toLowerCase()).endsWith('.jpg') || ((attachment.fileName).toLowerCase()).endsWith('.png')  ">
-                    <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
-                 </div>
+                <img :src="attachment.url" :alt="Image" style="width: 150px; padding: 5px;" data-bs-toggle="modal" data-bs-target="#imageModal" @click="modalImage = attachment.url">
                 <a :href="attachment.url" :download="attachment.fileName" style="display: block; padding: 5px; text-align: left;">
                     Download File
                 </a>
@@ -104,9 +102,6 @@ export default {
                     }));
 
                     this.attachmentURLs[index.toString()] = urls;
-                    console.log(`Attachment URLs for report ${index}:`, this.attachmentURLs[index.toString()]); // Debugging line
-
-
                 }
             } catch (error) {
                 console.error('Error occurred during getAttachment request:', error);
@@ -115,7 +110,6 @@ export default {
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
-            console.log("PROVENANCE",this.provenance);
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
         }
     },

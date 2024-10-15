@@ -1,5 +1,5 @@
 <!-- deviceKey.vue -- management of device
-Copyright (C) 2024 GOSQAS Team
+Copyright (C) 2024 GOSQAS
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
@@ -17,9 +17,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     Page will be the forum where users can keep track of the provenance of
     their items.
     -->
+
 <script setup lang="ts">
   const route = useRoute()
-  const deviceKey = route.params.deviceKey;
+  const deviceKey = route.params.deviceKey as string;
 </script>
 
 <template>
@@ -71,11 +72,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <body  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+          <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
-              <div class="my-4 text-iris fs-1">"{{ deviceRecord.deviceName }}" Asset History Records</div>
+              <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
               <div>Device ID: {{ deviceKey }}</div>
-              <div><span v-html="clickableLink(deviceRecord.description)"></span></div>
+              <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
             </section>
 
             <section ref= "section" id="priority-notices">
@@ -83,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
 
             <section id="recent">
-              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenance_noRecord"/>
+              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenanceNoRecord"/>
             </section>
             <section id="device-creation">
               <ProvenanceFeed :deviceKey="deviceKey" :provenance="deviceCreationRecord"/>
@@ -93,17 +94,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/provenance/${deviceRecord.reportingKey}`">{{deviceRecord.reportingKey}}</a></div>
+                <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
               </div>
-              <div> Child Keys:
-                <div> <KeyList v-bind:keys="childKeys"/> </div>
-              </div>
-              <div v-if="(childKeys.length > 0) || hasReportingKey ">
+              <div v-if="(childKeys?.length > 0) || hasReportingKey ">
+                <div> Child Keys:
+                  <div> <KeyList v-bind:keys="childKeys"/> </div>
+                </div>    
                 <CsvFile :deviceKey="deviceKey"></CsvFile>
               </div>
             </section>
             
-          </body>
+          </div>
           <!-- Spied element -->
         </div>
 
@@ -113,7 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div>
           <ProvenanceNotificationSignUpModal/>
       </div>   --> 
-
+      
     </div>
     <div v-else>
       <p>Device key not found.</p>
@@ -126,7 +127,7 @@ import { getProvenance} from '~/services/azureFuncs';
 import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord, provenance, deviceCreationRecord, provenance_noRecord;
+let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
 const currentSection = ref();
 let section = ref();
 
@@ -149,7 +150,7 @@ export default {
       isLoading: true,
       deviceKeyFound: false,
       hasReportingKey: false,
-      childKeys: [],
+      childKeys: [] as string[],
     }},
     async mounted() {
       try {
@@ -171,18 +172,24 @@ export default {
                 
 
         const route = useRoute();
-        const deviceKey = route.params.deviceKey;
-        await getProvenance(deviceKey).then((response) => {
-            provenance = response;
-            this.deviceKeyFound = true;
-        });
-        provenance_noRecord = provenance.slice(0, -1); // get the provenance without device creation
-        deviceCreationRecord = [provenance.at(-1)]; //the last record in the list should be the device creation
-        deviceRecord = provenance[provenance.length - 1].record;
+        const deviceKey = route.params.deviceKey as string;
+        const provenance = await getProvenance(deviceKey);
+
+        if (!provenance) {
+          console.log("No provenance record found.")
+          return;
+        }
+
+        this.deviceKeyFound = true;
+
+        // Decompose the provenance records into parts to be rendered.
+        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+        
         this.isLoading = false;
 
         // This functionality could be pushed into a component...
         this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+        
         // We will remove the reportingKey, because although it is a child,
         // we have already rendered it.
         if (this.hasReportingKey) {
@@ -191,21 +198,11 @@ export default {
                 deviceRecord.children_key.splice(index, 1);
             }
         }
-
-
-        let childKeysList:any = [];
-
-        for (let i=0; i < provenance.length; i++) {
-            childKeysList += provenance[i].record.children_key + ",";
-        }
-
-        childKeysList= childKeysList.split(',');
-
-        this.childKeys = childKeysList;
-
+        this.childKeys = getChildKeys(provenance);
       } catch (error) {
           this.isLoading = false;
           this.deviceKeyFound = false;
+          this.hasReportingKey = false;
           console.log(error)
       }
     }

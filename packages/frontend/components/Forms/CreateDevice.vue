@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
+    <!-- Form for creating a new device. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
         <h4 class="text-iris mt-1 mb-3">Create New Device</h4>
  
@@ -53,6 +54,7 @@ import { postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
+import { isNavigationFailure } from 'vue-router';
 
 export default {
     data() {
@@ -67,7 +69,6 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -78,28 +79,29 @@ export default {
             }
         },
         async submitForm() {
+            try {
+                const deviceKey = await makeEncodedDeviceKey();
+                const response = await postProvenance(deviceKey, {
+                    blobType: 'deviceInitializer',
+                    deviceName: this.name,
+                    description: this.description,
+                    tags: this.tags,
+                    children_key: '',
+                    hasParent: false,
+                    isReportingKey: false,
+                }, this.pictures || []);
+                
+                console.log('Succesfully created the device:', response);
 
-            const deviceKey = await makeEncodedDeviceKey();
-            postProvenance(deviceKey, {
-                blobType: 'deviceInitializer',
-                deviceName: this.name,
-                description: this.description,
-                tags: this.tags,
-                children_key: '',
-                hasParent: false,
-                isReportingKey: false,
-            }, this.pictures || [])
-                .then(response => {
-                    // Handle the successful response here
-                    console.log('Post request successful:', response);
-                })
-                .catch(error => {
-                    // Handle the error here
-                    console.error('Error in post request:', error);
-                });
+                // Navigate to the new device page
+                const failure = await this.$router.push({ path: `/device/${deviceKey}` });
 
-            //Routing to display the device QR code etc.
-            this.$router.push({ path: `/device/${deviceKey}` });
+                if (isNavigationFailure(failure)) {
+                    console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
+                }
+            } catch (error) {
+                console.error('Failed to create the device:', error);
+            }
         },
     }
 

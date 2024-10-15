@@ -1,5 +1,4 @@
-// nuxt.config.ts -- default configuration f0r framework 
-
+// types.ts - Defines common application types
 
 // Copyright (C) 2024 GOSQAS Team
 // This program is free software: you can redistribute it and/or modify
@@ -14,22 +13,10 @@
 
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// https://nuxt.com/docs/api/configuration/nuxt-config
-const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
-
-
-export default defineNuxtConfig({
-  devtools: { enabled: true },
-//    css: ['~/assets/css/main.css'],
-    css: ['~/assets/styles/main.scss'],
-    runtimeConfig: {
-    // The private keys which are only available server-side
-        // Keys within public are also exposed client-side
-        public: {
-            baseUrl: process.env.BACKEND_URL ? process.env.BACKEND_URL : globalBaseUrl,
-            apiBase: '/api'
-        }
-    },
-    modules: ['@nuxt/test-utils/module']
-});
+export interface Provenance {
+    record: any;
+    attachments?: string[];
+    deviceID?: string;
+    timestamp: number;
+}

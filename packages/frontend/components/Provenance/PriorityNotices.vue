@@ -1,6 +1,6 @@
 <!-- 
 PriorityNotices.vue -- Notices  
-Copyright (C) 2024 GOSQAS Team 
+Copyright (C) 2024 GOSQAS 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
@@ -77,18 +77,19 @@ export default {
             }
         },
         refreshPage() {
-            console.log("XXXXXXXX");
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
+
+            if (!this.provenance) {
+              return;
+            }
+
             // First, we search for the high-priority notices;
             // at the time of this writing, recall is the only one.
-            console.log(this.provenance);
             this.notices = this.provenance.filter(
                 (p) => p.record.tags && p.record.tags.includes("recall"));
-            console.log("NOTICES",this.notices);
 
             this.notices.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
-
         }
     },
 };
@@ -99,7 +100,7 @@ export default {
   background-color: red;
     }
 .report-box {
-    border: 5px solid #f00);
+    border: 5px solid #f00;
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 5px;

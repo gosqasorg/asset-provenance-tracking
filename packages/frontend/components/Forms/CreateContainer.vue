@@ -62,7 +62,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="d-grid">
             <ButtonComponent class="my-4 mb-0" buttonText="Create Container" type="submit" />
         </div>
-
     </form>
  </template>
 
@@ -71,6 +70,7 @@ import { postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
+import { isNavigationFailure } from 'vue-router';
 
 export default {
     data() {
@@ -86,7 +86,6 @@ export default {
     },
     methods: {
         handleUpdateTags(tags: string[]) {
-            // console.log('handle Update Tags', tags);
             this.tags = tags;
         },
         onFileChange(e: Event) {
@@ -149,7 +148,6 @@ export default {
             let reportingKey;
 
             if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
-                console.log("notifying all children");
                 this.tags = (this.tags).concat(['notify_all'])
             } 
 
@@ -180,10 +178,6 @@ export default {
             }
 
             if (numChildren) {
-                
-                // let input_trial = (<HTMLInputElement>document.getElementById("name-input-1")).value;
-                // console.log("this is the input trial", input_trial);
-
                 const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
                 var childName;
 
@@ -219,28 +213,30 @@ export default {
                     childrenDeviceName.push(childName);
                 }
             };
-            postProvenance(deviceKey, {
-                blobType: 'deviceInitializer',
-                deviceName: this.name,
-                description: this.description,
-                tags:this.tags,
-                reportingKey: reportingKey,
-                children_key: childrenDeviceList,
-                children_name: childrenDeviceName,
-                hasParent: false,
-                isReportingKey: false
-            }, this.pictures || [])
-                .then(response => {
-                    // Handle the successful response here
-                    console.log('Post request successful:', response);
-                })
-                .catch(error => {
-                    // Handle the error here
-                    console.error('Error in post request:', error);
-                });
+            try {
+                const response = await postProvenance(deviceKey, {
+                    blobType: 'deviceInitializer',
+                    deviceName: this.name,
+                    description: this.description,
+                    tags:this.tags,
+                    reportingKey: reportingKey,
+                    children_key: childrenDeviceList,
+                    children_name: childrenDeviceName,
+                    hasParent: false,
+                    isReportingKey: false
+                }, this.pictures || [])
+                
+                console.log('Succesfully created the container:', response);
 
-            //Routing to display the device QR code etc.
-            this.$router.push({ path: `/device/${deviceKey}` });
+                // Navigate to the new container page
+                const failure = await this.$router.push({ path: `/device/${deviceKey}` });
+
+                if (isNavigationFailure(failure)) {
+                    console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
+                }
+            } catch (error) {
+                console.error('Failed to create the container:', error);
+            }
         },
     }
 

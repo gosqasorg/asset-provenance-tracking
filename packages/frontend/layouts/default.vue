@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="root-div">
 
         <nav class="navbar navbar-expand-lg bg-frost">
             <div class="container-fluid" id="nav">
@@ -50,7 +50,7 @@
             </div>
         </nav>
 
-        <div>
+        <div class="content">
             <slot/>
         </div>
         <!-- Footer Section -->
@@ -129,6 +129,15 @@ export default {
 
  
 <style scoped>
+    .root-div {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    .content {
+        flex: 1 0 auto;
+    }
 
     #logo {
         width: 100%;
@@ -312,14 +321,12 @@ export default {
     }
 
     .footer {
-        width: 1440px;
         width: 100%;
-        height: 250px; /* Ensures the footer maintains the correct height */
-        padding: 40px; /* Adds padding around the content */
+        padding: 40px;
         display: flex;
-        justify-content: space-between; /* Space between elements */
-        flex-wrap: wrap; 
-        
+        justify-content: space-between;
+        flex-wrap: wrap;
+        flex-shrink: 0;
     }
 
 
