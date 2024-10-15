@@ -102,9 +102,6 @@ export default {
                     }));
 
                     this.attachmentURLs[index.toString()] = urls;
-                    console.log(`Attachment URLs for report ${index}:`, this.attachmentURLs[index.toString()]); // Debugging line
-
-
                 }
             } catch (error) {
                 console.error('Error occurred during getAttachment request:', error);
@@ -113,7 +110,6 @@ export default {
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
-            console.log("PROVENANCE",this.provenance);
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
         }
     },
