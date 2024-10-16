@@ -28,7 +28,8 @@ export default defineNuxtConfig({
         // Keys within public are also exposed client-side
         public: {
             baseUrl: process.env.BACKEND_URL ? process.env.BACKEND_URL : globalBaseUrl,
-            apiBase: '/api'
+            apiBase: '/api',
+            frontendUrl: process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'http://localhost:3000',
         }
     },
     modules: ['@nuxt/test-utils/module']

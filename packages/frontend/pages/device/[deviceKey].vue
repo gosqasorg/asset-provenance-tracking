@@ -15,6 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const route = useRoute()
 const deviceKey = route.params.deviceKey;
+const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceKey}`;
 </script>
 
 <template>
@@ -33,14 +34,14 @@ const deviceKey = route.params.deviceKey;
                 <!-- Didn't use button componenet here, couldn't get the link to work with it -->
 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
-                <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
 
             </div>
 
         </div>
         <div class="col-sm-6 col-lg-3 mt-2">
 
-            <div><GenerateQRCode :deviceKey="route.params.deviceKey"></GenerateQRCode></div>
+            <QRCode :url="qrCodeUrl" ref="qrcode_component"/>
 
         </div>
 
@@ -61,10 +62,8 @@ const deviceKey = route.params.deviceKey;
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
-import QRCodeStyling from "~/qrcode/src/core/QRCodeStyling";
 import clickableLink from '~/utils/clickableLink';
-
-
+import QRCode from '@/components/QRCode.vue';
 
 let deviceRecord: any;
 
@@ -89,48 +88,20 @@ export default {
             loadingKey: 0,
         }
     },
-    computed: {
-            qrCodeValue() {
-                return `http://localhost:3001/provenance/${this.deviceKey}`;
-            }
-    },
     methods: {
         //This method helps rerendering the site
         forceRerender() { 
             this.loadingKey += 1;
-        }, 
-        getQRCode() {
-                const qr = new QRCodeStyling({
-                    width: 322, 
-                    height: 361,
-                    data: this.qrCodeValue,
-                    imageOptions: {
-                    hideBackgroundDots: true,
-                    imageSize: 0.2,  // Image size as a fraction of the QR code size
-                    margin: 40,
-                    crossOrigin: 'Anonymous'
-                    },
-                    dotsOptions: {
-                    type: 'rounded',  // Rounded dots
-                    color: '#000000'  // Color of the dots
-                },
-                cornersSquareOptions: {
-                type: 'extra-rounded',  // Extra rounded corners for squares
-                color: '#000000'        // Color of the square corners
-                },
-                cornersDotOptions: {
-                type: 'extra-rounded',  // Extra rounded corners for dots
-                color: '#4e3681'        // Color of the dot corners
-                }
-                });
-            qr.download({ name: 'vqr', extension: 'png' });
-            console.log("downloadQRcode")
+        },
+        downloadQRCode() {
+            const qrCodeComponent = this.$refs.qrcode_component as any;
+            qrCodeComponent?.downloadQRCode()
         },
     },
     async mounted() {
         try {
             const route = useRoute();
-            const deviceKey = route.params.deviceKey;
+            const deviceKey = route.params.deviceKey as string;
             const response = await getProvenance(deviceKey);
             deviceRecord = response[response.length - 1].record;
             console.log(deviceRecord);
