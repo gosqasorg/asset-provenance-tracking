@@ -43,15 +43,15 @@ export default {
                     crossOrigin: 'Anonymous'
                 },
                 dotsOptions: {
-                    type: 'rounded' as 'rounded',  // Cast to specific type
+                    type: 'square' as 'square',  // Cast to specific type
                     color: '#000000'
                 },
                 cornersSquareOptions: {
-                    type: 'extra-rounded' as 'extra-rounded',  // Cast to specific type
+                    type: 'square' as 'square',  // Cast to specific type
                     color: '#000000'
                 },
                 cornersDotOptions: {
-                    type: 'extra-rounded' as 'extra-rounded',  // Cast to specific type
+                    type: 'square' as 'square',  // Cast to specific type
                     color: '#4e3681'  // Color of the dot corners
                 }
             }
