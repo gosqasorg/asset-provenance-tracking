@@ -87,12 +87,12 @@ export default {
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
+            deviceKey: "",
         }
     },
     computed: {
             qrCodeValue() {
-                const baseUrl = useRuntimeConfig().public.baseUrl;
-                return `${baseUrl}/provenance/${this.deviceKey}`;
+                return `${useRuntimeConfig().public.frontendUrl}/provenance/${this.deviceKey}`;
             }
     },
     methods: {
@@ -124,15 +124,15 @@ export default {
                 color: '#4e3681'        // Color of the dot corners
                 }
                 });
-            qr.download({ name: 'vqr', extension: 'png' });
+            qr.download({ name: this.deviceKey ?? 'vqr', extension: 'png' });
             console.log("downloadQRcode")
         },
     },
     async mounted() {
         try {
             const route = useRoute();
-            const deviceKey = route.params.deviceKey;
-            const response = await getProvenance(deviceKey);
+            this.deviceKey = route.params.deviceKey as string;
+            const response = await getProvenance(this.deviceKey);
             deviceRecord = response[response.length - 1].record;
             console.log(deviceRecord);
             this.isLoading = false;
