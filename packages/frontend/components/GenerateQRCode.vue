@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div>
 
     <QRCodeVue3
-            :value="`${useRuntimeConfig().public.frontendUrl}/provenance/${deviceKey}`"
+            :value="`http://localhost:3001/provenance/${deviceKey}`"
             :width="322" 
             :height="361" 
             :qr-options="{
@@ -56,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
 <script>
     import QRCodeVue3 from  "../qrcode/src/QRCodeVue3.vue";
-
+    import QRCodeStyling from "../qrcode/src/core/QRCodeStyling";
   
     export default {
         components: {
@@ -71,7 +71,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         computed: {
             qrCodeValue() {
-                return `${useRuntimeConfig().public.frontendUrl}/provenance/${this.deviceKey}`;
+                return `http://localhost:3001/provenance/${this.deviceKey}`;
             }
         },
     }
