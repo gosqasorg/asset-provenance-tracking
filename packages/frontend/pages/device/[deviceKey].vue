@@ -25,7 +25,7 @@ const deviceKey = route.params.deviceKey;
             <h1 class="mt-4 mb-2 text-iris">{{deviceRecord.deviceName}}</h1>
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
-            <h5>Device Key: {{ route.params.deviceKey }}</h5>
+            <h5>Device Key: <a href = "http://localhost:3000/device/{{ route.params.deviceKey }}">{{ route.params.deviceKey }}</a></h5>
             <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 
@@ -34,7 +34,6 @@ const deviceKey = route.params.deviceKey;
 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
                 <button class="btn mt-1 bg-sky px-5" @click="getQRCode">Download QR Code</button>
-
             </div>
 
         </div>
