@@ -4,6 +4,7 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 import * as bs58 from 'bs58';
 import * as JSON5 from 'json5';
 import { EmailClient } from "@azure/communication-email";
+import * as dotenv from "dotenv";
 
 
 // To deploy this project from the command line, you need:
@@ -367,6 +368,81 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     };
 };
 
+
+
+// Load environment variables from .env
+dotenv.config();
+
+const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
+const emailClient = new EmailClient(connectionString);
+
+export async function sendEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const POLLER_WAIT_TIME = 10;
+
+    try {
+        // Extract email address from request body
+        const requestBody = await request.json();
+        const recipientEmail = requestBody.email || "input@gmail.com"; // Use a default or dynamic email
+
+        // Define email message details
+        const message = {
+            senderAddress: "donotreply@6104f838-923b-468b-a2cc-4d5aeaea891a.azurecomm.net", // Replace this with your sender email address
+            content: {
+                subject: "Welcome to Azure Communication Services Email",
+                plainText: "This is testing email sending function.",
+            },
+            recipients: {
+                to: [
+                    {
+                        address: "input@gmail.com",  // Use the dynamic email
+                        displayName: "Customer Name",
+                    },
+                ],
+            },
+        };
+
+        // Start email sending process
+        const poller = await emailClient.beginSend(message);
+
+        if (!poller.getOperationState().isStarted) {
+            throw new Error("Poller was not started.");
+        }
+
+        let timeElapsed = 0;
+        while (!poller.isDone()) {
+            await poller.poll();
+            console.log("Email send polling in progress");
+
+            await new Promise(resolve => setTimeout(resolve, POLLER_WAIT_TIME * 1000));
+            timeElapsed += POLLER_WAIT_TIME;
+
+            if (timeElapsed > 18 * POLLER_WAIT_TIME) {
+                throw new Error("Polling timed out.");
+            }
+        }
+
+        if (poller.getResult().status === KnownEmailSendStatus.Succeeded) {
+            console.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
+            return {
+                status: 200,
+                body: { message: "Email sent successfully!" }
+            };
+        } else {
+            throw poller.getResult().error;
+        }
+
+    } catch (e) {
+        console.error("Error sending email:", e);
+        return {
+            status: 500,
+            body: { message: `Failed to send email: ${e.message || e}` }
+        };
+    }
+}
+
+
+
+
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
@@ -401,6 +477,12 @@ app.get("getStatistics", {
     authLevel: 'anonymous',
     route: 'statistics',
     handler: getStatistics
+})
+
+app.get("sendEmail", {
+    authLevel: 'anonymous',
+    route: 'email',
+    handler: sendEmail,
 })
 
 
