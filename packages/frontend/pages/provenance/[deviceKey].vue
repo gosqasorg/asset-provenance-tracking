@@ -75,7 +75,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
-              <div>Device ID: {{ deviceKey }}</div>
+              <div>Record Key: {{ deviceKey }}</div>
               <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
             </section>
 
@@ -132,12 +132,12 @@ const currentSection = ref();
 let section = ref();
 
 const headers = [
-  { id: "device-details", name: "Device details" },
+  { id: "device-details", name: "Record details" },
   { id: "priority-notices", name: "Priority notices" },
   { id: "recent", name: "Most recent updates" },
-  { id: "device-creation", name: "Device creation" },
-  { id: "create-record", name: "Create history record" },
-  { id: "child-keys", name: "Children keys" }
+  { id: "device-creation", name: "Record creation" },
+  { id: "create-record", name: "Create new record entry" },
+  { id: "child-keys", name: "Child keys" }
 ];
 
 
