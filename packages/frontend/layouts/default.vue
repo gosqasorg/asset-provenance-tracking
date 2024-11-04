@@ -82,8 +82,9 @@
                 
                 <div class="row custom-copy-right">
                     <div class="mt-10">
-                    <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. However, our software is open source software. </p>
-                    </div>
+                    <p class="text-muted">© 2024 Global Open Source Quality Assurance System   |   Please review our <a href="">terms & conditions</href>.</p>
+                    <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. However, our software is open source software. </p> 
+                   </div>
             </div>
             </div>
         </footer>
