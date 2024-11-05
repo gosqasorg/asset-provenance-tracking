@@ -2,7 +2,6 @@
     <button type="button" class="btn mt-1 bg-sky px-5" v-on:click="downloadCSV">
         Download Children Keys as CSV
     </button>
-
 </template>
 
 <script>
@@ -20,15 +19,11 @@ export default {
     methods: {
         async downloadCSV() {
             let keyList = await getChildrenKeys(this.deviceKey);
-            // Convert key to a link
-            keyList = keyList.map(key => 'https://gosqas.org/provenance/' + key);
-            // Replace comas with new lines
-            keyList = String(keyList).replaceAll(",", "\n");
 
             const anchor = document.createElement('a');
             anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(keyList);
             anchor.target = '_blank';
-            anchor.download = 'keys.csv';
+            anchor.download = `${this.deviceKey} Child Keys.csv`;
             anchor.click();
         }
     }
