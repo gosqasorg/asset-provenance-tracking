@@ -16,7 +16,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div v-for="key in keys">
         <a :href="`/provenance/${key}`">{{key}}</a>
     </div>
-
 </template>
 
 <script>

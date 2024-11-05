@@ -22,8 +22,7 @@ export async function getProvenance(deviceKey: string) {
         });
         return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
     } catch (error) {
-        // probably we didn't find the key...
-        console.log(`It is likely that they key your requestd: ${deviceKey} does not exist.`);
+        console.log(`It is likely that they key your requested device key ${deviceKey} does not exist.`);
         console.log(error);
         throw error;
     }
@@ -32,7 +31,7 @@ export async function getProvenance(deviceKey: string) {
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
     try {
         const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-        method: "GET",
+            method: "GET",
         });
 
         const blob = await response.blob();

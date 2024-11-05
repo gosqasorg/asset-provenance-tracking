@@ -1,6 +1,5 @@
 <!--Button Component-->
 <template>
-   <!-- <button :class="[example ? 'example' : 'baseButton']" :style="styles">{{ buttonText }}</button> -->
    <button :class="buttonSize" :style="styles">{{ buttonText }}</button>
 </template>
 
