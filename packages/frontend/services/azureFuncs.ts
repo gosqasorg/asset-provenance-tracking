@@ -60,12 +60,14 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
 }
 
 
-export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
+export async function postProvenance(deviceKey: string, record: any, attachments?: readonly File[]) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
-    for (const blob of attachments) {
-        formData.append(blob.name, blob);
+    if (attachments) {
+        for (const blob of attachments) {
+            formData.append(blob.name, blob);
+        }
     }
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",
@@ -80,4 +82,19 @@ export async function getStatistics() {
         method: "GET",
     });
     return await response.json() as { record: string, timestamp: number }[];
+}
+
+
+
+export async function bulkCreateProvenances(provenance: Provenance[]) {
+    try {
+        let responses = [];
+        for (const p of provenance) {
+            const response = await postProvenance(p.deviceID, p.record, p.attachments);
+            responses.push(response);
+        }
+        return responses;
+    } catch (error) {
+        console.error('Error occurred during bulkCreateProvenances request:', error);
+    }
 }

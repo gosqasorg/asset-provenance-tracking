@@ -29,5 +29,12 @@ function encodeDeviceKey(key: Uint8Array): string {
 }
 
 export async function makeEncodedDeviceKey(): Promise<string> {
-        return encodeDeviceKey(await makeDeviceKey());
+    return encodeDeviceKey(await makeDeviceKey());
+}
+
+export function validateKey(key: string): boolean {
+  if (key == "") {
+    return false;
+  }
+  return true;
 }

@@ -49,3 +49,68 @@ export function getChildKeys(provenance: Provenance[]): string[] {
 
     return childKeys;
 }
+
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+export function addChildKeys(existing_keys: string[], new_keys: string[]) {
+    if (new_keys.length == 0) {
+        console.error("No child keys provided.");
+        return;
+    }
+
+    for (const key in new_keys) {
+        if (!existing_keys.includes(key)) {
+            existing_keys.push(key)
+        }
+    }
+}
+
+
+// let string_children = this.childKeys.toString();
+// let entered_children = string_children.split(",");
+// entered_children = [...new Set(entered_children)]; //removing any duplicates
+// let new_children_list = entered_children.slice(0); //copy this exact array
+// let childExists, child_prov;
+// for (let i of entered_children) {
+//     let index = new_children_list.lastIndexOf(i);
+
+//     //First, check if entered child exists
+//     try { 
+//         const response = await getProvenance(i);
+//         child_prov = response;
+//         childExists = true;
+//     } catch(error) {
+//         new_children_list.splice(index, 1);
+//         this.description = this.description + `\nError: Entered child key does not exist.`;
+//         childExists = false;
+//     }
+
+//     // If entered child exist, check if it has a parent or is already a descendant of this device
+//     if(childExists) {
+//         const child_record = child_prov[0].record;
+        
+//         if (child_record.hasParent) { // Child has a parent, cannot be added
+//             this.description = this.description + `\nError: Entered child key already has a container.`;
+//             new_children_list.splice(index, 1);
+//         } else {
+//             let descendants = await getAllDescendants(i);
+//             if (descendants.includes(this.deviceKey)) { // Device is a descendant of entered child, cannot be added
+//                 this.description = this.description + `\nError: Child device could not be added.`;
+//                 new_children_list.splice(index, 1);
+//             } else {
+//                 postProvenance(i,
+//                     {
+//                         blobType: 'deviceRecord',
+//                         description: "Added parent", // need to discuss whether we want to have a unique description
+//                         tags: [],
+//                         children_key: [],
+//                         hasParent: true,  // make sure the child has parent = true
+//                     },
+//                     this.attachments || []
+//                 )
+//             }
+//         }
+//     }                        
+// }
