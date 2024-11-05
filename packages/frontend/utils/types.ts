@@ -21,7 +21,8 @@ export interface ProvenanceRecord {
     deviceName: string,
     description: string,
     tags: string[],
-    children_key: string[],  // child_keys would be a better name.
+    children_key?: string[],  // child_keys would be a better name.
+    children_name?: string[],
     hasParent: boolean,      // This record belongs to a group.
     isReportingKey: boolean  // ...
 }
