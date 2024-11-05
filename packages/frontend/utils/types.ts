@@ -14,9 +14,21 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+export type BlobType = 'deviceInitializer' | 'deviceProvenance' | 'deviceAttachment' | 'deviceAttachmentName';
+
+export interface ProvenanceRecord {
+    blobType: BlobType,
+    deviceName: string,
+    description: string,
+    tags: string[],
+    children_key: string[],  // child_keys would be a better name.
+    hasParent: boolean,      // This record belongs to a group.
+    isReportingKey: boolean  // ...
+}
+
 export interface Provenance {
-    record: any;
-    attachments?: string[];
+    record: ProvenanceRecord;
+    attachments?: string[]; // TODO: sometimes this is a filename or a File object...
     deviceID?: string;
-    timestamp: number;
+    timestamp?: number;     // Timestamps are added server-side.
 }
