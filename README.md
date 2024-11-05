@@ -16,7 +16,7 @@ GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly prototyping this demo
 
 # News
 
-[Distributed Medical Device Manufacturing](https://dmdm.icu/) DMDM has made a small number of Glia tourniquest wwhich will be tracked with the GDT QR codes
+[Distributed Medical Device Manufacturing](https://dmdm.icu/) (DMDM) has made a small number of Glia tourniquest wwhich will be tracked with the GDT QR codes
 and sent to Sudan where they are desperately needed. We thank Alex Barton for being an early user.
 ![TourniquetShippedToSudan](https://github.com/user-attachments/assets/65fca262-ab15-4aff-96a6-6728198cca5d)
 
