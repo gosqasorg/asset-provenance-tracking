@@ -2,6 +2,18 @@ Note: All icons, images, and logos are © 2024 Global Open Source Quality Assura
 We are committed to keeping our code open source, but all GOSQAS and GDT 
 branding, including logos, is subject to the copyright above.
 
+## A Live MVP
+
+We are developing a Minimal Viable Product. Although still a work in progress, you can try it out here:
+
+[https://gosqas.org/](https://gosqas.org/)
+
+# GOSQAS Demo
+
+This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).
+
+GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly prototyping this demo.
+
 # News
 
 [Distributed Medical Device Manufacturing](https://dmdm.icu/) DMDM has made a small number of Glia tourniquest wwhich will be tracked with the GDT QR codes
@@ -10,17 +22,7 @@ and sent to Sudan where they are desperately needed. We thank Alex Barton for be
 
 ![DMDMwithTourniquetBoxes](https://github.com/user-attachments/assets/d0a15ae4-d2d6-4bf0-b69e-2e19ee9caf0b)
 
-# GOSQAS Demo
 
-This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).
-
-GOSQAS is grateful to @devhawk (Harry Pierson) for rapidly prototyping this demo.
-
-## A Live MVP
-
-We are developing a Minimal Viable Product. Although still a work in progress, you can try it out here:
-
-[https://gosqas.org/](https://gosqas.org/)
 
 ## Installation
 
