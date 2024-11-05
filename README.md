@@ -2,6 +2,14 @@ Note: All icons, images, and logos are © 2024 Global Open Source Quality Assura
 We are committed to keeping our code open source, but all GOSQAS and GDT 
 branding, including logos, is subject to the copyright above.
 
+# News
+
+[Distributed Medical Device Manufacturing](https://dmdm.icu/) DMDM has made a small number of Glia tourniquest wwhich will be tracked with the GDT QR codes
+and sent to Sudan where they are desperately needed. We thank Alex Barton for being an early user.
+![TourniquetShippedToSudan](https://github.com/user-attachments/assets/65fca262-ab15-4aff-96a6-6728198cca5d)
+
+![DMDMwithTourniquetBoxes](https://github.com/user-attachments/assets/d0a15ae4-d2d6-4bf0-b69e-2e19ee9caf0b)
+
 # GOSQAS Demo
 
 This is experimental code for the [GOSQAS project](https://github.com/gosqas/home/blob/main/README.md).
