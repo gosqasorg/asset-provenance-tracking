@@ -53,7 +53,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
-import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
 export default {

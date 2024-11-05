@@ -14,49 +14,36 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
-        <h4 class="text-iris mt-1 mb-3">Create New Container</h4>
+        <h4 class="text-iris mt-1 mb-3">Create New Group</h4>
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
-            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Container Description">
-            <h4 class="text-iris form-label mt-3 mb-3" for="file">Container Image (optional)</h4>
+            <input type="text" class="form-control" v-model="name" required placeholder="Group Name">
+            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description">
+            <h4 class="text-iris form-label mt-3 mb-3" for="file">Attachments (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
            
-            <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
-            <ProvenanceTagInput class="form-control mt-1 " placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <h4 class="mt-3 mb-3 text-iris">Tags (optional)</h4>
+            <ProvenanceTagInput class="form-control mt-1 " placeholder="Group Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
- 
- 
- 
- 
-            <h4 class="text-iris my-4 mb-0" for="children-keys">Number of Contained Devices (optional)
-                <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
-            </h4>
- 
- 
-            <br>
-            <h4 class="text-iris p-1 mt-0 mb-0 ">
-                <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Contained Device Names?
-            </h4>
- 
- 
-            <div class="text-iris" id="num-fields" style="display:none" >
-                <label for="input"></label>
-            </div>
- 
- 
-            <br>
-            <h4 class="text-iris p-1 mt-0 mb-0 ">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
-            </h4>
- 
- 
-            <br>
-            <h4 class="text-iris p-1 mt-0">
-                <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
-            </h4>
 
+            <!-- <br> -->
+            <!-- <h4 class="text-iris p-1 mt-0 mb-0 ">
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create reporting key?
+            </h4> -->
+ 
+            <!-- <br>
+            <h4 class="text-iris p-1 mt-0">
+                <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all children?
+            </h4> -->
+ 
+            <h4 class="text-iris my-4 mb-0" for="children-keys">Add devices to group:
+                <input type="number" class="form-inline" id="children-keys" v-model="numChildKeys" min="0" max="500">
+            </h4>
+ 
+            <br>
+
+            <ChildDeviceGroup v-if="numChildKeys > 0" :numChildren="numChildKeys" />
         </div>
        
         <div class="d-grid">
@@ -66,11 +53,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { bulkCreateProvenances, postProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
+import type { ProvenanceRecord } from '~/utils/types';
 
 export default {
     data() {
@@ -78,10 +66,10 @@ export default {
             name: '',
             description: '',
             tags: [] as string[],
-            childrenKeys: 0,
-            createReportingKey: false,
+            numChildKeys: 0,
+            // createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/container
-            pictures: [] as File[] | null,
+            attachments: [] as File[] | null,
         }
     },
     methods: {
@@ -92,141 +80,87 @@ export default {
             const target = e.target as HTMLInputElement;
             const files = target.files;
             if (files) {
-                this.pictures = Array.from(files);
+                this.attachments = Array.from(files);
             }
         },
-        displayFields() {
-            const childrenNum = (<HTMLInputElement>document.getElementById("children-keys")).value;
-
-            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
-            const customize_no = (<HTMLInputElement>document.getElementById("customize-no"));
-            
-            var newInput, newLabel;
-            var wrapper_div = document.getElementById('num-fields') as HTMLInputElement;
-            var fieldset = document.createElement('div') as HTMLInputElement;
-
-            while (wrapper_div.hasChildNodes()) {
-                wrapper_div.removeChild(wrapper_div.firstChild!);
-            }
-
-            for (var i=0; i<Number(childrenNum); i++) {
-                    newInput = document.createElement('input');
-                    newInput.id = 'name-input-' + (i);
-                    newInput.type = 'text';
-                    newInput.style.border = "0px";
-                    newInput.style.borderRadius = "4px";
-                    newInput.style.margin = "3px"
-                    newInput.required = true;
-                    newLabel =  document.createElement('label');
-                    newLabel.textContent = 'Device #'+ (i+1) +' Name:  ';
-                    fieldset.appendChild(newLabel);
-                    fieldset.appendChild(newInput);
-                    fieldset.appendChild(document.createElement('br'));
-            }
-
-            if (customize_yes.checked) {
-                wrapper_div.append(fieldset);
-                wrapper_div.style.display = "inline";
-
-            } else {
-                wrapper_div.style.display = "none";
-            }
-            
-            
+        onFormChange() {
         },
 
         async submitForm() {
-            const deviceKey = await makeEncodedDeviceKey();
-
-            // This code is copied from Judith;
-            // I am going to retain her names even though they are
-            // redundant until I get this workin.
-            const hasReportingKey = this.createReportingKey;
-            const numChildren = this.childrenKeys as Number;
             const childrenDeviceList = [];
             const childrenDeviceName = [];
             let reportingKey;
 
-            if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
-                this.tags = (this.tags).concat(['notify_all'])
-            } 
+            // if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
+            //     this.tags = (this.tags).concat(['notify_all'])
+            // } 
 
-            if (hasReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
-
-                await  postProvenance(reportingKey, {
+            // if (this.createReportingKey) {
+            // A reporting key is a special record that is a child of the group.
+            reportingKey =  await makeEncodedDeviceKey();
+            
+            try {
+                this.tags.push('reportingkey');
+                const response = await postProvenance(reportingKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
-                    // Is this a proper description? Should it say "reporting key" or something?
-                    description: this.description,
-                    tags: tag_set,
-                    children_key: '',
+                    description: "Reporting Key",
+                    tags: this.tags,
+                    children_key: [],
                     hasParent: true,
                     isReportingKey: true,
-                }, this.pictures || [])
-                    .then(response => {
-                        // Handle the successful response here
-                        console.log('Create Reporting Key Successful:', response);
-                    })
-                    .catch(error => {
-                        // Handle the error here
-                        console.error('Create Reporting Key Failed:', error);
-                    });
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
+                } as ProvenanceRecord);
+                console.log('Succesfully created the reporting key:', response);
+            } catch (error) {
+                console.error('Failed to create the reporting key:', error);
             }
 
-            if (numChildren) {
-                const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
-                var childName;
+            childrenDeviceList.push(reportingKey);
+            childrenDeviceName.push(this.name + "_reporting_key");
+            // }
 
-                for (let i = 0; i < Number(numChildren); i++) {
+            if (this.numChildKeys > 0) {
+                // Create the child records.
+                // TODO: use default name for children but also allow user to specify names.
+                let records: Provenance[] = [];
+                for (let i = 0; i < this.numChildKeys; i++) {
+                    const childName = this.name + " #" + String(i + 1);
                     const childKey =  await makeEncodedDeviceKey();
-
-                    if (customize_yes.checked) {
-                        // user has selected to customize names. use the inputted names.
-                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
-                    } else {
-                        // user not customizing names. use default.                        
-                        childName = this.name + " #" + String(i + 1);
+                    const record: ProvenanceRecord = {
+                            blobType: 'deviceInitializer',
+                            deviceName: childName,
+                            description: this.description,
+                            tags: this.tags,
+                            children_key: [],
+                            hasParent: true,
+                            isReportingKey: false
+                        }
+                    const prov: Provenance = {
+                        deviceID: childKey,
+                        record: record,
                     }
+                    records.push(prov);
+                };
 
-                    await  postProvenance(childKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: childName,
-                        description: this.description,  // need to see if we want a special description when making a child
-                        tags:this.tags,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: false
-                    }, this.pictures || [])
-                        .then(response => {
-                            // Handle the successful response here
-                            console.log('Create Child Key Successful:', response);
-                        })
-                        .catch(error => {
-                            // Handle the error here
-                            console.error('Create Child Key Failed:', error);
-                        });
-                    childrenDeviceList.push(childKey);
-                    childrenDeviceName.push(childName);
-                }
-            };
+                await bulkCreateProvenances(records);
+            }
+
+            // Create the group record.
             try {
+                const deviceKey = await makeEncodedDeviceKey();
                 const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
-                    tags:this.tags,
+                    tags: this.tags,
                     reportingKey: reportingKey,
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
                     hasParent: false,
                     isReportingKey: false
-                }, this.pictures || [])
+                }, this.attachments || [])
                 
-                console.log('Succesfully created the container:', response);
+                console.log('Succesfully created the group:', response);
 
                 // Navigate to the new container page
                 const failure = await this.$router.push({ path: `/device/${deviceKey}` });
@@ -237,9 +171,8 @@ export default {
             } catch (error) {
                 console.error('Failed to create the container:', error);
             }
-        },
+        }
     }
-
 }
 </script>
 

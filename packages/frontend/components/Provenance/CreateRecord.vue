@@ -27,10 +27,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
         <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Container Key (optional)"/>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Device Keys (optional, separated with a coma)"/>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeys" placeholder="Contained Device Keys (optional, separated with a coma)"/>
         <div>
-            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
-                {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+            <span v-for="(childkey1, index) in childKeys" :key="childkey1">
+                {{ childkey1 }}{{ index !== childKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
         <div>
@@ -63,10 +63,10 @@ export default {
     data() {
         return {
             description: '',
-            pictures: [] as File[] | null,
+            attachments: [] as File[] | null,
             tags: [] as string[],
             containerKey: '',
-            childrenKey: [] as string[],
+            childKeys: [] as string[],
             hasParent: false,
             isReportingKey: false,
         }
@@ -84,11 +84,11 @@ export default {
         },
     },
     computed: {
-    uniqueChildrenKeys() {
-        const uniqueValues = [...new Set(this.childrenKey)];
-        return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
-    }
-},
+        uniqueChildKeys() {
+            const uniqueValues = [...new Set(this.childKeys)];
+            return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
+        }
+    },
     methods: {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
@@ -97,72 +97,69 @@ export default {
             const target = e.target as HTMLInputElement;
             const files = target.files;
             if (files) {
-                this.pictures = Array.from(files);
+                this.attachments = Array.from(files);
             }
         },
         refresh() {
             this.description = '';
-            this.pictures = null;
+            this.attachments = null;
             this.tags = [];
             this.containerKey = '';
-            this.childrenKey = [];
+            this.childKeys = [];
             this.hasParent = false;
             this.isReportingKey = false;
         },
-
         async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
-
             for (const key of childrenkeys) {
                 if (key != "" && key != "undefined") {
-                    postProvenance(key, {
+                    postProvenance(key,
+                    {
                         blobType: 'deviceRecord',
                         description: recallReason,
                         children_key: '',
                         tags: tags,
-                    }, this.pictures || [])
+                    },
+                    this.attachments || [])
                 }
             }
-
-
         },
         async submitRecord() {
-
             const response = await getProvenance(this.deviceKey);
+            
+            // Split into useful information that we will use later.
+            // Metadata is stored in the first record.
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
             let descendantsList = await getAllDescendants(this.deviceKey);
 
-            //here we post provenance if a container (parent) key was entered
-            if (this.containerKey != '') {
+            let parentResponse;
+            // Create a container (group) key if the conditions are met,
+            // ie. the key is the top level element.
+            if (validateKey(this.containerKey)) {
+                if (!this.hasParent && !descendantsList.includes(this.containerKey)) {
+                    parentResponse = await postProvenance(this.containerKey, {
+                        blobType: 'deviceRecord',
+                        description: this.description, // keep the same description?
+                        tags: [],
+                        children_key: [this.deviceKey], // Add the device key as a child.
+                        hasParent: true,
+                    }, this.attachments || [])
 
-                if (this.hasParent) {
+                    this.hasParent = true;
+                } else {
                     console.log("This device already has a container.");
                     this.description = this.description + "\nError: Container could not be added.";
-
-                } else {
-                    // need to check if this parent is NOT a descendant of the device already
-                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among descendants
-                        // container is INDEED a descendant of this device
-                        // therefore, this relationship shouldn't be created
-                        console.log("This container is a descendant of this device.");
-                        this.description = this.description + `\nError: Container could not be added.`;
-                    } else{
-                        postProvenance(this.containerKey, {
-                            blobType: 'deviceRecord',
-                            description: this.description, // keep the same description?
-                            tags: [],
-                            children_key: [this.deviceKey],
-                            hasParent: true,
-                        }, this.pictures || [])
-    
-                        this.hasParent = true;
-                    }
                 }
             }
 
-            if (this.childrenKey.length > 1) { // if user want to add children keys 
-                let string_children = this.childrenKey.toString();
+            const a = JSON.parse(parentResponse?.record)
+            addChildKeys()
+
+            // Add child keys (if any).
+            // 1 is used because the deviceKey is already added (TODO: consider creating that here).
+            if (this.childKeys.length > 1) {
+                let string_children = this.childKeys.toString();
                 let entered_children = string_children.split(",");
                 entered_children = [...new Set(entered_children)]; //removing any duplicates
                 let new_children_list = entered_children.slice(0); //copy this exact array
@@ -172,10 +169,9 @@ export default {
 
                     //First, check if entered child exists
                     try { 
-                        await getProvenance(i).then((response) => {
-                            child_prov = response;
-                            childExists = true;
-                        });
+                        const response = await getProvenance(i);
+                        child_prov = response;
+                        childExists = true;
                     } catch(error) {
                         new_children_list.splice(index, 1);
                         this.description = this.description + `\nError: Entered child key does not exist.`;
@@ -195,75 +191,72 @@ export default {
                                 this.description = this.description + `\nError: Child device could not be added.`;
                                 new_children_list.splice(index, 1);
                             } else {
-                                postProvenance(i, {
-                                blobType: 'deviceRecord',
-                                description: "Added parent", // need to discuss whether we want to have a unique description
-                                tags: [],
-                                children_key: [],
-                                hasParent: true,  // make sure the child has parent = true
-                                }, this.pictures || [])
-    
+                                postProvenance(i,
+                                    {
+                                        blobType: 'deviceRecord',
+                                        description: "Added parent", // need to discuss whether we want to have a unique description
+                                        tags: [],
+                                        children_key: [],
+                                        hasParent: true,  // make sure the child has parent = true
+                                    },
+                                    this.attachments || []
+                                )
                             }
                         }
                     }                        
                 }
-                this.childrenKey = new_children_list;
+                this.childKeys = new_children_list;
             } 
 
-        const recall = this.tags.indexOf("recall", 0);        
+            //
+            const recall = this.tags.indexOf("recall", 0);        
 
-        // "recall" is being added....
-        if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
-            let reason = ""
-            if (recall > -1) { 
-                reason = "Recalled by Admin Key";
-            } else { 
-                reason = this.description; 
-                this.tags = (this.tags).concat(['notify_all']);
-            }
+            // "recall" is being added....
+            if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
+                let reason = ""
+                if (recall > -1) { 
+                    reason = "Recalled by Admin Key";
+                } else { 
+                    reason = this.description; 
+                    this.tags = (this.tags).concat(['notify_all']);
+                }
 
-            if (this.isReportingKey) {
-                // reporting keys do not have the ability to recall
-                console.log("Action failed. This is a reporting key.");
-            } else {
-                await this.messageChildren(descendantsList, reason, this.tags)
-                .then(response => {
+                if (this.isReportingKey) {
+                    // reporting keys do not have the ability to recall
+                    console.log("Action failed. This is a reporting key.");
+                } else {
+                    await this.messageChildren(descendantsList, reason, this.tags)
                     console.log("Finished recalling/informing");
-                })
+                }
             }
             
-        }
-                       
-        // Here we post the povenance itself...
-        postProvenance(this.deviceKey, {
-                blobType: 'deviceRecord',
-                description: this.description,
-                tags: this.tags,
-                children_key: [this.childrenKey],
-                hasParent: this.hasParent,
-        }, this.pictures || [])
-        .then(response => {
+            try {
+                // Here we post the povenance itself...
+                await postProvenance(this.deviceKey,
+                    {
+                        blobType: 'deviceRecord',
+                        description: this.description,
+                        tags: this.tags,
+                        children_key: this.childKeys,
+                        hasParent: this.hasParent,
+                    },
+                    this.attachments || []
+                )
+                
                 // Refresh CreateRecord component
                 this.refresh();
 
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
-                
-            })
-            .catch(error => {
-                // Handle error here
-                console.error('Error occurred during post request:', error);
-            });
+            } catch (error) {
+                console.log("Error creating record: ", error);
+            }        
         },
-
         async submitForm() {
-            this.submitRecord()
-            .then(response=> {
-                window.location.reload(); //once they submit it just reloads the entire page.
-            }); 
+            await this.submitRecord()
+            window.location.reload(); //once they submit it just reloads the entire page.
         },
     }
-
 };
 </script>
 
