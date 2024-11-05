@@ -30,34 +30,24 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
             <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 
-
                 <!-- Didn't use button componenet here, couldn't get the link to work with it -->
-
                 <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
                 <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
-
             </div>
 
         </div>
         <div class="col-sm-6 col-lg-3 mt-2">
-
             <QRCode :url="qrCodeUrl" ref="qrcode_component"/>
-
         </div>
-
     </div>
 
-    <div v-if="hasReportingKey"> Reporting Key:
-        <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
-    </div>
+    <ProvenanceChildKeys :deviceRecord="deviceRecord"/>
     <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-        <div> Child Keys:
-            <div> <KeyList v-bind:keys="childKeys"/> </div>
-        </div>    
         <CsvFile :deviceKey="deviceKey"></CsvFile>
     </div>
   </div>
 </template>
+
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';

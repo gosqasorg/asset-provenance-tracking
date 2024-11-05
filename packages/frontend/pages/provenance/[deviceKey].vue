@@ -30,9 +30,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div v-if="deviceKeyFound">
 
       <div class="row pt-3 pb-6 mx-4">
-        <div class="col-md-2 d-none d-md-block">
-        <!-- Scrollspy -->
-         <!-- When the screen size is md (>= 768px) and up  -->
+          <div class="col-md-2 d-none d-md-block">
+            <!-- Scrollspy Menu -->
+            <!-- When the screen size is md (>= 768px) and up  -->
             <nav id="jump-to test" class="sticky-top text-slate"> 
               <p class="menu-spacing">Jump to section</p>
               <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
@@ -67,24 +67,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </ul>
           </div>
 
-
-    <!-- Scrollspy -->
-
+        <!-- Scrollspy -->
         <div class="col-md-10">
           <!-- Spied element -->
           <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
-              <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
-              <div>Device ID: {{ deviceKey }}</div>
-              <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
+              <ProvenanceHeadline :deviceKey="deviceKey" :deviceRecord="deviceRecord"/>
+              <!-- <ProvenanceChildKeys :deviceRecord="deviceRecord"/> -->
             </section>
-
             <section ref= "section" id="priority-notices">
-              <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
+              <ProvenancePriorityNotifications :deviceKey="deviceKey" :provenance="provenance"/>
             </section>
-
             <section id="recent">
-              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenanceNoRecord"/>
+              <ProvenanceFeed :deviceKey="deviceKey" :provenance="allOtherRecords"/>
             </section>
             <section id="device-creation">
               <ProvenanceFeed :deviceKey="deviceKey" :provenance="deviceCreationRecord"/>
@@ -93,17 +88,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey"/>
             </section>
             <section id="child-keys">
-              <div v-if="hasReportingKey"> Reporting Key:
-                  <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
-              </div>
               <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-                  <div> Child Keys:
-                      <div> <KeyList v-bind:keys="childKeys"/> </div>
-                  </div>
                   <CsvFile :deviceKey="deviceKey"></CsvFile>
               </div>
             </section>
-            
           </div>
           <!-- Spied element -->
         </div>
@@ -124,10 +112,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { getProvenance} from '~/services/azureFuncs';
-import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
+import { ProvenanceRecord } from '~/utils/types';
+import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
+let deviceRecord = new ProvenanceRecord();
+let provenance: any, deviceCreationRecord: any, allOtherRecords: any;
 const currentSection = ref();
 let section = ref();
 
@@ -151,6 +141,7 @@ export default {
       deviceKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
+      isGroup: false,
     }},
     async mounted() {
       try {
@@ -161,6 +152,9 @@ export default {
             let current_id = headers[num].id;
             let sec = document.getElementById(current_id);
 
+            if (!sec) {
+              return;
+            }
             let top = window.scrollY;
             let offset = sec.offsetTop + 150; // can customize how far from the section to become active
             let height = sec.offsetHeight;
@@ -169,7 +163,6 @@ export default {
             }
           }
         });
-                
 
         const route = useRoute();
         const deviceKey = route.params.deviceKey as string;
@@ -183,7 +176,7 @@ export default {
         this.deviceKeyFound = true;
 
         // Decompose the provenance records into parts to be rendered.
-        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+        ({ deviceCreationRecord, deviceRecord, allOtherRecords  } = decomposeProvenance(provenance));
         
         this.isLoading = false;
 
