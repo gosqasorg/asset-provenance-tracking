@@ -121,7 +121,7 @@ az storage account create --name $STG_NAME --location $LOCATION --resource-group
 export STG_KEY=$(az storage account keys list  --account-name $STG_NAME --resource-group $RG_NAME | jq '.[0].value')
 
 # create and configure function app
-az functionapp create --resource-group $RG_NAME  --consumption-plan-location $LOCATION --runtime node --runtime-version 20 --functions-version 4 --name $FUNC_NAME --storage-account gdtteststorage
+az functionapp create --resource-group $RG_NAME  --consumption-plan-location $LOCATION --runtime node --runtime-version 20 --functions-version 4 --name $FUNC_NAME --storage-account $STG_NAME
 az functionapp cors add --name $FUNC_NAME --resource-group $RG_NAME --allowed-origins "*"
 az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAME --settings AZURE_STORAGE_ACCOUNT_NAME=$STG_NAME AZURE_STORAGE_ACCOUNT_KEY=$STG_KEY
 
