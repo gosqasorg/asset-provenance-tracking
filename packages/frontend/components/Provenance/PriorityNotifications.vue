@@ -20,23 +20,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     It is used in the providence-fourm.vue page.
 -->
 <template>
-  PriorityNotices:
-  <div v-if="notices.length > 0">
-    <div  v-for="(report, index) in notices" class="report-box">
+  Notifications: 
+  <div v-if="notifications.length">
+    <div  v-for="(report, index) in notifications" class="report-box">
       <div class="mb-1 tag-container">
         <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
       </div>
       <div style="font-size: small;">{{ Date(report.timestamp) }}</div>
     </div>
   </div>
-  <div v-else>
-    None.
-  </div>
 </template>
 
-
 <script>
-import { getProvenance, getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 
 export default {
@@ -51,8 +46,8 @@ export default {
     },
     data() {
         return {
-            notices: [],
-            attachmentURLs: {},
+            notifications: [],
+            // attachmentURLs: {},
         };
     },
     mounted() {
@@ -63,22 +58,9 @@ export default {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
-        async fetchAttachmentsForReport(report, index) {
-            try {
-                if (report.attachments.length > 0) {
-                    const baseUrl = useRuntimeConfig().public.baseUrl;
-                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
-                    const attachments = await Promise.all(attachmentPromises);
-                    const urls = attachments.map(attachment => URL.createObjectURL(attachment));
-                    this.attachmentURLs[index.toString()] = urls;
-                }
-            } catch (error) {
-                console.error('Error occurred during getAttachment request:', error);
-            }
-        },
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
-            this.attachmentURLs = {};
+            // this.attachmentURLs = {};
 
             if (!this.provenance) {
               return;
@@ -86,19 +68,19 @@ export default {
 
             // First, we search for the high-priority notices;
             // at the time of this writing, recall is the only one.
-            this.notices = this.provenance.filter(
-                (p) => p.record.tags && p.record.tags.includes("recall"));
+            // this.notifications = this.provenance.filter(
+            //     (p) => p.record.tags && p.record.tags.includes("recall"));
 
-            this.notices.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+            // this.notifications.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
         }
     },
 };
 </script>
 
-    <style scoped>
-    .div {
+<style scoped>
+.div {
   background-color: red;
-    }
+}
 .report-box {
     border: 5px solid #f00;
   padding: 20px;
