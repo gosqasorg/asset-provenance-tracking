@@ -14,17 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-export type BlobType = 'deviceInitializer' | 'deviceProvenance' | 'deviceAttachment' | 'deviceAttachmentName';
+export type BlobType = 'deviceInitializer' | 'deviceRecord';
 
 export interface ProvenanceRecord {
     blobType: BlobType,
-    deviceName: string,
-    description: string,
-    tags: string[],
+    deviceName: string,       // User provided name.
+    description: string,      // User provided description.
+    tags: string[],           // Tags are used to categorize records.
     children_key?: string[],  // child_keys would be a better name.
-    children_name?: string[],
-    hasParent: boolean,      // This record belongs to a group.
-    isReportingKey: boolean  // ...
+    children_name?: string[], // Parallel array to children_key.
+    hasParent?: boolean,      // This record belongs to a group.
+    isReportingKey?: boolean  // Identifies a record as a reporting key.
+    reportingKey?: string     // A groups reporting key.
 }
 
 export interface Provenance {
