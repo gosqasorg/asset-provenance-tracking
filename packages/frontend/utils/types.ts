@@ -14,19 +14,52 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-export type BlobType = 'deviceInitializer' | 'deviceRecord';
+export type BlobType = 'deviceInitializer' | 'deviceRecord' | '';
 
-export interface ProvenanceRecord {
-    blobType: BlobType,
-    deviceName: string,       // User provided name.
-    description: string,      // User provided description.
-    tags: string[],           // Tags are used to categorize records.
-    children_key?: string[],  // child_keys would be a better name.
-    children_name?: string[], // Parallel array to children_key.
-    hasParent?: boolean,      // This record belongs to a group.
-    isReportingKey?: boolean  // Identifies a record as a reporting key.
-    reportingKey?: string     // A groups reporting key.
+
+export class ProvenanceRecord {
+    blobType?: BlobType;
+    deviceName?: string;       // User provided name.
+    description?: string;      // User provided description.
+    tags?: string[];           // Tags are used to categorize records.
+    children_key?: string[];   // child_keys would be a better name.
+    children_name?: string[];  // Parallel array to children_key.
+    hasParent?: boolean;       // This record belongs to a group.
+    isReportingKey?: boolean;  // Identifies a record as a reporting key.
+    reportingKey?: string ;    // A groups reporting key.
+    attachments?: string[];    // Attachments are files that are associated with a record.
+
+    constructor() {
+        this.blobType = '';
+        this.deviceName = '';
+        this.description = '';
+        this.tags = [];
+        this.children_key = [];
+        this.children_name = [];
+        this.hasParent = false;
+        this.isReportingKey = false;
+        this.reportingKey = '';
+        this.attachments = [];
+    };
+    
+    static create(name: string, description: string) {
+        let record = new ProvenanceRecord();
+        record.deviceName = name;
+        record.description = description;
+    }
 }
+
+// export interface ProvenanceRecord {
+//     blobType?: BlobType,
+//     deviceName``: string,       // User provided name.
+//     description: string,      // User provided description.
+//     tags: string[],           // Tags are used to categorize records.
+//     children_key?: string[],  // child_keys would be a better name.
+//     children_name?: string[], // Parallel array to children_key.
+//     hasParent?: boolean,      // This record belongs to a group.
+//     isReportingKey?: boolean  // Identifies a record as a reporting key.
+//     reportingKey?: string     // A groups reporting key.
+// }
 
 export interface Provenance {
     record: ProvenanceRecord;
