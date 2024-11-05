@@ -24,7 +24,7 @@ export default {
         }
     },
     props: {
-        key: {
+        deviceKey: {
             type: Number,
             required: true
         },

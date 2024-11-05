@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
        
         <div class="d-grid">
-            <ButtonComponent class="my-4 mb-0" buttonText="Create Container" type="submit" />
+            <ButtonComponent class="my-4 mb-0" buttonText="Create Group" type="submit" />
         </div>
     </form>
  </template>
@@ -87,6 +87,7 @@ export default {
         },
 
         async submitForm() {
+            console.log("submitting form")
             const childrenDeviceList = [];
             const childrenDeviceName = [];
             let reportingKey;
@@ -98,14 +99,14 @@ export default {
             // if (this.createReportingKey) {
             // A reporting key is a special record that is a child of the group.
             reportingKey =  await makeEncodedDeviceKey();
-            
+            const reportingKeyName = this.name + " Reporting Key";
             try {
                 this.tags.push('reportingkey');
                 const response = await postProvenance(reportingKey, {
                     blobType: 'deviceInitializer',
-                    deviceName: this.name,
+                    deviceName: reportingKeyName,
                     description: "Reporting Key",
-                    tags: this.tags,
+                    tags: [],//this.tags, // TODO: why should we add tags to the reporting key?
                     children_key: [],
                     hasParent: true,
                     isReportingKey: true,
@@ -116,8 +117,7 @@ export default {
             }
 
             childrenDeviceList.push(reportingKey);
-            childrenDeviceName.push(this.name + "_reporting_key");
-            // }
+            childrenDeviceName.push(reportingKeyName);
 
             if (this.numChildKeys > 0) {
                 // Create the child records.
@@ -130,7 +130,7 @@ export default {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
                             description: this.description,
-                            tags: this.tags,
+                            tags: [],//this.tags, // TODO: why should we add tags to the reporting key?
                             children_key: [],
                             hasParent: true,
                             isReportingKey: false
@@ -140,6 +140,9 @@ export default {
                         record: record,
                     }
                     records.push(prov);
+
+                    childrenDeviceList.push(childKey);
+                    childrenDeviceName.push(childName);
                 };
 
                 await bulkCreateProvenances(records);

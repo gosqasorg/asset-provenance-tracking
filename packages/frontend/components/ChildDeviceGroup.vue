@@ -1,6 +1,6 @@
 
 <template>
-   <ChildDeviceRow v-for="i in numChildren" :key="i" :name="bob" />
+   <ChildDeviceRow v-for="i in numChildren" :key="i" :deviceKey="i" :name="bob" />
 
     <!-- TODO: Paginate with a maximum of 10 children displayed -->
 </template>
@@ -10,7 +10,8 @@
 export default {
     data() {
         return {
-            maxDisplayedChildren: 10
+            maxDisplayedChildren: 10,
+            bob: "hello"
         }
     },
     props: {
