@@ -94,13 +94,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
+                  <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
               </div>
               <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-                <div> Child Keys:
-                  <div> <KeyList v-bind:keys="childKeys"/> </div>
-                </div>    
-                <CsvFile :deviceKey="deviceKey"></CsvFile>
+                  <div> Child Keys:
+                      <div> <KeyList v-bind:keys="childKeys"/> </div>
+                  </div>
+                  <CsvFile :deviceKey="deviceKey"></CsvFile>
               </div>
             </section>
             
