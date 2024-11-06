@@ -3,3 +3,6 @@ dist/
 *.sqlite
 **/.DS_Store
 coverage/
+.azurite
+__blobstorage__
+__azurite*.json

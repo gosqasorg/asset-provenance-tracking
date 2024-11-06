@@ -1,4 +1,4 @@
-// keyFuncs.ts -- Creation and Function of Key
+// tags.ts -- Utility functions and definitions for tags.
 // Copyright (C) 2024 GOSQAS Team
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -13,28 +13,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import {encode as base58encode } from '@urlpack/base58'
-
-export async function makeDeviceKey(): Promise<Uint8Array> {
-  const key = await crypto.subtle.generateKey({
-    name: "AES-CBC",
-    length: 128
-  }, true, ['encrypt', 'decrypt']);
-  const buffer = await crypto.subtle.exportKey("raw", key);
-  return new Uint8Array(buffer).slice();
+export enum TagName {
+    Compatible = "compatible",
+    Complete = "complete",
+    Counterfeit = "counterfeit",
+    Damaged = "damaged",
+    Defective = "defective",
+    Deployed = "deployed",
+    Incompatible = "incompatible",
+    Incomplete = "incomplete",
+    Inspected = "inspected",
+    Received = "received",
+    TestedFail = "tested_fail",
+    TestedPass = "tested_pass",
 }
 
-function encodeDeviceKey(key: Uint8Array): string {
-    return base58encode(key);
-}
-
-export async function makeEncodedDeviceKey(): Promise<string> {
-    return encodeDeviceKey(await makeDeviceKey());
-}
-
-export function validateKey(key: string): boolean {
-  if (key == "") {
-    return false;
-  }
-  return true;
+export enum InternalTagName {
+    NotifyAll = "notify_all",
+    Recall = "recall",
+    ReportingKey = "reportingkey", // This is in use so we can't change the formatting.
 }

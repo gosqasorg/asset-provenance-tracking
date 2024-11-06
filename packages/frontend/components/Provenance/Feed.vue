@@ -110,7 +110,7 @@ export default {
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
-            this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+            this.provenance?.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
         }
     },
 };
