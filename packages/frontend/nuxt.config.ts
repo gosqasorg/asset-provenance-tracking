@@ -21,15 +21,18 @@ const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
-    css: ['~/assets/styles/main.scss'],
-    runtimeConfig: {
-        // The private keys which are only available server-side
-        // Keys within public are also exposed client-side
-        public: {
-            baseUrl: process.env.BACKEND_URL ? process.env.BACKEND_URL : 'http://localhost:7071/api',
-            apiBase: '/api',
-            frontendUrl: process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'http://localhost:3000',
-        }
-    },
-    modules: ['@nuxt/test-utils/module']
+  css: ['~/assets/styles/main.scss'],
+  runtimeConfig: {
+      // The private keys which are only available server-side
+      // Keys within public are also exposed client-side
+      public: {
+          baseUrl: process.env.BACKEND_URL ? process.env.BACKEND_URL : 'http://localhost:7071/api',
+          apiBase: '/api',
+          frontendUrl: process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'http://localhost:3000',
+      }
+  },
+  modules: [
+      '@nuxt/test-utils/module',
+      '@pinia/nuxt'
+  ],
 });
