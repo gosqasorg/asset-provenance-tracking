@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
            
             <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
-            <ProvenanceTagInput class="form-control mt-1 " placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput class="form-control mt-1 " placeholder="Group Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
