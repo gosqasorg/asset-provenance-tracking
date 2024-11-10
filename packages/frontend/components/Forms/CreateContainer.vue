@@ -1,4 +1,4 @@
-<!-- CreateContainer.vue -- Creation of Container
+<!-- CreateContainer.vue -- Creation of a Group
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -14,15 +14,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
-        <h4 class="text-iris mt-1 mb-3">Create New Container</h4>
+        <h4 class="text-iris mt-1 mb-3">Create New Group</h4>
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Container Name">
-            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Container Description">
-            <h4 class="text-iris form-label mt-3 mb-3" for="file">Container Image (optional)</h4>
+            <input type="text" class="form-control" v-model="name" required placeholder="Group Name">
+            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description">
+            <h4 class="text-iris form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
            
             <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
-            <ProvenanceTagInput class="form-control mt-1 " placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput class="form-control mt-1 " placeholder="Group Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
@@ -30,14 +30,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  
  
  
-            <h4 class="text-iris my-4 mb-0" for="children-keys">Number of Contained Devices (optional)
+            <h4 class="text-iris my-4 mb-0" for="children-keys">Number of Grouped Records (optional)
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
  
  
             <br>
             <h4 class="text-iris p-1 mt-0 mb-0 ">
-                <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Contained Device Names?
+                <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Names?
             </h4>
  
  
@@ -60,7 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
        
         <div class="d-grid">
-            <ButtonComponent class="my-4 mb-0" buttonText="Create Container" type="submit" />
+            <ButtonComponent class="my-4 mb-0" buttonText="Create Group" type="submit" />
         </div>
     </form>
  </template>
@@ -80,7 +80,7 @@ export default {
             tags: [] as string[],
             childrenKeys: 0,
             createReportingKey: false,
-            hasParent: false, // states whether this device is contained within a box/container
+            hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
         }
     },
@@ -226,16 +226,16 @@ export default {
                     isReportingKey: false
                 }, this.pictures || [])
                 
-                console.log('Succesfully created the container:', response);
+                console.log('Succesfully created the group:', response);
 
-                // Navigate to the new container page
+                // Navigate to the new group page
                 const failure = await this.$router.push({ path: `/device/${deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
                 }
             } catch (error) {
-                console.error('Failed to create the container:', error);
+                console.error('Failed to create the group:', error);
             }
         },
     }

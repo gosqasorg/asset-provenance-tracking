@@ -1,5 +1,5 @@
 <!--
-Feed.vue -- Display the feed of reports for a device
+Feed.vue -- Display the feed of reports for a record
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -15,14 +15,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-    This component is used to display the feed of reports for a device.
-    It is used in the providence-fourm.vue page.
+    This component is used to display the feed of reports for a record.
+    It is used in the providence/[deviceKey].vue page.
 -->
 <template>
     <div>
         <div v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3 id = "createdDevicePoint">Created Device: {{ report.record.deviceName }}</h3>
+                <h3 id = "createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
             </template>
 
             <div style="font-size: small; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 12px; line-height: 30px; color: #1E2019;">
@@ -66,7 +66,7 @@ import { textColorForTag, getColorForTag } from '~/utils/colorTag';
 
 export default {
     props: {
-        deviceKey: {
+        recordKey: {
             type: String,
             default: "",
         },
@@ -92,7 +92,7 @@ export default {
             try {
                 if (report.attachments.length > 0) {
                     const baseUrl = useRuntimeConfig().public.baseUrl;
-                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
+                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.recordKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
 
                     // Create object URLs for attachments and include filenames

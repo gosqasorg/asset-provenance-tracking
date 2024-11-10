@@ -15,7 +15,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-    This component is a form. The form is used to create a new device that we will track the
+    This component is a form. The form is used to create a new record that we will track the
     providence for.
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
@@ -23,22 +23,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <form enctype="multipart/form-data" class='bg-frost' @submit.prevent="submitForm">
-      <h5 class="text-iris">Create New History Record</h5>
+      <h5 class="text-iris">Create New Record Entry</h5>
       <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="History Description" />
-        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Container Key (optional)"/>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Device Keys (optional, separated with a coma)"/>
+        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" />
+        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Group Key (optional)"/>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Record Keys (optional, separated with a coma)"/>
         <div>
             <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
                 {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
         <div>
-            <h5 class="text-iris">Device Image (optional)    </h5>
+            <h5 class="text-iris">Image (optional)</h5>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
         </div>
         <h5 class="text-iris">Add Tags (optional)</h5>
-        <ProvenanceTagInput class="form-control" id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Device tag"/>
+        <ProvenanceTagInput class="form-control" id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Record Tag"/>
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </h5>
     </div>
     <div class="d-grid" id="submit-button">
-        <button-component buttonText="Create History Record" type="submit" />
+        <button-component buttonText="Create Record Entry" type="submit" />
     </div>
     </form>
 </template>
@@ -72,7 +72,7 @@ export default {
         }
     },
     props: {
-        deviceKey: {
+        recordKey: {
             type: String,
             default: "",
             required: true,
@@ -127,32 +127,32 @@ export default {
         },
         async submitRecord() {
 
-            const response = await getProvenance(this.deviceKey);
+            const response = await getProvenance(this.recordKey);
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
-            let descendantsList = await getAllDescendants(this.deviceKey);
+            let descendantsList = await getAllDescendants(this.recordKey);
 
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
 
                 if (this.hasParent) {
-                    console.log("This device already has a container.");
+                    console.log("This record already has a group.");
                     this.description = this.description + "\nError: Container could not be added.";
 
                 } else {
-                    // need to check if this parent is NOT a descendant of the device already
+                    // need to check if this parent is NOT a descendant of the record already
                     if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among descendants
-                        // container is INDEED a descendant of this device
+                        // container is INDEED a descendant of this record
                         // therefore, this relationship shouldn't be created
-                        console.log("This container is a descendant of this device.");
-                        this.description = this.description + `\nError: Container could not be added.`;
+                        console.log("This group is a descendant of this record.");
+                        this.description = this.description + `\nError: Group could not be added.`;
                     } else{
                         postProvenance(this.containerKey, {
                             blobType: 'deviceRecord',
                             description: this.description, // keep the same description?
                             tags: [],
-                            children_key: [this.deviceKey],
+                            children_key: [this.recordKey],
                             hasParent: true,
                         }, this.pictures || [])
     
@@ -191,7 +191,7 @@ export default {
                             new_children_list.splice(index, 1);
                         } else {
                             let descendants = await getAllDescendants(i);
-                            if (descendants.includes(this.deviceKey)) { // Device is a descendant of entered child, cannot be added
+                            if (descendants.includes(this.recordKey)) { // Device is a descendant of entered child, cannot be added
                                 this.description = this.description + `\nError: Child device could not be added.`;
                                 new_children_list.splice(index, 1);
                             } else {

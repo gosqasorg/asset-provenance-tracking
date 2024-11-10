@@ -63,7 +63,7 @@
     height: 100%;
     top: 0;
     left: 0;
-    background: #4a148c;
+    background: #4e3681;
     border-radius: 10px;
     padding: 14px 18px;
     transition: left 0.3s;
@@ -71,7 +71,7 @@
 
 /* Text containers */
 .toggle-label div {
-    padding: 10px;
+    padding: 10px 15px 10px 15px;
     text-align: center;
     z-index: 1;
     font-weight: bold;

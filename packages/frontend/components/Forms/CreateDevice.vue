@@ -13,7 +13,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <!--
-    This component is a form used to create a new device that we will track the
+    This component is a form used to create a new record that we will track the
     providence for.
 
     Resourses:
@@ -21,22 +21,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <!-- Form for creating a new device. Uses custom form submission. -->
+    <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
-        <h4 class="text-iris mt-1 mb-3">Create New Device</h4>
+        <h4 class="text-iris mt-1 mb-3">Create New Record</h4>
  
  
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Device Name">
-            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Device Description">
+            <input type="text" class="form-control" v-model="name" required placeholder="Record Name">
+            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description">
             <div style="display: block;">
-                <h4 class="mt-3 mb-3 text-iris">Device Image (optional)   </h4>
+                <h4 class="mt-3 mb-3 text-iris">Record Image (optional)</h4>
                 <input type="file"  class="form-control " accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
  
  
             <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
-            <ProvenanceTagInput class="form-control mt-1" placeholder="Device Tag" v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput class="form-control mt-1" placeholder="Record Tag" v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
@@ -44,7 +44,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  
  
         <div class="d-grid">
-            <ButtonComponent class="my-4 mb-0" buttonText="Create Device" type="submit" />
+            <ButtonComponent class="my-4 mb-0" buttonText="Create Record" type="submit" />
         </div>
     </form>
  </template>
@@ -63,7 +63,7 @@ export default {
             description: '',
             tags: [] as string[],
             children_key: '',
-            hasParent: false, // states whether a device is contained within a box/container
+            hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
         }
     },
@@ -91,16 +91,16 @@ export default {
                     isReportingKey: false,
                 }, this.pictures || []);
                 
-                console.log('Succesfully created the device:', response);
+                console.log('Succesfully created the record:', response);
 
-                // Navigate to the new device page
+                // Navigate to the new record page
                 const failure = await this.$router.push({ path: `/device/${deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
                 }
             } catch (error) {
-                console.error('Failed to create the device:', error);
+                console.error('Failed to create the record:', error);
             }
         },
     }

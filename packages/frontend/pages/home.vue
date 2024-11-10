@@ -27,11 +27,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
                 <div class="row" style=" margin-bottom: 60px; margin-top:15px; display:inline-flex">
                     <form style="margin-bottom: 20px; width:40%; min-width: 230px;" @submit.prevent="trackingForm">
-                        <button-component class="button" id="trackButton" buttonText="Track an Asset" type="submit" style="opacity:100;"
+                        <button-component class="button" id="trackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             padding="18px 22px"></button-component>
                     </form>
                     <div style="margin-bottom: 20px; width: 60%; min-width: 250px;" >
-                        <button-component class="button" buttonText="Create a Device" backgroundColor="#CCECFD" onclick="window.location.href='/'"
+                        <button-component class="button" buttonText="Create Record" backgroundColor="#CCECFD" onclick="window.location.href='/'"
                             borderColor="#CCECFD" color="#1E2019" padding="18px 22px"></button-component>
                     </div>
                     <div id="homeTrackAssetDiv" style="visibility: hidden;">
@@ -73,7 +73,7 @@ let showTrack = false;
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We believe that open-source projects should be simple to use and understand."},
     { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."},
-    { title: "Open Source", descr:"Our projects are created for the public good and are available either free of charge or at minimal cost."}
+    { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."}
 ];
 
 export default {

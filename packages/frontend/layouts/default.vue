@@ -33,18 +33,18 @@
                                 <a class="mobile-link" href="https://github.com/gosqasorg/asset-provenance-tracking">GDT GitHub</a>
                             </li>
                             <li style="margin:10px 0px 20px 0px">
-                                <a class="mobile-link" href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Technical Documents</a>
+                                <a class="mobile-link" href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Terms and Conditions</a>
                             </li>
                         </div>
                         <span>
-                            <ButtonComponent @click="trackingForm()" id="trackButton" buttonText="Track an Asset" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
+                            <ButtonComponent @click="trackingForm()" id="viewRecordButton" buttonText="View Record" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
                             <div class="mobile-nav">
-                                    <ButtonComponent buttonText="Create a Device" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px" style="font-size: 18px"></ButtonComponent>
+                                    <ButtonComponent buttonText="Create Record" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px" style="font-size: 18px"></ButtonComponent>
                             </div>
                         </span>
                     </ul>
-                    <div class="me-0 ms-auto" id="trackAssetDiv" style="display:none;">
-                        <TrackAsset inputWidth="75%" id="trackAssetInput"></TrackAsset>
+                    <div class="me-0 ms-auto" id="viewRecordDiv" style="display:none;">
+                        <TrackAsset inputWidth="75%" id="viewRecordInput"></TrackAsset>
                     </div>
                 </div>
             </div>
@@ -75,7 +75,7 @@
                         <div class="row">
                             <a href="/about" class="me-3">About</a>
                             <a href="/data_privacy" class="me-3">Data & Privacy</a>
-                            <a href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Technical Documents</a>
+                            <a href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Terms and Conditions</a>
                         </div>
                     </div>
                 </div>
@@ -100,24 +100,24 @@ let showTrack = false;
 
 export default {
     methods: {
-        // Function to have the 'Track an asset' input field appear
+        // Function to have the 'View Record' input field appear
         async trackingForm() {
-            let trackAssetDiv = <HTMLDivElement>document.getElementById("trackAssetDiv");
-            let trackButton = <HTMLDivElement>document.getElementById("trackButton");
+            let viewRecordDiv = <HTMLDivElement>document.getElementById("viewRecordDiv");
+            let viewRecordButton = <HTMLDivElement>document.getElementById("viewRecordButton");
             let nav = <HTMLDivElement>document.getElementById("nav")
 
             if (!showTrack) { //if showTrack is false
                 showTrack = true;
-                trackAssetDiv.style.display="inline"; //make text input available
-                trackButton.style.backgroundColor = "#322253";
-                trackButton.style.borderColor = "#322253";
+                viewRecordDiv.style.display="inline"; //make text input available
+                viewRecordButton.style.backgroundColor = "#322253";
+                viewRecordButton.style.borderColor = "#322253";
                 nav.style.paddingBottom = "80px";
 
             } else { 
                 showTrack = false; 
-                trackAssetDiv.style.display="none";
-                trackButton.style.backgroundColor = "#4E3681";
-                trackButton.style.borderColor = "#4E3681";
+                viewRecordDiv.style.display="none";
+                viewRecordButton.style.backgroundColor = "#4E3681";
+                viewRecordButton.style.borderColor = "#4E3681";
                 nav.style.paddingBottom = "24.5px";
 
             }
@@ -233,7 +233,7 @@ export default {
             color: #1E2019;
             text-decoration: none;
         }
-        #trackAssetInput {
+        #viewRecordInput {
             padding: 20px 0px 0 0;            
         }
         
@@ -252,7 +252,7 @@ export default {
         }
         #main-nav{
             position:absolute;
-            padding:24.5px 20px;  /* right margin is 40 but Track Asset button has a 20px margin */
+            padding:24.5px 20px;  /* right margin is 40 but View Record button has a 20px margin */
         }
         .nav-link {
             font-size: 20px;
@@ -264,11 +264,11 @@ export default {
             margin-right: 15px; /* Need a smaller margin so it does not collide with logo */
         }   
 
-        #trackAssetDiv {
+        #viewRecordDiv {
             min-width: 600px;
         }
 
-        #trackAssetInput {
+        #viewRecordInput {
             padding: 20px 20px 0 0;
         }
     }
