@@ -3,7 +3,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import * as bs58 from 'bs58';
 import * as JSON5 from 'json5';
-import { EmailClient } from "@azure/communication-email";
+import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 import * as dotenv from "dotenv";
 
 
@@ -368,7 +368,23 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     };
 };
 
+interface EmailMessageContent {
+    subject: string;
+    plainText: string;
+}
 
+interface EmailMessageRecipient {
+    address: string;
+    displayName: string;
+}
+
+interface EmailMessage {
+    senderAddress: string;
+    content: EmailMessageContent;
+    recipients: {
+        to: EmailMessageRecipient[];
+    };
+}
 
 // Load environment variables from .env
 dotenv.config();
@@ -381,25 +397,14 @@ export async function sendEmail(request: HttpRequest, context: InvocationContext
 
     try {
         // Extract email address from request body
-        const requestBody = await request.json();
-        const recipientEmail = requestBody.email || "input@gmail.com"; // Use a default or dynamic email
+        const message = await request.json() as EmailMessage;
 
-        // Define email message details
-        const message = {
-            senderAddress: "donotreply@6104f838-923b-468b-a2cc-4d5aeaea891a.azurecomm.net", // Replace this with your sender email address
-            content: {
-                subject: "Welcome to Azure Communication Services Email",
-                plainText: "This is testing email sending function.",
-            },
-            recipients: {
-                to: [
-                    {
-                        address: "input@gmail.com",  // Use the dynamic email
-                        displayName: "Customer Name",
-                    },
-                ],
-            },
-        };
+        console.log(message);
+
+        // TODO: validate the message object
+        if (!message || !message.senderAddress || !message.content || !message.recipients) {
+            throw new Error("Invalid email message object");
+        }
 
         // Start email sending process
         const poller = await emailClient.beginSend(message);
@@ -425,7 +430,7 @@ export async function sendEmail(request: HttpRequest, context: InvocationContext
             console.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
             return {
                 status: 200,
-                body: { message: "Email sent successfully!" }
+                jsonBody: { message: "Email sent successfully!" }
             };
         } else {
             throw poller.getResult().error;
@@ -435,7 +440,7 @@ export async function sendEmail(request: HttpRequest, context: InvocationContext
         console.error("Error sending email:", e);
         return {
             status: 500,
-            body: { message: `Failed to send email: ${e.message || e}` }
+            jsonBody: { message: `Failed to send email: ${e.message || e}` }
         };
     }
 }
