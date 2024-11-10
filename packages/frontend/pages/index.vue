@@ -18,7 +18,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <!--
-    This is the landing page where you can create a new device to track
+    This is the landing page where you can create a new record to track
 -->
 <template>
     <link href="https://fonts.google.com/specimen/Poppins" rel="stylesheet" type="text/css">
@@ -28,20 +28,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h1 class="my-4 text-iris fs-1">Global Distributed Tracking</h1>
  
  
-        <!-- create toggle for single or container  -->
+        <!-- create toggle for single or group  -->
         <ButtonsLargeToggle 
             @toggle-change="toggleView" 
-            :left-label="'New Device'" 
-            :right-label="'New Container'"
+            :left-label="'New Record'" 
+            :right-label="'New Group'"
         />
     
         <!-- <div>Create a Single Asset:</div> -->
-        <div id="create_device"><FormsCreateDevice/></div>
+        <div id="create_record"><FormsCreateDevice/></div>
         <!-- <CreateDevice/> -->
         <!-- <div>Or, if you want to create a group of keys:</div> -->
         <!-- <div></div> -->
        
-        <div id="create_container" style="display:none"><FormsCreateContainer/></div>
+        <div id="create_group" style="display:none"><FormsCreateContainer/></div>
  
  
         <h5 class="my-4">
@@ -59,14 +59,14 @@ export default {
     methods: {
         toggleView() {
             const toggle = document.getElementById("toggle") as HTMLInputElement;
-            const createDevice = document.getElementById("create_device");
-            const createContainer = document.getElementById("create_container");
+            const createRecord = document.getElementById("create_record");
+            const createGroup = document.getElementById("create_group");
             if (toggle.checked) {
-                createDevice.style.display = "none";
-                createContainer.style.display = "block";
+                createRecord.style.display = "none";
+                createGroup.style.display = "block";
             } else {
-                createDevice.style.display = "block";
-                createContainer.style.display = "none";
+                createRecord.style.display = "block";
+                createGroup.style.display = "none";
             }
         }
     }
