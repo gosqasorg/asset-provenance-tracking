@@ -26,7 +26,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
             <h1 class="mt-4 mb-2 text-iris">{{deviceRecord.deviceName}}</h1>
             <!-- TODO: We might want to call this an Admin key if it has a reporting key -->
         
-            <h5>Device Key: {{ route.params.deviceKey }}</h5>
+            <h5>Record Key: {{ route.params.deviceKey }}</h5>
             <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 

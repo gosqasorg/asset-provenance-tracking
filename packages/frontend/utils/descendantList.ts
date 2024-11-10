@@ -44,7 +44,7 @@ export function getChildKeys(provenance: Provenance[]): string[] {
         if (!child || !child.length) {
             continue;
         }
-        childKeys.push(p.record.children_key)
+        childKeys = [...childKeys, ...child];
     }
 
     return childKeys;

@@ -136,8 +136,7 @@ const headers = [
   { id: "priority-notices", name: "Priority notices" },
   { id: "recent", name: "Most recent updates" },
   { id: "device-creation", name: "Record creation" },
-  { id: "create-record", name: "Create new record entry" },
-  { id: "child-keys", name: "Child keys" }
+  { id: "create-record", name: "Create new record entry" }
 ];
 
 
@@ -199,6 +198,11 @@ export default {
             }
         }
         this.childKeys = getChildKeys(provenance);
+
+        // Add child key navigation if there are child keys
+        if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+          headers.push({ id: "child-keys", name: "Child keys" });
+        }
       } catch (error) {
           this.isLoading = false;
           this.deviceKeyFound = false;
