@@ -10,5 +10,6 @@
   "exclude": [
     "test/**",
     "vitest.config.ts",
+    // "functions/emailNotification.ts"
   ]
 }

@@ -1,5 +1,8 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
-import * as dotenv from "dotenv";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 interface EmailMessageContent {
     subject: string;
@@ -18,9 +21,6 @@ export interface EmailMessage {
         to: EmailMessageRecipient[];
     };
 }
-
-// Load environment variables from .env
-dotenv.config();
 
 export async function sendEmailMessage(message: EmailMessage): Promise<void> {
     const POLLER_WAIT_TIME = 10;
@@ -75,3 +75,26 @@ export async function sendEmailMessage(message: EmailMessage): Promise<void> {
         throw e;
     }
 }
+
+export async function sendNotification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const message = await request.json() as EmailMessage;
+    try {
+        await sendEmailMessage(message);
+        return {
+            status: 200,
+            jsonBody: { message: "Notification sent successfully!" }
+        };
+    } catch (e) {
+        console.error("Error sending notification:", e);
+        return {
+            status: 500,
+            jsonBody: { message: `Failed to send notification.` }
+        };
+    }
+}
+
+app.post("sendNotification", {
+    authLevel: 'anonymous',
+    route: 'notification',
+    handler: sendNotification,
+})

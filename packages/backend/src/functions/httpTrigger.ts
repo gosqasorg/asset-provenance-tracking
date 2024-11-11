@@ -365,25 +365,6 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     };
 };
 
-import { sendEmailMessage, EmailMessage } from "./emailNotification";
-
-export async function sendNotification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const message = await request.json() as EmailMessage;
-    try {
-        await sendEmailMessage(message);
-        return {
-            status: 200,
-            jsonBody: { message: "Notification sent successfully!" }
-        };
-    } catch (e) {
-        console.error("Error sending notification:", e);
-        return {
-            status: 500,
-            jsonBody: { message: `Failed to send notification.` }
-        };
-    }
-}
-
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
@@ -419,10 +400,4 @@ app.get("getStatistics", {
     authLevel: 'anonymous',
     route: 'statistics',
     handler: getStatistics
-})
-
-app.post("sendNotification", {
-    authLevel: 'anonymous',
-    route: 'notification',
-    handler: sendNotification,
 })
