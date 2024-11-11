@@ -3,8 +3,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import * as bs58 from 'bs58';
 import * as JSON5 from 'json5';
-import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
-import * as dotenv from "dotenv";
+
 
 
 // To deploy this project from the command line, you need:
@@ -368,84 +367,24 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     };
 };
 
-interface EmailMessageContent {
-    subject: string;
-    plainText: string;
-}
+import { sendEmailMessage, EmailMessage } from "./emailNotification";
 
-interface EmailMessageRecipient {
-    address: string;
-    displayName: string;
-}
-
-interface EmailMessage {
-    senderAddress: string;
-    content: EmailMessageContent;
-    recipients: {
-        to: EmailMessageRecipient[];
-    };
-}
-
-// Load environment variables from .env
-dotenv.config();
-
-const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
-const emailClient = new EmailClient(connectionString);
-
-export async function sendEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const POLLER_WAIT_TIME = 10;
-
+export async function sendNotification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const message = await request.json() as EmailMessage;
     try {
-        // Extract email address from request body
-        const message = await request.json() as EmailMessage;
-
-        console.log(message);
-
-        // TODO: validate the message object
-        if (!message || !message.senderAddress || !message.content || !message.recipients) {
-            throw new Error("Invalid email message object");
-        }
-
-        // Start email sending process
-        const poller = await emailClient.beginSend(message);
-
-        if (!poller.getOperationState().isStarted) {
-            throw new Error("Poller was not started.");
-        }
-
-        let timeElapsed = 0;
-        while (!poller.isDone()) {
-            await poller.poll();
-            console.log("Email send polling in progress");
-
-            await new Promise(resolve => setTimeout(resolve, POLLER_WAIT_TIME * 1000));
-            timeElapsed += POLLER_WAIT_TIME;
-
-            if (timeElapsed > 18 * POLLER_WAIT_TIME) {
-                throw new Error("Polling timed out.");
-            }
-        }
-
-        if (poller.getResult().status === KnownEmailSendStatus.Succeeded) {
-            console.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
-            return {
-                status: 200,
-                jsonBody: { message: "Email sent successfully!" }
-            };
-        } else {
-            throw poller.getResult().error;
-        }
-
+        await sendEmailMessage(message);
+        return {
+            status: 200,
+            jsonBody: { message: "Notification sent successfully!" }
+        };
     } catch (e) {
-        console.error("Error sending email:", e);
+        console.error("Error sending notification:", e);
         return {
             status: 500,
-            jsonBody: { message: `Failed to send email: ${e.message || e}` }
+            jsonBody: { message: `Failed to send notification.` }
         };
     }
 }
-
-
 
 
 app.get("getProvenance", {
@@ -484,13 +423,8 @@ app.get("getStatistics", {
     handler: getStatistics
 })
 
-app.get("sendEmail", {
+app.post("sendNotification", {
     authLevel: 'anonymous',
-    route: 'email',
-    handler: sendEmail,
+    route: 'notification',
+    handler: sendNotification,
 })
-
-
-
-
-
