@@ -18,7 +18,7 @@
     "@types/bootstrap": "^5.2.10",
     "@vitest/coverage-v8": "^2.1.1",
     "@vue/test-utils": "^2.4.6",
-    "happy-dom": "^15.7.4",
+    "happy-dom": "^15.10.2",
     "playwright-core": "^1.47.1",
     "sass": "^1.77.2",
     "sass-loader": "^14.2.1",

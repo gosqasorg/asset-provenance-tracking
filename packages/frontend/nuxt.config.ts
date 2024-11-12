@@ -32,5 +32,6 @@ export default defineNuxtConfig({
             frontendUrl: process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'http://localhost:3000',
         }
     },
-    modules: ['@nuxt/test-utils/module']
+    modules: ['@nuxt/test-utils/module'],
+  compatibilityDate: '2024-11-12'
 });
