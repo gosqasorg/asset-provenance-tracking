@@ -1,0 +1,36 @@
+name: Deploy to Production
+
+# Manual deployment trigger
+on:
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
+  FRONTEND_URL: https://www.gosqas.org                  # set this to the frontend URL (for QR code generation)
+  STATIC_APP_NAME: gdt-prod-frontend                    # set this to the name of the frontend app on Azure Static Web Apps
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: 18
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+      - name: build frontend
+        working-directory: packages/frontend
+        run: |
+          npm ci
+          npx nuxi build --preset=azure
+      - name: deploy frontend
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./packages/frontend
+        run: |
+          npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --app-name=${{ env.STATIC_APP_NAME }} --env production --deployment-token  ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: packages
+          path: packages/frontend/.output/**
