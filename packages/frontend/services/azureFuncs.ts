@@ -18,13 +18,17 @@
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
-        if (!deviceKey) {
+        if (!deviceKey || deviceKey.length === 0) {
             throw new Error("No device key provided");
         }
         const baseUrl = useRuntimeConfig().public.baseUrl;
         const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
             method: "GET",
         });
+
+        if (response.status !== 200) {
+            throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        }
         return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
     } catch (error) {
         // probably we didn't find the key...

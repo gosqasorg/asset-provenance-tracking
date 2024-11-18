@@ -117,7 +117,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       
     </div>
     <div v-else>
-      <p>Device key not found.</p>
+      <p>Record key not found.</p>
     </div>
   </div>
 </template>
@@ -150,10 +150,10 @@ export default {
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
+      recordKey: "",
     }},
     async mounted() {
       try {
-
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
           for(let num in headers) {
@@ -168,11 +168,10 @@ export default {
             }
           }
         });
-                
 
         const route = useRoute();
-        const recordKey = route.params.deviceKey as string;
-        const provenance = await getProvenance(recordKey);
+        this.recordKey = route.params.deviceKey as string;
+        const provenance = await getProvenance(this.recordKey);
 
         if (!provenance) {
           console.log("No provenance record found.")
