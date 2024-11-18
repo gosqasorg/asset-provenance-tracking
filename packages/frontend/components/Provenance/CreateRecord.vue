@@ -127,7 +127,6 @@ export default {
 
         },
         async submitRecord() {
-
             const response = await getProvenance(this.recordKey);
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
@@ -236,7 +235,7 @@ export default {
         }
                        
         // Here we post the povenance itself...
-        postProvenance(this.deviceKey, {
+        postProvenance(this.recordKey, {
                 blobType: 'deviceRecord',
                 description: this.description,
                 tags: this.tags,

@@ -20,14 +20,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script setup lang="ts">
   const route = useRoute()
-  const deviceKey = route.params.deviceKey as string;
+  const recordKey = route.params.deviceKey as string;
 </script>
 
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <div v-if="!isLoading">
-    <div v-if="deviceKeyFound">
+    <div v-if="recordKeyFound">
 
       <div class="row pt-3 pb-6 mx-4">
         <div class="col-md-2 d-none d-md-block">
@@ -75,22 +75,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
-              <div>Record Key: {{ deviceKey }}</div>
+              <div>Record Key: {{ recordKey }}</div>
               <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
             </section>
 
             <section ref= "section" id="priority-notices">
-              <ProvenancePriorityNotices :deviceKey="deviceKey" :provenance="provenance"/>
+              <ProvenancePriorityNotices :recordKey="recordKey" :provenance="provenance"/>
             </section>
 
             <section id="recent">
-              <ProvenanceFeed :deviceKey="deviceKey" :provenance="provenanceNoRecord"/>
+              <ProvenanceFeed :recordKey="recordKey" :provenance="provenanceNoRecord"/>
             </section>
             <section id="device-creation">
-              <ProvenanceFeed :deviceKey="deviceKey" :provenance="deviceCreationRecord"/>
+              <ProvenanceFeed :recordKey="recordKey" :provenance="deviceCreationRecord"/>
             </section>
             <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :deviceKey="deviceKey"/>
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="recordKey"/>
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
@@ -100,7 +100,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div> Child Keys:
                   <div> <KeyList v-bind:keys="childKeys"/> </div>
                 </div>    
-                <CsvFile :deviceKey="deviceKey"></CsvFile>
+                <CsvFile :recordKey="recordKey"></CsvFile>
               </div>
             </section>
             
@@ -147,7 +147,7 @@ export default {
   data() {
     return {
       isLoading: true,
-      deviceKeyFound: false,
+      recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
     }},
@@ -171,15 +171,15 @@ export default {
                 
 
         const route = useRoute();
-        const deviceKey = route.params.deviceKey as string;
-        const provenance = await getProvenance(deviceKey);
+        const recordKey = route.params.deviceKey as string;
+        const provenance = await getProvenance(recordKey);
 
         if (!provenance) {
           console.log("No provenance record found.")
           return;
         }
 
-        this.deviceKeyFound = true;
+        this.recordKeyFound = true;
 
         // Decompose the provenance records into parts to be rendered.
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
@@ -205,7 +205,7 @@ export default {
         }
       } catch (error) {
           this.isLoading = false;
-          this.deviceKeyFound = false;
+          this.recordKeyFound = false;
           this.hasReportingKey = false;
           console.log(error)
       }
