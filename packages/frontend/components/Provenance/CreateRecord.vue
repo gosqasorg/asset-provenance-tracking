@@ -272,6 +272,7 @@ export default {
   form {
       border-radius: 6px;
       display: block;
+      margin-bottom: 30px;
   }
   /* Style for the placeholder text */
     .form-control::placeholder {
