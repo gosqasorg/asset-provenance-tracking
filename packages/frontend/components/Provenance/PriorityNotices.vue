@@ -41,7 +41,7 @@ import { EventBus } from '~/utils/event-bus';
 
 export default {
     props: {
-        deviceKey: {
+        recordKey: {
             type: String,
             default: "",
         },
@@ -67,7 +67,7 @@ export default {
             try {
                 if (report.attachments.length > 0) {
                     const baseUrl = useRuntimeConfig().public.baseUrl;
-                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.deviceKey, attachmentID));
+                    const attachmentPromises = report.attachments.map(attachmentID => getAttachment(baseUrl,this.recordKey, attachmentID));
                     const attachments = await Promise.all(attachmentPromises);
                     const urls = attachments.map(attachment => URL.createObjectURL(attachment));
                     this.attachmentURLs[index.toString()] = urls;

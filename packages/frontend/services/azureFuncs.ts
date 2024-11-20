@@ -18,14 +18,21 @@
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
+        if (!deviceKey || deviceKey.length === 0) {
+            throw new Error("No device key provided");
+        }
         const baseUrl = useRuntimeConfig().public.baseUrl;
         const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
             method: "GET",
         });
+
+        if (response.status !== 200) {
+            throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        }
         return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
     } catch (error) {
         // probably we didn't find the key...
-        console.log(`It is likely that they key your requestd: ${deviceKey} does not exist.`);
+        console.log(`Key not found: ${deviceKey}.`);
         console.log(error);
         throw error;
     }
@@ -61,6 +68,9 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
 
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
+    if (!deviceKey) {
+        throw new Error("No device key provided.");
+    }
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
@@ -71,6 +81,9 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         method: "POST",
         body: formData,
     });
+    if (response.status !== 200) {
+        throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    }
     return await response.json() as { record: string, attachments?: string[] };
 }
 
