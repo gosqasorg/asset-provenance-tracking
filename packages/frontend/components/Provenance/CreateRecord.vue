@@ -27,10 +27,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" />
         <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Group Key (optional)"/>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childrenKey" placeholder="Contained Record Keys (optional, separated with a coma)"/>
+        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeys" placeholder="Contained Record Keys (optional, separated with a comma)"/>
         <div>
-            <span v-for="(childkey1, index) in childrenKey" :key="childkey1">
-                {{ childkey1 }}{{ index !== childrenKey.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+            <span v-for="(childkey1, index) in childKeys" :key="childkey1">
+                {{ childkey1 }}{{ index !== childKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
         <div>
@@ -55,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { getAllDescendants } from '~/utils/descendantList';
+import { addChildKeys, getAllDescendants } from '~/utils/descendantList';
 
 
 export default {
@@ -66,7 +66,7 @@ export default {
             pictures: [] as File[] | null,
             tags: [] as string[],
             containerKey: '',
-            childrenKey: [] as string[],
+            childKeys: [] as string[],
             hasParent: this.isContainer ? false : true,
             isReportingKey: false,
         }
@@ -86,7 +86,7 @@ export default {
     },
     computed: {
     uniqueChildrenKeys() {
-        const uniqueValues = [...new Set(this.childrenKey)];
+        const uniqueValues = [...new Set(this.childKeys)];
         return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
     }
 },
@@ -106,7 +106,7 @@ export default {
             this.pictures = null;
             this.tags = [];
             this.containerKey = '';
-            this.childrenKey = [];
+            this.childKeys = [];
             this.hasParent = false;
             this.isReportingKey = false;
         },
@@ -127,13 +127,20 @@ export default {
 
         },
         async submitRecord() {
-
             const response = await getProvenance(this.recordKey);
+            
+            if (!response) {
+                console.log("No provenance record found.")
+                return;
+            }
+
             let local_deviceRecord = response[0].record;
             this.hasParent = local_deviceRecord.hasParent;
             this.isReportingKey = local_deviceRecord.isReportingKey;
-            let descendantsList = await getAllDescendants(this.recordKey);
+            let descendantsList = await getChildrenKeys(this.recordKey);
 
+
+            // Add a group key to the record. TODO: hide this as needed.
             //here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
 
@@ -149,7 +156,7 @@ export default {
                         console.log("This group is a descendant of this record.");
                         this.description = this.description + `\nError: Group could not be added.`;
                     } else{
-                        postProvenance(this.containerKey, {
+                        await postProvenance(this.containerKey, {
                             blobType: 'deviceRecord',
                             description: this.description, // keep the same description?
                             tags: [],
@@ -162,106 +169,55 @@ export default {
                 }
             }
 
-            if (this.childrenKey.length > 1) { // if user want to add children keys 
-                let string_children = this.childrenKey.toString();
-                let entered_children = string_children.split(",");
-                entered_children = [...new Set(entered_children)]; //removing any duplicates
-                let new_children_list = entered_children.slice(0); //copy this exact array
-                let childExists, child_prov;
-                for (let i of entered_children) {
-                    let index = new_children_list.lastIndexOf(i);
+            if (this.childKeys) {
+                await addChildKeys(this.recordKey, this.childKeys, this.description || '', []);
+            }
 
-                    //First, check if entered child exists
-                    try { 
-                        await getProvenance(i).then((response) => {
-                            child_prov = response;
-                            childExists = true;
-                        });
-                    } catch(error) {
-                        new_children_list.splice(index, 1);
-                        this.description = this.description + `\nError: Entered child key does not exist.`;
-                        childExists = false;
-                    }
+            const recall = this.tags.indexOf("recall", 0);        
 
-                    // If entered child exist, check if it has a parent or is already a descendant of this device
-                    if(childExists) {
-                        const child_record = child_prov[0].record;
-                        
-                        if (child_record.hasParent) { // Child has a parent, cannot be added
-                            this.description = this.description + `\nError: Entered child key already has a container.`;
-                            new_children_list.splice(index, 1);
-                        } else {
-                            let descendants = await getAllDescendants(i);
-                            if (descendants.includes(this.recordKey)) { // Device is a descendant of entered child, cannot be added
-                                this.description = this.description + `\nError: Child device could not be added.`;
-                                new_children_list.splice(index, 1);
-                            } else {
-                                postProvenance(i, {
-                                blobType: 'deviceRecord',
-                                description: "Added parent", // need to discuss whether we want to have a unique description
-                                tags: [],
-                                children_key: [],
-                                hasParent: true,  // make sure the child has parent = true
-                                }, this.pictures || [])
-    
-                            }
-                        }
-                    }                        
+            // "recall" is being added....
+            if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
+                let reason = ""
+                if (recall > -1) { 
+                    reason = "Recalled by Admin Key";
+                } else { 
+                    reason = this.description; 
+                    this.tags = (this.tags).concat(['notify_all']);
                 }
-                this.childrenKey = new_children_list;
-            } 
 
-        const recall = this.tags.indexOf("recall", 0);        
-
-        // "recall" is being added....
-        if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
-            let reason = ""
-            if (recall > -1) { 
-                reason = "Recalled by Admin Key";
-            } else { 
-                reason = this.description; 
-                this.tags = (this.tags).concat(['notify_all']);
-            }
-
-            if (this.isReportingKey) {
-                // reporting keys do not have the ability to recall
-                console.log("Action failed. This is a reporting key.");
-            } else {
-                await this.messageChildren(descendantsList, reason, this.tags)
-                .then(response => {
+                if (this.isReportingKey) {
+                    // reporting keys do not have the ability to recall
+                    console.log("Action failed. This is a reporting key.");
+                } else {
+                    await this.messageChildren(descendantsList, reason, this.tags)                    
                     console.log("Finished recalling/informing");
-                })
+                }
+                
             }
-            
-        }
-                       
-        // Here we post the povenance itself...
-        postProvenance(this.deviceKey, {
-                blobType: 'deviceRecord',
-                description: this.description,
-                tags: this.tags,
-                children_key: [this.childrenKey],
-                hasParent: this.hasParent,
-        }, this.pictures || [])
-        .then(response => {
+                        
+            // Here we post the povenance itself... 
+            console.log("Posting provenance...", this.recordKey);
+            try {
+                await postProvenance(this.recordKey, {
+                        blobType: 'deviceRecord',
+                        description: this.description,
+                        tags: this.tags,
+                        children_key: this.childKeys,
+                        hasParent: this.hasParent,
+                }, this.pictures || []);
+                
                 // Refresh CreateRecord component
                 this.refresh();
 
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
-                
-            })
-            .catch(error => {
-                // Handle error here
-                console.error('Error occurred during post request:', error);
-            });
+            } catch (error) {        
+                console.error('Error POSTing provenance:', error);
+            }
         },
-
         async submitForm() {
-            this.submitRecord()
-            .then(response=> {
-                window.location.reload(); //once they submit it just reloads the entire page.
-            }); 
+            await this.submitRecord()
+            window.location.reload();
         },
     }
 

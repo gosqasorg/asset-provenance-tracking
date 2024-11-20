@@ -11,7 +11,7 @@ import { getChildrenKeys } from '~/utils/descendantList';
 
 export default {
     props: {
-        deviceKey: {
+        recordKey: {
         type: String,
         required: true,
         },
@@ -19,7 +19,7 @@ export default {
 
     methods: {
         async downloadCSV() {
-            let keyList = await getChildrenKeys(this.deviceKey);
+            let keyList = await getChildrenKeys(this.recordKey);
             // Convert key to a link
             keyList = keyList.map(key => 'https://gosqas.org/provenance/' + key);
             // Replace comas with new lines

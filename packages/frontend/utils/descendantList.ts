@@ -2,11 +2,12 @@
 // devices (children, grandchildren, great granchildren, so on) given a key
 // or the list of direct descendants (children only) given a key 
 
-import { getProvenance } from '~/services/azureFuncs';
+import { getProvenance, postProvenance } from '~/services/azureFuncs';
 import type { Provenance } from '~/utils/types';
 
-// gets all children given a key
+// Get all children given a key. Calls API.
 export async function getChildrenKeys(key: string) {
+    console.log("Getting children keys for key: ", key);
     const response = await getProvenance(key);
     return getChildKeys(response);
 }
@@ -48,4 +49,70 @@ export function getChildKeys(provenance: Provenance[]): string[] {
     }
 
     return childKeys;
+}
+
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+export async function addChildKeys(deviceKey: string, childKeys: string[], description: string, attachments: File[]) {
+    // Add child keys (if any).
+    // 1 is used because the deviceKey is already added (TODO: consider creating that here).
+
+    if (!childKeys || childKeys.length == 0) {
+        console.log("No child keys to add.");
+        return;
+    }
+
+    const dedupedKeys = deduplicateKeys(childKeys);
+    
+    let string_children = childKeys.toString();
+    let entered_children = string_children.split(",");
+    entered_children = [...new Set(entered_children)]; //removing any duplicates
+
+    let childrenToAdd = entered_children.slice(0); //copy this exact array
+
+    
+    let childProvenance;
+    for (let childKey of dedupedKeys) {
+        const index = childrenToAdd.lastIndexOf(childKey);
+
+        //First, check if entered child exists
+        try { 
+            childProvenance = await getProvenance(childKey);
+        } catch(error) {
+            childrenToAdd.splice(index, 1); // remove the child key from the list
+            description += `\nError: Entered child key does not exist.`;
+        }
+
+        // If entered child exist, check if it has a parent or is already a descendant of this device
+        if(childProvenance) {
+            const childRecord = childProvenance[0].record;
+            
+            if (childRecord.hasParent) {
+                description += `\nError: Entered child key already has a container.`;
+                childrenToAdd.splice(index, 1);
+            } else {
+                const descendants = await getAllDescendants(childKey);
+                if (descendants.includes(deviceKey)) {
+                    description += `\nError: Child device could not be added.`;
+                    childrenToAdd.splice(index, 1);
+                } else {
+                    // Add the parent to the child.
+                    await postProvenance(childKey,
+                        {
+                            blobType: 'deviceRecord',
+                            description: "Added parent",
+                            tags: [],
+                            children_key: [],
+                            hasParent: true,
+                        },
+                        attachments || []
+                    )
+                }
+            }
+        }                        
+    }
+    // this.childKeys = childrenToAdd;
+    return  ;
 }
