@@ -1,36 +1,65 @@
-name: Deploy to Production
+name: Deploy frontend to production
 
 # Manual deployment trigger
 on:
   workflow_dispatch:
+    inputs:
+      BUMP_VERSION:
+        type: choice
+        description: "Bump version, eg. 'major', 'minor', or 'patch'"
+        required: true
+        options:
+          - 'major'
+          - 'minor'
+          - 'patch'
+        default: 'patch'
 
 env:
-  NODE_VERSION: '18.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
-  FRONTEND_URL: https://www.gosqas.org                  # set this to the frontend URL (for QR code generation)
-  STATIC_APP_NAME: gdt-prod-frontend                    # set this to the name of the frontend app on Azure Static Web Apps
+  NODE_VERSION: 18
+  APP_ENVIRONMENT: production
+  BACKEND_URL: https://gdtprodbackend.azurewebsites.net
+  FRONTEND_URL: https://gosqas.org
+  BUILD_ARTIFACT_NAME: 'gosqas-fe'
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Use Node.js 18
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4.0.2
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
       - name: Checkout
         uses: actions/checkout@v4.1.7
+        with:
+          fetch-depth: '0'
+      - name: Bump version and push tag
+        id: bump_version
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          DEFAULT_BUMP: ${{ github.event.inputs.BUMP_VERSION }}
       - name: build frontend
         working-directory: packages/frontend
+        env:
+          APP_VERSION: ${{ steps.bump_version.outputs.new_tag }}
         run: |
           npm ci
           npx nuxi build --preset=azure
-      - name: deploy frontend
-        if: github.ref == 'refs/heads/main'
-        working-directory: ./packages/frontend
-        run: |
-          npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --app-name=${{ env.STATIC_APP_NAME }} --env production --deployment-token  ${{ secrets.AZURE_SWA_DEPLOYMENT_TOKEN }}
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.3.3
         with:
-          name: packages
+          name: ${{ env.BUILD_ARTIFACT_NAME }}-${{ steps.bump_version.outputs.new_tag }}
           path: packages/frontend/.output/**
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      id: download
+      with:
+        name: ${{ env.BUILD_ARTIFACT_NAME }}-${{ needs.build.outputs.new_tag }}
+    # TODO: deploy to Azure Static Web Apps
+    
