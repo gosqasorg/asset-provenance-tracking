@@ -52,6 +52,7 @@
 
         <div class="content">
             <slot/>
+            <NuxtSnackbar />
         </div>
         <!-- Footer Section -->
 
