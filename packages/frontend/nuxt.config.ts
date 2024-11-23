@@ -34,7 +34,6 @@ export default defineNuxtConfig({
   modules: ['@nuxt/test-utils/module', 'nuxt-snackbar'],
   snackbar: {
     bottom: true,
-    right: true,
     duration: 5000
   },
   compatibilityDate: '2024-11-12'
