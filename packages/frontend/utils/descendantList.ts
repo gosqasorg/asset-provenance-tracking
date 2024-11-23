@@ -7,7 +7,6 @@ import type { Provenance } from '~/utils/types';
 
 // Get all children given a key. Calls API.
 export async function getChildrenKeys(key: string) {
-    console.log("Getting children keys for key: ", key);
     const response = await getProvenance(key);
     return getChildKeys(response);
 }
@@ -60,7 +59,6 @@ export async function addChildKeys(deviceKey: string, childKeys: string[], descr
     // 1 is used because the deviceKey is already added (TODO: consider creating that here).
 
     if (!childKeys || childKeys.length == 0) {
-        console.log("No child keys to add.");
         return;
     }
 

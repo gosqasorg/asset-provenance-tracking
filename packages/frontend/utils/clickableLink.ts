@@ -27,7 +27,6 @@ export default function clickableLink(description: string)  {
         if (words[i].match(regEx)) { //Checks if there are links that start with https
             // Wrap the word with <a> tag
             words[i] = `<a href="${words[i]}" target="_blank">${words[i]}</a>`;
-            console.log("successful match");
         }
     }
 
