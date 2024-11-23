@@ -49,6 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </h5>
         
         <button @click="successMessage" class="btn btn-primary">Show Success Message</button>
+        <button @click="errorMessage" class="btn btn-primary">Show Error Message</button>
  
     </div>
  </template>
@@ -73,6 +74,12 @@ export default {
         successMessage() {
             this.$snackbar.add({
                 type: 'success',
+                text: 'This is a snackbar message'
+            })
+        },
+        errorMessage() {
+            this.$snackbar.add({
+                type: 'error',
                 text: 'This is a snackbar message'
             })
         }

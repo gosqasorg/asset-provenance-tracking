@@ -47,17 +47,22 @@ export default {
     methods: {
         async fetchData() {
             try {
-                const response = await getStatistics();
-                return response;
+                return await getStatistics();
             } catch (error) {
-                console.log(error)
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error fetching data ${error}`
+                });
             }
         },
     },
     async mounted(){
         const pairs = await this.fetchData();
         if (!pairs) {
-            console.log("erorr fetching data");
+            this.$snackbar.add({
+                    type: 'error',
+                    text: `Error fetching data ${error}`
+                });
             return;
         }  else {
             pairs.sort( (a,b) => {
