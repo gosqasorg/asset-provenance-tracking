@@ -26,8 +26,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <h5 class="text-iris">Create New Record Entry</h5>
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" />
-        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Group Key (optional)"/>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeys" placeholder="Contained Record Keys (optional, separated with a comma)"/>
+        <div v-if="isGroup">            
+            <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeys" placeholder="Group Record Keys (optional, separated with a comma)"/>
+        </div>
+        <div v-else>
+            <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey" placeholder="Group Key (optional)"/>
+        </div>
+
         <div>
             <span v-for="(childkey1, index) in childKeys" :key="childkey1">
                 {{ childkey1 }}{{ index !== childKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
@@ -42,6 +47,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
+        <h5 class="text-iris p-1 mt-0" v-if="isGroup">
+            <input type="checkbox" class="form-check-input" id="notify-all" /> Notify all Children?
+        </h5>
     </div>
     <div class="d-grid" id="submit-button">
         <button-component buttonText="Create Record Entry" type="submit" />
@@ -52,7 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { addChildKeys, getAllDescendants } from '~/utils/descendantList';
+import { addChildKeys } from '~/utils/descendantList';
 
 
 export default {
@@ -62,9 +70,8 @@ export default {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
-            containerKey: '',
+            groupKey: '',
             childKeys: [] as string[],
-            hasParent: this.isContainer ? false : true,
             isReportingKey: false,
         }
     },
@@ -82,11 +89,16 @@ export default {
         },
     },
     computed: {
-    uniqueChildrenKeys() {
-        const uniqueValues = [...new Set(this.childKeys)];
-        return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
-    }
-},
+        uniqueChildrenKeys() {
+            const uniqueValues = [...new Set(this.childKeys)];
+            return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
+        },
+        isGroup(): boolean {
+            // children_key is "" if it is created as a record or [] if it is created as a group
+            // The Boolean constructor returns false for "" and true for []
+            return Boolean(this.deviceRecord?.children_key);
+        },
+    },
     methods: {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
@@ -102,9 +114,8 @@ export default {
             this.description = '';
             this.pictures = null;
             this.tags = [];
-            this.containerKey = '';
+            this.groupKey = '';
             this.childKeys = [];
-            this.hasParent = false;
             this.isReportingKey = false;
         },
 
@@ -124,6 +135,7 @@ export default {
 
         },
         async submitRecord() {
+            // Get a refreshed copy of the record
             const response = await getProvenance(this.recordKey);
             
             if (!response) {
@@ -135,36 +147,35 @@ export default {
             }
 
             let local_deviceRecord = response[0].record;
-            this.hasParent = local_deviceRecord.hasParent;
+            const hasParent = local_deviceRecord.hasParent as boolean;
             this.isReportingKey = local_deviceRecord.isReportingKey;
             let descendantsList = await getChildrenKeys(this.recordKey);
 
-            // Add a group key to the record. TODO: hide this as needed.
-            // Here we post provenance if a container (parent) key was entered
-            if (this.containerKey != '') {
-
-                if (this.hasParent) {
+            //here we post provenance if a container (parent) key was entered
+            if (this.groupKey !== '') {
+                if (hasParent) {
                     this.$snackbar.add({
                         type: 'error',
                         text: "Can't add group because this record already belongs to a group"
-                    })
+                    });
+                    this.description = this.description + "\nError: Container could not be added.";
+
                 } else {
                     // Check if the key is a child of the record.
-                    if (descendantsList.indexOf(this.containerKey, 0) > -1) {
+                    if (descendantsList.indexOf(this.groupKey, 0) > -1) {
                         this.$snackbar.add({
                             type: 'error',
                             text: "Can't add group because it is a child of the record"
                         })
+                        this.description = this.description + `\nError: Group could not be added.`;
                     } else{
-                        await postProvenance(this.containerKey, {
+                        await postProvenance(this.groupKey, {
                             blobType: 'deviceRecord',
                             description: this.description, // keep the same description?
                             tags: [],
                             children_key: [this.recordKey],
                             hasParent: true,
                         }, this.pictures || [])
-    
-                        this.hasParent = true;
                     }
                 }
             }
@@ -208,7 +219,7 @@ export default {
                         description: this.description,
                         tags: this.tags,
                         children_key: this.childKeys,
-                        hasParent: this.hasParent,
+                        hasParent: hasParent,
                 }, this.pictures || []);
                 
                 // Refresh CreateRecord component
