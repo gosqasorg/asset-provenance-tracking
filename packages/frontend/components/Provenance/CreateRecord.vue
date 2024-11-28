@@ -48,7 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
         <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-            <input type="checkbox" class="form-check-input" id="notify-all" /> Notify all Children?
+            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> Notify all Children?
         </h5>
     </div>
     <div class="d-grid" id="submit-button">
@@ -73,6 +73,7 @@ export default {
             groupKey: '',
             childKeys: [] as string[],
             isReportingKey: false,
+            notifyAll: false,
         }
     },
 
@@ -117,6 +118,7 @@ export default {
             this.groupKey = '';
             this.childKeys = [];
             this.isReportingKey = false;
+            this.notifyAll = false;
         },
 
         async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
@@ -187,7 +189,7 @@ export default {
             const recall = this.tags.indexOf("recall", 0);        
 
             // "recall" is being added....
-            if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
+            if (recall > -1 || this.notifyAll) {
                 let reason = ""
                 if (recall > -1) { 
                     reason = "Recalled by Admin Key";
