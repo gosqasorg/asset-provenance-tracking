@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             {{ new Date(report.timestamp) }}
             </div>
             <div style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
-                <span v-html="clickableLink(report.record.description)"></span>
+                <span v-html="clickableLink(report.record?.description)"></span>
             </div>
             <div class="mb-1 tag-container">
                 <span class="tag" v-for="tag in report.record.tags" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'">
