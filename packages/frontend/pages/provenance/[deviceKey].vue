@@ -120,6 +120,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <p>Record key not found.</p>
     </div>
   </div>
+  <div v-else>
+      <p>Loading... please wait.</p>
+    </div>
 </template>
 
 <script lang="ts">
