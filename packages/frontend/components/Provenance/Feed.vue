@@ -59,7 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script>
-import { getProvenance, getAttachment } from '~/services/azureFuncs';
+import { getAttachment } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { textColorForTag, getColorForTag } from '~/utils/colorTag';
 
@@ -81,7 +81,6 @@ export default {
         };
     },
     mounted() {
-        EventBus.on('feedRefresh', this.refreshPage);
         this.refreshPage();
     },
     beforeDestroy() {
@@ -97,8 +96,8 @@ export default {
 
                     // Create object URLs for attachments and include filenames
                     const urls = attachments.map(attachment => ({
-                    url: URL.createObjectURL(attachment.blob),
-                    fileName: attachment.fileName
+                        url: URL.createObjectURL(attachment.blob),
+                        fileName: attachment.fileName
                     }));
 
                     this.attachmentURLs[index.toString()] = urls;
@@ -140,3 +139,4 @@ export default {
   font-size: 14px;
 }
 </style>
+    

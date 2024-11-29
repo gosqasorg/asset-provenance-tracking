@@ -154,6 +154,23 @@ export default {
     }},
     async mounted() {
       try {
+        this.addScrollListener();
+
+        EventBus.on('feedRefresh', this.refreshFeed);
+        
+        this.refreshFeed();
+      } catch (error) {
+          this.isLoading = false;
+          this.recordKeyFound = false;
+          this.hasReportingKey = false;
+          console.log(error)
+      }
+    },
+    beforeDestroy() {
+        EventBus.off('feedRefresh', this.refreshFeed);
+    },
+    methods: {
+      addScrollListener() {
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
           for(let num in headers) {
@@ -168,6 +185,12 @@ export default {
             }
           }
         });
+      },
+      async refreshFeed() {
+        console.log("Refreshing feed...");
+        this.isLoading = true;
+        this.recordKeyFound = false;
+        this.hasReportingKey = false;
 
         const route = useRoute();
         this._recordKey = route.params.deviceKey as string;
@@ -187,7 +210,7 @@ export default {
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
         
         this.isLoading = false;
-
+        
         // This functionality could be pushed into a component...
         this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
         
@@ -205,15 +228,7 @@ export default {
         if ((this.childKeys?.length > 0) || this.hasReportingKey) {
           headers.push({ id: "child-keys", name: "Child keys" });
         }
-      } catch (error) {
-          this.isLoading = false;
-          this.recordKeyFound = false;
-          this.hasReportingKey = false;
-          this.$snackbar.add({
-            type: 'error',
-            text: `Error fetching provenance record ${error}`
-          });
-      }
+      },
     }
 };
 
