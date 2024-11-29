@@ -27,15 +27,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" />
         <div v-if="isGroup">            
-            <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeys" placeholder="Group Record Keys (optional, separated with a comma)"/>
+            <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText" placeholder="Group Record Keys (optional, separated with a comma)"/>
         </div>
         <div v-else>
             <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey" placeholder="Group Key (optional)"/>
         </div>
 
         <div>
-            <span v-for="(childkey1, index) in childKeys" :key="childkey1">
-                {{ childkey1 }}{{ index !== childKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+            <span v-for="(childkey1, index) in newChildKeys" :key="childkey1">
+                {{ childkey1 }}{{ index !== newChildKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
         <div>
@@ -47,9 +47,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
-        <h5 class="text-iris p-1 mt-0" v-if="isGroup">
+        <!-- <h5 class="text-iris p-1 mt-0" v-if="isGroup">
             <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> Notify all Children?
-        </h5>
+        </h5> -->
     </div>
     <div class="d-grid" id="submit-button">
         <button-component buttonText="Create Record Entry" type="submit" />
@@ -60,23 +60,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { addChildKeys } from '~/utils/descendantList';
-
+import { addChildKeys, addToGroup, notifyChildren } from '~/utils/descendantList';
+import { validateKey } from '~/utils/keyFuncs';
 
 export default {
-
     data() {
         return {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
             groupKey: '',
-            childKeys: [] as string[],
-            isReportingKey: false,
+            childKeyText: '',
+            newChildKeys: [] as string[],
             notifyAll: false,
         }
     },
-
     props: {
         recordKey: {
             type: String,
@@ -91,7 +89,7 @@ export default {
     },
     computed: {
         uniqueChildrenKeys() {
-            const uniqueValues = [...new Set(this.childKeys)];
+            const uniqueValues = [...new Set(this.newChildKeys)];
             return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
         },
         isGroup(): boolean {
@@ -116,31 +114,15 @@ export default {
             this.pictures = null;
             this.tags = [];
             this.groupKey = '';
-            this.childKeys = [];
-            this.isReportingKey = false;
+            this.newChildKeys = [];
             this.notifyAll = false;
         },
-
-        async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
-
-            for (const key of childrenkeys) {
-                if (key != "" && key != "undefined") {
-                    postProvenance(key, {
-                        blobType: 'deviceRecord',
-                        description: recallReason,
-                        children_key: '',
-                        tags: tags,
-                    }, this.pictures || [])
-                }
-            }
-
-
-        },
         async submitRecord() {
-            // Get a refreshed copy of the record
-            const response = await getProvenance(this.recordKey);
+            // Get a refreshed copy of the records
+            const records = await getProvenance(this.recordKey);
+            console.log("Exusting records", records);
             
-            if (!response) {
+            if (!records) {
                 this.$snackbar.add({
                     type: 'error',
                     text: 'No provenance record found'
@@ -148,81 +130,55 @@ export default {
                 return;
             }
 
-            let local_deviceRecord = response[0].record;
-            const hasParent = local_deviceRecord.hasParent as boolean;
-            this.isReportingKey = local_deviceRecord.isReportingKey;
-            let descendantsList = await getChildrenKeys(this.recordKey);
+            // User wants to add this record to an existing group.
+            if (validateKey(this.groupKey)) {
+                try {
+                    await addToGroup(this.groupKey, records);
+                } catch (error) {
+                    console.error('Error adding to group:', error);
+                }
+            } else {
+                console.log("Group key is invalid. Not adding to group.");
+            }
 
-            //here we post provenance if a container (parent) key was entered
-            if (this.groupKey !== '') {
-                if (hasParent) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: "Can't add group because this record already belongs to a group"
-                    });
-                    this.description = this.description + "\nError: Container could not be added.";
-
-                } else {
-                    // Check if the key is a child of the record.
-                    if (descendantsList.indexOf(this.groupKey, 0) > -1) {
-                        this.$snackbar.add({
-                            type: 'error',
-                            text: "Can't add group because it is a child of the record"
-                        })
-                        this.description = this.description + `\nError: Group could not be added.`;
-                    } else{
-                        await postProvenance(this.groupKey, {
-                            blobType: 'deviceRecord',
-                            description: this.description, // keep the same description?
-                            tags: [],
-                            children_key: [this.recordKey],
-                            hasParent: true,
-                        }, this.pictures || [])
+            // The record already is a group - add the child keys.
+            try {
+                if (this.childKeyText.length > 0) {
+                    this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim());
+                    for (const childKey of this.newChildKeys) {
+                        if (!validateKey(childKey)) {
+                            console.warn('Invalid child key:', childKey);
+                            // Remove the invalid key from the list
+                            this.newChildKeys = this.newChildKeys.filter(key => key !== childKey);
+                        }
+                    }
+                    
+                    if (this.newChildKeys.length > 0) {
+                        console.log("Adding child keys...", this.newChildKeys);
+                        await addChildKeys(records, this.newChildKeys, []);
+                    } else {
+                        console.warn("No valid child keys to add.");
                     }
                 }
+            } catch (error) {
+                console.error('Error adding child keys:', error);
             }
 
-            if (this.childKeys) {
-                await addChildKeys(this.recordKey, this.childKeys, this.description || '', []);
-            }
+            // Notify children (update their records) depending on the tags
+            notifyChildren(records, this.tags);
 
-            const recall = this.tags.indexOf("recall", 0);        
-
-            // "recall" is being added....
-            if (recall > -1 || this.notifyAll) {
-                let reason = ""
-                if (recall > -1) { 
-                    reason = "Recalled by Admin Key";
-                } else { 
-                    reason = this.description; 
-                    this.tags = (this.tags).concat(['notify_all']);
-                }
-
-                if (this.isReportingKey) {
-                    // reporting keys do not have the ability to recall
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: "Reporting keys cannot issue recalls"
-                    })
-                } else {
-                    await this.messageChildren(descendantsList, reason, this.tags)                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: "Successfully issued recall to child records"
-                    })
-                }
-                
-            }
-                        
-            // Here we post the povenance itself... 
+            // Append the record to the records.
             try {
-                await postProvenance(this.recordKey, {
-                        blobType: 'deviceRecord',
-                        description: this.description,
-                        tags: this.tags,
-                        children_key: this.childKeys,
-                        hasParent: hasParent,
-                }, this.pictures || []);
+                console.log("description", this.description);
+                const record = {
+                    blobType: 'deviceRecord',
+                    description: this.description,
+                    tags: this.tags,
+                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+                };
+                console.log("Posting record...", this.recordKey);
+
+                await postProvenance(this.recordKey, record, this.pictures || []);
                 
                 // Refresh CreateRecord component
                 this.refresh();
@@ -238,7 +194,7 @@ export default {
         },
         async submitForm() {
             await this.submitRecord()
-            window.location.reload();
+            window.location.reload(); // TODO: use the event bus to refresh the feed
         },
     }
 
