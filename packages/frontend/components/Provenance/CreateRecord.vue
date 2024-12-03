@@ -42,9 +42,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
-        <h5 class="text-iris p-1 mt-0" v-if="!hasParent"> <!--This checks whether it is a container or device and decides whether or not to display this.-->
-            <input type="checkbox" class="form-check-input" id="notify-all" /> Notify all Children?
-        </h5>
     </div>
     <div class="d-grid" id="submit-button">
         <button-component buttonText="Create Record Entry" type="submit" />
