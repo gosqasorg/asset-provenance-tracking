@@ -104,7 +104,6 @@ export default {
             const deviceKey = route.params.deviceKey as string;
             const response = await getProvenance(deviceKey);
             deviceRecord = response[response.length - 1].record;
-            console.log(deviceRecord);
             this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
             // We will remove the reportingKey, because although it is a child,
@@ -117,7 +116,10 @@ export default {
             }
             this.childKeys = deviceRecord.children_key;
         } catch (error) {
-            console.log(error)
+            this.$snackbar.add({
+                type: 'error',
+                text: 'No record found'
+            });
         }
     }
 };

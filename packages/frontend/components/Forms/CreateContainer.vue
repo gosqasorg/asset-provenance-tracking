@@ -155,24 +155,28 @@ export default {
                 reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
                 let tag_set = (this.tags).concat(['reportingkey']);
 
-                await  postProvenance(reportingKey, {
-                    blobType: 'deviceInitializer',
-                    deviceName: this.name,
-                    // Is this a proper description? Should it say "reporting key" or something?
-                    description: this.description,
-                    tags: tag_set,
-                    children_key: '',
-                    hasParent: true,
-                    isReportingKey: true,
-                }, this.pictures || [])
-                    .then(response => {
-                        // Handle the successful response here
-                        console.log('Create Reporting Key Successful:', response);
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
                     })
-                    .catch(error => {
-                        // Handle the error here
-                        console.error('Create Reporting Key Failed:', error);
-                    });
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
                 childrenDeviceList.push(reportingKey);
                 childrenDeviceName.push(name);
             }
@@ -192,29 +196,34 @@ export default {
                         childName = this.name + " #" + String(i + 1);
                     }
 
-                    await  postProvenance(childKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: childName,
-                        description: this.description,  // need to see if we want a special description when making a child
-                        tags:this.tags,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: false
-                    }, this.pictures || [])
-                        .then(response => {
-                            // Handle the successful response here
-                            console.log('Create Child Key Successful:', response);
+                    try {
+                        await postProvenance(childKey, {
+                            blobType: 'deviceInitializer',
+                            deviceName: childName,
+                            description: this.description,  // need to see if we want a special description when making a child
+                            tags:this.tags,
+                            children_key: '',
+                            hasParent: true,
+                            isReportingKey: false
+                        }, this.pictures || [])
+                        
+                        childrenDeviceList.push(childKey);
+                        childrenDeviceName.push(childName);
+                        
+                        this.$snackbar.add({
+                            type: 'success',
+                            text: 'Successfully created child key'
                         })
-                        .catch(error => {
-                            // Handle the error here
-                            console.error('Create Child Key Failed:', error);
-                        });
-                    childrenDeviceList.push(childKey);
-                    childrenDeviceName.push(childName);
+                    } catch (error) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Error creating child key: ${error}`
+                        })
+                    };                
                 }
             };
             try {
-                const response = await postProvenance(deviceKey, {
+                await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -226,16 +235,25 @@ export default {
                     isReportingKey: false
                 }, this.pictures || [])
                 
-                console.log('Succesfully created the group:', response);
+                this.$snackbar.add({
+                    type: 'success',
+                    text: 'Successfully created the group'
+                })
 
                 // Navigate to the new group page
                 const failure = await this.$router.push({ path: `/device/${deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
-                    console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`
+                    })
                 }
             } catch (error) {
-                console.error('Failed to create the group:', error);
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error creating the group: ${error}`
+                })
             }
         },
     }

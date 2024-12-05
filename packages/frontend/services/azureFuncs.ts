@@ -17,30 +17,21 @@
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
-    try {
-        if (!deviceKey || deviceKey.length === 0) {
-            throw new Error("No device key provided");
-        }
-        const baseUrl = useRuntimeConfig().public.baseUrl;
-        const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-            method: "GET",
-        });
-
-        if (response.status !== 200) {
-            throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
-        }
-        return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
-    } catch (error) {
-        // probably we didn't find the key...
-        console.log(`Key not found: ${deviceKey}.`);
-        console.log(error);
-        throw error;
+    if (!deviceKey || deviceKey.length === 0) {
+        throw new Error("No device key provided");
     }
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+        method: "GET",
+    });
+
+    if (response.status !== 200) {
+        throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+    }
+    return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
 }
 
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
-//    const baseUrl = useRuntimeConfig().public.baseUrl;
-    try {
     const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
       method: "GET",
     });
@@ -58,14 +49,7 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
         fileName = await nameResponse.text();
     }
     return { blob, fileName };
-} catch (error) {
-    console.error('Error occurred during getAttachment request:', error);
-    throw error; // re-throw the error if you want to handle it further up the call stack
-  }
-   
-      
 }
-
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
     if (!deviceKey) {
