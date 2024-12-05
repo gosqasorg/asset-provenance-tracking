@@ -10,10 +10,7 @@ describe('descendantList', () => {
 
     it('should return an list of child keys', async () => {
         const keys = getChildKeys(fakeProvenanceWithChildren)
-        const expected = [
-            ["childkey1"],
-            ["childkey2", "childkey3"]
-        ];
+        const expected = ["childkey1", "childkey2", "childkey3"];
         expect(keys).toEqual(expected);
     });
 });

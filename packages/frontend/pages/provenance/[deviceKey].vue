@@ -75,22 +75,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
-              <div>Record Key: {{ recordKey }}</div>
+              <div>Record Key: {{ _recordKey }}</div>
               <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
             </section>
 
             <section ref= "section" id="priority-notices">
-              <ProvenancePriorityNotices :recordKey="recordKey" :provenance="provenance"/>
+              <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
             </section>
 
             <section id="recent">
-              <ProvenanceFeed :recordKey="recordKey" :provenance="provenanceNoRecord"/>
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/>
             </section>
             <section id="device-creation">
-              <ProvenanceFeed :recordKey="recordKey" :provenance="deviceCreationRecord"/>
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord"/>
             </section>
             <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="recordKey"/>
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey"/>
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
@@ -100,7 +100,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div> Child Keys:
                   <div> <KeyList v-bind:keys="childKeys"/> </div>
                 </div>    
-                <CsvFile :recordKey="recordKey"></CsvFile>
+                <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
             </section>
             
@@ -124,7 +124,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { getProvenance} from '~/services/azureFuncs';
-import { ref, onMounted, type HtmlHTMLAttributes } from 'vue'
+import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
 let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
@@ -150,7 +150,7 @@ export default {
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
-      recordKey: "",
+      _recordKey: "",
     }},
     async mounted() {
       try {
@@ -170,8 +170,8 @@ export default {
         });
 
         const route = useRoute();
-        this.recordKey = route.params.deviceKey as string;
-        const provenance = await getProvenance(this.recordKey);
+        this._recordKey = route.params.deviceKey as string;
+        const provenance = await getProvenance(this._recordKey);
 
         if (!provenance) {
           this.$snackbar.add({

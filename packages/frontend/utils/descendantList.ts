@@ -39,7 +39,7 @@ export function getChildKeys(provenance: Provenance[]): string[] {
     let childKeys: string[] = []
 
     for (const p of provenance) {
-        const child = p.record.children_key;
+        const child = p.record.children_key; // Can be "" if not a group or string[] if a group
         // child may be undefined or an empty array
         if (!child || !child.length) {
             continue;
