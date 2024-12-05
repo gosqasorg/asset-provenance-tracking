@@ -127,7 +127,10 @@ export default {
             const response = await getProvenance(this.recordKey);
             
             if (!response) {
-                console.log("No provenance record found.")
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'No provenance record found'
+                })
                 return;
             }
 
@@ -136,22 +139,22 @@ export default {
             this.isReportingKey = local_deviceRecord.isReportingKey;
             let descendantsList = await getChildrenKeys(this.recordKey);
 
-
             // Add a group key to the record. TODO: hide this as needed.
-            //here we post provenance if a container (parent) key was entered
+            // Here we post provenance if a container (parent) key was entered
             if (this.containerKey != '') {
 
                 if (this.hasParent) {
-                    console.log("This record already has a group.");
-                    this.description = this.description + "\nError: Container could not be added.";
-
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: "Can't add group because this record already belongs to a group"
+                    })
                 } else {
-                    // need to check if this parent is NOT a descendant of the record already
-                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among descendants
-                        // container is INDEED a descendant of this record
-                        // therefore, this relationship shouldn't be created
-                        console.log("This group is a descendant of this record.");
-                        this.description = this.description + `\nError: Group could not be added.`;
+                    // Check if the key is a child of the record.
+                    if (descendantsList.indexOf(this.containerKey, 0) > -1) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: "Can't add group because it is a child of the record"
+                        })
                     } else{
                         await postProvenance(this.containerKey, {
                             blobType: 'deviceRecord',
@@ -184,16 +187,21 @@ export default {
 
                 if (this.isReportingKey) {
                     // reporting keys do not have the ability to recall
-                    console.log("Action failed. This is a reporting key.");
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: "Reporting keys cannot issue recalls"
+                    })
                 } else {
                     await this.messageChildren(descendantsList, reason, this.tags)                    
-                    console.log("Finished recalling/informing");
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: "Successfully issued recall to child records"
+                    })
                 }
                 
             }
                         
             // Here we post the povenance itself... 
-            console.log("Posting provenance...", this.recordKey);
             try {
                 await postProvenance(this.recordKey, {
                         blobType: 'deviceRecord',
@@ -209,7 +217,10 @@ export default {
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
             } catch (error) {        
-                console.error('Error POSTing provenance:', error);
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error creating record: ${error}`
+                })
             }
         },
         async submitForm() {

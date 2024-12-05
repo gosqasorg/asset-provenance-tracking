@@ -174,7 +174,10 @@ export default {
         const provenance = await getProvenance(this.recordKey);
 
         if (!provenance) {
-          console.log("No provenance record found.")
+          this.$snackbar.add({
+            type: 'error',
+            text: 'No provenance record found'
+          });
           return;
         }
 
@@ -206,7 +209,10 @@ export default {
           this.isLoading = false;
           this.recordKeyFound = false;
           this.hasReportingKey = false;
-          console.log(error)
+          this.$snackbar.add({
+            type: 'error',
+            text: `Error fetching provenance record ${error}`
+          });
       }
     }
 };
