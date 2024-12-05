@@ -199,11 +199,12 @@ export default {
         this._recordKey = route.params.deviceKey as string;
         const provenance = await getProvenance(this._recordKey);
 
-        if (!provenance) {
+        if (!provenance || provenance.length === 0) {
           this.$snackbar.add({
             type: 'error',
             text: 'No provenance record found'
           });
+          this.isLoading = false;
           return;
         }
 
