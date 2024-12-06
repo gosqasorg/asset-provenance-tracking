@@ -31,3 +31,8 @@ function encodeDeviceKey(key: Uint8Array): string {
 export async function makeEncodedDeviceKey(): Promise<string> {
         return encodeDeviceKey(await makeDeviceKey());
 }
+
+export function validateKey(key: string): boolean {
+  const alphanumericRegex = /^[a-zA-Z0-9]+$/;
+  return typeof key === 'string' && key.length === 22 && alphanumericRegex.test(key);
+}

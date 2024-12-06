@@ -120,6 +120,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <p>Record key not found.</p>
     </div>
   </div>
+  <div v-else>
+      <p>Loading... please wait.</p>
+    </div>
 </template>
 
 <script lang="ts">
@@ -154,6 +157,23 @@ export default {
     }},
     async mounted() {
       try {
+        this.addScrollListener();
+
+        EventBus.on('feedRefresh', this.refreshFeed);
+        
+        this.refreshFeed();
+      } catch (error) {
+          this.isLoading = false;
+          this.recordKeyFound = false;
+          this.hasReportingKey = false;
+          console.log(error)
+      }
+    },
+    beforeDestroy() {
+        EventBus.off('feedRefresh', this.refreshFeed);
+    },
+    methods: {
+      addScrollListener() {
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
           for(let num in headers) {
@@ -168,16 +188,23 @@ export default {
             }
           }
         });
+      },
+      async refreshFeed() {
+        console.log("Refreshing feed...");
+        this.isLoading = true;
+        this.recordKeyFound = false;
+        this.hasReportingKey = false;
 
         const route = useRoute();
         this._recordKey = route.params.deviceKey as string;
         const provenance = await getProvenance(this._recordKey);
 
-        if (!provenance) {
+        if (!provenance || provenance.length === 0) {
           this.$snackbar.add({
             type: 'error',
             text: 'No provenance record found'
           });
+          this.isLoading = false;
           return;
         }
 
@@ -187,7 +214,7 @@ export default {
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
         
         this.isLoading = false;
-
+        
         // This functionality could be pushed into a component...
         this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
         
@@ -205,15 +232,7 @@ export default {
         if ((this.childKeys?.length > 0) || this.hasReportingKey) {
           headers.push({ id: "child-keys", name: "Child keys" });
         }
-      } catch (error) {
-          this.isLoading = false;
-          this.recordKeyFound = false;
-          this.hasReportingKey = false;
-          this.$snackbar.add({
-            type: 'error',
-            text: `Error fetching provenance record ${error}`
-          });
-      }
+      },
     }
 };
 

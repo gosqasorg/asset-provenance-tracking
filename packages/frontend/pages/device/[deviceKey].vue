@@ -30,12 +30,8 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
             <div class="my-2"><span v-html="clickableLink(deviceRecord.description)"></span></div>
         
             <div> 
-
-                <!-- Didn't use button componenet here, couldn't get the link to work with it -->
-
-                <button class="btn mt-1 bg-iris text-white me-4 px-4"><a :href="`/provenance/${route.params.deviceKey}`" style="color: white; text-decoration: none">View Provenance Records</a></button>
+                <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View Provenance Records</button>
                 <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
-
             </div>
 
         </div>
@@ -97,6 +93,10 @@ export default {
             const qrCodeComponent = this.$refs.qrcode_component as any;
             qrCodeComponent?.downloadQRCode()
         },
+        viewRecord() {
+            const route = useRoute();
+            this.$router.push(`/provenance/${route.params.deviceKey}`);
+        }
     },
     async mounted() {
         try {
