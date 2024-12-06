@@ -13,54 +13,72 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// const globalBaseUrl = 'https://gosqasbe.azurewebsites.net/api';
+import { validateKey } from "~/utils/keyFuncs";
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
-    if (!deviceKey || deviceKey.length === 0) {
-        throw new Error("No device key provided");
-    }
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-        method: "GET",
-    });
+    try {
+        if (!validateKey(deviceKey)) {
+            throw new Error("Bad key provided");
+        }
+        
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+            method: "GET",
+        });
 
-    if (response.status !== 200) {
-        throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        if (response.status !== 200) {
+            throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        }
+        return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+    } catch (error) {
+        console.log(`Key not found: ${deviceKey}.`);
+        console.log(error);
+        throw error;
     }
-    return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
 }
 
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
-    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-      method: "GET",
-    });
+    try {
+        if (!validateKey(deviceKey)) {
+            throw new Error("Bad key provided.");
+        }
 
-    const blob = await response.blob();
+        const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+            method: "GET",
+        });
 
-    // Check for the attachment name
-    let fileName = response.headers.get('Attachment-Name');
-    // If the header is not present, fetch the attachment name
-    if(!fileName) {
-        // Fetch the attachment name
-        const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
-        method: "GET",
-    });
-        fileName = await nameResponse.text();
-    }
-    return { blob, fileName };
+        const blob = await response.blob();
+
+        // Check for the attachment name
+        let fileName = response.headers.get('Attachment-Name');
+        // If the header is not present, fetch the attachment name
+        if(!fileName) {
+            // Fetch the attachment name
+            const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+                method: "GET",
+            });
+            fileName = await nameResponse.text();
+        }
+        return { blob, fileName };
+    } catch (error) {
+        console.error('Error occurred during getAttachment request:', error);
+        throw error; // re-throw the error if you want to handle it further up the call stack
+    }      
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
-    if (!deviceKey) {
-        throw new Error("No device key provided.");
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
     }
+
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
     formData.append("provenanceRecord", JSON.stringify(record));
     for (const blob of attachments) {
         formData.append(blob.name, blob);
     }
+    
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",
         body: formData,
