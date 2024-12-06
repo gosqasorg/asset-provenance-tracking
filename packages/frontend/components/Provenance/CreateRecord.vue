@@ -120,9 +120,8 @@ export default {
         async submitRecord() {
             // Get a refreshed copy of the records
             const records = await getProvenance(this.recordKey);
-            console.log("Exusting records", records);
             
-            if (!records) {
+            if (!records || records.length === 0) {
                 this.$snackbar.add({
                     type: 'error',
                     text: 'No provenance record found'
@@ -131,14 +130,23 @@ export default {
             }
 
             // User wants to add this record to an existing group.
-            if (validateKey(this.groupKey)) {
-                try {
-                    await addToGroup(this.groupKey, records);
-                } catch (error) {
-                    console.error('Error adding to group:', error);
+            if (this.groupKey != '') {
+                if (validateKey(this.groupKey)) {
+                    try {
+                        await addToGroup(this.groupKey, records);
+                    } catch (error) {
+                        console.error('Error adding to group:', error);
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Error adding to group: ${error}`
+                        });
+                    }
+                } else {
+                    this.$snackbar.add({
+                        type: 'warning',
+                        text: 'Group key is invalid. Not adding to group.'
+                    });
                 }
-            } else {
-                console.log("Group key is invalid. Not adding to group.");
             }
 
             // The record already is a group - add the child keys.
@@ -147,7 +155,10 @@ export default {
                     this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim());
                     for (const childKey of this.newChildKeys) {
                         if (!validateKey(childKey)) {
-                            console.warn('Invalid child key:', childKey);
+                            this.$snackbar.add({
+                                type: 'warning',
+                                text: `Invalid child key: ${childKey}.`
+                            });
                             // Remove the invalid key from the list
                             this.newChildKeys = this.newChildKeys.filter(key => key !== childKey);
                         }
@@ -157,11 +168,17 @@ export default {
                         console.log("Adding child keys...", this.newChildKeys);
                         await addChildKeys(records, this.newChildKeys, []);
                     } else {
-                        console.warn("No valid child keys to add.");
+                        this.$snackbar.add({
+                            type: 'warning',
+                            text: `No valid child keys to add.`
+                        });
                     }
                 }
             } catch (error) {
-                console.error('Error adding child keys:', error);
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error adding child keys: ${error}`
+                });
             }
 
             // Notify children (update their records) depending on the tags
@@ -169,14 +186,12 @@ export default {
 
             // Append the record to the records.
             try {
-                console.log("description", this.description);
                 const record = {
                     blobType: 'deviceRecord',
                     description: this.description,
                     tags: this.tags,
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
-                console.log("Posting record...", this.recordKey);
 
                 await postProvenance(this.recordKey, record, this.pictures || []);
                 
@@ -189,7 +204,7 @@ export default {
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating record: ${error}`
-                })
+                });
             }
         },
     }
