@@ -44,7 +44,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  
  
         <div class="d-grid">
-            <ButtonComponent class="my-4 mb-0" buttonText="Create Record" type="submit" />
+            <ButtonComponent class="my-4 mb-0 submit-btn" buttonText="Create Record" type="submit" />
         </div>
     </form>
  </template>
@@ -118,10 +118,6 @@ export default {
         margin-right: auto;
 
     }
-    /* Style for the placeholder text */
-    .form-control::placeholder {
-    color: gray;
-    }
     
     #device-form > * {
         padding: 5px;
@@ -130,6 +126,7 @@ export default {
         flex-direction: column;
         width: 70%
     }
+
     #submit-button {
         display: block;
         margin-left: auto;

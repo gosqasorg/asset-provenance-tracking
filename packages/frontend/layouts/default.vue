@@ -1,6 +1,7 @@
 <template>
     <div class="root-div">
 
+        <!-- Mobile Menu -->
         <nav class="navbar navbar-expand-lg bg-frost">
             <div class="container-fluid" id="nav">
                 <a href="/" class="navbar-brand" >
@@ -23,24 +24,22 @@
                             <a class="nav-link" href="/about">About</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/how_it_works">How It Works</a>
+                            <a class="nav-link" href="/how-it-works">How It Works</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/data_privacy">Data & Privacy</a>
+                            <a class="nav-link" href="/data-privacy">Data & Privacy</a>
                         </li>
                         <div class="mobile-nav">
                             <li style="margin:10px 0px">
                                 <a class="mobile-link" href="https://github.com/gosqasorg/asset-provenance-tracking">GDT GitHub</a>
                             </li>
-                            <li style="margin:10px 0px 20px 0px">
-                                <a class="mobile-link" href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Terms and Conditions</a>
+                            <li class="button-spacing" style="margin:20px 0px 0px 0px">
+                                <a class="mobile-link" href="/terms_and_conditions">Terms and Conditions</a>
                             </li>
                         </div>
                         <span>
                             <ButtonComponent @click="trackingForm()" id="viewRecordButton" buttonText="View Record" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
-                            <div class="mobile-nav">
-                                    <ButtonComponent buttonText="Create Record" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px" style="font-size: 18px"></ButtonComponent>
-                            </div>
+                            <ButtonComponent class="mobile-nav" buttonText="Create Record" backgroundColor="#e6f6ff" onclick="window.location.href='/gdt'" color="#4e3681" padding="12px 16px" margin="20px 0px 0px 0px" style="font-size: 18px"></ButtonComponent>
                         </span>
                     </ul>
                     <div class="me-0 ms-auto" id="viewRecordDiv" style="display:none;">
@@ -53,39 +52,35 @@
         <div class="content">
             <slot/>
         </div>
-        <!-- Footer Section -->
 
+        <!-- Footer Section -->
         <footer class="footer footer-light bg-frost">
-            <div class="container custom-container">
-                <div class="row custom-row-position">
-                    <div class="col-md-4 text-md-start mb-3 mb-md-0 custom-logo">
-                        <a href="/">
-                            <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
-                        </a>
-                    </div>
-                    <div class="col-md-4 text-md-start custom-row-home">
+            <div class="container custom-row-position custom-container">
+                <div class="col-md-5 text-md-start mb-3 mb-md-0 custom-logo">
+                    <a href="/">
+                        <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
+                    </a>
+                </div>
+                <div class="row col-md-4 text-md-start">
+                    <div class="col-md-3">
                         <div class="row">
-                        <a href="/home" class="me-3">Home</a>
-                        <a href="/how_it_works" class="me-3">How It Works</a>
+                        <a href="/" class="me-3">Home</a>
+                        <a href="/how-it-works" class="me-3">How It Works</a>
                         <a href="https://github.com/gosqasorg/asset-provenance-tracking" class="me-3">GDT GitHub</a>
 
                         </div>
                     </div>
-                    <div class="col-md-4 text-md-start custom-row-about">
+                    <div class="col-md-2 text-md-start custom-row-about">
                         <div class="row">
                             <a href="/about" class="me-3">About</a>
-                            <a href="/data_privacy" class="me-3">Data & Privacy</a>
-                            <a href="https://docs.google.com/document/d/1CkJ3Tz7I6DO1TV4CgKxCUxyvJEqqtBEu/edit#heading=h.gjdgxs">Terms and Conditions</a>
+                            <a href="/data-privacy" class="me-3">Data & Privacy</a>
+                            <a href="/terms_and_conditions" class="me-3">Terms and Conditions</a>
                         </div>
                     </div>
                 </div>
-                
-                <div class="row custom-copy-right">
-                    <div class="mt-10">
-                    <p class="text-muted">© 2024 Global Open Source Quality Assurance System   |   Please review our <a href="">Terms and Conditions</a>.</p>
-                    <p class="text-muted">The purple hand logo and the GOSQAS are marks of the Global Open Source Quality Assurance System, all rights reserved. However, our software is open source software. </p> 
-                   </div>
             </div>
+            <div class="row custom-copy-right">
+                <p class="text-muted">© 2024 Global Open Source Quality Assurance System</p> 
             </div>
         </footer>
 
@@ -140,13 +135,6 @@ export default {
         flex: 1 0 auto;
     }
 
-    #logo {
-        width: 100%;
-        max-width: 25vw;
-        min-width: 262px;
-        height: auto;
-    }
-
     .navbar-collapse {
         top: 0;
         left: 0;
@@ -181,6 +169,13 @@ export default {
     .mobile-link:hover,
     .mobile-link.active {
         color: #4e3681;
+        font-weight: 600;
+    }
+
+    #button-toggler {
+        width: 100%;
+        max-width: 8vw;
+        height: auto;
     }
 
     #button-toggler[aria-expanded='true'] {
@@ -237,7 +232,14 @@ export default {
             padding: 20px 0px 0 0;            
         }
         
+        /* Make footer wrap */
+        .container { flex-wrap: wrap;  }
+        .custom-logo { flex-basis: 100%; }
     
+    }
+
+    .container {
+        display: flex;
     }
 
 
@@ -276,31 +278,45 @@ export default {
 
     /* Footer Styling */
     @media (max-width:420px) {
-        .custom-logo img {
-            max-width: 70%;
-            height: auto; /* Ensures the image maintains its aspect ratio */
-        }
         .custom-row-home, .custom-row-about {
             display: none; /* Hide the sections */
         }
         .text-muted {
             font-size: 7px; /* Smaller font size for the copyright text */
         }
-        .custom-copy-right {
-            position: relative; /* Allows the use of top and left properties for positioning */
-            top: -40px; /* Moves the element upwards */
-            left: -60px; /* Moves the element to the left */
-            width: 100%;
-            text-align: left; /* Aligns text to the left */
-            margin-top: 0;  /* Remove flexbox margins */
-            margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
-
-        }
         .custom-nav { /* mobile view */
             padding: 0px 7px 0px 20px;
             height: 101px;
         }
-    
+
+        /* Adjust mobile menu logo spacing when size is below 420px */
+        #logo {
+            width: 100%;
+            max-width: 58vw;
+            height: auto;
+        }
+
+        /* Change box sizes for the footer */
+        .col-md-4 {
+            width: 200px !important;
+        }
+
+        .col-md-5 {
+            margin-right: 5px !important;
+        }
+
+        .footer {
+            padding: 30px !important;
+        }
+    }
+
+    @media (min-width: 420px) {
+        #logo {
+            width: 100%;
+            max-width: 25vw;
+            min-width: 262px;
+            height: auto;
+        }
     }
 
     @media (min-width: 768px) { /* desktop view */
@@ -308,22 +324,20 @@ export default {
             padding: 0px 30px 0px 30px;
             height: 101px;
         }
-        
-    .custom-copy-right {
-            position: relative; /* Allows the use of top and left properties for positioning */
-            top: -30px; /* Moves the element upwards */
-            left: -60px; /* Moves the element to the left */
-            width: 100%;
-            text-align: left; /* Aligns text to the left */
-            margin-top: 0;  /* Remove flexbox margins */
-            margin-left: 0; /* Reset any margin issues */        /* Adjust this value to move it right */
+    }
 
-            }  
+    @media (max-width: 370px) {
+        /* Shrink the footer logo */
+        .custom-logo img {
+            max-width: 85%;
+            height: auto;
+        }
     }
 
     .footer {
         width: 100%;
         padding: 40px;
+        padding-bottom: 0px;
         display: flex;
         justify-content: space-between;
         flex-wrap: wrap;
@@ -342,38 +356,105 @@ export default {
         color: #666;
     }
 
-
-
     /* Shift the row slightly to the left */
     .custom-container {
-        padding-left: 0px; /* Remove padding to move content close to the left edge */
+        padding: 0px; /* Remove padding to move content closer to the side edges */
         margin-left: -15px;/* Adjust the padding to move the content more to the left */
         text-align: left; /* Ensure the content is left-aligned */
+        margin: 0px;
+        position: relative;
+
+        /* display: grid;
+        column-gap: 30px; */
+
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        max-width: 100%;
     }
+
+    .custom-logo {
+        flex: 2;
+        box-sizing: border-box;
+    }
+
     .custom-row-home {
         position: relative;
-        left: 80px; /* Move it to the right by 20px, adjust as necessary */
+        box-sizing: border-box;
+        flex: 1;
+        /*left: 160px; /* Move it to the right by 20px, adjust as necessary */
+        /* width: 250px; */
+    }
+
+    .custom-row-about {
+        position: relative;
+        box-sizing: border-box;
+        flex: 1;
+        /*left: 24%; /* Move it to the right by 20px, adjust as necessary */
+        display: inline-block;
+        /*width: 250px;*/
+    }
+
+    /* Logo */
+    .col-md-5 {
+        float: left;
+        width: 50%;
+        padding: 10px;
+        margin-right: 20px;
+        /* width: min-content; */
+        flex: 2 1 auto;  /* flex-grow, flex-shrink, flex-basis */
+    }
+
+    /* Links container */
+    .col-md-4 {
+        float: left;
+        width: 300px;
+        padding: 10px;
+        padding-top: 0px;
+
+        /* width: max-content; */
+        flex: 1 0 auto;  /* flex-grow, flex-shrink, flex-basis */
+    }
+
+    /* First col of links */
+    .col-md-3 {
+        padding: 10px;
+        width: 45%;
+        /* white-space: nowrap; */
+
+        /* width: max-content; */
+    }
+
+    /* Second col of links */
+    .col-md-2 {
+        padding: 10px;
+        width: 55%;
+        /* white-space: nowrap; */
+
+        /* width: max-content; */
     }
 
     .custom-copy-right {
-        display: flex;
-        justify-content: center;  /* Center horizontally */
-        align-items: center;      /* Center vertically */
-        text-align: center;       /* Ensures text is centered */
-        width: 100%;              /* Ensures the container spans the full width */
-        margin-top: 70px;  
-        margin-left: 100px;        /* Adjust this value to move it right */
-
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        margin-top: 50px;
+        margin-bottom: 25px;
     }
 
 
     /* Smaller copyright text */
     .text-muted {
-        font-size: 15px; /* Smaller font size for the copyright text */
-        
+        font-size: 16px; /* Smaller font size for the copyright text */
+        font-weight: 400;
+        line-height: 24px;
     }
 
-
+    @media (max-width: 398px) {
+        .button-spacing {
+            padding-bottom: 20px;
+        }
+    }
 
 
 </style>
