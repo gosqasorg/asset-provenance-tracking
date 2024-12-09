@@ -23,7 +23,11 @@ import type QRCodeStyling from 'qr-code-styling';
 
 export default {
     props: {
-        url: {
+        size: {
+            type: Number,
+            default: 300
+        },
+        recordKey: {
             type: String,
             required: true
         }
@@ -33,9 +37,9 @@ export default {
             qrCode: null as HTMLElement | null,
             qrCodeStyling: null as QRCodeStyling | null,
             options: {
-                width: 322,
-                height: 361,
-                data: this.url,
+                width: this.size,
+                height: this.size,
+                data: this.getQrCodeUrl(),
                 imageOptions: {
                     hideBackgroundDots: true,
                     imageSize: 0.2,
@@ -53,7 +57,7 @@ export default {
                 cornersDotOptions: {
                     type: 'square' as 'square',  // Cast to specific type
                     color: '#4e3681'  // Color of the dot corners
-                }
+                },
             }
         };
     },
@@ -64,22 +68,37 @@ export default {
 
         if (this.qrCode) {
             this.qrCodeStyling.append(this.qrCode);
+        } else {
+            console.error('QR Code element not found');
+        }
+
+        // Add event listener to download QR Code on click
+        const canvas = this.qrCode?.querySelector('canvas');
+        canvas?.addEventListener('click', () => {
+            this.downloadQRCode();
+        });
+        // Show a pointer cursor on hover to indicate the QR Code is clickable
+        if (canvas) {
+            canvas.style.cursor = 'pointer';
         }
     },
-    watch: {
-        url(newValue: string | undefined) {
-            if (newValue) {
-                this.options.data = newValue;
-                this.qrCodeStyling?.update(this.options);
-            }
+    computed: {
+        qrCodeUrl() {
+            this.getQrCodeUrl();
         }
     },
     methods: {
         downloadQRCode() {
             this.qrCodeStyling?.download({
-                name: 'vqr',
+                name: this.recordKey,
                 extension: 'png'
             });
+        },
+        getQrCodeUrl() {
+            const baseUrl = useRuntimeConfig().public.frontendUrl;
+            const qrUrl = `${baseUrl}/provenance/${this.recordKey}`;
+            console.log('qrUrl', qrUrl);
+            return qrUrl;
         }
     }
 }

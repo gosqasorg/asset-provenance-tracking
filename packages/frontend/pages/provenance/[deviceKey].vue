@@ -102,7 +102,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>    
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
-            </section><br>
+
+              <div>
+                <QRCode :size=200 :recordKey="_recordKey" ref="qrcode_component"/>
+              </div>
+            </section>
             
           </div>
           <!-- Spied element -->
