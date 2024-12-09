@@ -14,8 +14,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const route = useRoute()
-const deviceKey = route.params.deviceKey;
-const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceKey}`;
+const recordKey = route.params.deviceKey as string;
 </script>
 
 <template>
@@ -36,9 +35,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
 
         </div>
         <div class="col-sm-6 col-lg-3 mt-2">
-
-            <QRCode :url="qrCodeUrl" ref="qrcode_component"/>
-
+            <QRCode :size=322 :recordKey="recordKey" ref="qrcode_component"/>
         </div>
 
     </div>
@@ -122,7 +119,16 @@ export default {
             });
         }
     }
+    
 };
 
 
 </script>
+<style>
+#image-hover {
+
+}
+#image-hover:o {
+    color: gray;
+}
+</style>
