@@ -97,7 +97,7 @@ export default {
                 });
 
                 // Navigate to the new record page
-                const failure = await this.$router.push({ path: `/device/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({

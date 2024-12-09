@@ -94,7 +94,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
             <section id="child-keys">
               <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
+                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
               </div>
               <div v-if="(childKeys?.length > 0) || hasReportingKey ">
                 <div> Child Keys:
