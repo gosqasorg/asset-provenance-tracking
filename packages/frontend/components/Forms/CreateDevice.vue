@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <ButtonComponent class="my-4 mb-0 submit-btn" buttonText="Create Record" type="submit" />
         </div>
     </form>
- </template>
+</template>
 
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';

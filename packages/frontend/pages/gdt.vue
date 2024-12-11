@@ -21,9 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the landing page where you can create a new record to track
 -->
 <template>
-    <link href="https://fonts.google.com/specimen/Poppins" rel="stylesheet" type="text/css">
- 
- 
     <div class="container-md">
         <h1 class="my-4 text-iris fs-1">Global Distributed Tracking</h1>
  

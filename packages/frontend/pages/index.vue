@@ -31,8 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                             padding="18px 22px"></button-component>
                     </form>
                     <div style="margin-bottom: 20px; width: 60%; width: 230px;" >
-                        <button-component class="button" buttonText="Create Record" backgroundColor="#CCECFD" onclick="window.location.href='/gdt'"
-                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component>
+                        <RouterLink to="/gdt"><button-component class="button" buttonText="Create Record" backgroundColor="#CCECFD"
+                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
                     <div id="homeTrackAssetDiv" style="visibility: hidden;">
                         <TrackAsset inputWidth="75%"></TrackAsset>
@@ -51,8 +51,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <button-component class="button" buttonText="About Us" color="#322253" onclick="window.location.href='about'"
-                    backgroundColor="#ffffff00"></button-component>
+                <RouterLink to="/about"><button-component class="button" buttonText="About Us" color="#322253" backgroundColor="#ffffff00"></button-component></RouterLink>
             </div>
 
         </div> 
@@ -117,6 +116,7 @@ export default {
 }
 
 #first-row {
+    /* Set the hand background image on the homepage */
     background-image: url(../assets/images/hand-icon.png);
     background-repeat: no-repeat;
     background-position-x: 85%;

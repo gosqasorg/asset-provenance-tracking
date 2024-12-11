@@ -17,29 +17,28 @@
                 <div class="collapse navbar-collapse flex-column" id="main-nav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item mobile-nav">
-                            <a class="nav-link" href="/home">Home</a>
+                            <RouterLink to="/" class="nav-link">Home</RouterLink>
                         </li>
                         <li class="nav-item">
-
-                            <a class="nav-link" href="/about">About</a>
+                            <RouterLink to="/about" class="nav-link">About</RouterLink>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/how-it-works">How It Works</a>
+                            <RouterLink to="/how-it-works" class="nav-link">How it Works</RouterLink>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/data-privacy">Data & Privacy</a>
+                            <RouterLink to="/data-privacy" class="nav-link">Data & Privacy</RouterLink>
                         </li>
                         <div class="mobile-nav">
                             <li style="margin:10px 0px">
                                 <a class="mobile-link" href="https://github.com/gosqasorg/asset-provenance-tracking">GDT GitHub</a>
                             </li>
                             <li class="button-spacing" style="margin:20px 0px 0px 0px">
-                                <a class="mobile-link" href="/terms_and_conditions">Terms and Conditions</a>
+                                <RouterLink to="/terms_and_conditions" class="mobile-link">Terms and Conditions</RouterLink>
                             </li>
                         </div>
                         <span>
                             <ButtonComponent @click="trackingForm()" id="viewRecordButton" buttonText="View Record" padding="12px 16px" margin="0px 20px 0px 0px" style="font-size: 18px"></ButtonComponent>
-                            <ButtonComponent class="mobile-nav" buttonText="Create Record" backgroundColor="#e6f6ff" onclick="window.location.href='/gdt'" color="#4e3681" padding="12px 16px" margin="20px 0px 0px 0px" style="font-size: 18px"></ButtonComponent>
+                            <RouterLink to="/gdt"><ButtonComponent class="mobile-nav" buttonText="Create Record" backgroundColor="#e6f6ff" color="#4e3681" padding="12px 16px" margin="20px 0px 0px 0px" style="font-size: 18px"></ButtonComponent></RouterLink>
                         </span>
                     </ul>
                     <div class="me-0 ms-auto" id="viewRecordDiv" style="display:none;">
@@ -57,24 +56,23 @@
         <footer class="footer footer-light bg-frost">
             <div class="container custom-row-position custom-container">
                 <div class="col-md-5 text-md-start mb-3 mb-md-0 custom-logo">
-                    <a href="/">
+                    <RouterLink to="/">
                         <img src="../assets/styles/gosqas_logo.png" height="42px" alt="Global Open Source Quality Assurance System">
-                    </a>
+                    </RouterLink>
                 </div>
                 <div class="row col-md-4 text-md-start">
                     <div class="col-md-3">
                         <div class="row">
-                        <a href="/" class="me-3">Home</a>
-                        <a href="/how-it-works" class="me-3">How It Works</a>
-                        <a href="https://github.com/gosqasorg/asset-provenance-tracking" class="me-3">GDT GitHub</a>
-
+                            <RouterLink to="/" class="me-3">Home</RouterLink>
+                            <RouterLink to="/how-it-works" class="me-3">How It Works</RouterLink>
+                            <a href="https://github.com/gosqasorg/asset-provenance-tracking" class="me-3">GDT GitHub</a>
                         </div>
                     </div>
                     <div class="col-md-2 text-md-start custom-row-about">
                         <div class="row">
-                            <a href="/about" class="me-3">About</a>
-                            <a href="/data-privacy" class="me-3">Data & Privacy</a>
-                            <a href="/terms_and_conditions" class="me-3">Terms and Conditions</a>
+                            <RouterLink to="/about" class="me-3">About</RouterLink>
+                            <RouterLink to="/data-privacy" class="me-3">Data & Privacy</RouterLink>
+                            <RouterLink to="/terms_and_conditions" class="me-3">Terms and Conditions</RouterLink>
                         </div>
                     </div>
                 </div>
