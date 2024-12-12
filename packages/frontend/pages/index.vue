@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
-                <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
+                <div class="row"> <h1>Trust and transparency when you need it most.</h1> </div>
                 <div class="row" style=" margin-bottom: 60px; margin-top:20px; display:inline-flex">
                     <form style="margin-bottom: 20px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackingForm">
                         <button-component class="button" id="trackButton" buttonText="View Record" type="submit" style="opacity:100;"
