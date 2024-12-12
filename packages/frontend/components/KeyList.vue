@@ -14,7 +14,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <div v-for="key in keys">
-        <a :href="`/provenance/${key}`">{{key}}</a>
+        <a :href="`/history/${key}`">{{key}}</a>
     </div>
 
 </template>

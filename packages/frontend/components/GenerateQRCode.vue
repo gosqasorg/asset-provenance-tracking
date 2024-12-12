@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div>
 
     <QRCodeVue3
-            :value="`http://localhost:3001/provenance/${deviceKey}`"
+            :value="`http://localhost:3001/history/${deviceKey}`"
             :width="322" 
             :height="361" 
             :qr-options="{
@@ -71,7 +71,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         computed: {
             qrCodeValue() {
-                return `http://localhost:3001/provenance/${this.deviceKey}`;
+                return `http://localhost:3001/history/${this.deviceKey}`;
             }
         },
     }
