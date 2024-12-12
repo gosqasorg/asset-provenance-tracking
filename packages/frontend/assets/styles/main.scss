@@ -36,7 +36,7 @@ $custom-theme-colors: (
 );
 
 $font-family-base: 'Poppins', sans-serif;
-$font-weight-base: 500;
+$font-weight-base: 400;
 
 $theme-colors: map-merge($custom-theme-colors, $theme-colors);
 
@@ -85,38 +85,37 @@ h1 {
  
  // Apply custom font size to h3 elements
  h3 {
-    font-size: 24px;
+    font-size: 24px !important;
     font-weight: $font-weight-base;
-    line-height: 36px;
+    line-height: 36px !important;
  }
  
  
  // Apply custom font size to h4 elements
  h4 {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: $font-weight-base;
-    line-height: 33px;
+    line-height: 27px;
  }
  
   //Normal Text Regular
   p {
     font-size: 18px;
     line-height: 27px;
-    font-weight: 400;
+    font-weight: $font-weight-base;
  }
  
- // Apply h4 style font to buttons and inputs
+ // Apply custom text sizes for buttons
  .form-control {
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 400;
-    line-height: 33px;
+    line-height: 24px;
  }
  .btn {
-    font-size: 22px;
-    font-weight: 350;
-    line-height: 33px;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
  }
- 
  
  //// Desktop
  @media (min-width:768px) {
@@ -139,21 +138,26 @@ h1 {
  
  
     h4 {
-        font-size: 24px;
-        line-height: 36px;
+        font-size: 20px;
+        line-height: 30px;
     }
  
+    p {
+        font-size: 20px;
+        line-height: 30px;
+    }
  
     .form-control {
-        font-size: 24px;
+        font-size: 18px;
         font-weight: 400;
-        line-height: 36px;
+        line-height: 27px;
     }
     .btn {
-        font-size: 24px;
-        font-weight: 350;
-        line-height: 36px;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 27px;
     }
+
     // h4 style on nav-links
     .nav-link {
         font-size: 24px;
