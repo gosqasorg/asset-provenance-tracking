@@ -91,16 +91,26 @@ export default {
                     isReportingKey: false,
                 }, this.pictures || []);
                 
-                console.log('Succesfully created the record:', response);
+                this.$snackbar.add({
+                    type: 'success',
+                    text: 'Successfully created the record'
+                });
 
                 // Navigate to the new record page
                 const failure = await this.$router.push({ path: `/device/${deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
-                    console.error(`Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`);
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`
+                    })
+
                 }
             } catch (error) {
-                console.error('Failed to create the record:', error);
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Failed to create the record: ${error}`
+                });
             }
         },
     }

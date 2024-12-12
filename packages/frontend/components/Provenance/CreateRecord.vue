@@ -22,15 +22,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <form enctype="multipart/form-data" class='bg-frost' @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class='bg-frost' @submit.prevent="submitRecord">
       <h5 class="text-iris">Create New Record Entry</h5>
       <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" />
-        <input type="text" class="form-control" name="container-key" id="container-key" v-model="containerKey" placeholder="Group Key (optional)"/>
-        <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeys" placeholder="Contained Record Keys (optional, separated with a comma)"/>
+        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" required/>
+        <div v-if="isGroup">            
+            <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText" placeholder="Group Record Keys (optional, separated with a comma)"/>
+        </div>
+        <div v-else>
+            <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey" placeholder="Group Key (optional)"/>
+        </div>
+
         <div>
-            <span v-for="(childkey1, index) in childKeys" :key="childkey1">
-                {{ childkey1 }}{{ index !== childKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
+            <span v-for="(childkey1, index) in newChildKeys" :key="childkey1">
+                {{ childkey1 }}{{ index !== newChildKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
             </span>
         </div>
         <div>
@@ -42,9 +47,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
         </div>
-        <h5 class="text-iris p-1 mt-0" v-if="!hasParent"> <!--This checks whether it is a container or device and decides whether or not to display this.-->
-            <input type="checkbox" class="form-check-input" id="notify-all" /> Notify all Children?
-        </h5>
+        <!-- <h5 class="text-iris p-1 mt-0" v-if="isGroup">
+            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> Notify all Children?
+        </h5> -->
     </div>
     <div class="d-grid" id="submit-button">
         <button-component buttonText="Create Record Entry" type="submit" />
@@ -55,23 +60,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, getProvenance } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { addChildKeys, getAllDescendants } from '~/utils/descendantList';
-
+import { addChildKeys, addToGroup, notifyChildren } from '~/utils/descendantList';
+import { validateKey } from '~/utils/keyFuncs';
 
 export default {
-
     data() {
         return {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
-            containerKey: '',
-            childKeys: [] as string[],
-            hasParent: this.isContainer ? false : true,
-            isReportingKey: false,
+            groupKey: '',
+            childKeyText: '',
+            newChildKeys: [] as string[],
+            notifyAll: false,
         }
     },
-
     props: {
         recordKey: {
             type: String,
@@ -85,11 +88,16 @@ export default {
         },
     },
     computed: {
-    uniqueChildrenKeys() {
-        const uniqueValues = [...new Set(this.childKeys)];
-        return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
-    }
-},
+        uniqueChildrenKeys() {
+            const uniqueValues = [...new Set(this.newChildKeys)];
+            return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
+        },
+        isGroup(): boolean {
+            // children_key is "" if it is created as a record or [] if it is created as a group
+            // The Boolean constructor returns false for "" and true for []
+            return Boolean(this.deviceRecord?.children_key);
+        },
+    },
     methods: {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
@@ -105,106 +113,87 @@ export default {
             this.description = '';
             this.pictures = null;
             this.tags = [];
-            this.containerKey = '';
-            this.childKeys = [];
-            this.hasParent = false;
-            this.isReportingKey = false;
-        },
-
-        async messageChildren(childrenkeys: string[],recallReason: string, tags: string[]) {
-
-            for (const key of childrenkeys) {
-                if (key != "" && key != "undefined") {
-                    postProvenance(key, {
-                        blobType: 'deviceRecord',
-                        description: recallReason,
-                        children_key: '',
-                        tags: tags,
-                    }, this.pictures || [])
-                }
-            }
-
-
+            this.groupKey = '';
+            this.newChildKeys = [];
+            this.notifyAll = false;
         },
         async submitRecord() {
-            const response = await getProvenance(this.recordKey);
+            // Get a refreshed copy of the records
+            const records = await getProvenance(this.recordKey);
             
-            if (!response) {
-                console.log("No provenance record found.")
+            if (!records || records.length === 0) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'No provenance record found'
+                })
                 return;
             }
 
-            let local_deviceRecord = response[0].record;
-            this.hasParent = local_deviceRecord.hasParent;
-            this.isReportingKey = local_deviceRecord.isReportingKey;
-            let descendantsList = await getChildrenKeys(this.recordKey);
-
-
-            // Add a group key to the record. TODO: hide this as needed.
-            //here we post provenance if a container (parent) key was entered
-            if (this.containerKey != '') {
-
-                if (this.hasParent) {
-                    console.log("This record already has a group.");
-                    this.description = this.description + "\nError: Container could not be added.";
-
+            // User wants to add this record to an existing group.
+            if (this.groupKey != '') {
+                if (validateKey(this.groupKey)) {
+                    try {
+                        await addToGroup(this.groupKey, records);
+                    } catch (error) {
+                        console.error('Error adding to group:', error);
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Error adding to group: ${error}`
+                        });
+                    }
                 } else {
-                    // need to check if this parent is NOT a descendant of the record already
-                    if (descendantsList.indexOf(this.containerKey, 0) > -1) { //check if container key is among descendants
-                        // container is INDEED a descendant of this record
-                        // therefore, this relationship shouldn't be created
-                        console.log("This group is a descendant of this record.");
-                        this.description = this.description + `\nError: Group could not be added.`;
-                    } else{
-                        await postProvenance(this.containerKey, {
-                            blobType: 'deviceRecord',
-                            description: this.description, // keep the same description?
-                            tags: [],
-                            children_key: [this.recordKey],
-                            hasParent: true,
-                        }, this.pictures || [])
-    
-                        this.hasParent = true;
+                    this.$snackbar.add({
+                        type: 'warning',
+                        text: 'Group key is invalid. Not adding to group.'
+                    });
+                }
+            }
+
+            // The record already is a group - add the child keys.
+            try {
+                if (this.childKeyText.length > 0) {
+                    this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim());
+                    for (const childKey of this.newChildKeys) {
+                        if (!validateKey(childKey)) {
+                            this.$snackbar.add({
+                                type: 'warning',
+                                text: `Invalid child key: ${childKey}.`
+                            });
+                            // Remove the invalid key from the list
+                            this.newChildKeys = this.newChildKeys.filter(key => key !== childKey);
+                        }
+                    }
+                    
+                    if (this.newChildKeys.length > 0) {
+                        console.log("Adding child keys...", this.newChildKeys);
+                        await addChildKeys(records, this.newChildKeys, []);
+                    } else {
+                        this.$snackbar.add({
+                            type: 'warning',
+                            text: `No valid child keys to add.`
+                        });
                     }
                 }
+            } catch (error) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error adding child keys: ${error}`
+                });
             }
 
-            if (this.childKeys) {
-                await addChildKeys(this.recordKey, this.childKeys, this.description || '', []);
-            }
+            // Notify children (update their records) depending on the tags
+            notifyChildren(records, this.tags);
 
-            const recall = this.tags.indexOf("recall", 0);        
-
-            // "recall" is being added....
-            if (recall > -1 || (<HTMLInputElement>document.getElementById("notify-all")).checked) {
-                let reason = ""
-                if (recall > -1) { 
-                    reason = "Recalled by Admin Key";
-                } else { 
-                    reason = this.description; 
-                    this.tags = (this.tags).concat(['notify_all']);
-                }
-
-                if (this.isReportingKey) {
-                    // reporting keys do not have the ability to recall
-                    console.log("Action failed. This is a reporting key.");
-                } else {
-                    await this.messageChildren(descendantsList, reason, this.tags)                    
-                    console.log("Finished recalling/informing");
-                }
-                
-            }
-                        
-            // Here we post the povenance itself... 
-            console.log("Posting provenance...", this.recordKey);
+            // Append the record to the records.
             try {
-                await postProvenance(this.recordKey, {
-                        blobType: 'deviceRecord',
-                        description: this.description,
-                        tags: this.tags,
-                        children_key: this.childKeys,
-                        hasParent: this.hasParent,
-                }, this.pictures || []);
+                const record = {
+                    blobType: 'deviceRecord',
+                    description: this.description,
+                    tags: this.tags,
+                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+                };
+
+                await postProvenance(this.recordKey, record, this.pictures || []);
                 
                 // Refresh CreateRecord component
                 this.refresh();
@@ -212,12 +201,11 @@ export default {
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
             } catch (error) {        
-                console.error('Error POSTing provenance:', error);
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error creating record: ${error}`
+                });
             }
-        },
-        async submitForm() {
-            await this.submitRecord()
-            window.location.reload();
         },
     }
 

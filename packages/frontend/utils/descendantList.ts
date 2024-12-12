@@ -4,10 +4,10 @@
 
 import { getProvenance, postProvenance } from '~/services/azureFuncs';
 import type { Provenance } from '~/utils/types';
+import { InternalTagName } from './tags';
 
 // Get all children given a key. Calls API.
 export async function getChildrenKeys(key: string) {
-    console.log("Getting children keys for key: ", key);
     const response = await getProvenance(key);
     return getChildKeys(response);
 }
@@ -40,7 +40,7 @@ export function getChildKeys(provenance: Provenance[]): string[] {
     let childKeys: string[] = []
 
     for (const p of provenance) {
-        const child = p.record.children_key;
+        const child = p.record.children_key; // Can be "" if not a group or string[] if a group
         // child may be undefined or an empty array
         if (!child || !child.length) {
             continue;
@@ -55,64 +55,128 @@ export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
 
-export async function addChildKeys(deviceKey: string, childKeys: string[], description: string, attachments: File[]) {
-    // Add child keys (if any).
-    // 1 is used because the deviceKey is already added (TODO: consider creating that here).
-
-    if (!childKeys || childKeys.length == 0) {
-        console.log("No child keys to add.");
-        return;
-    }
-
-    const dedupedKeys = deduplicateKeys(childKeys);
-    
-    let string_children = childKeys.toString();
-    let entered_children = string_children.split(",");
-    entered_children = [...new Set(entered_children)]; //removing any duplicates
-
-    let childrenToAdd = entered_children.slice(0); //copy this exact array
-
-    
-    let childProvenance;
-    for (let childKey of dedupedKeys) {
-        const index = childrenToAdd.lastIndexOf(childKey);
-
-        //First, check if entered child exists
-        try { 
-            childProvenance = await getProvenance(childKey);
-        } catch(error) {
-            childrenToAdd.splice(index, 1); // remove the child key from the list
-            description += `\nError: Entered child key does not exist.`;
+export function isGroup(records: any): boolean {
+    for (let record of records) {
+        if (Boolean(record.children_key)) {
+            return true;
         }
-
-        // If entered child exist, check if it has a parent or is already a descendant of this device
-        if(childProvenance) {
-            const childRecord = childProvenance[0].record;
-            
-            if (childRecord.hasParent) {
-                description += `\nError: Entered child key already has a container.`;
-                childrenToAdd.splice(index, 1);
-            } else {
-                const descendants = await getAllDescendants(childKey);
-                if (descendants.includes(deviceKey)) {
-                    description += `\nError: Child device could not be added.`;
-                    childrenToAdd.splice(index, 1);
-                } else {
-                    // Add the parent to the child.
-                    await postProvenance(childKey,
-                        {
-                            blobType: 'deviceRecord',
-                            description: "Added parent",
-                            tags: [],
-                            children_key: [],
-                            hasParent: true,
-                        },
-                        attachments || []
-                    )
-                }
-            }
-        }                        
     }
-    // this.childKeys = childrenToAdd;
-    return  ;
+    return false;
+}
+
+export function hasParent(records: any): boolean {
+    for (let record of records) {
+        if (record.hasParent) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// The records are immutable, so we need to iterate through all the records
+// to collate all feature flags.
+export function getFeatures(records: any) {
+    let features: Record<string, boolean> = {
+        hasParent: false,
+        isGroup: false,
+    };
+    for (let record of records) {
+        if (record.hasParent) {
+            features.hasParent = true;
+        }
+        if (Boolean(record.children_key)) {
+            features.isGroup = true;
+        }
+    }
+    return features;
+}
+
+export async function addChildKeys(record: any, childKeys: string[], attachments: File[]) {
+    if (!record) {
+        console.log("No record provided.");
+        throw new Error("No record provided.");
+    }
+    if (!childKeys || childKeys.length == 0) {
+        console.log("No child keys provided.");
+        throw new Error("No child keys provided.");
+    }
+
+    for (let childKey of deduplicateKeys(childKeys)) {
+        console.log(`Adding child ${childKey} to group.`);
+        try {
+            const records = await getProvenance(childKey);
+            const features = getFeatures(records);
+
+            console.log("Records: ", records);
+            console.log("Features: ", features);
+
+            if (features.hasParent) {
+                console.log(`Cannot update child ${childKey} - it already belongs to a group.`);
+                continue;
+            }
+
+            if (features.isGroup) {
+                console.log(`Cannot update child ${childKey} - it already is a group`);
+                continue;
+            }
+
+            const response = await postProvenance(childKey, {
+                blobType: 'deviceRecord',
+                description:  "Added to group",
+                hasParent: true,
+            }, []);
+            console.log("Updated records: ", response);
+        }
+        catch (error) {
+            console.error(`Error updating child record ${childKey}: ${error}`);
+        }
+    }
+}
+
+export async function addToGroup(recordKey: string, records: any, attachments?: File[]) {
+    if (records[0].record.hasParent as boolean) {
+        throw new Error("This record already belongs to a group.");
+    }
+    if (isGroup(records)) {
+        throw new Error("This record is already a group.");
+    }
+
+    try {
+        // records[0].record.hasParent = true;
+        const response = postProvenance(recordKey, {
+            blobType: 'deviceRecord',
+            description:  "Added to group",
+            hasParent: true,
+        }, attachments || []);
+
+        // const response = await postProvenance(recordKey, records, []);
+        console.log("Updated records: ", response);
+    } catch (error) {
+        console.error(`Error updating record ${recordKey}: ${error}`);
+    }
+}
+
+export async function notifyChildren(records: any, tags: string[], attachments?: File[]) {
+    try {
+        if (tags.includes(InternalTagName.Recall)) {
+            if (records[0].isReportingKey) {
+                // Reporting keys do not have the ability to recall
+                console.log("Cannot notify children with the 'recall' tag. This is a reporting key.");
+            } else {
+                const uniqueChildKeys = deduplicateKeys(getChildKeys(records));
+
+                for (const key of uniqueChildKeys) {
+                    postProvenance(key, {
+                        blobType: 'deviceRecord',
+                        description:  "Recalled by admin",
+                        children_key: '',
+                        tags: tags,
+                    }, attachments || [])
+                }
+                console.log("Finished updating children with 'recall' tag.");
+            }
+        }
+    } catch (error) {
+        console.error(`Error notifying children: ${error}`);
+    }
 }
