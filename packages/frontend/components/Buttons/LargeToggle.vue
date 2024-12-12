@@ -1,6 +1,6 @@
 <!-- LargeToggle.vue -->
 <template>
-    <div class="ms-1 mb-3 toggle-border">
+    <div class="ms-1 mb-3 toggle-border form-control">
       <input type="checkbox" id="toggle" class="toggleCheckbox" @change="toggleView">
       <label for="toggle" class="toggle-label">
         <div class="toggle-text toggle-left">{{ leftLabel }}</div>
@@ -74,7 +74,6 @@
     padding: 10px 15px 10px 15px;
     text-align: center;
     z-index: 1;
-    font-weight: bold;
 }
 
 /* Adjust text colors when checked */

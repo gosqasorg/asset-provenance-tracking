@@ -1,9 +1,4 @@
 <!-- index.vue
-
-© 2024 Global Open Source Quality Assurance System. All rights reserved.
-We are committed to keeping our code open source, but all GOSQAS and GDT 
-branding, including logos, is subject to the copyright above.
-
 Copyright (C) 2024 GOSQAS
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -18,51 +13,88 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <!--
-    This is the landing page where you can create a new record to track
+    This is the home page for GOSQAS
 -->
+<script setup lang="ts">
+    const route = useRoute()
+</script>
+
 <template>
-    <link href="https://fonts.google.com/specimen/Poppins" rel="stylesheet" type="text/css">
- 
- 
-    <div class="container-md">
-        <h1 class="my-4 text-iris fs-1">Global Distributed Tracking</h1>
- 
- 
-        <!-- create toggle for single or group  -->
-        <ButtonsLargeToggle 
-            @toggle-change="toggleView" 
-            :left-label="'New Record'" 
-            :right-label="'New Group'"
-        />
-    
-        <div id="create_record"><FormsCreateDevice/></div>
-       
-        <div id="create_group" style="display:none"><FormsCreateContainer/></div>
- 
-        <h5 class="my-4">
-            The Global Open Source Quality Assurance System (GOSQAS) provides the opportunity to create truthful, transparent documentation via our open source provenance tracker, Global Distributed Tracking (GDT). Designed specifically for low-resource settings, GDT allows anyone with simple website access to securely record their project data. Our development philosophy of “Trust Through Transparency” (TTT) encourages better global communication within diverse communities- to include humanitarian response, open source hardware, and scientific research.
-        </h5>
-        
+    <div class="container-fluid">
+
+        <div class="row" id="first-row">
+            <div class="col-12 col-md-7" id="first-row-col">
+                <div class="row"> <h1>Trust and transparancy when you need it most.</h1> </div>
+                <div class="row" style=" margin-bottom: 60px; margin-top:20px; display:inline-flex">
+                    <form style="margin-bottom: 20px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackingForm">
+                        <button-component class="button" id="trackButton" buttonText="View Record" type="submit" style="opacity:100;"
+                            padding="18px 22px"></button-component>
+                    </form>
+                    <div style="margin-bottom: 20px; width: 60%; width: 230px;" >
+                        <RouterLink to="/gdt"><button-component class="button" buttonText="Create Record" backgroundColor="#CCECFD"
+                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
+                    </div>
+                    <div id="homeTrackAssetDiv" style="visibility: hidden;">
+                        <TrackAsset inputWidth="75%"></TrackAsset>
+                    </div>
+                </div>
+                
+            </div>
+
+        </div>
+
+        <div class="row bg-frost" id="second-row" >
+            <div class="row rowtest">
+                <div class="col test" id="second-row-cols" v-for="item in second_row">
+                    <h3 class="text-iris" id="second-row-cols-h3">{{item.title}}</h3>
+                    <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
+                </div>
+            </div>
+            <div class="col" style="text-align: center; margin-top: 50px;">
+                <RouterLink to="/about"><button-component class="button" buttonText="About Us" color="#322253" backgroundColor="#ffffff00"></button-component></RouterLink>
+            </div>
+
+        </div> 
+
+        <Learn_more id="learn-more"></Learn_more>
+
     </div>
- </template>
+
+</template>
+
+
 
 <script lang="ts">
+import Learn_more from '~/layouts/learn_more.vue';
+import ButtonComponent from '~/components/ButtonComponent.vue';
+let showTrack = false;
+
+const second_row = [
+    { title: "Simplicity & Accessibility", descr: "We believe that open-source projects should be simple to use and understand."},
+    { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."},
+    { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."}
+];
 
 export default {
-    
     methods: {
-        toggleView() {
-            const toggle = document.getElementById("toggle") as HTMLInputElement;
-            const createRecord = document.getElementById("create_record");
-            const createGroup = document.getElementById("create_group");
-            if (toggle.checked) {
-                createRecord.style.display = "none";
-                createGroup.style.display = "block";
-            } else {
-                createRecord.style.display = "block";
-                createGroup.style.display = "none";
+        // Function to have the 'Track an asset' input field appear
+        async trackingForm() {
+            let trackAssetDiv = <HTMLDivElement>document.getElementById("homeTrackAssetDiv");
+            let trackButton = <HTMLDivElement>document.getElementById("homeTrackButton");
+
+            if (!showTrack) { //if showTrack is false
+                showTrack = true;
+                trackAssetDiv.style.visibility="visible"; //make text input available
+                trackButton.style.backgroundColor = "#322253";
+                trackButton.style.borderColor = "#322253";
+
+            } else { 
+                showTrack = false; 
+                trackAssetDiv.style.visibility="hidden";
+                trackButton.style.backgroundColor = "#4E3681";
+                trackButton.style.borderColor = "#4E3681";
             }
-        }
+        },
     }
 }
 
@@ -71,93 +103,103 @@ export default {
 
 <style scoped>
 
-/* Hide the original checkbox */
-.toggleCheckbox {
-    display: none;
+#test {
+    /* width : 10vh;
+    min-width : 200px; */
+    overflow-wrap: break-word;
 }
 
-/* Container for the toggle switch */
-.toggle-container {
-    display: flex;
-    justify-content: left;
-    margin: 0 auto;
-    padding: 10px;
-    width: 500px;
-    height: 70px;
-    border-radius: 20px 0px 20px 0px;
+#rowtest {
+    width: 100%;
+    max-width: 20vw;
+    height: auto;
 }
 
-/* Custom toggle switch */
-.toggle-label {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    width: fit-content;
-    border: 2px solid #4a148c;
-    border-radius: 25px;
-    background: white;
-    cursor: pointer;
-    overflow: hidden; /* Ensure no overflow */
+#first-row {
+    /* Set the hand background image on the homepage */
+    background-image: url(../assets/images/hand-icon.png);
+    background-repeat: no-repeat;
+    background-position-x: 85%;
+    background-position-y: bottom;
+    background-size: 60%;
+
+    height: auto;
+    min-height: 369px;
+    max-height: 500px;
+    display: flex;  
+    flex-wrap: wrap;
 }
 
-/* Create the toggle slider */
-.toggle-label::before {
-    content: '';
-    position: absolute;
-    width: 50%; /* Half of the label width */
-    height: 100%;
-    top: 0;
-    left: 0;
-    background: #4a148c;
-    border-radius: 25px;
-    transition: left 0.3s;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add a shadow for better visibility */
+/* For screens less than 991px resize hand logo*/
+@media (max-width: 991px) {
+    #first-row {
+        background-size: 80%;
+        height: auto;
+        min-height: 372px;
+        max-height: 525px;
+    }
+    h1 {
+        font-size: 32px !important;
+        line-height: 50px !important;
+    }
 }
 
-/* Text containers */
-.toggle-label div {
-    padding: 10px;
-    text-align: center;
-    z-index: 1;
-    color: white;
-    font-weight: bold;
+/* For screens less than 768px */
+@media (max-width: 768px) {
+    #first-row-col{
+        padding: 41px 33px;
+    }
+    #second-row{
+        padding: 40px 30px;
+    }
+    #second-row-cols{
+        gap: 20px;
+    }
+    #second-row-cols-h3 {
+        font-weight: 600;
+    }
+    #learn-more{
+        padding: 40px 30px;
+    }
+    .button{
+        font-size: 18px;
+    }
+    #first-row {
+        background-size: 80%;
+        height: 450px;
+    }
 }
 
-/* Adjust text colors when checked */
-.toggleCheckbox:checked + .toggle-label::before {
-    left: 50%;
+/* For screens less than 381px resize hand logo */
+@media (max-width: 381px) {
+    #first-row {
+        background-size: 60%;
+        background-position-x: 95%;
+    }
 }
 
-.toggleCheckbox:checked + .toggle-label .toggle-left {
-    color: #4a148c; /* Inactive text color */
+/* For screens greater than 768px */
+@media (min-width: 768px) {
+    #first-row-col{
+        padding: 60px 78px
+    }
+    #second-row {
+        padding: 70px 100px;
+    }
+    #second-row-cols{
+        gap: 40px;
+    }
+    #learn-more{
+        padding: 70px 100px;
+    }
+    .button{
+        font-size: 20px;
+        padding: 1px;
+        
+    }
+
 }
 
-.toggleCheckbox:checked + .toggle-label .toggle-right {
-    color: black; /* Active text color */
-}
-
-.toggleCheckbox + .toggle-label .toggle-left {
-    color: white; /* Active text color */
-}
-
-.toggleCheckbox + .toggle-label .toggle-right {
-    color: black; /* Inactive text color */
-}
-.my-4 {
-    margin: 1.5rem 0;
-}
-
-.fs-1 {
-    font-size: 2.5rem;
-}
-
-.ms-1 {
-    margin-left: 0.25rem;
-}
-
-.mb-3 {
-    margin-bottom: 1rem;
-}
 
 
 </style>

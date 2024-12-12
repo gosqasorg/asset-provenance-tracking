@@ -72,9 +72,23 @@ export default {
    border-style: solid;
 }
 
+.submit-btn {
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 27px;
+}
+
+.learn-more {
+   font-size: 16px;
+   font-weight: 400;
+
+   border-radius: 10px;
+   border-style: solid;
+}
+
 .example {
    font-size: 16px;
-   font-weight: 350;
+   font-weight: 400;
 
    border-radius: 10px;
    border-style: solid;
@@ -90,6 +104,20 @@ export default {
        border-style: solid;
    }
 
+   .submit-btn {
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 30px;
+   }
+
+   .learn-more {
+       font-size: 18px;
+       font-weight: 350;
+
+       border-radius: 10px;
+       border-style: solid;
+   }
+
    .example {
        font-size: 18px;
        font-weight: 350;
@@ -97,6 +125,17 @@ export default {
        border-radius: 10px;
        border-style: solid;
    }
+}
+
+/* Fix spacing between 'Interested in Learning More' buttons when they wrap (learn_more.vue) */
+@media (max-width: 386px) {
+    .first {
+        margin: 20px 20px 0px 0px !important;
+    }
+    .middle {
+        margin: 20px 20px 0px 0px !important;
+        margin-top: 20px;
+    }
 }
 
 </style>
