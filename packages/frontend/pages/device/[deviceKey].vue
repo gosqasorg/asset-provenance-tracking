@@ -33,7 +33,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
                 <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View Provenance Records</button>
                 <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode" style="border-top-right-radius: 0px; border-bottom-right-radius: 0px;">Download QR Code</button>
                 <!--Add something similar to the screen size conditional code in https://vscode.dev/github/gosqasorg/asset-provenance-tracking/blob/main/packages/frontend/pages/provenance/%5BdeviceKey%5D.vue#L35-L68, because the share icon button is attached to the Download QR Code button-->
-                <button class="btn mt-1 bg-frost px-5" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px; text-align: center;" @click="shareQRCode"><img style="width: 30px;"src="../assets/images/share-icon.png"></button>
+                <button class="btn mt-1 bg-frost px-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px; text-align: center;" @click="shareQRCode"><img style="width: 30px;"src="../assets/images/share-icon.png"></button>
             </div>
 
         </div>

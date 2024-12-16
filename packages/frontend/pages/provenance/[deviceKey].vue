@@ -75,7 +75,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
-              <div>Record Key: {{ _recordKey }}</div>
+              <div>Record Key: {{ _recordKey }}<button @click="copyRecordKey" class="btn bg-sky px-2" style ="margin-left:10px; padding-top: 2px; padding-bottom: 2px;">Copy <u>Record Key</u> to Clipboard</button></div> 
               <div><i><span v-html="clickableLink(deviceRecord?.description)"></span></i></div>
             </section>
 
@@ -173,6 +173,17 @@ export default {
         EventBus.off('feedRefresh', this.refreshFeed);
     },
     methods: {
+      copyRecordKey() {
+        const copyKey = `${this._recordKey}`;
+        navigator.clipboard.writeText(copyKey)
+          .then(() => {
+              alert('Record key copied to clipboard!');
+          })
+          .catch((error) => {
+              console.error('Failed to copy text: ', error);
+              alert('Failed to copy Record Key. Please try again.');
+          });
+      },
       addScrollListener() {
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
