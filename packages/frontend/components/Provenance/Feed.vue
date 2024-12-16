@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     It is used in the providence/[deviceKey].vue page.
 -->
 <template>
-    <div>
-        <div v-for="(report, index) in provenance" class="report-box">
+    <div :class="{'dimming': isDimming}" class="page">
+        <div @click="toggleDimming" v-for="(report, index) in provenance" class="report-box">
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3 id = "createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
             </template>
@@ -78,6 +78,7 @@ export default {
         return {
             attachmentURLs: {},
             modalImage: "",
+            isDimming: false,
         };
     },
     mounted() {
@@ -110,6 +111,14 @@ export default {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+        },
+        toggleDimming() {
+            this.isDimming = !this.isDimming;
+            if (this.isDimming) {
+                document.body.classList.add("dimming");
+            } else {
+                document.body.classList.remove("dimming");
+            }
         }
     },
 };
@@ -137,6 +146,19 @@ export default {
   margin: 5px;
   border-radius: 5px;
   font-size: 14px;
+}
+.dimming {
+    animation: dimming 2s forwards; /* Apply the dimming animation globally */
+}
+
+/* Dimmed state */
+@keyframes dimming {
+    0% {
+        filter: brightness(100%);
+    }
+    100% {
+        filter: brightness(50%); /* Dim the page */
+    }
 }
 </style>
     

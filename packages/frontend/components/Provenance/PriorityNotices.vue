@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
   PriorityNotices:
   <div v-if="notices.length > 0">
-    <div  v-for="(report, index) in notices" class="report-box">
+    <div v-for="(report, index) in notices" class="report-box">
       <div class="mb-1 tag-container">
         <span class="tag" v-for="tag in report.record.tags">{{ tag }}</span>
       </div>
@@ -91,11 +91,13 @@ export default {
 
             this.notices.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
         }
+        
     },
 };
 </script>
 
     <style scoped>
+    
     .div {
   background-color: red;
     }
