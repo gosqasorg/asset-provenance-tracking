@@ -76,7 +76,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <section id="device-details">
               <div class="my-4 text-iris fs-1">"{{ deviceRecord?.deviceName }}" Asset History Records</div>
               <div>Record Key: {{ _recordKey }}</div>
-              <div><span v-html="clickableLink(deviceRecord?.description)"></span></div>
+              <div><i><span v-html="clickableLink(deviceRecord?.description)"></span></i></div>
             </section>
 
             <section ref= "section" id="priority-notices">
