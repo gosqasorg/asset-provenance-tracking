@@ -81,6 +81,7 @@ export default {
             _recordKey: ""
         }
     },
+    
     methods: {
         //This method helps rerendering the site
         forceRerender() {
@@ -89,6 +90,22 @@ export default {
         downloadQRCode() {
             const qrCodeComponent = this.$refs.qrcode_component as any;
             qrCodeComponent?.downloadQRCode()
+        },
+        getDescription() {
+            const route = useRoute();
+            return `Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick link & view records: ${useRuntimeConfig().public.frontendUrl}/provenance/${route.params.deviceKey}`;
+        },
+        shareQRCode() {
+                    const textToCopy = this.getDescription();
+            // Use the modern Clipboard API if available
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    alert('QR Code Data copied to clipboard!');
+                })
+                .catch((error) => {
+                    console.error('Failed to copy text: ', error);
+                    alert('Failed to copy QR Code Data. Please try again.');
+                });
         },
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
@@ -103,6 +120,9 @@ export default {
             deviceRecord = response[response.length - 1].record;
             this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+            const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceKey}`;
+        this.deviceRecord.qrCodeImage = qrCodeUrl;  // Add the QR code URL to the deviceRecord
+        
             // We will remove the reportingKey, because although it is a child,
             // we have already rendered it.
             if (this.hasReportingKey) {
