@@ -31,7 +31,9 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
         
             <div> 
                 <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View Provenance Records</button>
-                <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode" style="border-top-right-radius: 0px; border-bottom-right-radius: 0px;">Download QR Code</button>
+                <!--Add something similar to the screen size conditional code in https://vscode.dev/github/gosqasorg/asset-provenance-tracking/blob/main/packages/frontend/pages/provenance/%5BdeviceKey%5D.vue#L35-L68, because the share icon button is attached to the Download QR Code button-->
+                <button class="btn mt-1 bg-frost px-2" style="border-top-left-radius: 0px; border-bottom-left-radius: 0px; text-align: center;" @click="shareQRCode"><img style="width: 30px;"src="../assets/images/share-icon.png"></button>
             </div>
 
         </div>
@@ -82,8 +84,13 @@ export default {
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
-        }
+            deviceRecord: {
+                deviceName: "${this.deviceRecord.deviceName}",
+                description: "${this.deviceRecord.description}"
+            }
+        };
     },
+    
     methods: {
         //This method helps rerendering the site
         forceRerender() { 
@@ -92,6 +99,22 @@ export default {
         downloadQRCode() {
             const qrCodeComponent = this.$refs.qrcode_component as any;
             qrCodeComponent?.downloadQRCode()
+        },
+        getDescription() {
+            const route = useRoute();
+            return `Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick link & view records: ${useRuntimeConfig().public.frontendUrl}/provenance/${route.params.deviceKey}`;
+        },
+        shareQRCode() {
+                    const textToCopy = this.getDescription();
+            // Use the modern Clipboard API if available
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => {
+                    alert('QR Code Data copied to clipboard!');
+                })
+                .catch((error) => {
+                    console.error('Failed to copy text: ', error);
+                    alert('Failed to copy QR Code Data. Please try again.');
+                });
         },
         viewRecord() {
             const route = useRoute();
@@ -106,6 +129,9 @@ export default {
             deviceRecord = response[response.length - 1].record;
             this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+            const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceKey}`;
+        this.deviceRecord.qrCodeImage = qrCodeUrl;  // Add the QR code URL to the deviceRecord
+        
             // We will remove the reportingKey, because although it is a child,
             // we have already rendered it.
             if (this.hasReportingKey) {
