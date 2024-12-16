@@ -33,39 +33,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="col-md-2 d-none d-md-block">
         <!-- Scrollspy -->
          <!-- When the screen size is md (>= 768px) and up  -->
-            <nav id="jump-to test" class="sticky-top text-slate"> 
-              <p class="menu-spacing">Jump to section</p>
-              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
-                <li id="item" class="py-2"
-                  style= "border-left: 2px solid #4e3681;"
-                  v-for="header in headers"
-                  :key="header"
-                  :class="{ active: header.id === currentSection }">
-                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
-                </li>
-              </ul>
-            </nav>
-          </div>
-
-          <!-- When the screen size is less than md (< 768px ) -->
-          <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
-            <button class="btn text-left rounded-0" 
-                    type="button" id="jump-to-mobile" data-bs-toggle="dropdown" aria-controls="toggle" aria-expanded="false"
-                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;"> 
-              <i id="toggle-right" class="fa fa-angle-right"></i>
-              <i id="toggle-down" class="fa fa-angle-down"></i>
-              Jump to section
-            </button>
-
-            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px; 
-                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
-              <li id="dropdown-item" style="padding: 7px"
-                  v-for="header in headers"
-                  :key="header">
+          <nav id="jump-to test" class="sticky-top text-slate"> 
+            <p class="menu-spacing">Jump to section</p>
+            <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
+              <li id="item" class="py-2"
+                style= "border-left: 2px solid #4e3681;"
+                v-for="header in headers"
+                :key="header"
+                :class="{ active: header.id === currentSection }">
                 <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
-          </div>
+          </nav>
+        </div>
+
+        <!-- When the screen size is less than md (< 768px ) -->
+        <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
+          <button class="btn text-left rounded-0" 
+                  type="button" id="jump-to-mobile" data-bs-toggle="dropdown" aria-controls="toggle" aria-expanded="false"
+                  style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;"> 
+            <i id="toggle-right" class="fa fa-angle-right"></i>
+            <i id="toggle-down" class="fa fa-angle-down"></i>
+            Jump to section
+          </button>
+
+          <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px; 
+              background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
+            <li id="dropdown-item" style="padding: 7px"
+                v-for="header in headers"
+                :key="header">
+              <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+            </li>
+          </ul>
+        </div>
 
 
     <!-- Scrollspy -->
