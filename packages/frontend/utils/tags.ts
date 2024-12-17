@@ -14,18 +14,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 export enum TagName {
+    Inspected = "inspected",
+    Good = "good",
+    Bad = "bad",
+    Damaged = "damaged",
+    Counterfeit = "counterfeit",
+    Opened = "opened",
+    Missing = "missing",
     Compatible = "compatible",
     Complete = "complete",
-    Counterfeit = "counterfeit",
-    Damaged = "damaged",
-    Defective = "defective",
-    Deployed = "deployed",
-    Incompatible = "incompatible",
-    Incomplete = "incomplete",
-    Inspected = "inspected",
-    Received = "received",
-    TestedFail = "tested_fail",
-    TestedPass = "tested_pass",
 }
 
 export enum InternalTagName {
