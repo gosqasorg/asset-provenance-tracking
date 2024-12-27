@@ -43,7 +43,9 @@ export default {
     },
     methods: {
         async submit() {
-            this.$router.push({ path: `/provenance/${this.deviceKey}` });
+            // Get the record/device key from the end of an entered URL, or just use the entered key
+            var extractedDeviceKey = this.deviceKey.split("/").pop();
+            this.$router.push({ path: `/provenance/${extractedDeviceKey}` });
         }
     }
 }
