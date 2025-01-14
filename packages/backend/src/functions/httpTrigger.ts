@@ -410,8 +410,3 @@ app.get("getStatistics", {
     route: 'statistics',
     handler: getStatistics
 })
-
-
-
-
-
