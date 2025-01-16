@@ -43,7 +43,7 @@ export default {
     },
     methods: {
         async submit() {
-            this.$router.push({ path: `/provenance/${this.deviceKey}` });
+            this.$router.push({ path: `/history/${this.deviceKey}` });
         }
     }
 }

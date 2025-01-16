@@ -14,8 +14,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const route = useRoute()
-const deviceKey = route.params.deviceKey;
-const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceKey}`;
+const recordKey = route.params.deviceKey;
+const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
 </script>
 
 <template>
@@ -44,13 +44,13 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/provenance/${deviceK
     </div>
 
     <div v-if="hasReportingKey"> Reporting Key:
-        <div> <a :href="`/provenance/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
+        <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
     </div>
     <div v-if="(childKeys?.length > 0) || hasReportingKey ">
         <div> Child Keys:
             <div> <KeyList v-bind:keys="childKeys"/> </div>
         </div>    
-        <CsvFile :deviceKey="deviceKey"></CsvFile>
+        <CsvFile :deviceKey="recordKey"></CsvFile>
     </div>
   </div>
 </template>
@@ -94,8 +94,7 @@ export default {
             qrCodeComponent?.downloadQRCode()
         },
         viewRecord() {
-            const route = useRoute();
-            this.$router.push(`/provenance/${route.params.deviceKey}`);
+            navigateTo(`/history/${route.params.deviceKey}`);
         }
     },
     async mounted() {

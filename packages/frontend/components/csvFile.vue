@@ -21,7 +21,7 @@ export default {
         async downloadCSV() {
             let keyList = await getChildrenKeys(this.recordKey);
             // Convert key to a link
-            keyList = keyList.map(key => 'https://gosqas.org/provenance/' + key);
+            keyList = keyList.map(key => 'https://gosqas.org/history/' + key);
             // Replace comas with new lines
             keyList = String(keyList).replaceAll(",", "\n");
 
