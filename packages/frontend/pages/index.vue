@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1>Trust and transparency when you need it most.</h1> </div>
+                <div class="row"> <h4>Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style=" margin-bottom: 60px; margin-top:20px; display:inline-flex">
                     <form style="margin-bottom: 20px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackingForm">
                         <button-component class="button" id="trackButton" buttonText="View Record" type="submit" style="opacity:100;"
@@ -45,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row bg-frost" id="second-row" >
             <div class="row rowtest">
-                <div class="col test" id="second-row-cols" v-for="item in second_row">
+                <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 class="text-iris" id="second-row-cols-h3">{{item.title}}</h3>
                     <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
@@ -103,9 +104,7 @@ export default {
 
 <style scoped>
 
-#test {
-    /* width : 10vh;
-    min-width : 200px; */
+#wrap-word {
     overflow-wrap: break-word;
 }
 
@@ -142,6 +141,10 @@ export default {
         font-size: 32px !important;
         line-height: 50px !important;
     }
+    /* Remove extra padding on the right of the top white box */
+    #first-row-col {
+        width: 100% !important;
+    }
 }
 
 /* For screens less than 768px */
@@ -175,6 +178,9 @@ export default {
     #first-row {
         background-size: 60%;
         background-position-x: 95%;
+
+        /* Resize white box containing the hand logo */
+        min-height: 675px !important;
     }
 }
 
@@ -200,6 +206,18 @@ export default {
 
 }
 
+/* Resize the top white box to make sure the buttons don't go out of bounds */
+@media (max-width: 1083px) {
+    #first-row {
+        background-size: 70%;
+        max-height: 600px;
+    }
+}
 
+@media (max-width: 445px) {
+    #first-row {
+        min-height: 600px;
+    }
+}
 
 </style>
