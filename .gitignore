@@ -3,3 +3,4 @@ dist/
 *.sqlite
 .DS_Store
 coverage/
+.azurite/
