@@ -2,15 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "typescript",
-      "tsconfig": "packages/legacy/tsconfig.json",
-      "problemMatcher": [
-        "$tsc"
-      ],
-      "group": "build",
-      "label": "build legacy",
-    },
-    {
       "type": "func",
       "label": "start backend host",
       "command": "host start",
