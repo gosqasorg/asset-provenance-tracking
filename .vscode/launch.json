@@ -3,19 +3,6 @@
   "configurations": [
     {
       "type": "node",
-      "request": "launch",
-      "preLaunchTask": "build legacy",
-      "name": "Launch Legacy",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "program": "${workspaceFolder}/packages/legacy/dist/app.js",
-      "outFiles": [
-        "${workspaceFolder}/**/*.js"
-      ]
-    },
-    {
-      "type": "node",
       "request": "attach",
       "preLaunchTask": "start backend host",
       "name": "Attach to Backend (Azure Functions)",

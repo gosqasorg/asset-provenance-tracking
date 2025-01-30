@@ -24,40 +24,21 @@ and sent to Sudan where they are desperately needed. We thank Alex Barton for be
 
 
 
+# Project Structure
+
+All source code is in the packages/ directory.
+
 ## Installation
 
-1. Clone the repo
-2. Install dependencies
-```
-npm install
-```
-3. Run development environment
-```
-npm run dev
-```
-4. Then point your browser at [http://localhost:8000](http://localhost:8000) for example
-
-> Note, as of v0.2, the demo server listens on *all* networks the server is connected to.
-> While exposing server ports is always a security risk, exposing the demo server on the local network
-> allows other devices - mobile devices in particular - to access the demo server.
-> On startup, the server prints out a list of the IP addresses it is listening on.
+- Install the project dependencies as documented in the backend and frontend README.md.
+- Open a terminal in the packages/backend and packages/frontend directories.
+- Run `npm install` in both terminals.
+- Start the backend with `npm start`
+- Start the frontend with `npm run dev`
 
 ## Video of Operation
 
 We have made a [short video](https://youtu.be/E5_YQV72NyY) of [v0.1](https://github.com/gosqas/asset-provenance-tracking/releases/tag/v0.1) operation.
-
-## batch-shell.sh
-
-The file batch-shell.sh can be used to produce any number of keys and QR codes at at time.
-It takes a single argument, the number N of keys and QR codes to create. It will
-populate the current directory directly with N files, each of which has the name of a device key, and whose
-body a .png file of the QR code that resolves to that key. An internal variable defines the full URL.
-The name in the start record is currently hard-coded to "MakerFaireBayArea" but can of course be changed.
-
-For example, to generate 300 valid QR codes run the following:
-```
-batch-shell.sh 300
-```
 
 ## License
 As mentioned in the [Licences section](https://github.com/gosqasorg/home#licenses) of the Home repository, as this repository is software the license is under a GNU Affero GPL v3 License. See the [License](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/LICENSE) file for more details.
@@ -81,6 +62,3 @@ But, you are welcome to enter issues and create pull requests as well. We recomm
 before expending significant time on this unless you have spoken to us first.
 
 Contributors will be expected to sign our [Contributors License Agreement ](https://github.com/gosqasorg/asset-provenance-tracking/blob/main/CONTRIBUTOR%20LICENSE%20AGREEMENT.md) designed to keep your contribution forever free.
-
-
-
