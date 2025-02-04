@@ -94,7 +94,8 @@ export default {
             qrCodeComponent?.downloadQRCode()
         },
         viewRecord() {
-            navigateTo(`/history/${route.params.deviceKey}`);
+            const route = useRoute();
+            navigateTo(`/history/${route.params.deviceKey as string}`);
         }
     },
     async mounted() {
