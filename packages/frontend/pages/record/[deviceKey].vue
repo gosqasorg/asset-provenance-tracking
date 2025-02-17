@@ -93,7 +93,7 @@ onMounted(async () => {
         <div> Child Keys:
             <div> <KeyList v-bind:keys="childKeys"/> </div>
         </div>    
-        <CsvFile :deviceKey="recordKey"></CsvFile>
+        <CsvFile :recordKey="_recordKey"></CsvFile>
     </div>
   </div>
 </template>

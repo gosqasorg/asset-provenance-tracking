@@ -80,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <div class="my-4 text-iris fs-1">
                 <p class="text-bold mb-0">Asset History Records</p>
                 <h1 class="mt-1 mb-1 text-iris">
-                  "{{ deviceRecord?.deviceName }}"
+                  {{ deviceRecord?.deviceName }}
                 </h1>
               </div>
               <div class="qr-code-container">
