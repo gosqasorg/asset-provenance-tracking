@@ -78,14 +78,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
             <section id="device-details">
               <div class="my-4 text-iris fs-1">
-                  "{{ deviceRecord?.deviceName }}" Asset History Records
+                <p class="text-bold mb-0">Asset History Records</p>
+                <h1 class="mt-1 mb-1 text-iris">
+                  "{{ deviceRecord?.deviceName }}"
+                </h1>
               </div>
               <div class="qr-code-container">
                 <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;"/>
                 </div>
                 <div class="wrapper-download">
-                  <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+                  <button class="btn mt-0 bg-sky px-5 p-3" @click="downloadQRCode">Download QR Code</button>
                 </div>
               </div>
               <div>Record Key: {{ _recordKey }}</div>
@@ -263,44 +266,45 @@ export default {
 
 .qr-code-wrapper {
   background-color:#4e3681; /* Light blue background */
-  padding-bottom: 13px;
-  padding-top:20px;
-  padding-left: 18px;
-  padding-right: 18px;
+  padding:13px;
+  padding-bottom: 7px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform:scale(0.75);
-  margin-bottom: -40px;
-  margin-top: -30px;
-  margin-left: -20px;
-  margin-right: -20px;
+  transform:scale(0.775);
+  margin: -20px;
+  transition-duration: 0.4s;
 }
 .qr-code-wrapper:hover {
-  transform: scale(0.8);
+  transform: scale(0.825);
 }
 .qr-code-container {
-  margin-top: -80px;
-  margin-right: 20px;
+  margin-top: -110px;
+  margin-right: 15px;
   display: inline-block;
-  background-color:aliceblue; /* Light blue background */
+  background-color: rgb(238, 247, 255); /* Light blue background */
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
   position:absolute;
   right: 0;
-  transform:scale(0.85);
+  transform:scale(1.1);
   /* transform-origin: top right; */
 }
 .wrapper-download {
   padding: 0;
   text-align: center;
-  padding-bottom: 20px;
+  padding-bottom: 15px;
+  transform: scale(0.95);
+  margin-top: -30px;
+  transition-duration: 0.4s;
+}
+.wrapper-download:hover {
+  transform: scale(1);
 }
 .download-button {
     display: inline-block;
     margin-top: 15px;
     padding: 10px 20px;
-    background-color:; /* Light blue button color */
     color: #333;
     font-size: 14px;
     font-weight: bold;

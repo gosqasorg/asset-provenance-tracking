@@ -120,6 +120,7 @@ export default {
   background-color: #F1F5F9;
   padding: 20px;
   margin-bottom: 14px;
+  margin-top: 14px;
   border-radius: 20px;
   width: 70%; /* Assuming the width is to fill the container */
   word-wrap: break-word;
@@ -137,6 +138,13 @@ export default {
   margin: 5px;
   border-radius: 5px;
   font-size: 14px;
+  transform: scale(1);
+  transition-duration: 0.4s;
+  margin-left: 0px;
+}
+.tag:hover {
+    transform: scale(1.05);
+    cursor: pointer;
 }
 </style>
     
