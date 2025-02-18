@@ -97,3 +97,75 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+<script lang="ts">
+import GenerateQRCode from '~/components/GenerateQRCode.vue';
+import KeyList from '~/components/KeyList.vue';
+import { getProvenance } from '~/services/azureFuncs';
+import clickableLink from '~/utils/clickableLink';
+import QRCode from '@/components/QRCode.vue';
+
+let deviceRecord: any;
+
+ // Here we are are going to want to read the device,
+ //    but not all the provenance. We will use this to load
+ //    the two components above, the reporting key component and
+ //    the child list component.
+ //    At present, get Provenance is our only function;
+ //    we do not have a function for returning only the first
+//    record of a device, but we probably should.
+
+export default {
+    components: {
+        GenerateQRCode,
+        KeyList,
+    },
+    data() {
+        return {
+            isLoading: true,
+            hasReportingKey: false,
+            childKeys: [] as string[],
+            loadingKey: 0,
+        }
+    },
+    methods: {
+        //This method helps rerendering the site
+        forceRerender() { 
+            this.loadingKey += 1;
+        },
+        downloadQRCode() {
+            const qrCodeComponent = this.$refs.qrcode_component as any;
+            qrCodeComponent?.downloadQRCode()
+        },
+        viewRecord() {
+            const route = useRoute();
+            navigateTo(`/history/${route.params.deviceKey as string}`);
+        }
+    },
+    async mounted() {
+        try {
+            const route = useRoute();
+            const deviceKey = route.params.deviceKey as string;
+            const response = await getProvenance(deviceKey);
+            deviceRecord = response[response.length - 1].record;
+            this.isLoading = false;
+            this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+            // We will remove the reportingKey, because although it is a child,
+            // we have already rendered it.
+            if (this.hasReportingKey) {
+                const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+                if (index > -1) {
+                    deviceRecord.children_key.splice(index, 1);
+                }
+            }
+            this.childKeys = deviceRecord.children_key;
+        } catch (error) {
+            this.$snackbar.add({
+                type: 'error',
+                text: 'No record found'
+            });
+        }
+    }
+};
+
+
+</script>
