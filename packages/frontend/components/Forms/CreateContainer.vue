@@ -37,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  
             <br>
             <h4 class="text-iris p-1 mt-0 mb-0 ">
-                <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Names?
+                <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
  
  
