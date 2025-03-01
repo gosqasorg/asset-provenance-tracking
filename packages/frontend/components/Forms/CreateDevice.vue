@@ -34,7 +34,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
  
             <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
-            <ProvenanceTagInput id="recordTags" v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
