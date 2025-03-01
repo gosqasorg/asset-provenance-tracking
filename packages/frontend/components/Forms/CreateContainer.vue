@@ -269,9 +269,9 @@ export default {
 
     }
     /* Style for the placeholder text */
-    .form-control::placeholder {
+    /* .form-control::placeholder {
     color: gray;
-    }
+    } */
     #container-form > * {
         padding: 5px;
         margin: 5px;

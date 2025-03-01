@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h4>Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style=" margin-bottom: 60px; margin-top:20px; display:inline-flex">
                     <form style="margin-bottom: 20px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackingForm">
-                        <button-component class="button" id="trackButton" buttonText="View Record" type="submit" style="opacity:100;"
+                        <button-component class="button" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             padding="18px 22px"></button-component>
                     </form>
                     <div style="margin-bottom: 20px; width: 60%; width: 230px;" >
