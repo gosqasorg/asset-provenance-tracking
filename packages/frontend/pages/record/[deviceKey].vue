@@ -92,8 +92,8 @@ onMounted(async () => {
     <div v-if="(childKeys?.length > 0) || hasReportingKey ">
         <div> Child Keys:
             <div> <KeyList v-bind:keys="childKeys"/> </div>
-        </div>    
-        <CsvFile :recordKey="_recordKey"></CsvFile>
+        </div>
+        <CsvFile :deviceKey="recordKey"></CsvFile>
     </div>
   </div>
 </template>
@@ -129,7 +129,7 @@ export default {
     },
     methods: {
         //This method helps rerendering the site
-        forceRerender() { 
+        forceRerender() {
             this.loadingKey += 1;
         },
         downloadQRCode() {
@@ -137,8 +137,8 @@ export default {
             qrCodeComponent?.downloadQRCode()
         },
         viewRecord() {
-            const route = useRoute();
-            navigateTo(`/history/${route.params.deviceKey as string}`);
+            const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
+            navigateTo(`/history/${route.params.deviceKey}`);
         }
     },
     async mounted() {
