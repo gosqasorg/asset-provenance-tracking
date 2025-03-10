@@ -202,8 +202,9 @@ export default {
             let sec = document.getElementById(current_id);
 
             let top = window.scrollY;
-            let offset = sec.offsetTop + 150; // can customize how far from the section to become active
-            let height = sec.offsetHeight;
+            const baseOffset = 150;
+            let offset = sec?.offsetTop ? sec?.offsetTop + baseOffset : baseOffset; // can customize how far from the section to become active
+            let height = sec?.offsetHeight ?? 0;
             if (top >= offset && top < offset + height) {
               currentSection.value = current_id;
             }
@@ -217,7 +218,7 @@ export default {
         this.hasReportingKey = false;
 
         const route = useRoute();
-        this._recordKey = route.params.deviceKey as string;
+        this._recordKey = route?.params.deviceKey as string;
         const provenance = await getProvenance(this._recordKey);
 
         if (!provenance || provenance.length === 0) {
