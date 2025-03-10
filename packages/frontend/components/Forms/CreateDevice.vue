@@ -26,8 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h4 class="text-iris mt-1 mb-3">Create New Record</h4>
  
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Record Title">
-            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description">
+            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">
+            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description" maxlength="5000">
             <div style="display: block;">
                 <h4 class="mt-3 mb-3 text-iris">Record Image (optional)</h4>
                 <input type="file"  class="form-control " accept="*" @change="onFileChange" capture="environment" multiple />
