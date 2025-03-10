@@ -50,10 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <!-- The Modal to Enlarge Image -->
-    <!-- Image Preview Modal -->
-    <!-- Image Preview Modal -->
-    <!-- Image Preview Modal -->
+ <!-- Image Preview Modal -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
@@ -61,7 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img :src="attachment.url" :alt="attachment.fileName" class="modal-image">
+                <img :src="attachment?.url" :alt="attachment?.fileName" class="modal-image">
             </div>
         </div>
     </div>
@@ -88,6 +85,7 @@ export default {
         return {
             attachmentURLs: {},
             modalImage: "",
+            attachment: null,
         };
     },
     mounted() {
