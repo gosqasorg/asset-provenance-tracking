@@ -75,9 +75,9 @@ onMounted(async () => {
             <h1 class="mt-4 mb-2 text-iris">{{deviceRecord?.deviceName}}</h1>
             <h5>Record Key: {{ route.params.deviceKey }}</h5>
             <div class="my-2"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
-        
-            <div> 
-                <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View Provenance Records</button>
+
+            <div>
+                <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View History Records</button>
                 <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
             </div>
         </div>
