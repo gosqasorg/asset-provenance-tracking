@@ -25,67 +25,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h1 class="text-iris">Support GOSQAS</h1>
         <div class="row">
             <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) 
-                creates opportunities for better practices across the diverse humanitarian response, open-source hardware, 
-                and scientific research communities. We employ open-source tools and principles to centralize user solutions, 
-                despite location or resource environment.</p>
+                creates open-source technology to encourage better practices in the diverse humanitarian response, 
+                open-source hardware, and scientific research communities.<br><br>
+                We believe that all communities, regardless of location or resource environment, deserve tools that 
+                increase accessibility to quality information and products.<br><br>
+                GOSQAS/GDT is a project of Public Invention, a tax-exempt nonprofit organization under section 
+                501(c)(3) in the United States. Contributions by check should be made payable to “Public Invention” 
+                and include “GOSQAS” in the memo line to designate your support.<br><br>
+                Our EIN is 83-4036254.<br><br>
+                Mailing Address:<br>
+                Public Invention<br>
+                1709 Norris Dr.<br>
+                Address 2<br>
+                Austin, TX, 78704, USA</p>
         </div>
         
-        <form class="mt-3 mb-5" action="https://www.paypal.com/donate" method="post" target="_top">
+        <form class="mt-3 mb-3" action="https://www.paypal.com/donate" method="post" target="_top">
             <input type="hidden" name="hosted_button_id" value="L4XU6TL2UYSA2" />
             <input type="submit" class="donate-btn" value="Make a Donation on Paypal" />
         </form>
-
-        <div class="row">
-            <h3 class="text-iris involved-heading">Get Involved!</h3>
-
-            <!-- TODO: update with link to open positions once we have it -->
-            <p>Interested in helping out? Email us at <span class="learn-more-desc text-decoration-underline text-iris"> gosqasystem@gmail.com</span>
-                or view our open positions.</p>
-        </div>
-
-        <div class="row">
-            <div class="col wrap-word">
-                <RouterLink to="/about" class="text-iris heading-link">About Us</RouterLink>
-                <p>Read our mission statement and discover our values.</p>
-            </div>
-            <div class="col wrap-word">
-                <RouterLink to="/how-it-works" class="text-iris heading-link">How it Works</RouterLink>
-                <p>Learn about our open-source methodology.</p>
-            </div>
-            <!-- TODO: replace text and link once FIGMA is updated -->
-            <div class="col wrap-word">
-                <RouterLink to="/donate" class="text-iris heading-link">Another Thing</RouterLink>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-            </div>
-        </div>
     </div>
 </template>
 
 
-<script lang="ts">
-import ButtonComponent from '~/components/ButtonComponent.vue';
-
-export default {
-    components: {
-        ButtonComponent
-    }
-};
-</script>
 
 <style scoped>
-.involved-heading {
-    font-size: 32px !important;
-}
-
-.heading-link {
-    font-size: 24px;
-}
-
-.box {
-    float:left;
-    width: 33.33%;
-}
-
 .donate-btn {
     font-size: 18px;
     font-weight: 400;
