@@ -138,14 +138,14 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     return { record: recordID, attachments };
 }
 
-interface DecryptedBlob {
+export interface DecryptedBlob {
     data: Uint8Array;
     contentType: string;
     timestamp: number;
     filename?: string;
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
+export async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
@@ -175,7 +175,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Prom
     }
 }
 
-async function pathExists(containerClient: ContainerClient, path: string) {
+export async function pathExists(containerClient: ContainerClient, path: string) {
     const iterResult = await containerClient.listBlobsFlat({ prefix: path }).next();
     if (iterResult.done) {
         return false;
