@@ -2,10 +2,6 @@ import { sendEmail } from "./sendEmail.js";
 import { calculateDeviceID, decodeKey, decryptBlob, DecryptedBlob, encrypt, pathExists, sha256, toHex } from './httpTrigger.js';
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { ContainerClient, Metadata, StorageSharedKeyCredential } from "@azure/storage-blob";
-import { assert } from "console";
-import { triggerAsyncId } from "async_hooks";
-
-// const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 
 enum NotificationType {
     Email = 'email',
@@ -268,10 +264,8 @@ export async function unsubscribeNotification(request: HttpRequest, context: Inv
     }
 }
 
-// TODO: this shouldn't be a public endpoint
 
 // Notification messaging
-
 
 export async function sendNotification(context: InvocationContext, notification: Notification): Promise<void> {
     // TODO: add rate limiting, queueing, other notification channels and other notification logic
@@ -360,7 +354,7 @@ export async function getAllSubscribers(request: HttpRequest, context: Invocatio
     }
 }
 
-
+// TODO: for dev only
 app.get("getAllSubscribers", {
     authLevel: 'anonymous',
     route: 'notification/subscriber/{deviceKey}',
@@ -379,6 +373,7 @@ app.post("unsubscribeNotification", {
     handler: unsubscribeNotification
 })
 
+// TODO: this shouldn't be a public endpoint
 app.post('publishNotification', {
     authLevel: 'anonymous',
     route: 'notification/publish/{deviceKey}',
