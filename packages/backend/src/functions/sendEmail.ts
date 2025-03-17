@@ -1,6 +1,7 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
+import { InvocationContext } from "@azure/functions";
 
-const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
+const connectionString = 'endpoint=https://ben-comms-services.unitedstates.communication.azure.com/;accesskey=17MXXZ027eLbLLBFI9SORRbydrgWTDRoZk8syVAq4xuU6yZqTfkuJQQJ99BAACULyCpL2lOYAAAAAZCSDTWI'//process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 
 if (connectionString === undefined) {
   throw Error("COMMUNICATION_SERVICES_CONNECTION_STRING is not defined.");
@@ -9,8 +10,8 @@ if (connectionString === undefined) {
 const emailClient = new EmailClient(connectionString);
 
 // Send an email using the Azure Communication Services Email SDK
-export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
-  if (!from_address || !to_address || !subject || !plainText || !displayName) {
+export async function sendEmail(context: InvocationContext, from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
+  if (!context || !from_address || !to_address || !subject || !plainText || !displayName) {
     throw "Missing required parameter(s).";
   }
 
@@ -32,7 +33,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
       },
     };
 
-    console.log("Sending email...", message);
+    context.log("Sending email...", message);
     const poller = await emailClient.beginSend(message);
 
     if (!poller.getOperationState().isStarted) {
@@ -52,7 +53,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     }
 
     if (poller.getResult().status === KnownEmailSendStatus.Succeeded) {
-      console.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
+      context.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
       return { status: KnownEmailSendStatus.Succeeded, message: message };
     }
     else {
@@ -60,7 +61,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     }
 
   } catch (e) {
-    console.log(e);
+    context.log(e);
     return { status: "Failed", message: e };
   }
 
