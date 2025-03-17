@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     -->
 
 <script setup lang="ts">
-  import { useRoute, useRouter } from 'vue-router';
+  import { useRoute } from 'vue-router';
   const route = useRoute()
   const recordKey = route.params.deviceKey as string;
   const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
@@ -174,11 +174,14 @@ export default {
     }},
     async mounted() {
       try {
+        const route = useRoute();
+        this._recordKey = route.params.deviceKey as string; 
+
         this.addScrollListener();
 
         EventBus.on('feedRefresh', this.refreshFeed);
         
-        this.refreshFeed();
+        await this.refreshFeed();
       } catch (error) {
           this.isLoading = false;
           this.recordKeyFound = false;
@@ -216,9 +219,7 @@ export default {
         this.isLoading = true;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
-
-        const route = useRoute();
-        this._recordKey = route?.params.deviceKey as string;
+        
         const provenance = await getProvenance(this._recordKey);
 
         if (!provenance || provenance.length === 0) {
