@@ -46,7 +46,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
         <div> Child Keys:
             <div> <KeyList v-bind:keys="childKeys"/> </div>
         </div>
-        <CsvFile :deviceKey="recordKey"></CsvFile>
+        <CsvFile :recordKey="_recordKey"></CsvFile>
     </div>
   </div>
 </template>
@@ -78,6 +78,7 @@ export default {
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
+            _recordKey: ""
         }
     },
     methods: {
@@ -97,8 +98,8 @@ export default {
     async mounted() {
         try {
             const route = useRoute();
-            const deviceKey = route.params.deviceKey as string;
-            const response = await getProvenance(deviceKey);
+            this._recordKey = route.params.deviceKey as string; 
+            const response = await getProvenance(this._recordKey);
             deviceRecord = response[response.length - 1].record;
             this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
