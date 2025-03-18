@@ -1,7 +1,7 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 import { InvocationContext } from "@azure/functions";
 
-const connectionString = 'endpoint=https://ben-comms-services.unitedstates.communication.azure.com/;accesskey=17MXXZ027eLbLLBFI9SORRbydrgWTDRoZk8syVAq4xuU6yZqTfkuJQQJ99BAACULyCpL2lOYAAAAAZCSDTWI'//process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
+const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 
 if (connectionString === undefined) {
   throw Error("COMMUNICATION_SERVICES_CONNECTION_STRING is not defined.");
