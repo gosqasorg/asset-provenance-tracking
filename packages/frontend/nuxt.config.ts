@@ -40,5 +40,9 @@ baseUrl: ${nuxt.options.runtimeConfig.public.baseUrl}
 frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     }
   },
+  ssr: false,
+  nitro: {
+    static: true
+  },
   compatibilityDate: '2024-11-12'
 });

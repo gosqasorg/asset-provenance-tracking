@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     -->
 
 <script setup lang="ts">
-  import { useRoute, useRouter } from 'vue-router';
+  import { useRoute } from 'vue-router';
   const route = useRoute()
   const recordKey = route.params.deviceKey as string;
   const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
@@ -174,11 +174,14 @@ export default {
     }},
     async mounted() {
       try {
+        const route = useRoute();
+        this._recordKey = route.params.deviceKey as string; 
+
         this.addScrollListener();
 
         EventBus.on('feedRefresh', this.refreshFeed);
         
-        this.refreshFeed();
+        await this.refreshFeed();
       } catch (error) {
           this.isLoading = false;
           this.recordKeyFound = false;
@@ -202,8 +205,9 @@ export default {
             let sec = document.getElementById(current_id);
 
             let top = window.scrollY;
-            let offset = sec.offsetTop + 150; // can customize how far from the section to become active
-            let height = sec.offsetHeight;
+            const baseOffset = 150;
+            let offset = sec?.offsetTop ? sec?.offsetTop + baseOffset : baseOffset; // can customize how far from the section to become active
+            let height = sec?.offsetHeight ?? 0;
             if (top >= offset && top < offset + height) {
               currentSection.value = current_id;
             }
@@ -215,9 +219,7 @@ export default {
         this.isLoading = true;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
-
-        const route = useRoute();
-        this._recordKey = route.params.deviceKey as string;
+        
         const provenance = await getProvenance(this._recordKey);
 
         if (!provenance || provenance.length === 0) {
