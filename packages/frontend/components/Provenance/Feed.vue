@@ -50,22 +50,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <!-- The Modal to Enlarge Image -->
+ 
     <!-- Image Preview Modal -->
-    <!-- Image Preview Modal -->
-    <!-- Image Preview Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <img :src="attachment.url" :alt="attachment.fileName" class="modal-image">
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img v-bind:src="modalImage" alt="Image" class="modal-image">
+                </div>
             </div>
         </div>
     </div>
-</div>
+
 </template>
 
 <script>
@@ -209,6 +208,7 @@ export default {
 .btn-close:hover {
     opacity: 1;
 }
+
 .modal-content {
     background-color: rgba(0, 0, 0, 0.9);
     border: none;
@@ -220,8 +220,6 @@ export default {
     justify-content: center;
     align-items: center;
     min-height: 300px;
-    
-    
 }
 
 .modal-image {
@@ -229,6 +227,6 @@ export default {
     height: auto;
     margin: auto;
     max-width: 100%;
-    
 }
+
 </style>
