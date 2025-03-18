@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form enctype="multipart/form-data" class='bg-frost mb-5' @submit.prevent="submitRecord">
       <h5 class="text-iris">Create New Record Entry</h5>
       <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" required/>
+        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" maxlength="5000" required/>
         <div v-if="isGroup">            
             <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText" placeholder="Group Record Keys (optional, separated with a comma)"/>
         </div>
