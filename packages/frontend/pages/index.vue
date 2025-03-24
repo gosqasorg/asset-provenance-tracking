@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
-                <div class="row"> <h1>Trust and transparency when you need it most.</h1> </div>
+                <div class="row"> <h1>Trust and ABC transparency when you need it most.</h1> </div>
                 <div class="row"> <h4>Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style="margin-top:20px; display:inline-flex">
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackingForm">
