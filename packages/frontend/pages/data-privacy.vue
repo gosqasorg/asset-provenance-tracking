@@ -24,13 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container-fluid" id="about-container">
         <h1 class="text-iris">Data & Privacy</h1>
         <div class="row"> <p>
-            Global Distributed Tracking encrypts user data and ensures its accessibility only 
-            through the unique device key, which is linked to a QR code. A cryptographic hash function 
-            securely references data via the device key. AES encryption with 128 bit keys is used along 
-            with SHA-256 for cryptographic hashing. This process is performed in a zero-knowledge manner, 
-            ensuring that the Global Distributed Tracking team never stores or knows a user device key. 
-            Only Global Distributed Tracking users and individuals with whom they share a device key have 
-            access to the History Record of a device.
+            Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
+            which is linked to a QR code. A cryptographic hash function securely references data via the record key. 
+            AES encryption with 128 bit keys is used along with SHA-256 for cryptographic hashing. 
+            This process is performed in a zero-knowledge manner, ensuring that the Global Distributed Tracking team never stores or knows a key. 
+            Only Global Distributed Tracking users, and individuals with whom they share a record key, have access to record history stored 
+            within the key.
         </p> </div>
     
         <learn_more></learn_more>
