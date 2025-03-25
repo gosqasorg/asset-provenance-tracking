@@ -27,19 +27,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h1>Trust and transparency when you need it most.</h1> </div>
                 <div class="row"> <h4>Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style="margin-top:20px; display:inline-flex">
+                    <div id="createRecordButton" style="width: 60%; width: 230px;">
+                        <RouterLink to="/gdt"><button-component class="button" id="homeCreateButton" buttonText="Create Record" backgroundColor="#4E3681"
+                            borderColor="#4E3681" color="white" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
+                    </div>
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackingForm">
                         <button-component class="button" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
-                            padding="18px 22px"></button-component>
+                            backgroundColor="#CCECFD" borderColor="#CCECFD" color="#1E2019" padding="18px 22px"></button-component>
                     </form>
-                    <div id="createRecordButton" style="width: 60%; width: 230px;" >
-                        <RouterLink to="/gdt"><button-component class="button" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
-                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
-                    </div>
                     <div id="homeTrackAssetDiv" style="visibility: hidden; height: 0px; padding-bottom: 20px;">
                         <TrackAsset inputWidth="75%"></TrackAsset>
                     </div>
                 </div>
-                
+
             </div>
 
         </div>
@@ -78,31 +78,23 @@ const second_row = [
 
 export default {
     methods: {
-        // Function to have the 'Track an asset' input field appear
-        async trackingForm() {
-            let trackAssetDiv = <HTMLDivElement>document.getElementById("homeTrackAssetDiv");
-            let trackButton = <HTMLDivElement>document.getElementById("homeTrackButton");
+    // Function to have the 'Track an asset' input field appear
+    async trackingForm() {
+        let trackAssetDiv = <HTMLDivElement>document.getElementById("homeTrackAssetDiv");
+        let trackButton = <HTMLDivElement>document.getElementById("homeTrackButton");
 
-            if (!showTrack) { //if showTrack is false
-                showTrack = true;
-                trackAssetDiv.style.visibility="visible"; //make text input available
-                trackButton.style.backgroundColor = "#322253";
-                trackButton.style.borderColor = "#322253";
-                trackAssetDiv.style.height = "auto";
+        if (!showTrack) { //if showTrack is false
+            showTrack = true;
+            trackAssetDiv.style.visibility="visible"; //make text input available
+            trackAssetDiv.style.height = "auto";
 
-                // trackAssetDiv.style.paddingTop = "20px";
-
-            } else { 
-                showTrack = false; 
-                trackAssetDiv.style.visibility="hidden";
-                trackButton.style.backgroundColor = "#4E3681";
-                trackButton.style.borderColor = "#4E3681";
-                trackAssetDiv.style.height = "0px";
-
-                // trackAssetDiv.style.paddingTop = "0px";
-            }
-        },
-    }
+        } else { 
+            showTrack = false; 
+            trackAssetDiv.style.visibility="hidden";
+            trackAssetDiv.style.height = "0px";
+        }
+    },
+}
 }
 
 </script>
