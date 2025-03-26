@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form @submit.prevent="submit">
         <input type="text" id="input" v-model="deviceKey" placeholder="Record key" style="width: inputWidth;" required/>
         <button-component id="viewRecord" buttonText="View Record" padding="12px 12px" margin="0"
-            type="submit" style="font-size: 16px;"></button-component>
+            type="submit" style="font-size: 16px;" backgroundColor="#CCECFD" borderColor="#CCECFD" color="#1E2019"></button-component>
     </form>
 </template>
 
@@ -49,11 +49,8 @@ export default {
         }
     }
 }
-
 </script>
-
 <style scoped>
-
 input {
     border: 1px solid #CBD5E1;
     border-radius: 6px;
@@ -62,17 +59,13 @@ input {
     margin-top: 20px;
     margin-bottom: 0px;
 }
-
 #viewRecord {
     margin-top: 20px !important;
 }
-
 input::placeholder{
     padding-left: 5px;
 }
-
 form {
     width: 100%;
 }
-
 </style>
