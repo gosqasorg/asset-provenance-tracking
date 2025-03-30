@@ -58,7 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-import { postProvenance, getProvenance } from '~/services/azureFuncs';
+import { postProvenance, getProvenance, postTimestamps, getTimestamps } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { addChildKeys, addToGroup, notifyChildren } from '~/utils/descendantList';
 import { validateKey } from '~/utils/keyFuncs';
@@ -118,6 +118,20 @@ export default {
             this.notifyAll = false;
         },
         async submitRecord() {
+            // TODO: POST new record to timestamp container (only if below tests pass, will move this down later)
+            const currTime: Date = new Date(); // ex. Mon Mar 24 2025 16:33:19 GMT-0400 (Eastern Daylight Time)
+            const timeRecord = {
+                blobType: 'timestampRecord',
+                deviceKey: this.recordKey,
+                timestamp: currTime
+            };
+            await postTimestamps(this.recordKey, timeRecord);
+
+            // TODO: GET len of timestamps, if >=200 records then display error
+            const numRecords = await getTimestamps(this.recordKey);
+            
+
+
             // Get a refreshed copy of the records
             const records = await getProvenance(this.recordKey);
             
@@ -183,6 +197,9 @@ export default {
 
             // Notify children (update their records) depending on the tags
             notifyChildren(records, this.tags);
+
+            // TODO: Add record to table and check timestamps
+            
 
             // Append the record to the records.
             try {
