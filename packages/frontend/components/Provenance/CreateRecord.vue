@@ -1,6 +1,6 @@
-<!-- 
-CreateRecord.vue -- Creation of provenance record  
-Copyright (C) 2024 GOSQAS Team 
+<!--
+CreateRecord.vue -- Creation of provenance record
+Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <h5 class="text-iris">Create New Record Entry</h5>
       <div>
         <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" maxlength="5000" required/>
-        <div v-if="isGroup">            
+        <div v-if="isGroup">
             <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText" placeholder="Group Record Keys (optional, separated with a comma)"/>
         </div>
         <div v-else>
@@ -125,16 +125,17 @@ export default {
                 deviceKey: this.recordKey,
                 timestamp: currTime
             };
+            console.log("ABOUT TO CALL postTimestamps");
             await postTimestamps(this.recordKey, timeRecord);
 
             // TODO: GET len of timestamps, if >=200 records then display error
             const numRecords = await getTimestamps(this.recordKey);
-            
+            console.log("Done with getTimestamps");
 
 
             // Get a refreshed copy of the records
             const records = await getProvenance(this.recordKey);
-            
+
             if (!records || records.length === 0) {
                 this.$snackbar.add({
                     type: 'error',
@@ -177,7 +178,7 @@ export default {
                             this.newChildKeys = this.newChildKeys.filter(key => key !== childKey);
                         }
                     }
-                    
+
                     if (this.newChildKeys.length > 0) {
                         console.log("Adding child keys...", this.newChildKeys);
                         await addChildKeys(records, this.newChildKeys, []);
@@ -199,7 +200,7 @@ export default {
             notifyChildren(records, this.tags);
 
             // TODO: Add record to table and check timestamps
-            
+
 
             // Append the record to the records.
             try {
@@ -211,13 +212,13 @@ export default {
                 };
 
                 await postProvenance(this.recordKey, record, this.pictures || []);
-                
+
                 // Refresh CreateRecord component
                 this.refresh();
 
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
-            } catch (error) {        
+            } catch (error) {
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating record: ${error}`

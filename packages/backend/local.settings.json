@@ -1,13 +1,14 @@
 
 {
   "IsEncrypted": false,
-  "Values": {
+    "Values": {
+     "WEBSITE_NODE_DEFAULT_VERSION":"~18",
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AZURE_STORAGE_ACCOUNT_NAME": "",
     "AZURE_STORAGE_ACCOUNT_KEY": "",
-    "COMMUNICATION_SERVICES_CONNECTION_STRING":""
+        "COMMUNICATION_SERVICES_CONNECTION_STRING":""
   },
   "Host": {
     "CORS": "*"

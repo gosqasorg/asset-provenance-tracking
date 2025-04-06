@@ -21,7 +21,7 @@ export async function getProvenance(deviceKey: string) {
         if (!validateKey(deviceKey)) {
             throw new Error("Bad key provided");
         }
-        
+
         const baseUrl = useRuntimeConfig().public.baseUrl;
         const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
             method: "GET",
@@ -64,7 +64,7 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
     } catch (error) {
         console.error('Error occurred during getAttachment request:', error);
         throw error; // re-throw the error if you want to handle it further up the call stack
-    }      
+    }
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
@@ -78,7 +78,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     for (const blob of attachments) {
         formData.append(blob.name, blob);
     }
-    
+
     const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
         method: "POST",
         body: formData,
@@ -105,13 +105,13 @@ export async function getTimestamps(deviceKey: string) {
         if (!validateKey(deviceKey)) {
             throw new Error("Bad key provided");
         }
-        
+
         const baseUrl = useRuntimeConfig().public.baseUrl;
 
         // TODO: make sure this is the URL we want to store at
         // ERROR: here is where it crashes (works for pages other than timestamps)
         console.log(baseUrl + '/timestamps')
-        const response = await fetch(`${baseUrl}/timestamps`, {
+        const response = await fetch(`${baseUrl}/getTimestamps/${deviceKey}`, {
             method: "GET",
         });
 
@@ -138,8 +138,8 @@ export async function postTimestamps(deviceKey: string, record: any) {
     const formData = new FormData();
     // TODO: not sure if form data is formatted correctly
     formData.append("timestampRecord", JSON.stringify(record));
-    
-    const response = await fetch(`${baseUrl}/timestamps`, {
+
+    const response = await fetch(`${baseUrl}/postTimestamps/${deviceKey}`, {
         method: "POST",
         body: formData,
     });

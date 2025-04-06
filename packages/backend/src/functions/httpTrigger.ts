@@ -370,6 +370,53 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     };
 };
 
+
+// NOTE: All of this is untested as of now, because I can't get the frontend to call it
+// Function to post new timestamps to the container (and create it if it doesn't exist)
+export async function postTimestamps(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    console.log("BACKEND postTimestamps")
+
+    // Create container if it doesn't exist
+    await containerClient.createIfNotExists();
+
+    // Get the form data (formData = {blobType, deviceKey, timestamp})
+    const formData = await request.formData();
+    const provenanceRecord = formData.get("timestampRecord");
+    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+    const record = JSON5.parse(provenanceRecord);
+
+    // Add formData to the container as a new blob
+    const timestamp = new Date().getTime();
+    // const attachments = new Array<NamedBlob>();
+    // for (const attach of formData.values()) {
+    //     if (typeof attach === 'string') continue;
+    //     attachments.push({ blob: attach, name: attach.name });
+    // }
+    const body = "\"postTimeStampsCalled\"";
+
+//    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    return { jsonBody: body ?? { converted: true}};
+};
+
+
+// NOTE: Even this function doesn't work, even though it is just returning an empty list
+// Function to get timestamps currently stored
+export async function getTimestamps(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    console.log("BACKEND getTimestamps")
+
+    // Make sure the path exists and connect to the container
+    const containerExists = await containerClient.exists();
+    if (!containerExists) { return { jsonBody: [] }; }
+
+    // Get the records and sort them by timestamp, removing ones >200 seconds old
+    const records = []
+
+    // Return the retreived records
+    return { jsonBody: records };
+};
+
+
+
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
@@ -406,7 +453,14 @@ app.get("getStatistics", {
     handler: getStatistics
 })
 
+app.get("postTimestamps", {
+    authLevel: 'anonymous',
+    route: 'postTimestamps/{deviceKey}/',
+    handler: postTimestamps
+})
 
-
-
-
+app.get("getTimestamps", {
+    authLevel: 'anonymous',
+    route: 'getTimestamps/{deviceKey}/',
+    handler: getTimestamps
+})
