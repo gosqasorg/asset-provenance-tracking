@@ -31,5 +31,6 @@ export enum TagName {
 export enum InternalTagName {
     NotifyAll = "notify_all",
     Recall = "recall",
+    Annotate = "annotate",
     ReportingKey = "reportingkey", // This is in use so we can't change the formatting.
 }
