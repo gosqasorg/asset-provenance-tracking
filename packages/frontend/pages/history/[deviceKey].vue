@@ -100,8 +100,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
             </section>
 
+            <section id="recalled">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recalledRecords"/>
+            </section>
             <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/>
+              <!-- <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/> -->
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
             </section>
             <section id="device-creation">
               <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord"/>
@@ -148,6 +152,8 @@ import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
 let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
+let recalledRecords = [];
+let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 
@@ -235,7 +241,30 @@ export default {
 
         // Decompose the provenance records into parts to be rendered.
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+
+        // TODO: If tag == recall for any of the records, put that record at the top!!
+        let counter = 0;
+
+        provenanceNoRecord.forEach(record => {
+          // 0 = top of feed
+          if (Array.from(record.record.tags).includes("recall")) {
+            console.log(record.record.tags, counter);  // TODO: this gets the KEY/INDEX of record to move in the obj!! remove?
+
+            // TODO: MAYBE STILL HAVE 2 LISTS (for outline? mess with that)
+            // recordsInFeed.unshift(record);  // NOTE: currently from oldest --> newest
+            recalledRecords.push(record)
+          } else {
+            // tempRecordsInFeed.push(record);
+            recordsInFeed.push(record);
+          }
+          counter++;
+        });
+
+        console.log("recalled records", recordsInFeed)
+        console.log("starting order", provenanceNoRecord)
         
+
+
         this.isLoading = false;
         
         // This functionality could be pushed into a component...

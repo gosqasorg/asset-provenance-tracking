@@ -21,24 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
    https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
-<template>
-    <div class="popup" v-if="annotatePopUp">
-        <div class="popup-inner">
-            <h2 class="text-iris">Annotate all children</h2>
-            <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
-            
-            <div>
-                <!-- Cancels the record creation (close pop up) -->
-                <button-component @click="closePopUp()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
-                    borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
-
-                <!-- Continues the record creation (call submit function) -->
-                <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
-            </div>
-
-        </div>
-    </div>
-    
+<template>    
     <form enctype="multipart/form-data" class='bg-frost mb-5' @submit.prevent="trackingForm">
       <h5 class="text-iris">Create New Record Entry</h5>
       <div>
@@ -76,6 +59,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <button-component buttonText="Create Record Entry" type="submit" />
     </div>
     </form>
+
+    <div class="popup" v-if="recallPopUp">
+        <div class="popup-inner recall-popup">
+            <h2 class="text-iris">Recall all children</h2>
+            <p>You've selected Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
+            
+            <div>
+                <!-- Cancels the record creation (close pop up) -->
+                <button-component @click="closePopUpR()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
+                    borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
+
+                <!-- Continues the record creation (call submit function) -->
+                <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
+            </div>
+
+        </div>
+    </div>
+    <div class="popup" v-if="annotatePopUp">
+        <div class="popup-inner">
+            <h2 class="text-iris">Annotate all children</h2>
+            <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
+            
+            <div>
+                <!-- Cancels the record creation (close pop up) -->
+                <button-component @click="closePopUpA()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
+                    borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
+
+                <!-- Continues the record creation (call submit function) -->
+                <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
+            </div>
+
+        </div>
+    </div>
  </template>
  
  <script lang="ts">
@@ -95,7 +111,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             newChildKeys: [] as string[],
             annotateAll: false,
             recallAll: false,
-            annotatePopUp: false
+            annotatePopUp: false,
+            recallPopUp: false
         }
     },
     props: {
@@ -122,8 +139,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
     },
     methods: {
-        closePopUp() {
+        closePopUpA() {
             this.annotatePopUp = false
+        },
+        closePopUpR() {
+            this.recallPopUp = false
         },
         async trackingForm() {
             const annotateCheckBox = document.getElementById("annotate-all");
@@ -132,10 +152,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (Object.is(annotateCheckBox, null) || Object.is(recallCheckBox, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
-            } else if (annotateCheckBox.checked == true) {
-                this.annotatePopUp = true
             } else if (recallCheckBox.checked == true) {
-                // TODO: differentiate wording from annotate!!
+                this.recallPopUp = true
+            } else if (annotateCheckBox.checked == true) {
                 this.annotatePopUp = true
             } else {
                 this.submitRecord()
@@ -160,6 +179,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.annotateAll = false;
             this.recallAll = false;
             this.annotatePopUp = false;
+            this.recallPopUp = false;
         },
         async submitRecord() {
             // Get a refreshed copy of the records
@@ -328,6 +348,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     width: 665px;
     height: 300px;
     border-radius: 20px;
+  }
+
+  .recall-popup {
+    height: 275px;
   }
 
   .confirmBtn {
