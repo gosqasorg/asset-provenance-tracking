@@ -20,7 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 <template>
     <div>
-        <div v-for="(report, index) in provenance" class="report-box">
+        <div v-for="(report, index) in provenance" class="report-box" :style="{ border }">
+
+            <div v-if="recalledRecord">
+                <img src="../../assets/images/pin-icon.png" class="pin-image">
+            </div>
+
             <template v-if="report.record.blobType === 'deviceInitializer'">
                 <h3 id="createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
             </template>
@@ -82,11 +87,18 @@ export default {
         provenance: {
             default: null,
         },
+        border: {
+            type: String
+        },
+        disabled: {
+            type: Boolean
+        }
     },
     data() {
         return {
             attachmentURLs: {},
             modalImage: "",
+            recalledRecord: false
         };
     },
     mounted() {
@@ -119,6 +131,9 @@ export default {
             // set attachmentURLs to empty object to clear out old attachment URLs
             this.attachmentURLs = {};
             this.provenance.forEach((report, index) => this.fetchAttachmentsForReport(report, index));
+            
+            this.recalledRecord = false;
+            this.recalledRecord = (this.disabled ? true : false);
         }
     },
 };
@@ -227,6 +242,15 @@ export default {
     height: auto;
     margin: auto;
     max-width: 100%;
+}
+
+.recalled_records {
+  border: 2px;
+  border-color: #4e3681;
+}
+
+.pin-image {
+    float: right;
 }
 
 </style>

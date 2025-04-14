@@ -101,10 +101,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </section>
 
             <section id="recalled">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="recalledRecords"/>
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
             </section>
             <section id="recent">
-              <!-- <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/> -->
               <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
             </section>
             <section id="device-creation">
@@ -177,6 +176,7 @@ export default {
       hasReportingKey: false,
       childKeys: [] as string[],
       _recordKey: "",
+      valid: false
     }},
     async mounted() {
       try {
@@ -242,28 +242,15 @@ export default {
         // Decompose the provenance records into parts to be rendered.
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
-        // TODO: If tag == recall for any of the records, put that record at the top!!
-        let counter = 0;
-
+        // Pin recalled records to the top of the feed
         provenanceNoRecord.forEach(record => {
           // 0 = top of feed
           if (Array.from(record.record.tags).includes("recall")) {
-            console.log(record.record.tags, counter);  // TODO: this gets the KEY/INDEX of record to move in the obj!! remove?
-
-            // TODO: MAYBE STILL HAVE 2 LISTS (for outline? mess with that)
-            // recordsInFeed.unshift(record);  // NOTE: currently from oldest --> newest
             recalledRecords.push(record)
           } else {
-            // tempRecordsInFeed.push(record);
             recordsInFeed.push(record);
           }
-          counter++;
         });
-
-        console.log("recalled records", recordsInFeed)
-        console.log("starting order", provenanceNoRecord)
-        
-
 
         this.isLoading = false;
         
