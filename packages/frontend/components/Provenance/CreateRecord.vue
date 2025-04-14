@@ -63,7 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="popup" v-if="recallPopUp">
         <div class="popup-inner recall-popup">
             <h2 class="text-iris">Recall all children</h2>
-            <p>You've selected Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
+            <p>You've selected "Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
             
             <div>
                 <!-- Cancels the record creation (close pop up) -->
@@ -245,19 +245,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 });
             }
  
-            // Notify children (update their records w/ tags)
-            if (this.annotateAll) {
+            if (this.recallAll) {
+                // Recall children (update their records w/ tags AND description), move to top of record
+                this.tags.push("recall");
+                recallChildren(records, this.tags, this.description);
+            } else if (this.annotateAll) {
+                // Annotate children (update their records w/ tags)
                 this.tags.push("annotate");
                 notifyChildren(records, this.tags);
             }
  
-            // Recall children (update their records w/ tags AND description), move to top of record
-            if (this.recallAll) {
-                this.tags.push("recall");
-                recallChildren(records, this.tags, this.description);
-            }
- 
-            // TODO: if a record has a recall tag (which you can add above) then put it permanently at the top of the feed!
             // Append the record to the records.
             try {
                 const record = {

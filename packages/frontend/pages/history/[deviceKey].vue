@@ -243,10 +243,12 @@ export default {
         ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
         // Pin recalled records to the top of the feed
+        recalledRecords = [];
+        recordsInFeed = [];
+
         provenanceNoRecord.forEach(record => {
-          // 0 = top of feed
-          if (Array.from(record.record.tags).includes("recall")) {
-            recalledRecords.push(record)
+          if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
+            recalledRecords.push(record);
           } else {
             recordsInFeed.push(record);
           }
