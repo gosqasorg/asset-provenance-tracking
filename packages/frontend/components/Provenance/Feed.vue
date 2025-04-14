@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div v-for="(report, index) in provenance" class="report-box" :style="{ border }">
 
             <div v-if="recalledRecord">
-                <img src="../../assets/images/pin-icon.png" class="pin-image">
+                <img src="../../assets/images/pin-icon.svg" class="pin-image">
             </div>
 
             <template v-if="report.record.blobType === 'deviceInitializer'">
