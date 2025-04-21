@@ -1,0 +1,94 @@
+<template>
+    <button type="button" class="btn mt-1 bg-sky px-5 mb-5" v-on:click="downloadProvenanceCSV">
+        Download Provenance as CSV
+    </button>
+</template>
+
+<script>
+import { getProvenance, getAttachment } from '~/services/azureFuncs';
+
+
+export default {
+    props: {
+        recordKey: {
+            type: String,
+            required: true,
+        },
+    },
+
+    methods: {
+        async downloadProvenanceCSV() {
+            try {
+                // Fetch provenance provenanceItem using the provided recordKey
+                const provenanceData = await getProvenance(this.recordKey);
+                
+                if (!provenanceData || provenanceData.length === 0) {
+                    // Handle case where no provenance record are found
+                    console.error('No provenance record found');
+                    return;
+                }
+
+                // Create CSV header
+                let csvContent = 'Timestamp,Description,Device Name,Tags,Children Names,Children Keys,Attachment File\n';
+
+                // Use for...of instead of forEach for async operations
+                for (const provenanceItem of provenanceData) {
+                    // Format timestamp in UTC with both local and UTC time
+                    const date = new Date(provenanceItem.record.timestamp || provenanceItem.timestamp);
+                    const localTime = date.toLocaleString().replace(',', '');
+                    const utcTime = date.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+                    const timestamp = `${localTime} (${utcTime})`;
+
+                    const description = provenanceItem.record?.description?.replace(/"/g, '""') || '';
+                    const deviceName = provenanceItem.record?.deviceName?.replace(/"/g, '""') || '';
+
+                    // Format tags
+                    const tags = (provenanceItem.record?.tags || [])
+                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
+                        .join(';');
+                    const formattedTags = `[${tags}]`;
+
+                    const children = (provenanceItem.record?.children_name || [])
+                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
+                        .join(';');
+
+                    const childrenNames = `[${children}]`
+
+                    const childrenKeys = (provenanceItem.record?.children_key || [])
+                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
+                        .join(';');
+                    
+                    const formattedChildrenKeys = `[${childrenKeys}]`
+
+                    // Get attachment filename
+                    const baseUrl = useRuntimeConfig().public.baseUrl;
+                    const attachmentPromises = (provenanceItem.attachments || []).map(async (attachmentId) => {
+                        try {
+                            const { fileName } = await getAttachment(baseUrl, this.recordKey, attachmentId);
+                            return fileName || attachmentId;
+                        } catch (error) {
+                            console.error(`Error fetching attachment name for ${attachmentId}:`, error);
+                            return attachmentId;
+                        }
+                    });
+
+                    const attachmentName = await Promise.all(attachmentPromises);
+                    const stringifyAttachmentName = attachmentName
+                        .map(name => `"${name.replace(/"/g, '""')}"`);    
+
+                    csvContent += `${timestamp},${description},${deviceName},${formattedTags},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
+                }
+
+                // Create and trigger download
+                const anchor = document.createElement('a');
+                anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+                anchor.target = '_blank';
+                anchor.download = `provenance_${this.recordKey}.csv`;
+                anchor.click();
+            } catch (error) {
+                console.error('Error generating CSV:', error);
+            }
+        }
+    }
+}
+</script>

@@ -119,6 +119,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>    
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
+              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
             </section>
             
           </div>
