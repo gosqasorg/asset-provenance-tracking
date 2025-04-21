@@ -31,7 +31,6 @@ export default {
                 // Create CSV header
                 let csvContent = 'Timestamp,Description,Device Name,Tags,Children Names,Children Keys,Attachment File\n';
 
-                // Use for...of instead of forEach for async operations
                 for (const provenanceItem of provenanceData) {
                     // Format timestamp in UTC with both local and UTC time
                     const date = new Date(provenanceItem.record.timestamp || provenanceItem.timestamp);
@@ -39,6 +38,7 @@ export default {
                     const utcTime = date.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
                     const timestamp = `${localTime} (${utcTime})`;
 
+                    //Format Description and Device Name
                     const description = provenanceItem.record?.description?.replace(/"/g, '""') || '';
                     const deviceName = provenanceItem.record?.deviceName?.replace(/"/g, '""') || '';
 
@@ -48,12 +48,14 @@ export default {
                         .join(';');
                     const formattedTags = `[${tags}]`;
 
+                    //Find Children Names and format them
                     const children = (provenanceItem.record?.children_name || [])
                         .map(tag => `"${tag.replace(/"/g, "''")}"`)
                         .join(';');
 
                     const childrenNames = `[${children}]`
 
+                     //Find Children Keys and format them
                     const childrenKeys = (provenanceItem.record?.children_key || [])
                         .map(tag => `"${tag.replace(/"/g, "''")}"`)
                         .join(';');
@@ -75,7 +77,8 @@ export default {
                     const attachmentName = await Promise.all(attachmentPromises);
                     const stringifyAttachmentName = attachmentName
                         .map(name => `"${name.replace(/"/g, '""')}"`);    
-
+                    
+                    // Concatenate relevant data for csv file
                     csvContent += `${timestamp},${description},${deviceName},${formattedTags},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
                 }
 
