@@ -131,7 +131,6 @@ export default {
     margin-bottom: 14px;
     margin-top: 14px;
     border-radius: 20px;
-    width: 70%;
     /* Assuming the width is to fill the container */
     word-wrap: break-word;
 

@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="col-md-2 d-none d-md-block">
         <!-- Scrollspy -->
          <!-- When the screen size is md (>= 768px) and up  -->
-            <nav id="jump-to test" class="sticky-top text-slate"> 
+            <nav id="jump-to" class="sticky-top text-slate"> 
               <p class="menu-spacing">Jump to section</p>
               <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
                 <li id="item" class="py-2"
@@ -50,11 +50,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </nav>
           </div>
 
+
+
+          <!-- TODO: use BELOW as ref for Share button! -->
+
           <!-- When the screen size is less than md (< 768px ) -->
           <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
             <button class="btn text-left rounded-0" 
                     type="button" id="jump-to-mobile" data-bs-toggle="dropdown" aria-controls="toggle" aria-expanded="false"
-                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;"> 
+                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;"> 
               <i id="toggle-right" class="fa fa-angle-right"></i>
               <i id="toggle-down" class="fa fa-angle-down"></i>
               Jump to section
@@ -75,30 +79,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
-            <section id="device-details">
-              <div class="my-4 text-iris fs-1">
-                <p class="text-bold mb-0">Asset History Records</p>
-                <h1 class="mt-1 mb-1 text-iris">
-                  {{ deviceRecord?.deviceName }}
-                </h1>
-              </div>
-              <div class="qr-code-container">
-                <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;"/>
+          <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+
+            <section id="device-details" class="details-container">
+              <!-- WORDS: 1 -->
+              <div class="record-description">
+                <div class="my-4 text-iris fs-1">
+                  <p class="text-bold mb-0">Asset History Records</p>
+                  <h1 class="mt-1 mb-1 text-iris">
+                    {{ deviceRecord?.deviceName }}
+                  </h1>
                 </div>
-                <div class="wrapper-download">
-                  <button class="btn mt-0 bg-sky px-5 p-3" @click="downloadQRCode">Download QR Code</button>
+
+                <div>Record Key: {{ _recordKey }}</div>
+                <div class="mb-3">
+                    <span v-html="clickableLink(deviceRecord?.description)"></span>
                 </div>
+
+                <section ref= "section" id="priority-notices">
+                  <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
+                </section>
               </div>
-              <div>Record Key: {{ _recordKey }}</div>
-              <div>
-                  <span v-html="clickableLink(deviceRecord?.description)"></span>
+
+              <!-- QR: 1 -->
+              <div class="qr-code-wrapper">
+                <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
               </div>
           </section>
-            <section ref= "section" id="priority-notices">
-              <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
-            </section>
+            
+          <!-- TODO: add buttons (download and share) -->
+          <div class="buttons-container">
+            <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
+
+            <!-- TODO: create dropdown button -->
+            <button class="btn bg-sky share-btn" data-bs-toggle="dropdown">
+              Share Record Link
+              <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+            </button>
+
+            <!-- TODO: need to fix bootstrap dropdown styling (put in big div, set same bg color?) -->
+            <!-- Share dropdown -->
+            <ul class="dropdown-menu border-0 mt-1" style="padding: 7px 34px; 
+                background-color:#ccecfd;">
+              <li id="dropdown-item" style="padding: 7px" v-for="button in shareButtons" :key="button">
+
+                <!-- TODO: need unique funcs for each, either remove v-for OR define copy separately -->
+                <!-- NOTE: on click does not work, and @click can't be used with v-for (others should use href!!) -->
+
+                <!-- <a @click="copy()" class="text-slate" id="item-link">{{ button.name }}</a> -->
+
+                <!-- TODO: modify for email, then figure out v-for -->
+                <!-- <a @click="copy()" class="text-slate" id="item-link">{{ button.name }}</a> -->
+
+                <!-- _recordKey -->
+                <!-- TODO: give all custom id and use Javascript to edit the link?? currently am missing link/record key -->
+                <a href="mailto:example@website.com?subject=GOSQAS%20Asset%20History%20Record%20Link&body=Record%20Link:%20" 
+                class="text-slate" id="item-link">{{ button.name }}</a>
+              </li>
+            </ul>
+
+          </div>
 
             <section id="recent">
               <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/>
@@ -173,6 +213,13 @@ const headers = [
   { id: "device-creation", name: "Record creation" },
   { id: "create-record", name: "Create new record entry" }
 ];
+const shareButtons = [
+  { id: "copy-qr", name: "Copy" },
+  { id: "open-messages", name: "Messages" },
+  { id: "email-qr", name: "Email" },
+  { id: "open-whatsapp", name: "WhatsApp" },
+  { id: "open-telegram", name: "Telegram" }
+];
 
 
 export default {
@@ -211,7 +258,10 @@ export default {
       downloadQRCode() {
             const qrCodeComponent = this.$refs.qrcode_component as any;
             qrCodeComponent?.downloadQRCode()
-        },
+      },
+      copy() {
+        navigator.clipboard.writeText(window.location.href);
+      },
       addScrollListener() {
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
@@ -278,46 +328,70 @@ export default {
 <style>
 #device-details {
     margin: 20px auto;
+    margin-bottom: 15px;
     position: relative;
 }
 
 .qr-code-wrapper {
-  background-color:#4e3681; /* Light blue background */
+  background-color:#4e3681; /* Purple outline */
   padding:13px;
   padding-bottom: 7px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transform:scale(0.775);
   margin: -20px;
+  margin-left: -40px;
   transition-duration: 0.4s;
 }
 .qr-code-wrapper:hover {
   transform: scale(0.825);
 }
-.qr-code-container {
-  margin-top: -110px;
+/* TODO: modify QR style */
+
+.record-description {
   margin-right: 15px;
-  display: inline-block;
-  background-color: rgb(238, 247, 255); /* Light blue background */
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  position:absolute;
-  right: 0;
-  transform:scale(1.1);
-  /* transform-origin: top right; */
 }
-.wrapper-download {
-  padding: 0;
-  text-align: center;
-  padding-bottom: 15px;
-  transform: scale(0.95);
-  margin-top: -30px;
-  transition-duration: 0.4s;
+
+.details-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
-.wrapper-download:hover {
-  transform: scale(1);
+
+/* TODO: modify download button style */
+.buttons-container {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  /* align-content: stretch; */
 }
+.download-btn {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  /* margin-right: 30px; */
+  width: 48% !important;
+}
+.share-btn {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 48% !important;
+}
+
+/* Wrap buttons once screen gets below a certain size */
+@media (max-width: 665px) {
+  .share-btn {
+    width: 100% !important;
+  }
+  .download-btn {
+    width: 100% !important;
+  }
+}
+
+#item-link {
+  text-decoration: none;
+}
+
 .download-button {
     display: inline-block;
     margin-top: 15px;
