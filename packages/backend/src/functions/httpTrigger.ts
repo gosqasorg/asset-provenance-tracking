@@ -220,8 +220,12 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
 }
 
 
-const accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"] ?? "devstoreaccount1";
-const accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"] ?? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+function isEmpty(str) {
+    return (!str || str.length === 0 );
+}
+
+const accountName = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_NAME"]) ? "devstoreaccount1" : process.env["AZURE_STORAGE_ACCOUNT_NAME"];
+const accountKey = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_KEY"]) ? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==" : process.env["AZURE_STORAGE_ACCOUNT_KEY"];
 const baseUrl = accountName === "devstoreaccount1"
     ? `http://127.0.0.1:10000/devstoreaccount1`
     : `https://${accountName}.blob.core.windows.net`;
