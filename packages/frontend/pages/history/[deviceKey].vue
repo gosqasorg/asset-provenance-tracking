@@ -19,63 +19,105 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     -->
 
 <script setup lang="ts">
-  import { useRoute } from 'vue-router';
-  const route = useRoute()
-  const recordKey = route.params.deviceKey as string;
-  const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
-
+import { useRoute } from "vue-router";
+const route = useRoute();
+const recordKey = route.params.deviceKey as string;
+const qrCodeUrl = `${
+  useRuntimeConfig().public.frontendUrl
+}/history/${recordKey}`;
 </script>
 
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+  />
   <div v-if="!isLoading">
     <div v-if="recordKeyFound">
-
       <div class="row pt-3 pb-6 mx-4">
         <div class="col-md-2 d-none d-md-block">
-        <!-- Scrollspy -->
-         <!-- When the screen size is md (>= 768px) and up  -->
-            <nav id="jump-to test" class="sticky-top text-slate"> 
-              <p class="menu-spacing">Jump to section</p>
-              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
-                <li id="item" class="py-2"
-                  style= "border-left: 2px solid #4e3681;"
-                  v-for="header in headers"
-                  :key="header"
-                  :class="{ active: header.id === currentSection }">
-                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
-                </li>
-              </ul>
-            </nav>
-          </div>
-
-          <!-- When the screen size is less than md (< 768px ) -->
-          <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
-            <button class="btn text-left rounded-0" 
-                    type="button" id="jump-to-mobile" data-bs-toggle="dropdown" aria-controls="toggle" aria-expanded="false"
-                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;"> 
-              <i id="toggle-right" class="fa fa-angle-right"></i>
-              <i id="toggle-down" class="fa fa-angle-down"></i>
-              Jump to section
-            </button>
-
-            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px; 
-                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
-              <li id="dropdown-item" style="padding: 7px"
-                  v-for="header in headers"
-                  :key="header">
-                <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+          <!-- Scrollspy -->
+          <!-- When the screen size is md (>= 768px) and up  -->
+          <nav id="jump-to test" class="sticky-top text-slate">
+            <p class="menu-spacing">Jump to section</p>
+            <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2">
+              <li
+                id="item"
+                class="py-2"
+                style="border-left: 2px solid #4e3681"
+                v-for="header in headers"
+                :key="header"
+                :class="{ active: header.id === currentSection }"
+              >
+                <a
+                  :href="'#' + header.id"
+                  class="text-slate py-2"
+                  id="item-link"
+                  >{{ header.name }}</a
+                >
               </li>
             </ul>
-          </div>
+          </nav>
+        </div>
 
+        <!-- When the screen size is less than md (< 768px ) -->
+        <div
+          class="dropdown d-md-none"
+          style="border-bottom: 2px solid #4e3681"
+        >
+          <button
+            class="btn text-left rounded-0"
+            type="button"
+            id="jump-to-mobile"
+            data-bs-toggle="dropdown"
+            aria-controls="toggle"
+            aria-expanded="false"
+            style="
+              border: none;
+              font-size: 18px;
+              text-align: left;
+              border-bottom: 3px;
+            "
+          >
+            <i id="toggle-right" class="fa fa-angle-right"></i>
+            <i id="toggle-down" class="fa fa-angle-down"></i>
+            Jump to section
+          </button>
 
-    <!-- Scrollspy -->
+          <ul
+            class="dropdown-menu rounded-0 border-0"
+            style="width: 95%; padding: 7px 34px; background-color: #f1f5f9"
+            aria-labelledby="dropdownMenuButton"
+          >
+            <li
+              id="dropdown-item"
+              style="padding: 7px"
+              v-for="header in headers"
+              :key="header"
+            >
+              <a
+                :href="'#' + header.id"
+                class="text-slate py-2"
+                id="item-link"
+                >{{ header.name }}</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <!-- Scrollspy -->
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+          <div
+            data-mdb-scrollspy-init
+            data-spy="scroll"
+            data-mdb-target="#jump-to"
+            data-mdb-offset="0"
+            class="left-col"
+          >
+          <div class="device-setup-container">
             <section id="device-details">
               <div class="my-4 text-iris fs-1">
                 <p class="text-bold mb-0">Asset History Records</p>
@@ -83,69 +125,101 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                   {{ deviceRecord?.deviceName }}
                 </h1>
               </div>
-              <div class="qr-code-container">
-                <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;"/>
-                </div>
-                <div class="wrapper-download">
-                  <button class="btn mt-0 bg-sky px-5 p-3" @click="downloadQRCode">Download QR Code</button>
-                </div>
-              </div>
               <div>Record Key: {{ _recordKey }}</div>
               <div>
-                  <span v-html="clickableLink(deviceRecord?.description)"></span>
+                <span v-html="clickableLink(deviceRecord?.description)"></span>
               </div>
-          </section>
-            <section ref= "section" id="priority-notices">
-              <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
+            </section>
+
+            <section ref="section" id="priority-notices">
+              <ProvenancePriorityNotices
+                :recordKey="_recordKey"
+                :provenance="provenance"
+              />
             </section>
 
             <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/>
+              <ProvenanceFeed
+                :recordKey="_recordKey"
+                :provenance="provenanceNoRecord"
+              />
             </section>
-            <section id="device-creation">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord"/>
-            </section>
-            <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey"/>
-            </section>
-            <section id="child-keys">
-              <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
+
+            <div class="device-qrcode-flex">
+              <section id="device-creation" class="flex-item">
+                <ProvenanceFeed
+                  :recordKey="_recordKey"
+                  :provenance="deviceCreationRecord"
+                />
+              </section>
+
+              <div class="qr-code-container flex-item">
+                <div class="qr-code-wrapper">
+                  <QRCode
+                    :url="qrCodeUrl"
+                    ref="qrcode_component"
+                    style="border-radius: 15px; overflow: hidden"
+                  />
+                </div>
+                <div class="wrapper-download">
+                  <button
+                    class="btn mt-0 bg-sky px-5 p-3"
+                    @click="downloadQRCode"
+                  >
+                    Download QR Code
+                  </button>
+                </div>
               </div>
-              <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-                <div> Child Keys:
-                  <div> <KeyList v-bind:keys="childKeys"/> </div>
-                </div>    
+            </div>
+            </div>
+
+            <section id="create-record">
+              <ProvenanceCreateRecord
+                :deviceRecord="deviceRecord"
+                :recordKey="_recordKey"
+              />
+            </section>
+
+            <section id="child-keys">
+              <div v-if="hasReportingKey">
+                Reporting Key:
+                <div>
+                  <a :href="`/history/${deviceRecord?.reportingKey}`">{{
+                    deviceRecord?.reportingKey
+                  }}</a>
+                </div>
+              </div>
+              <div v-if="childKeys?.length > 0 || hasReportingKey">
+                <div>
+                  Child Keys:
+                  <div><KeyList v-bind:keys="childKeys" /></div>
+                </div>
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
             </section>
-            
           </div>
           <!-- Spied element -->
         </div>
-
       </div>
 
       <!-- TODO: Uncomment when  functionality is ready: 
       <div>
           <ProvenanceNotificationSignUpModal/>
-      </div>   --> 
-      
+      </div>   -->
     </div>
     <div v-else>
       <p>Record key not found.</p>
     </div>
   </div>
   <div v-else>
-      <p>Loading... please wait.</p>
-    </div>
+    <p>Loading... please wait.</p>
+  </div>
 </template>
 
 <script lang="ts">
-import { getProvenance} from '~/services/azureFuncs';
-import { ref } from 'vue'
-import KeyList from '~/components/KeyList.vue';
+import { getProvenance } from "~/services/azureFuncs";
+import { ref } from "vue";
+import KeyList from "~/components/KeyList.vue";
 
 let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
 const currentSection = ref();
@@ -156,9 +230,8 @@ const headers = [
   { id: "priority-notices", name: "Priority notices" },
   { id: "recent", name: "Most recent updates" },
   { id: "device-creation", name: "Record creation" },
-  { id: "create-record", name: "Create new record entry" }
+  { id: "create-record", name: "Create new record entry" },
 ];
-
 
 export default {
   components: {
@@ -171,125 +244,191 @@ export default {
       hasReportingKey: false,
       childKeys: [] as string[],
       _recordKey: "",
-    }},
-    async mounted() {
-      try {
-        const route = useRoute();
-        this._recordKey = route.params.deviceKey as string; 
+    };
+  },
+  async mounted() {
+    try {
+      const route = useRoute();
+      this._recordKey = route.params.deviceKey as string;
 
-        this.addScrollListener();
+      this.addScrollListener();
 
-        EventBus.on('feedRefresh', this.refreshFeed);
-        
-        await this.refreshFeed();
-      } catch (error) {
-          this.isLoading = false;
-          this.recordKeyFound = false;
-          this.hasReportingKey = false;
-          console.log(error)
+      EventBus.on("feedRefresh", this.refreshFeed);
+
+      await this.refreshFeed();
+    } catch (error) {
+      this.isLoading = false;
+      this.recordKeyFound = false;
+      this.hasReportingKey = false;
+      console.log(error);
+    }
+  },
+  beforeDestroy() {
+    EventBus.off("feedRefresh", this.refreshFeed);
+  },
+  methods: {
+    downloadQRCode() {
+      const qrCodeComponent = this.$refs.qrcode_component as any;
+      qrCodeComponent?.downloadQRCode();
+    },
+    addScrollListener() {
+      // When user scrolls, the nav bar is updated
+      window.addEventListener("scroll", () => {
+        for (let num in headers) {
+          let current_id = headers[num].id;
+          let sec = document.getElementById(current_id);
+
+          let top = window.scrollY;
+          const baseOffset = 150;
+          let offset = sec?.offsetTop
+            ? sec?.offsetTop + baseOffset
+            : baseOffset; // can customize how far from the section to become active
+          let height = sec?.offsetHeight ?? 0;
+          if (top >= offset && top < offset + height) {
+            currentSection.value = current_id;
+          }
+        }
+      });
+    },
+    async refreshFeed() {
+      console.log("Refreshing feed...");
+      this.isLoading = true;
+      this.recordKeyFound = false;
+      this.hasReportingKey = false;
+
+      const provenance = await getProvenance(this._recordKey);
+
+      if (!provenance || provenance.length === 0) {
+        this.$snackbar.add({
+          type: "error",
+          text: "No provenance record found",
+        });
+        this.isLoading = false;
+        return;
+      }
+
+      this.recordKeyFound = true;
+
+      // Decompose the provenance records into parts to be rendered.
+      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } =
+        decomposeProvenance(provenance));
+
+      this.isLoading = false;
+
+      // This functionality could be pushed into a component...
+      this.hasReportingKey = deviceRecord.reportingKey ? true : false;
+
+      // We will remove the reportingKey, because although it is a child,
+      // we have already rendered it.
+      if (this.hasReportingKey) {
+        const index = deviceRecord.children_key.indexOf(
+          deviceRecord.reportingKey,
+          0
+        );
+        if (index > -1) {
+          deviceRecord.children_key.splice(index, 1);
+        }
+      }
+      this.childKeys = getChildKeys(provenance);
+
+      // Add child key navigation if there are child keys
+      if (this.childKeys?.length > 0 || this.hasReportingKey) {
+        headers.push({ id: "child-keys", name: "Child keys" });
       }
     },
-    beforeDestroy() {
-        EventBus.off('feedRefresh', this.refreshFeed);
-    },
-    methods: {
-      downloadQRCode() {
-            const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode()
-        },
-      addScrollListener() {
-        // When user scrolls, the nav bar is updated
-        window.addEventListener('scroll', () => {
-          for(let num in headers) {
-            let current_id = headers[num].id;
-            let sec = document.getElementById(current_id);
-
-            let top = window.scrollY;
-            const baseOffset = 150;
-            let offset = sec?.offsetTop ? sec?.offsetTop + baseOffset : baseOffset; // can customize how far from the section to become active
-            let height = sec?.offsetHeight ?? 0;
-            if (top >= offset && top < offset + height) {
-              currentSection.value = current_id;
-            }
-          }
-        });
-      },
-      async refreshFeed() {
-        console.log("Refreshing feed...");
-        this.isLoading = true;
-        this.recordKeyFound = false;
-        this.hasReportingKey = false;
-        
-        const provenance = await getProvenance(this._recordKey);
-
-        if (!provenance || provenance.length === 0) {
-          this.$snackbar.add({
-            type: 'error',
-            text: 'No provenance record found'
-          });
-          this.isLoading = false;
-          return;
-        }
-
-        this.recordKeyFound = true;
-
-        // Decompose the provenance records into parts to be rendered.
-        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
-        
-        this.isLoading = false;
-        
-        // This functionality could be pushed into a component...
-        this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
-        
-        // We will remove the reportingKey, because although it is a child,
-        // we have already rendered it.
-        if (this.hasReportingKey) {
-            const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-            if (index > -1) {
-                deviceRecord.children_key.splice(index, 1);
-            }
-        }
-        this.childKeys = getChildKeys(provenance);
-
-        // Add child key navigation if there are child keys
-        if ((this.childKeys?.length > 0) || this.hasReportingKey) {
-          headers.push({ id: "child-keys", name: "Child keys" });
-        }
-      },
-    }
+  },
 };
-
 </script>
 <style>
 #device-details {
-    margin: 20px auto;
-    position: relative;
+  margin: 20px auto;
+  position: relative;
+}
+
+.device-qrcode-flex {
+  display: flex;
+  justify-content: space-between;
+  /* align-items: flex-start; */
+  align-items: flex-end;
+  /*gap: 1rem;*/ /*removing this made it tiny bit bigger*/
+  /*margin-top: 1rem;*/ /*removing this made space tiny bit bigger*/
+  margin-top: -215px;
+  flex-wrap: wrap;
+  /*margin-bottom: 40px;*/
+  flex-direction: column;
+}
+
+
+/*add mobile settings with gap and take off margin-top*/
+@media (min-width: 768px) {
+  .device-qrcode-flex {
+    flex-direction: row;
+  }
+  .flex-item {
+    flex: 1;
+    min-width: 300px;
+  }
+}
+
+/*.device-qrcode-flex .flex-item {
+  flex: 1;
+  min-width: 300px;
+}*/
+
+#device-creation {
+  flex: 1 1 auto;
+  /* flex: 1 1 0; */
+  margin-right: -275px;
 }
 
 .qr-code-wrapper {
-  background-color:#4e3681; /* Light blue background */
-  padding:13px;
+  background-color: #4e3681; /* Light blue background */
+  padding: 13px;
   padding-bottom: 7px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform:scale(0.775);
-  margin: -20px;
+  transform: scale(0.775);
+  /*margin: -20px; maybe leave this out*/
   transition-duration: 0.4s;
+  /* flex: 1 1 200px; */
+  /*margin-top: auto;*/
+  /*margin-bottom: 10px;*/
+  margin-top: 20px;
+  transform-origin: top center;
 }
 .qr-code-wrapper:hover {
   transform: scale(0.825);
 }
+
 .qr-code-container {
-  margin-top: -110px;
+  /* margin-top: -115px; */
+  /* margin-top: 1rem; */
   margin-right: 15px;
-  display: inline-block;
+  /* margin-left: 870px; */
+  margin-bottom: 35px;
+  display: flex;
+  /* flex-wrap: wrap; */
+  flex-direction: column;
+  align-items: center;
+  /*justify-content: space-evenly;*/ /*didnt make a difference*/
+  /* display: inline-block; */
+  /* display: inline-block; */
   background-color: rgb(238, 247, 255); /* Light blue background */
   border-radius: 15px;
+  /* maybe add padding to fix light blue*/
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
-  position:absolute;
-  right: 0;
-  transform:scale(1.1);
+  /* position: absolute; */
+  /* position: relative; */
+  /* right: 0; */
+  transform: scale(1.1);
+  /*flex: 1;*/
+  flex: 0 0 300px;
+  min-width: 300px; /*check if this line is necessary*/
+  max-width: 300px; /*change max-width from 400px*/
+  /*padding: 20px 0;*/
+  /* is there a max height to control top or maybe margin-top*/
+  height: 420px
   /* transform-origin: top right; */
 }
 .wrapper-download {
@@ -297,29 +436,32 @@ export default {
   text-align: center;
   padding-bottom: 15px;
   transform: scale(0.95);
-  margin-top: -30px;
+  margin-top: -70px;
+  /*margin-top: 10px;*/
+  /*margin-bottom: auto;*/
   transition-duration: 0.4s;
+  /* flex: 1 1 200px;*/
 }
 .wrapper-download:hover {
   transform: scale(1);
 }
 .download-button {
-    display: inline-block;
-    margin-top: 15px;
-    padding: 10px 20px;
-    color: #333;
-    font-size: 14px;
-    font-weight: bold;
-    text-align: center;
-    text-decoration: none;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  margin-top: 15px;
+  padding: 10px 20px;
+  color: #333;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .download-button:hover {
-    background-color:#4e3681; /* Slightly darker blue on hover */
+  background-color: #4e3681; /* Slightly darker blue on hover */
 }
 
 .menu-spacing {
@@ -330,15 +472,15 @@ export default {
   white-space: pre-line;
 }
 
-a:link, a:visited {
-      text-decoration: none;
+a:link,
+a:visited {
+  text-decoration: none;
 }
 
 #item > a {
   padding-left: 20px;
   box-decoration-break: clone;
 }
-
 
 #item > a:hover {
   padding-left: 20px;
@@ -357,7 +499,7 @@ a:link, a:visited {
 
 #jump-to-mobile[aria-expanded="true"] {
   #toggle-down {
-    display:inline-block;
+    display: inline-block;
   }
   #toggle-right {
     display: none;
@@ -366,12 +508,10 @@ a:link, a:visited {
 
 #jump-to-mobile[aria-expanded="false"] {
   #toggle-down {
-    display:none;
+    display: none;
   }
   #toggle-right {
     display: inline-block;
   }
 }
-
-
 </style>
