@@ -1,3 +1,4 @@
+import { HttpRequest } from '@azure/functions'
 import { vi } from 'vitest'
 
 const routeRegistrations: any[] = []
@@ -31,6 +32,54 @@ export const mockAzureFunctions = {
   })),
   HttpRequest: vi.fn(),
   HttpResponse: vi.fn(),
+}
+
+class TestHttpRequest implements HttpRequest {
+  method: string;
+  url: string;
+  headers: Headers;
+  query: URLSearchParams;
+  body: any;
+
+  constructor(config: {
+      method?: string;
+      url?: string;
+      headers?: Record<string, string>;
+      body?: any;
+      query?: Record<string, string>;
+  }) {
+      this.method = config.method || 'GET';
+      this.url = config.url || 'http://localhost';
+      this.headers = new Headers(config.headers || {});
+      this.query = new URLSearchParams(config.query);
+      this.body = config.body;
+  }
+
+  async json() {
+      return this.body;
+  }
+
+  async text() {
+      return JSON.stringify(this.body);
+  }
+
+  async formData() {
+      // Convert body to FormData if it isn't already
+      if (this.body instanceof FormData) return this.body;
+      const formData = new FormData();
+      Object.entries(this.body).forEach(([key, value]) => {
+          formData.append(key, value as string);
+      });
+      return formData;
+  }
+
+  async arrayBuffer() {
+      throw new Error('Not implemented');
+  }
+
+  async blob() {
+      throw new Error('Not implemented');
+  }
 }
 
 export { routeRegistrations }

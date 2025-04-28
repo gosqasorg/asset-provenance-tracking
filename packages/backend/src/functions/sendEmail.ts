@@ -3,7 +3,7 @@ import { InvocationContext } from "@azure/functions";
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 
-if (connectionString === undefined) {
+if (!connectionString) {
   throw Error("COMMUNICATION_SERVICES_CONNECTION_STRING is not defined.");
 }
 

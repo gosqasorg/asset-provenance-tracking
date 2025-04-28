@@ -305,7 +305,7 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
-    console.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
     
     await containerClient.createIfNotExists();
 

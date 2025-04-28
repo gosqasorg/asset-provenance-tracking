@@ -28,6 +28,17 @@ export interface Subscriber {
 
 // Notification Storage
 
+// gosqas
+//   -- gdt-notifications
+//       -- subscribers
+//           -- deviceID1
+//           -- deviceID2
+//           -- deviceID3
+
+// Blob storage is write only so updates are new blobs.
+// The deviceID is the name of the blob
+// The blob contains the subscriber list per device id
+
 const accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"] ?? "devstoreaccount1";
 const accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"] ?? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 const baseUrl = accountName === "devstoreaccount1"
@@ -92,7 +103,7 @@ export async function putSubscriber(deviceKey: Uint8Array, data: BufferSource, c
     // const blobID = toHex(await sha256(encryptedData));
 
     // Virtual path for the blob
-    const blobName = `subscribers/${deviceID}`;
+    const blobName = `subscribers/${deviceID}`;//${blobID}`;
 
     const { encryptedData: encryptedName } = fileName
         ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
@@ -110,26 +121,26 @@ export async function putSubscriber(deviceKey: Uint8Array, data: BufferSource, c
 }
 
 
-export async function getSubscribers(deviceKey: Uint8Array, context: InvocationContext): Promise<Subscriber[]> {
+export async function getSubscribers(deviceKey: Uint8Array, context?: InvocationContext): Promise<Subscriber[]> {
     const deviceID = await calculateDeviceID(deviceKey);
     const blobName = `subscribers/${deviceID}`;
 
     const decryptedBlob = await downloadBlob(deviceKey, blobName);
     if (!decryptedBlob) {
-        context.log("Blob not found");
+        context?.log("Blob not found");
         return [];
         // throw new Error("Blob not found");
     }
 
     const { data, contentType, filename } = decryptedBlob;
-    context.log("data:", data, "contentType:", contentType, "filename:", filename);
+    context?.log("data:", data, "contentType:", contentType, "filename:", filename);
 
     const data_string = new TextDecoder().decode(data);
-    context.log("data_string:", data_string);
+    context?.log("data_string:", data_string);
 
     const json = data_string ? JSON.parse(data_string) as Subscriber[] : [];
 
-    context.log("json:", json);
+    context?.log("json:", json);
     return json;
 }
 
@@ -150,14 +161,13 @@ export async function subscribeNotification(request: HttpRequest, context: Invoc
         }
 
         if (!body.tags) {
-            context.log("No tags... should unsub to everything");
+            context.log("No tags... should subscribe to everything");
         }
 
 
         // assert(request.params.deviceKey, "deviceKey is required");
         context.log("deviceKey:", request.params.deviceKey);
         const deviceKey = decodeKey(request.params.deviceKey);
-
         const subscribers = await getSubscribers(deviceKey, context);
 
         context.log("subscribers:", subscribers);
