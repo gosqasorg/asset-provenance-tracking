@@ -120,6 +120,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
             </section>
+            <section id="notification-signup">
+              <ProvenanceNotificationSignUp :recordKey="_recordKey"/>
+            </section>
             
           </div>
           <!-- Spied element -->

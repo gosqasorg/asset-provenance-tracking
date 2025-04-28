@@ -32,17 +32,16 @@ export default defineNuxtConfig({
     bottom: true,
     duration: 5000
   },
-  hooks: {
-    ready(nuxt) {
-      // Log the app config to ensure it is correct when deployed.
-      console.log(`App Config:
-baseUrl: ${nuxt.options.runtimeConfig.public.baseUrl}
-frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern',
+          // Silence Bootstrap SCSS deprecation warnings until they are fixed
+          silenceDeprecations: ['mixed-decls', 'import', 'color-functions', 'global-builtin'],
+        },
+      }
     }
-  },
-  ssr: false,
-  nitro: {
-    static: true
   },
   compatibilityDate: '2024-11-12'
 });
