@@ -48,6 +48,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
         </div>
         <CsvFile :recordKey="_recordKey"></CsvFile>
     </div>
+    <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
   </div>
 </template>
 <script lang="ts">
