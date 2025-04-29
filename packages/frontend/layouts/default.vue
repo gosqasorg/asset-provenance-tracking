@@ -1,7 +1,7 @@
 <template>
   <div class="root-div">
     <!-- Mobile Menu -->
-    <nav class="navbar navbar-expand-lg bg-frost">
+    <nav class="navbar navbar-expand-lg" id="navbar">
       <div class="container-fluid" id="nav">
         <a href="/" class="navbar-brand">
           <img src="../assets/styles/gosqas_logo.png" id="logo" />
@@ -99,7 +99,7 @@
     </div>
 
     <!-- Footer Section -->
-    <footer class="footer footer-light bg-frost">
+    <footer class="footer footer-light" id="footer">
       <div class="container custom-row-position custom-container">
         <div class="col-md-5 text-md-start mb-3 mb-md-0 custom-logo">
           <RouterLink to="/">
@@ -161,19 +161,38 @@ export default {
       );
       let nav = <HTMLDivElement>document.getElementById("nav");
 
+      const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
       if (!showTrack) {
-        //if showTrack is false
-        showTrack = true;
-        viewRecordDiv.style.display = "inline"; //make text input available
-        viewRecordButton.style.backgroundColor = "#322253";
-        viewRecordButton.style.borderColor = "#322253";
-        nav.style.paddingBottom = "80px";
+      showTrack = true;
+      viewRecordDiv.style.display = "inline";
+
+      if (prefersDarkMode) {
+        viewRecordButton.style.backgroundColor = "#CCECFD"; 
+        viewRecordButton.style.color = "#000000"; 
+        viewRecordButton.style.borderColor = "#CCECFD";
       } else {
-        showTrack = false;
-        viewRecordDiv.style.display = "none";
         viewRecordButton.style.backgroundColor = "#4E3681";
+        viewRecordButton.style.color = "#FFFFFF"; 
         viewRecordButton.style.borderColor = "#4E3681";
-        nav.style.paddingBottom = "24.5px";
+      }
+
+      nav.style.paddingBottom = "80px";
+    } else {
+      showTrack = false;
+      viewRecordDiv.style.display = "none";
+      
+      if (prefersDarkMode) {
+        viewRecordButton.style.backgroundColor = "#CCECFD";
+        viewRecordButton.style.color = "#000000"; 
+        viewRecordButton.style.borderColor = "#CCECFD";
+      } else {
+        viewRecordButton.style.backgroundColor = "#4E3681"; 
+        viewRecordButton.style.color = "#FFFFFF";
+        viewRecordButton.style.borderColor = "#4E3681"; 
+      }
+      
+      nav.style.paddingBottom = "24.5px";
       }
     },
   },
@@ -218,14 +237,6 @@ export default {
 .navbar-toggler-icon:focus {
   border: none;
   box-shadow: none;
-}
-
-.navbar-collapse .nav-link:hover,
-.navbar-collapse .nav-link.active,
-.mobile-link:hover,
-.mobile-link.active {
-  color: #4e3681;
-  font-weight: 600;
 }
 
 #button-toggler {
@@ -320,7 +331,6 @@ export default {
   .nav-link {
     font-size: 20px;
     font-weight: 400;
-    color: #1e2019;
   }
   li {
     align-content: center;
@@ -515,4 +525,103 @@ export default {
     padding-bottom: 20px;
   }
 }
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #navbar {
+      background-color: #1E2019;
+    }
+    #footer {
+      background-color: #1E2019;
+    }
+    .h1-text {
+      color: #CCECFD;
+    }
+    .p-text-color {
+      color: #E6F6FF;
+    }
+    .h2-text {
+      color: #CCECFD;
+    }
+    .nav-link {
+      color: #FFFFFF;
+    }
+    .mobile-link {
+      color: #FFFFFF;
+    }
+    .text-muted {
+      color: #FFFFFF;
+    }
+    .navbar-collapse .nav-link:hover,
+    .navbar-collapse .nav-link.active,
+    .mobile-link:hover,
+    .mobile-link.active {
+      color: #CCECFD;
+      font-weight: 600;
+    }
+    #viewRecordButton {
+      background-color: #CCECFD; 
+      color: #000000; 
+      borderColor: #CCECFD;
+    }
+    #footer a, 
+    #footer RouterLink {
+      color: #FFFFFF;
+    }
+    #footer p,
+    #footer .text-muted {
+      color: white 
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #navbar {
+        background-color: #E6F6FF;
+    }
+    #footer {
+        background-color: #E6F6FF;
+    }
+    .h1-text {
+        color: #4E3681;
+    }
+    .p-text-color {
+        color: #4E3681;
+    }
+    .h2-text {
+        color: #4E3681;
+    }
+    .p-text {
+        color: #4E3681;
+    }
+    .nav-link {
+        color: #1e2019;
+    }
+    .mobile-link {
+      color: #1e2019;
+    }
+    .text-muted {
+      color: #1e2019;
+    }
+    .navbar-collapse .nav-link:hover,
+    .navbar-collapse .nav-link.active,
+    .mobile-link:hover,
+    .mobile-link.active {
+      color: #4e3681;
+      font-weight: 600;
+    }
+    #viewRecordButton {
+      background-color: #4E3681;
+      color: #FFFFFF;  
+      borderColor: #4E3681;
+    } 
+    #footer p, 
+    #footer RouterLink {
+      color: black;
+    }
+    #footer p,
+    #footer .text-muted {
+      color: white 
+    }
+}
+
 </style>

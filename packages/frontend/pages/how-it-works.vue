@@ -20,9 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="how-it-works-container"> 
-        <h1 class="text-iris" style="margin-bottom:32px;">How It Works</h1>
+        <h1 class="h1-text" style="margin-bottom:32px;">How It Works</h1>
         <div class="row" id="how-it-works">
-            <p>Designed by Global Open Source Quality Assurance System (GOSQAS), 
+            <p class="p-text">Designed by Global Open Source Quality Assurance System (GOSQAS), 
                 Global Distributed Tracking (GDT) is a software platform enabling closed-loop tracking for products, 
                 information, and logistics.<br><br>
 
@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Distributed Tracking to function in low-resource environments where internet and electricity access is limited.</p>
 
             <div class="row" id="targets">
-                <ul class="text-iris" style="font-size: 20px; font-weight: 600;">Global Distributed Tracking targets solutions in:</ul>
+                <ul class="ul-text" style="font-size: 20px; font-weight: 600;">Global Distributed Tracking targets solutions in:</ul>
                 <div class="col mx-2">
                     <li>Last mile verification</li>
                     <li>Fraud and theft prevention</li>
@@ -42,7 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <div class="row" id="features">
-                <ul class="text-iris" style="font-size: 20px; font-weight: 600;">Features include:</ul>
+                <ul class="ul-text" style="font-size: 20px; font-weight: 600;">Features include:</ul>
                 <div class="col mx-2">
                     <li>Completely free service with no hidden fees</li>
                     <li>Fully encrypted data</li>
@@ -58,7 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row" id="overview">
-            <h2 class="text-iris" style="margin-bottom:25px">Overview</h2>
+            <h2 class="h2-text" style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
                 <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
@@ -123,8 +123,56 @@ li{
     #how-it-works-container{
         padding: 80px 200px 100px 200px;
     }
-   
+}
 
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #how-it-works-container {
+        background-color: #1E2019
+    }
+    .h1-text {
+        color: #CCECFD;
+    }
+    .ul-text {
+        color: #E6F6FF;
+    }
+    .h2-text {
+        color: #CCECFD;
+    }
+    .p-text {
+        color: #FFFFFF;
+    }
+    .col mx-2 {
+        color: #FFFFFF;
+    }
+    .col {
+        color: #FFFFFF;
+    }
+  
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #how-it-works-container {
+        background-color: #FFFFFF;
+    }
+    .h1-text {
+        color: #4E3681;
+    }
+    .ul-text {
+        color: #4E3681;
+    }
+    .h2-text {
+        color: #4E3681;
+    }
+    .p-text {
+        color: #4E3681;
+    }
+    .col mx-2 {
+        color: black;
+    }
+    .col {
+        color: black;
+    }
 }
 
 </style>

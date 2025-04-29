@@ -22,9 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="donate-container">
-        <h1 class="text-iris">Support GOSQAS</h1>
+        <h1 class="h1-text">Support GOSQAS</h1>
         <div class="row">
-            <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) 
+            <p class="p-text" style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) 
                 creates open-source technology to encourage better practices in the diverse humanitarian response, 
                 open-source hardware, and scientific research communities.<br><br>
                 We believe that all communities, regardless of location or resource environment, deserve tools that 
@@ -55,9 +55,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     font-weight: 400;
     line-height: 31px;
 
-    background-color: #4e3681;
+    /*background-color: #4e3681;
     border: #4e3681;
-    color: white;
+    color: white;*/
     padding: 10px 20px;
     border-radius: 10px;
 
@@ -91,6 +91,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     }
     .row{
         margin-top:32px;
+    }
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #donate-container {
+        background-color: #1E2019
+    }
+    .h1-text {
+        color: #CCECFD;
+    }
+    .p-text {
+        color: #FFFFFF;
+    }
+    .donate-btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #donate-container {
+        background-color: #FFFFFF;
+    }
+    .h1-text {
+        color: #4E3681;
+    }
+    .p-text {
+        color: #4E3681;
+    }
+    .donate-btn {
+        background-color: #4e3681;
+        border: #4e3681;
+        color: white;
     }
 }
 </style>

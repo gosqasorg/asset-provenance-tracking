@@ -24,8 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
-                <div class="row"> <h1>Trust and transparency when you need it most.</h1> </div>
-                <div class="row"> <h4>Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
+                <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
+                <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style="margin-top:20px; display:inline-flex">
                     <div id="createRecordButton" style="width: 60%; width: 230px;">
                         <RouterLink to="/gdt"><button-component class="button" id="homeCreateButton" buttonText="Create Record" backgroundColor="#4E3681"
@@ -44,15 +44,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
 
-        <div class="row bg-frost" id="second-row" >
+        <div class="row" id="second-row" >
             <div class="row rowtest">
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
-                    <h3 class="text-iris" id="second-row-cols-h3">{{item.title}}</h3>
-                    <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
+                    <h3 class="h3-text" id="second-row-cols-h3">{{item.title}}</h3>
+                    <p class="p-text" style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <RouterLink to="/about"><button-component class="button" buttonText="About Us" color="#322253" backgroundColor="#ffffff00"></button-component></RouterLink>
+                <RouterLink to="/about"><button-component class="about-button" buttonText="About Us"></button-component></RouterLink>
             </div>
 
         </div> 
@@ -209,5 +209,56 @@ export default {
     }
 }
 
+/* Dark mode version of first row */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-heading {
+    color: #FFFFFF;
+  }
+  #first-row {
+        background-color: #1E2019;
+    }
+}
+
+/* Dark mode version of second row */
+@media (prefers-color-scheme: dark) {
+  #second-row{
+        background-color: #4E3681;
+    }
+
+  .h3-text {
+    color: #FFFFFF; 
+  }
+
+  .p-text {
+    color: #E6F6FF; 
+  }
+
+  #about-button {
+    background-color: #4E3681; 
+    border: 2px solid #FFFFFF; 
+    borderColor: #FFFFFF;
+    color: #FFFFFF;
+  }
+}
+/* Light mode version of second row */
+@media (prefers-color-scheme: light) {
+  #second-row{
+        background-color: #E6F6FF;
+    }
+
+  .h3-text {
+    color: #4E3681; 
+  }
+
+  .p-text {
+    color: #322253; 
+  }
+
+  .about-button {
+    background-color: #ffffff00; 
+    border: 2px solid #322253; 
+    color: #FFFFFF00;
+  }
+}
 
 </style>

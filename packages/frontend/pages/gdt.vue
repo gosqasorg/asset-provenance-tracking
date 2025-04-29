@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the landing page where you can create a new record to track
 -->
 <template>
-    <div class="container-md">
-        <h1 class="my-4 text-iris fs-1">Global Distributed Tracking</h1>
+    <div class="container-md" id="gdt">
+        <h1 class="h1-text my-4 fs-1">Global Distributed Tracking</h1>
  
  
         <!-- create toggle for single or group  -->
@@ -165,6 +165,44 @@ export default {
 @media (min-width:768px) {
     .fs-1 {
         font-size: 32px;
+    }
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #gdt {
+        background-color: #1E2019
+    }
+    .h1-text {
+        color: #CCECFD;
+    }
+    .p-text-color {
+        color: #E6F6FF;
+    }
+    .h2-text {
+        color: #CCECFD;
+    }
+    .p-text {
+        color: #FFFFFF;
+    }
+  
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #gdt {
+        background-color: #FFFFFF;
+    }
+    .h1-text {
+        color: #4E3681;
+    }
+    .p-text-color {
+        color: #4E3681;
+    }
+    .h2-text {
+        color: #4E3681;
+    }
+    .p-text {
+        color: black;
     }
 }
 
