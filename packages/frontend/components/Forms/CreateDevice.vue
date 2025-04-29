@@ -42,7 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
  
         <div class="d-grid">
-            <ButtonComponent class="my-3 mb-0 submit-btn" buttonText="Create Record" type="submit" />
+            <ButtonComponent class="my-3 mb-0 submit-btn" buttonText="Create Record" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting"/>
         </div>
     </form>
 </template>
@@ -63,6 +63,16 @@ export default {
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
+            isSubmitting: false  // bool to check that form is submitted
+        }
+    },
+    computed: {
+        // Checks to see if form is valid to be submitted and disables the form submit button if so.
+        isFormValid() {
+            return this.name.trim() !== '' && this.description.trim() !== '';
+        },
+        isButtonDisabled() {
+            return !this.isFormValid || this.isSubmitting;
         }
     },
     methods: {
@@ -77,6 +87,9 @@ export default {
             }
         },
         async submitForm() {
+            if (this.isSubmitting) return;
+            
+            this.isSubmitting = true;
             try {
                 const deviceKey = await makeEncodedDeviceKey();
                 const response = await postProvenance(deviceKey, {
@@ -109,6 +122,8 @@ export default {
                     type: 'error',
                     text: `Failed to create the record: ${error}`
                 });
+            } finally {
+                this.isSubmitting = false;
             }
         },
     }
