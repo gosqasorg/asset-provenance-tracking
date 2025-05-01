@@ -156,7 +156,35 @@ export async function addToGroup(recordKey: string, records: any, attachments?: 
     }
 }
 
+// Annotate: Send new record entry to all children
 export async function notifyChildren(records: any, tags: string[], attachments?: File[]) {
+    try {
+        if (tags.includes(InternalTagName.Annotate)) {
+            if (records[0].isReportingKey) {
+                // Reporting keys do not have the ability to recall
+                console.log("Cannot notify children with the 'annotate' tag. This is a reporting key.");
+            } else {
+                const uniqueChildKeys = deduplicateKeys(getChildKeys(records));
+ 
+
+                for (const key of uniqueChildKeys) {
+                    postProvenance(key, {
+                        blobType: 'deviceRecord',
+                        description: "Annotated by admin",
+                        children_key: '',
+                        tags: tags,
+                    }, attachments || [])
+                }
+                console.log("Finished updating children with 'annotate' tag.");
+            }
+        }
+    } catch (error) {
+        console.error(`Error annotating children: ${error}`);
+    }
+ }
+ 
+ // Recall: Pin new record entry
+ export async function recallChildren(records: any, tags: string[], description: string, attachments?: File[]) {
     try {
         if (tags.includes(InternalTagName.Recall)) {
             if (records[0].isReportingKey) {
@@ -164,11 +192,12 @@ export async function notifyChildren(records: any, tags: string[], attachments?:
                 console.log("Cannot notify children with the 'recall' tag. This is a reporting key.");
             } else {
                 const uniqueChildKeys = deduplicateKeys(getChildKeys(records));
-
+ 
+ 
                 for (const key of uniqueChildKeys) {
                     postProvenance(key, {
                         blobType: 'deviceRecord',
-                        description:  "Recalled by admin",
+                        description: description,
                         children_key: '',
                         tags: tags,
                     }, attachments || [])
@@ -179,4 +208,5 @@ export async function notifyChildren(records: any, tags: string[], attachments?:
     } catch (error) {
         console.error(`Error notifying children: ${error}`);
     }
-}
+ }
+ 
