@@ -50,10 +50,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </nav>
           </div>
 
-
-
-          <!-- TODO: use BELOW as ref for Share button! -->
-
           <!-- When the screen size is less than md (< 768px ) -->
           <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
             <button class="btn text-left rounded-0" 
@@ -82,7 +78,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
 
             <section id="device-details" class="details-container">
-              <!-- WORDS: 1 -->
               <div class="record-description">
                 <div class="my-4 text-iris fs-1">
                   <p class="text-bold mb-0">Asset History Records</p>
@@ -101,43 +96,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </section>
               </div>
 
-              <!-- QR: 1 -->
               <div class="qr-code-wrapper">
                 <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
               </div>
           </section>
             
-          <!-- TODO: add buttons (download and share) -->
           <div class="buttons-container">
             <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
 
-            <!-- TODO: create dropdown button -->
-            <button class="btn bg-sky share-btn" data-bs-toggle="dropdown">
+            <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
               Share Record Link
-              <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+              <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+              <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
             </button>
 
-            <!-- TODO: need to fix bootstrap dropdown styling (put in big div, set same bg color?) -->
             <!-- Share dropdown -->
-            <ul class="dropdown-menu border-0 mt-1" style="padding: 7px 34px; 
-                background-color:#ccecfd;">
-              <li id="dropdown-item" style="padding: 7px" v-for="button in shareButtons" :key="button">
-
-                <!-- TODO: need unique funcs for each, either remove v-for OR define copy separately -->
-                <!-- NOTE: on click does not work, and @click can't be used with v-for (others should use href!!) -->
-
-                <!-- <a @click="copy()" class="text-slate" id="item-link">{{ button.name }}</a> -->
-
-                <!-- TODO: modify for email, then figure out v-for -->
-                <!-- <a @click="copy()" class="text-slate" id="item-link">{{ button.name }}</a> -->
-
-                <!-- _recordKey -->
-                <!-- TODO: give all custom id and use Javascript to edit the link?? currently am missing link/record key -->
-                <a href="mailto:example@website.com?subject=GOSQAS%20Asset%20History%20Record%20Link&body=Record%20Link:%20" 
-                class="text-slate" id="item-link">{{ button.name }}</a>
+            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 34px 15px 34px; background-color:#ccecfd;">
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="copy()" class="text-slate" id="item-link">Copy</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="text()" class="text-slate" id="item-link">Messages</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="mail()" class="text-slate" id="item-link">Email</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="whatsApp()" class="text-slate" id="item-link">WhatsApp</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="telegram()" class="text-slate" id="item-link">Telegram</a>
               </li>
             </ul>
-
           </div>
 
             <section id="recent">
@@ -205,6 +195,7 @@ import KeyList from '~/components/KeyList.vue';
 let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
 const currentSection = ref();
 let section = ref();
+let dropdownVisible = false;
 
 const headers = [
   { id: "device-details", name: "Record details" },
@@ -214,11 +205,11 @@ const headers = [
   { id: "create-record", name: "Create new record entry" }
 ];
 const shareButtons = [
-  { id: "copy-qr", name: "Copy" },
-  { id: "open-messages", name: "Messages" },
-  { id: "email-qr", name: "Email" },
-  { id: "open-whatsapp", name: "WhatsApp" },
-  { id: "open-telegram", name: "Telegram" }
+  { id: "copy-qr", name: "Copy", func: "copy()" },
+  { id: "open-messages", name: "Messages", func: "text()" },
+  { id: "email-qr", name: "Email", func: "mail()" },
+  { id: "open-whatsapp", name: "WhatsApp", func: "whatsApp()" },
+  { id: "open-telegram", name: "Telegram", func: "telegram()" }
 ];
 
 
@@ -231,6 +222,7 @@ export default {
       isLoading: true,
       recordKeyFound: false,
       hasReportingKey: false,
+      shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
     }},
@@ -256,11 +248,49 @@ export default {
     },
     methods: {
       downloadQRCode() {
-            const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode()
+        const qrCodeComponent = this.$refs.qrcode_component as any;
+        qrCodeComponent?.downloadQRCode()
+      },
+      buttonFormat() {
+        let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
+
+        if (!dropdownVisible) { // button clicked, dropdown now visible
+          dropdownVisible = true; 
+          this.shareDropdown = true;
+          shareBtn.style.borderRadius = "10px 10px 0px 0px";
+        } else {
+          dropdownVisible = false;
+          this.shareDropdown = false;
+          shareBtn.style.borderRadius = "10px";
+        }
+      },
+      getURL() {
+        var currLink = encodeURIComponent(window.location.href);
+        return currLink;
       },
       copy() {
         navigator.clipboard.writeText(window.location.href);
+      },
+      mail() {
+        // TODO: fix default text for ALL!!
+        // Device Name: "_"
+        // Description: "_"
+        // Click link & view records: 
+        var shareLink = this.getURL();
+        window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=Record%20Link:%20" + shareLink;
+      },
+      text() {
+        var shareLink = this.getURL();
+        window.location = "sms:?&body=Record Link: " + shareLink;
+      },
+      whatsApp() {
+        var shareLink = this.getURL();
+        window.location = "https://wa.me/send?text=Record Link: " + shareLink;
+      },
+      telegram() {
+        var shareLink = this.getURL();
+        var message = encodeURIComponent("Link to Asset History Records");
+        window.location = "https://t.me/share?url=" + shareLink + "&text=" + message;
       },
       addScrollListener() {
         // When user scrolls, the nav bar is updated
@@ -284,6 +314,7 @@ export default {
         this.isLoading = true;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
+        this.shareDropdown = false;
         
         const provenance = await getProvenance(this._recordKey);
 
@@ -346,7 +377,6 @@ export default {
 .qr-code-wrapper:hover {
   transform: scale(0.825);
 }
-/* TODO: modify QR style */
 
 .record-description {
   margin-right: 15px;
@@ -358,24 +388,33 @@ export default {
   justify-content: space-between;
 }
 
-/* TODO: modify download button style */
 .buttons-container {
   margin-bottom: 20px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  /* align-content: stretch; */
 }
 .download-btn {
   margin-top: 10px;
-  margin-bottom: 10px;
-  /* margin-right: 30px; */
   width: 48% !important;
 }
 .share-btn {
   margin-top: 10px;
-  margin-bottom: 10px;
   width: 48% !important;
+}
+#share-dropdown {
+  width: 48% !important;
+  border-radius: 0px 0px 10px 10px;
+  margin-left: auto;
+  margin-right: 0;
+  list-style-type: none;
+}
+.dropdown-item {
+  text-align: center;
+  border-radius: 10px;
+}
+.dropdown-item:hover {
+  background-color: #e6f6ff;
 }
 
 /* Wrap buttons once screen gets below a certain size */
@@ -386,10 +425,14 @@ export default {
   .download-btn {
     width: 100% !important;
   }
+  #share-dropdown {
+    width: 100% !important;
+  }
 }
 
 #item-link {
   text-decoration: none;
+  cursor: pointer;
 }
 
 .download-button {
