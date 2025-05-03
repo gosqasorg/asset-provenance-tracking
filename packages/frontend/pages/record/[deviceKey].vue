@@ -22,26 +22,27 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 </script>
 
 <template>
-  <div class="container-md my-4" v-if="!isLoading" :key="loadingKey">
+  <div class="container-md my-4 mb-2" v-if="!isLoading" :key="loadingKey">
     <div class="row justify-content-between">
-        <div class="col-sm-6 col-lg-9">
+        <!-- DESCR -->
+        <div class="col-sm-6 col-lg-9 descr-container">
             <h1 class="mt-4 mb-2 text-iris">{{deviceRecord?.deviceName}}</h1>
             <h5>Record Key: {{ route.params.deviceKey }}</h5>
-            <div class="my-2 mb-4"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
+            <div class="my-2 mb-2"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
 
             <div>
                 <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
                 <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
                 
                 <!-- Share dropdown -->
-                <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+                <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
                     Share Record Link
                     <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
                     <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
                 </button>
 
                 <!-- TODO: fix share button formatting on Device Page -->
-                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 34px 15px 34px; background-color:#ccecfd;">
+                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 0px 15px 0px; background-color:#ccecfd;">
                     <li class="dropdown-item" style="padding: 7px">
                         <a @click="copy()" class="text-slate item-link">Copy</a>
                     </li>
@@ -60,6 +61,8 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 </ul>
             </div>
         </div>
+
+        <!-- QR -->
         <div class="col-sm-6 col-lg-3 mt-2">
             <QRCode :url="qrCodeUrl" ref="qrcode_component"/>
         </div>
@@ -105,7 +108,8 @@ export default {
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
-            _recordKey: ""
+            _recordKey: "",
+            shareDropdown: false
         }
     },
     methods: {
@@ -191,13 +195,13 @@ export default {
     padding: 16px 20px;
     border-radius: 10px;
     margin-right: 30px;
-    margin-bottom: 20px;
+    margin-top: 20px;
 }
 .share-btn {
-    padding: 16px 20px;
-    border-radius: 10px;
+    margin-right: 0px;
 }
 #share-dropdown {
+    width: 218px;
     border-radius: 0px 0px 10px 10px;
     margin-left: auto;
     margin-right: 0;
@@ -215,5 +219,28 @@ export default {
   text-decoration: none;
   cursor: pointer;
 }
+.descr-container {
+    width: fit-content;
+}
+.container-md {
+    box-sizing: content-box;
+}
 
+/* Switches to mobile sizing */
+@media (max-width: 767px) {
+    .descr-container {
+        width: 100%;
+    }
+    .device-btn {
+        width: 100%;
+        margin-right: 0px;
+    }
+    #share-dropdown {
+        width: 100%;
+    }
+    .container-md {
+        margin-top: 0px !important;
+        box-sizing: border-box;
+    }
+}
 </style>
