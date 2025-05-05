@@ -41,8 +41,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                     <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
                 </button>
 
-                <!-- TODO: fix share button formatting on Device Page -->
-                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 0px 15px 0px; background-color:#ccecfd;">
+                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
                     <li class="dropdown-item" style="padding: 7px">
                         <a @click="copy()" class="text-slate item-link">Copy</a>
                     </li>
@@ -206,6 +205,8 @@ export default {
     margin-left: auto;
     margin-right: 0;
     list-style-type: none;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 .dropdown-item {
   text-align: center;

@@ -111,7 +111,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </button>
 
             <!-- Share dropdown -->
-            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 34px 15px 34px; background-color:#ccecfd;">
+            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
               <li class="dropdown-item" style="padding: 7px">
                 <a @click="copy()" class="text-slate" id="item-link">Copy</a>
               </li>
