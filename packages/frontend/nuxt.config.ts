@@ -25,6 +25,7 @@ export default defineNuxtConfig({
       // For local development, set baseUrl to http://localhost:7071/api
       baseUrl: process.env.BACKEND_URL ?? 'https://gosqasbe.azurewebsites.net/api', 
       frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+      handIconBackground: '/assets/images/hand-icon.png',
     }
   },
   modules: ['@nuxt/test-utils/module', 'nuxt-snackbar'],
