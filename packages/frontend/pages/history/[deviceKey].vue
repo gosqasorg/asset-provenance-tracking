@@ -123,6 +123,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 </div>
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
+              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
             </section>
 
           </div>
@@ -137,10 +138,25 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
       </div>   -->
 
     </div>
-    <div v-else>
-      <p>Record key not found.</p>
-    </div>
+ <div v-else class="error-container">
+  <h1 class="error-title">Invalid history key</h1>
+  <h2 class="error-subtitle">No record attached to this key</h2>
+  <p class="error-description">
+    We’re sorry, the record you’re looking for could not be found. <br />
+    Please double-check your key. If you keep receiving this error, <br />
+    email us at 
+    <span class="error-email">
+      gosqasystem@gmail.com
+    </span>.
+  </p>
+  <div class="error-buttons">
+    <!-- Go home button -->
+    <RouterLink to="/" class="btn btn-primary">Go home</RouterLink>
+    <!-- Email us button -->
+    <RouterLink to="/contact" class="btn btn-secondary">Email us</RouterLink>
   </div>
+</div>
+</div>
   <div v-else>
     <p>Loading... please wait.</p>
   </div>
@@ -399,4 +415,90 @@ a:visited {
     display: inline-block;
   }
 }
+
+.error-container {
+  text-align: center; 
+  margin: 70px auto; 
+  max-width: 655px; 
+  padding: 20px; 
+}
+.error-title {
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 150%;
+  margin-bottom: 10px;
+  color: #322253; 
+  text-align: left; 
+}
+
+.error-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 60px;
+  margin-bottom: 20px;
+  color:  #1E2019; /* Dark text color */
+  text-align: left;
+}
+
+.error-description {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 30px;
+  margin-bottom: 30px;
+  color: #1E2019; 
+  text-align: left; 
+}
+
+.error-email {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 30px;
+  color: #4e3681; 
+  text-decoration: underline; 
+}
+
+.error-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px; 
+  margin-top: 20px;
+}
+
+.btn {
+  width: 294px;
+  height: 66px;
+  padding: 18px 22px;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20pxpx;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #4E3681; 
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: #3B2A6A; /* Darker purple */
+}
+
+.btn-secondary {
+  background-color: #CCECFD; /* Light blue */
+  color: #1E2019; /* Dark text */
+}
+
+.btn-secondary:hover {
+  background-color: #B3DFF5; /* Slightly darker blue */
+   color: #1E2019; 
+}
+
 </style>
