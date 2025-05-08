@@ -4,8 +4,7 @@ export interface VersionInfo {
     buildTime: string;
 }
 export const VERSION_INFO: VersionInfo = {
-    // This is a placeholder and should be replaced by the updateVersion script
-    version: "1.0.0",
-    gitCommit: "unknown",
-    buildTime: new Date().toISOString()
+  "version": "0.0.1",
+  "gitCommit": "5216e17",
+  "buildTime": "2025-05-08T03:09:09.180Z"
 };
