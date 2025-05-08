@@ -11,7 +11,8 @@
     "prestart": "npm run clean && npm run build",
     "start": "func start",
     "test": "ts-node ./test/test.ts",
-    "dev": "func start",
+    "dev": "npm run update-version && func start",
+    "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
     "vitest": "vitest",
     "coverage": "vitest run --coverage"
   },
