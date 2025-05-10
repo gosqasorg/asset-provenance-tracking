@@ -57,7 +57,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             Jump to section
           </button>
 
-          <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px; 
+          <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;
                 background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
             <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
               <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
@@ -71,32 +71,39 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
         <div class="col-md-10">
           <!-- Spied element -->
           <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
-            class="left-col">
+               class="left-col">
             <section id="device-details">
-              <div class="my-4 text-iris fs-1">
-                <p class="text-bold mb-0">Asset History Records</p>
-                <h1 class="mt-1 mb-1 text-iris">
-                  {{ deviceRecord?.deviceName }}
-                </h1>
-              </div>
-              <div class="qr-code-container">
-                <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;" />
+              <div class="d-flex" id="deviceNameAndQR">
+                <div class="d-flex" id="nonQRFields">
+                  <div class="my-4 text-iris fs-1">
+                    <p class="text-bold mb-0">Asset History Records</p>
+                    <h1 class="mt-1 mb-1 text-iris">
+                      {{ deviceRecord?.deviceName }}
+                    </h1>
+                  </div>
+                  <div class="d-flex align-items-center">
+                    <div>Record Key: {{ _recordKey }}</div>
+
+                  </div>
+                  <div>
+                    <span v-html="clickableLink(deviceRecord?.description)"></span>
+                  </div>
                 </div>
-                <div class="wrapper-download">
-                  <button class="btn mt-0 bg-sky px-5 p-3" @click="downloadQRCode">Download QR Code</button>
+                <div class="qr-code-container">
+                  <div class="qr-code-wrapper">
+                    <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;" />
+                  </div>
                 </div>
               </div>
-              <div class="d-flex align-items-center">
-                <div>Record Key: {{ _recordKey }}</div>
-                <button @click="copyRecordKey" class="btn bg-sky px-2"
-                  style="margin-left:10px; padding-top: 2px; padding-bottom: 2px;">
-                  <i class="fa fa-copy"></i>
+              <div class="wrapper-download">
+                <button id="copyRecordKey" @click="copyRecordKey" class="btn bg-sky"
+                        >
+                  <i class="fa fa-copy"> </i>
+                  Share Record Key
                 </button>
+                <button class="btn bg-sky " @click="downloadQRCode">Download QR Code</button>
               </div>
-              <div>
-                <span v-html="clickableLink(deviceRecord?.description)"></span>
-              </div>
+
             </section>
             <section ref="section" id="priority-notices">
               <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
@@ -129,10 +136,9 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
           </div>
           <!-- Spied element -->
         </div>
-
       </div>
 
-      <!-- TODO: Uncomment when  functionality is ready: 
+      <!-- TODO: Uncomment when  functionality is ready:
       <div>
           <ProvenanceNotificationSignUpModal/>
       </div>   -->
@@ -144,7 +150,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
   <p class="error-description">
     We’re sorry, the record you’re looking for could not be found. <br />
     Please double-check your key. If you keep receiving this error, <br />
-    email us at 
+    email us at
     <span class="error-email">
       gosqasystem@gmail.com
     </span>.
@@ -313,28 +319,35 @@ export default {
 .qr-code-wrapper:hover {
   transform: scale(0.825);
 }
+#copyRecordKey {
+}
+#deviceNameAndQR {
+  flex-flow: row wrap;
+  justify-content: space-between;
+}
+
+#nonQRFields {
+   padding: 10px;
+  display: flex;
+  flex-flow: column wrap;
+}
 
 .qr-code-container {
-  margin-top: -110px;
-  margin-right: 15px;
-  display: inline-block;
-  background-color: rgb(238, 247, 255);
   /* Light blue background */
+  background-color: rgb(238, 247, 255);
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
-  position: absolute;
-  right: 0;
-  transform: scale(1.1);
-  /* transform-origin: top right; */
 }
 
 .wrapper-download {
-  padding: 0;
+  margin: 10px;
+  gap: 10px;
   text-align: center;
-  padding-bottom: 15px;
   transform: scale(0.95);
-  margin-top: -30px;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
   transition-duration: 0.4s;
 }
 
@@ -417,10 +430,10 @@ a:visited {
 }
 
 .error-container {
-  text-align: center; 
-  margin: 70px auto; 
-  max-width: 655px; 
-  padding: 20px; 
+  text-align: center;
+  margin: 70px auto;
+  max-width: 655px;
+  padding: 20px;
 }
 .error-title {
   text-align: left;
@@ -429,8 +442,8 @@ a:visited {
   font-size: 48px;
   line-height: 150%;
   margin-bottom: 10px;
-  color: #322253; 
-  text-align: left; 
+  color: #322253;
+  text-align: left;
 }
 
 .error-subtitle {
@@ -449,8 +462,8 @@ a:visited {
   font-size: 20px;
   line-height: 30px;
   margin-bottom: 30px;
-  color: #1E2019; 
-  text-align: left; 
+  color: #1E2019;
+  text-align: left;
 }
 
 .error-email {
@@ -458,21 +471,21 @@ a:visited {
   font-weight: 500;
   font-size: 20px;
   line-height: 30px;
-  color: #4e3681; 
-  text-decoration: underline; 
+  color: #4e3681;
+  text-decoration: underline;
 }
 
 .error-buttons {
   display: flex;
   justify-content: center;
-  gap: 20px; 
+  gap: 20px;
   margin-top: 20px;
 }
 
 .btn {
-  width: 294px;
   height: 66px;
   padding: 18px 22px;
+/*     margin: 5px;*/
   border-radius: 10px;
   font-family: 'Poppins', sans-serif;
   font-size: 20pxpx;
@@ -481,9 +494,11 @@ a:visited {
   cursor: pointer;
   border: none;
 }
+#shareQRCode {
+}
 
 .btn-primary {
-  background-color: #4E3681; 
+  background-color: #4E3681;
   color: #FFFFFF;
 }
 
@@ -498,7 +513,7 @@ a:visited {
 
 .btn-secondary:hover {
   background-color: #B3DFF5; /* Slightly darker blue */
-   color: #1E2019; 
+   color: #1E2019;
 }
 
 </style>
