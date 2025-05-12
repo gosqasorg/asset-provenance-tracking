@@ -137,30 +137,36 @@ export default {
                 shareBtn.style.borderRadius = "10px";
             }
         },
-      getURL() {
-        var currLink = encodeURIComponent(window.location.href);
-        return currLink;
-      },
-      copy() {
-        navigator.clipboard.writeText(window.location.href);
-      },
-      mail() {
-        var shareLink = this.getURL();
-        window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=Record%20Link:%20" + shareLink;
-      },
-      text() {
-        var shareLink = this.getURL();
-        window.location = "sms:?&body=Record Link: " + shareLink;
-      },
-      whatsApp() {
-        var shareLink = this.getURL();
-        window.location = "https://wa.me/send?text=Record Link: " + shareLink;
-      },
-      telegram() {
-        var shareLink = this.getURL();
-        var message = encodeURIComponent("Link to Asset History Records");
-        window.location = "https://t.me/share?url=" + shareLink + "&text=" + message;
-      },
+        getDescription() {
+            return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
+        },
+        copy() {
+            navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                alert('Record Link copied to clipboard!');
+            })
+            .catch((error) => {
+                console.error('Failed to copy text: ', error);
+                alert('Failed to copy Record Link. Please try again.');
+            });
+        },
+        mail() {
+            var shareDescr = this.getDescription();
+            window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
+        },
+        text() {
+            var shareDescr = this.getDescription();
+            window.location = "sms:?&body=Record Link: " + shareDescr;
+        },
+        whatsApp() {
+            var shareDescr = this.getDescription();
+            window.location = "https://wa.me/send?text=" + shareDescr;
+        },
+        telegram() {
+            var shareLink = encodeURIComponent(window.location.href);
+            var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
+            window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
+        },
     },
     async mounted() {
         try {

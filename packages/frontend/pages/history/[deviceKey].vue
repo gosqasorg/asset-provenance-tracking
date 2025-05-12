@@ -188,11 +188,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-import { getProvenance} from '~/services/azureFuncs';
+import { getProvenance } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
+let deviceRecord: any;
+let provenance, deviceCreationRecord, provenanceNoRecord;
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
@@ -230,6 +231,8 @@ export default {
       try {
         const route = useRoute();
         this._recordKey = route.params.deviceKey as string; 
+        const response = await getProvenance(this._recordKey);
+        deviceRecord = response[response.length - 1].record;
 
         this.addScrollListener();
 
@@ -264,33 +267,35 @@ export default {
           shareBtn.style.borderRadius = "10px";
         }
       },
-      getURL() {
-        var currLink = encodeURIComponent(window.location.href);
-        return currLink;
+      getDescription() {
+        return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
       },
       copy() {
-        navigator.clipboard.writeText(window.location.href);
+        navigator.clipboard.writeText(window.location.href)
+          .then(() => {
+              alert('Record Link copied to clipboard!');
+          })
+          .catch((error) => {
+              console.error('Failed to copy text: ', error);
+              alert('Failed to copy Record Link. Please try again.');
+          });
       },
       mail() {
-        // TODO: fix default text for ALL!!
-        // Device Name: "_"
-        // Description: "_"
-        // Click link & view records: 
-        var shareLink = this.getURL();
-        window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=Record%20Link:%20" + shareLink;
+        var shareDescr = this.getDescription();
+        window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
       },
       text() {
-        var shareLink = this.getURL();
-        window.location = "sms:?&body=Record Link: " + shareLink;
+        var shareDescr = this.getDescription();
+        window.location = "sms:?&body=Record Link: " + shareDescr;
       },
       whatsApp() {
-        var shareLink = this.getURL();
-        window.location = "https://wa.me/send?text=Record Link: " + shareLink;
+        var shareDescr = this.getDescription();
+        window.location = "https://wa.me/send?text=" + shareDescr;
       },
       telegram() {
-        var shareLink = this.getURL();
-        var message = encodeURIComponent("Link to Asset History Records");
-        window.location = "https://t.me/share?url=" + shareLink + "&text=" + message;
+        var shareLink = encodeURIComponent(window.location.href);
+        var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
+        window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
       },
       addScrollListener() {
         // When user scrolls, the nav bar is updated
