@@ -109,8 +109,11 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
               <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
             </section>
 
+            <section id="recalled">
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+            </section>
             <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
             </section>
             <section id="device-creation">
               <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
@@ -174,6 +177,8 @@ import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
 let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
+let recalledRecords = [];
+let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 
@@ -197,8 +202,8 @@ export default {
       hasReportingKey: false,
       childKeys: [] as string[],
       _recordKey: "",
-    }
-  },
+      valid: false
+  }},
   async mounted() {
     try {
       const route = useRoute();
@@ -271,10 +276,35 @@ export default {
 
       this.recordKeyFound = true;
 
-      // Decompose the provenance records into parts to be rendered.
-      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+        // Decompose the provenance records into parts to be rendered.
+        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
-      this.isLoading = false;
+        // Pin recalled records to the top of the feed
+        recalledRecords = [];
+        recordsInFeed = [];
+
+        provenanceNoRecord.forEach(record => {
+          if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
+            recalledRecords.push(record);
+          } else {
+            recordsInFeed.push(record);
+          }
+        });
+
+        this.isLoading = false;
+        
+        // This functionality could be pushed into a component...
+        this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+        
+        // We will remove the reportingKey, because although it is a child,
+        // we have already rendered it.
+        if (this.hasReportingKey) {
+            const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+            if (index > -1) {
+                deviceRecord.children_key.splice(index, 1);
+            }
+        }
+        this.childKeys = getChildKeys(provenance);
 
       // This functionality could be pushed into a component...
       this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
@@ -493,8 +523,6 @@ a:visited {
   text-align: center;
   cursor: pointer;
   border: none;
-}
-#shareQRCode {
 }
 
 .btn-primary {
