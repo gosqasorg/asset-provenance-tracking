@@ -31,7 +31,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
             <div>
                 <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View History Records</button>
-                <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+                <button class="btn mt-1 bg-sky px-5 me-4" @click="downloadQRCode">Download QR Code</button><button class="btn mt-1 bg-sky px-4 d-flex d-inline-flex">Share</button>
             </div>
         </div>
         <div class="col-sm-6 col-lg-3 mt-2">
@@ -48,6 +48,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
         </div>
         <CsvFile :recordKey="_recordKey"></CsvFile>
     </div>
+    <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
   </div>
 </template>
 <script lang="ts">
