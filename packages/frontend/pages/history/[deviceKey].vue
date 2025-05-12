@@ -46,7 +46,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             </ul>
           </nav>
         </div>
-
+        
         <!-- When the screen size is less than md (< 768px ) -->
         <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
           <button class="btn text-left rounded-0" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
@@ -64,7 +64,6 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             </li>
           </ul>
         </div>
-
 
         <!-- Scrollspy -->
 
@@ -125,29 +124,29 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             </ul>
           </div>
 
-            <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
-            </section>
-            <section id="device-creation">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-            </section>
-            <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-            </section>
-            <section id="child-keys">
-              <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-              </div>
-              <div v-if="(childKeys?.length > 0) || hasReportingKey">
-                <div> Child Keys:
-                  <div>
-                    <KeyList v-bind:keys="childKeys" />
-                  </div>
+          <section id="recent">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
+          </section>
+          <section id="device-creation">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+          </section>
+          <section id="create-record">
+            <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+          </section>
+          <section id="child-keys">
+            <div v-if="hasReportingKey"> Reporting Key:
+              <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+            </div>
+            <div v-if="(childKeys?.length > 0) || hasReportingKey">
+              <div> Child Keys:
+                <div>
+                  <KeyList v-bind:keys="childKeys" />
                 </div>
-                <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
-              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-            </section>
+              <CsvFile :recordKey="_recordKey"></CsvFile>
+            </div>
+            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+          </section>
 
           </div>
           <!-- Spied element -->
@@ -231,7 +230,7 @@ export default {
         const response = await getProvenance(this._recordKey);
         deviceRecord = response[response.length - 1].record;
 
-      this.addScrollListener();
+        this.addScrollListener();
 
         EventBus.on('feedRefresh', this.refreshFeed);
         
@@ -568,6 +567,7 @@ a:visited {
 .btn {
   height: 66px;
   padding: 18px 22px;
+/*     margin: 5px;*/
   border-radius: 10px;
   font-family: 'Poppins', sans-serif;
   font-size: 20pxpx;
@@ -575,6 +575,8 @@ a:visited {
   text-align: center;
   cursor: pointer;
   border: none;
+}
+#shareQRCode {
 }
 
 .btn-primary {
