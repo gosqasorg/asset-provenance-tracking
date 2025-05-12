@@ -125,7 +125,11 @@ export default {
 </script>
 
 <style scoped>
+
 .report-box {
+    display: list-item;
+    list-style-type: decimal;
+    counter-increment: item -1; /* Add this line */
     background-color: #F1F5F9;
     padding: 20px;
     margin-bottom: 14px;
@@ -133,9 +137,7 @@ export default {
     border-radius: 20px;
     /* Assuming the width is to fill the container */
     word-wrap: break-word;
-
 }
-
 .tag-container {
     display: flex;
     flex-wrap: wrap;

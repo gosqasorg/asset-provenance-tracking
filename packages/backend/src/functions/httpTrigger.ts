@@ -3,7 +3,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import bs58 from 'bs58';
 import JSON5 from 'json5';
-
+import { execSync } from 'child_process';
+import { VERSION_INFO } from '../version.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -12,6 +13,8 @@ import JSON5 from 'json5';
 // Once you've logged into Azure via 'az login' to an Azure account w/ PubInv permissions,
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
+
+
 
 interface ProvenanceRecord {
     record: any,
@@ -220,8 +223,12 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
 }
 
 
-const accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"] ?? "devstoreaccount1";
-const accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"] ?? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+function isEmpty(str) {
+    return (!str || str.length === 0 );
+}
+
+const accountName = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_NAME"]) ? "devstoreaccount1" : process.env["AZURE_STORAGE_ACCOUNT_NAME"];
+const accountKey = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_KEY"]) ? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==" : process.env["AZURE_STORAGE_ACCOUNT_KEY"];
 const baseUrl = accountName === "devstoreaccount1"
     ? `http://127.0.0.1:10000/devstoreaccount1`
     : `https://${accountName}.blob.core.windows.net`;
@@ -370,6 +377,14 @@ async function getStatistics(request: HttpRequest, context: InvocationContext): 
     };
 };
 
+export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that returns the version of the server.
+    return { 
+        jsonBody: VERSION_INFO,
+        headers: { "Content-Type": "application/json" }
+    };
+}
+
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
@@ -404,6 +419,12 @@ app.get("getStatistics", {
     authLevel: 'anonymous',
     route: 'statistics',
     handler: getStatistics
+})
+
+app.get("getVersion", {
+    authLevel: 'anonymous',
+    route: 'version',
+    handler: getVersion
 })
 
 

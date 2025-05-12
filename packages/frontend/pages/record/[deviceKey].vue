@@ -76,6 +76,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
         </div>
         <CsvFile :recordKey="_recordKey"></CsvFile>
     </div>
+    <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
   </div>
 </template>
 <script lang="ts">
@@ -88,7 +89,7 @@ import QRCode from '@/components/QRCode.vue';
 let deviceRecord: any;
 let dropdownVisible = false;
 
- // Here we are are going to want to read the device,
+// Here we are are going to want to read the device,
  //    but not all the provenance. We will use this to load
  //    the two components above, the reporting key component and
  //    the child list component.
@@ -112,7 +113,7 @@ export default {
         }
     },
     methods: {
-        //This method helps rerendering the site
+        // This method helps rerendering the site
         forceRerender() {
             this.loadingKey += 1;
         },
@@ -196,7 +197,7 @@ export default {
 </script>
 
 <style scoped>
-.device-btn {
+.btn {
     padding: 16px 20px;
     border-radius: 10px;
     margin-right: 30px;

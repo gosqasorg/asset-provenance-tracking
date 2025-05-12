@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form @submit.prevent="submit">
         <input type="text" id="input" v-model="deviceKey" placeholder="Record key" style="width: inputWidth;" required/>
         <button-component id="viewRecord" buttonText="View Record" padding="12px 12px" margin="0"
-            type="submit" style="font-size: 16px;" backgroundColor="#CCECFD" borderColor="#CCECFD" color="#1E2019"></button-component>
+            type="submit" style="font-size: 16px;" backgroundColor="#4E3681" borderColor="#4E3681" color="white"></button-component>
     </form>
 </template>
 
