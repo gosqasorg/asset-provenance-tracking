@@ -81,15 +81,19 @@
                 View Record
               </button>
               <RouterLink to="/gdt"
-                ><ButtonComponent
+                ><button
                   class="mobile-nav"
-                  buttonText="Create Record"
-                  backgroundColor="#e6f6ff"
-                  color="#4e3681"
-                  padding="12px 16px"
-                  margin="20px 0px 0px 0px"
-                  style="font-size: 18px"
-                ></ButtonComponent
+                  id="createRecordButton"
+                  style="
+                    border-width: 2px;
+                    border-style: solid;
+                    padding: 12px 16px;
+                    margin: 20px 0px 0px 0px;
+                    font-size: 18px;
+                "
+                >
+                  Create Record
+                </button
               ></RouterLink>
             </span>
           </ul>
@@ -178,14 +182,12 @@ export default {
         //if showTrack is false
         showTrack = true;
         viewRecordDiv.style.display = "inline"; //make text input available
-        viewRecordButton.style.backgroundColor = "#322253";
-        viewRecordButton.style.borderColor = "#322253";
+        viewRecordButton.classList.add("active");
         nav.style.paddingBottom = "80px";
       } else {
         showTrack = false;
         viewRecordDiv.style.display = "none";
-        viewRecordButton.style.backgroundColor = "#4E3681";
-        viewRecordButton.style.borderColor = "#4E3681";
+        viewRecordButton.classList.remove("active");
         nav.style.paddingBottom = "24.5px";
       }
     },
@@ -525,15 +527,10 @@ export default {
   }
 }
 
-.logo {
-  display: none;
-  /*height: 65px;*/
-}
-
+.logo,
 .logo-light,
 .logo-dark {
   display: none;
-  /*height: 42px;*/
 }
 
 /* Dark mode version*/
@@ -587,6 +584,17 @@ export default {
       border-color: #CCECFD;
       border-radius: 10px;
     }
+    #viewRecordButton.active {
+      background-color: #B0E3FF; 
+      border-color: #B0E3FF;
+      color: #000000;
+    }
+    #createRecordButton {
+      background-color: #4E3681; 
+      color: #FFFFFF; 
+      border-color: #4E3681;
+      border-radius: 10px;
+    }
     #footer a, 
     #footer RouterLink {
       color: #FFFFFF;
@@ -599,7 +607,6 @@ export default {
     }
     #logo-light {
       display: inline;
-      height: 60.5px;
     }
     #footer {
         background-color: #E6F6FF;
@@ -635,12 +642,23 @@ export default {
       color: #4e3681;
       font-weight: 600;
     }
+    #createRecordButton {
+      background-color: #e6f6ff; 
+      color: #4e3681; 
+      border-color: #4e3681;
+      border-radius: 10px;
+    }
     #viewRecordButton {
       background-color: #4E3681;
       color: #FFFFFF;  
       border-color: #4E3681;
       border-radius: 10px;
     } 
+    #viewRecordButton.active {
+      background-color: #322253; 
+      border-color: #322253;
+      color: #FFFFFF;
+    }
     #footer a, 
     #footer RouterLink {
       color: black;

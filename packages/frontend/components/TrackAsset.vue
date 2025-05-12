@@ -21,8 +21,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form @submit.prevent="submit">
         <input type="text" id="input" v-model="deviceKey" placeholder="Record key" style="width: inputWidth;" required/>
-        <button-component id="viewRecord" buttonText="View Record" padding="12px 12px" margin="0"
-            type="submit" style="font-size: 16px;" backgroundColor="#4E3681" borderColor="#4E3681" color="white"></button-component>
+        <button
+                @click="trackingForm()"
+                id="viewRecordButton"
+                class="baseButton view-record-button"
+                style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 12px;
+                  margin: 0px;
+                  font-size: 16px;
+                "
+              >
+                View Record
+              </button>
     </form>
 </template>
 
@@ -67,5 +79,37 @@ input::placeholder{
 }
 form {
     width: 100%;
+}
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #viewRecordButton {
+        background-color: #CCECFD;
+        color: #000000;
+        border-color: #CCECFD;
+        border-radius: 10px;
+    } 
+    .view-record-button.navbar-button {
+        background-color: #CCECFD;
+        color: #000000;
+        border-color: #CCECFD;
+        border-radius: 10px;
+    }
+
+  /* Index page button — purple background with white text */
+  .view-record-button.index-page-button {
+        background-color: #322253;
+        color: #FFFFFF;
+        border-color: #322253;
+        border-radius: 10px;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #viewRecordButton {
+      background-color: #4E3681;
+      color: #FFFFFF;  
+      border-color: #4E3681;
+      border-radius: 10px;
+    } 
 }
 </style>

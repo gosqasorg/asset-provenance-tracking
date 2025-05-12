@@ -141,14 +141,14 @@
         background-color: #FFFFFF;
     }
     .toggle-border {
-      border: 2px solid #4a148c;
+      border: 2px solid #4E3681;
     }
     .toggle-label {
         border: 2px solid #FFFFFF;
         background: white;
     }
     .toggle-label::before {
-        background: #4a148c;
+        background: #4E3681;
     }
     .toggle-label div {
         color: white;
