@@ -376,10 +376,6 @@ export default {
   transition-duration: 0.4s;
 }
 
-.qr-code-wrapper:hover {
-  transform: scale(0.825);
-}
-
 .record-description {
   margin-right: 15px;
 }
@@ -575,8 +571,6 @@ a:visited {
   text-align: center;
   cursor: pointer;
   border: none;
-}
-#shareQRCode {
 }
 
 .btn-primary {
