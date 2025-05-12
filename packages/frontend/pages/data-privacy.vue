@@ -69,7 +69,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #data-privacy-container {
-        background-color: #1E2019
+        background-color: #1E2019;
     }
     .h1-text {
         color: #CCECFD;
@@ -88,7 +88,7 @@ import Learn_more from '~/layouts/learn_more.vue';
         color: #4E3681;
     }
     .p-text {
-        color: #4E3681;
+        color: #1E2019;
     }
 }
 

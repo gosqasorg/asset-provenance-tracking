@@ -52,7 +52,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <RouterLink to="/about"><button-component class="about-button" buttonText="About Us"></button-component></RouterLink>
+                <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                "
+              >
+                About Us
+              </button></RouterLink>
             </div>
 
         </div> 
@@ -114,7 +124,7 @@ export default {
 
 #first-row {
     /* Set the hand background image on the homepage */
-    background-image: url(../assets/images/hand-icon.png);
+    /*background-image: url(../assets/images/hand-icon.png);*/
     background-repeat: no-repeat;
     background-position-x: 85%;
     background-position-y: bottom;
@@ -123,6 +133,10 @@ export default {
     height: auto;
     display: flex;  
     flex-wrap: wrap;
+}
+
+#about-button {
+    padding: 10px 20px
 }
 
 /* For screens less than 991px resize hand logo*/
@@ -221,43 +235,46 @@ export default {
 
 /* Dark mode version of second row */
 @media (prefers-color-scheme: dark) {
-  #second-row{
-        background-color: #4E3681;
+    #first-row {
+        background-image: url(../assets/images/darkmode-hand.png);
+    }
+    #second-row{
+            background-color: #4E3681;
+        }
+
+    .h3-text {
+        color: #FFFFFF; 
     }
 
-  .h3-text {
-    color: #FFFFFF; 
-  }
-
-  .p-text {
-    color: #E6F6FF; 
-  }
-
-  #about-button {
-    background-color: #4E3681; 
-    border: 2px solid #FFFFFF; 
-    borderColor: #FFFFFF;
-    color: #FFFFFF;
+    .p-text {
+        color: #E6F6FF; 
+    }
+    #about-button {
+        color: #FFFFFF;
+        background-color: #4E3681;
+        border: 2px solid #FFFFFF;
   }
 }
 /* Light mode version of second row */
 @media (prefers-color-scheme: light) {
-  #second-row{
-        background-color: #E6F6FF;
+    #first-row {
+        background-image: url(../assets/images/hand-icon.png);
+    }
+    #second-row {
+            background-color: #E6F6FF;
+        }
+
+    .h3-text {
+        color: #4E3681; 
     }
 
-  .h3-text {
-    color: #4E3681; 
-  }
-
-  .p-text {
-    color: #322253; 
-  }
-
-  .about-button {
-    background-color: #ffffff00; 
-    border: 2px solid #322253; 
-    color: #FFFFFF00;
+    .p-text {
+        color: #322253; 
+    }
+    #about-button {
+        color: #322253;
+        background-color: #E6F6FF;
+        border: 2px solid #4E3681;
   }
 }
 

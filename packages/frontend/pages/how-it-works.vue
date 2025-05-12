@@ -60,19 +60,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="overview">
             <h2 class="h2-text" style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px">
+                <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/darkmode-cross.png" style="height:50px; margin-bottom:20px" class="dark-icon">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/upload-icon.png" style="height:40px; margin-bottom:30px">
+                <img src="../assets/images/upload-icon.png" style="height:40px; margin-bottom:30px" class="light-icon">
+                <img src="../assets/images/darkmode-upload.png" style="height:40px; margin-bottom:30px" class="dark-icon">
                 <p>2. Testing agency uploads documentation</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px">
+                <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/darkmode-check.png" style="height:50px; margin-bottom:20px" class="dark-icon">
                 <p>3. Distributor views information within GDT and verifies product</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/gosqas-icon.png" style="height:55px; margin-bottom:15px">
+                <img src="../assets/images/gosqas-icon.png" style="height:55px; margin-bottom:15px" class="light-icon">
+                <img src="../assets/images/darkmode-gosqas.png" style="height:55px; margin-bottom:15px" class="dark-icon">
                 <p>4. Medical staff received verified product and records shipment receipt in GDT</p>
             </div>
 
@@ -125,10 +129,18 @@ li{
     }
 }
 
+.light-icon,
+.dark-icon {
+  display: none;
+}
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #how-it-works-container {
         background-color: #1E2019
+    }
+    .dark-icon {
+        display: inline;
     }
     .h1-text {
         color: #CCECFD;
@@ -155,6 +167,9 @@ li{
     #how-it-works-container {
         background-color: #FFFFFF;
     }
+    .light-icon {
+        display: inline;
+    }
     .h1-text {
         color: #4E3681;
     }
@@ -165,13 +180,13 @@ li{
         color: #4E3681;
     }
     .p-text {
-        color: #4E3681;
+        color: #1E2019;
     }
     .col mx-2 {
-        color: black;
+        color: #1E2019;
     }
     .col {
-        color: black;
+        color: #1E2019;
     }
 }
 

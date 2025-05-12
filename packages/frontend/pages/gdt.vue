@@ -21,31 +21,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the landing page where you can create a new record to track
 -->
 <template>
-    <div class="container-md" id="gdt">
-        <h1 class="h1-text my-4 fs-1">Global Distributed Tracking</h1>
- 
- 
-        <!-- create toggle for single or group  -->
-        <ButtonsLargeToggle 
-            @toggle-change="toggleView" 
-            :left-label="'New Record'" 
-            :right-label="'New Group'"
-        />
+    <div class="gdt" id="gdt-container">
+        <div class="container-md">
+            <h1 class="h1-text my-4 fs-1">Global Distributed Tracking</h1>
     
-        <!-- <div>Create a Single Asset:</div> -->
-        <div id="create_record"><FormsCreateDevice/></div>
-        <!-- <CreateDevice/> -->
-        <!-- <div>Or, if you want to create a group of keys:</div> -->
-        <!-- <div></div> -->
-       
-        <div id="create_group" style="display:none"><FormsCreateContainer/></div>
- 
- 
-        <p class="my-4 mb-5 form-control">
-            The Global Open Source Quality Assurance System (GOSQAS) enables transparent documentation through our Global Distributed Tracking (GDT) system, allowing secure data logging for low-resource settings and promoting global communication in humanitarian response, open source hardware, and scientific research.
-        </p>
- 
- 
+    
+            <!-- create toggle for single or group  -->
+            <ButtonsLargeToggle 
+                @toggle-change="toggleView" 
+                :left-label="'New Record'" 
+                :right-label="'New Group'"
+            />
+        
+            <!-- <div>Create a Single Asset:</div> -->
+            <div id="create_record"><FormsCreateDevice/></div>
+            <!-- <CreateDevice/> -->
+            <!-- <div>Or, if you want to create a group of keys:</div> -->
+            <!-- <div></div> -->
+        
+            <div id="create_group" style="display:none"><FormsCreateContainer/></div>
+    
+    
+            <p class="my-4 mb-5 form-control">
+                The Global Open Source Quality Assurance System (GOSQAS) enables transparent documentation through our Global Distributed Tracking (GDT) system, allowing secure data logging for low-resource settings and promoting global communication in humanitarian response, open source hardware, and scientific research.
+            </p>
+    
+    
+        </div>
     </div>
  </template>
 
@@ -96,9 +98,7 @@ export default {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     width: fit-content;
-    border: 2px solid #4a148c;
     border-radius: 25px;
-    background: white;
     cursor: pointer;
     overflow: hidden; /* Ensure no overflow */
 }
@@ -111,7 +111,6 @@ export default {
     height: 100%;
     top: 0;
     left: 0;
-    background: #4a148c;
     border-radius: 25px;
     transition: left 0.3s;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add a shadow for better visibility */
@@ -122,7 +121,6 @@ export default {
     padding: 10px;
     text-align: center;
     z-index: 1;
-    color: white;
     font-weight: bold;
 }
 
@@ -131,21 +129,6 @@ export default {
     left: 50%;
 }
 
-.toggleCheckbox:checked + .toggle-label .toggle-left {
-    color: #4a148c; /* Inactive text color */
-}
-
-.toggleCheckbox:checked + .toggle-label .toggle-right {
-    color: black; /* Active text color */
-}
-
-.toggleCheckbox + .toggle-label .toggle-left {
-    color: white; /* Active text color */
-}
-
-.toggleCheckbox + .toggle-label .toggle-right {
-    color: black; /* Inactive text color */
-}
 .my-4 {
     margin: 1.5rem 0;
 }
@@ -168,9 +151,13 @@ export default {
     }
 }
 
+#gdt-container {
+        padding: 5px 5px 5px 5px
+    }
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #gdt {
+    #gdt-container {
         background-color: #1E2019
     }
     .h1-text {
@@ -182,14 +169,40 @@ export default {
     .h2-text {
         color: #CCECFD;
     }
-    .p-text {
+    p {
         color: #FFFFFF;
+        background-color: #1E2019;
     }
-  
+    .form-control {
+        background-clip: padding-box;
+        background-color: #1E2019;
+    }
+    .toggle-label {
+        border: 2px solid #CCECFD;
+        background: #1E2019;
+    }
+    .toggle-label::before {
+        background: #CCECFD;
+    }
+    .toggle-label div {
+        color: #1E2019;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-left {
+        color: white;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-right {
+        color: black; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-left {
+        color: black; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-right {
+        color: white; /* Inactive text color */
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-    #gdt {
+    #gdt-container {
         background-color: #FFFFFF;
     }
     .h1-text {
@@ -201,8 +214,35 @@ export default {
     .h2-text {
         color: #4E3681;
     }
-    .p-text {
+    p {
         color: black;
+        background-color: #FFFFFF;
+    }
+    .form-control {
+        background-clip: padding-box;
+        background-color: #FFFFFF;
+    }
+    .toggle-label {
+        border: 2px solid #4a148c;
+        background: white;
+    }
+    .toggle-label::before {
+        background: #4a148c;
+    }
+    .toggle-label div {
+        color: white;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-left {
+        color: white;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-right {
+        color: black; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-left {
+        color: black; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-right {
+        color: white; /* Inactive text color */
     }
 }
 

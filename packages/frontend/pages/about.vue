@@ -138,7 +138,7 @@ export default {
         color: #4E3681;
     }
     .p-text {
-        color: black;
+        color: 1E2019;
     }
 }
 

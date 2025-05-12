@@ -4,7 +4,8 @@
     <nav class="navbar navbar-expand-lg" id="navbar">
       <div class="container-fluid" id="nav">
         <a href="/" class="navbar-brand">
-          <img src="../assets/styles/gosqas_logo.png" id="logo" />
+          <img src="../assets/styles/gosqas_logo.png" id="logo-light" class="logo"/>
+          <img src="../assets/styles/dark-mode-logo.png" id="logo-dark" class="logo" />
         </a>
         <button
           class="navbar-toggler"
@@ -22,7 +23,6 @@
               xmlns="http://www.w3.org/2000/svg"
               width="25.5px"
               height="19.5px"
-              fill="currentColor"
               class="bi bi-x-lg"
             >
               <path
@@ -66,14 +66,20 @@
               </li>
             </div>
             <span>
-              <ButtonComponent
+              <button
                 @click="trackingForm()"
                 id="viewRecordButton"
-                buttonText="View Record"
-                padding="12px 16px"
-                margin="0px 20px 0px 0px"
-                style="font-size: 18px"
-              ></ButtonComponent>
+                class="baseButton view-record-button"
+                style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 12px 16px;
+                  margin: 0px 20px 0px 0px;
+                  font-size: 18px;
+                "
+              >
+                View Record
+              </button>
               <RouterLink to="/gdt"
                 ><ButtonComponent
                   class="mobile-nav"
@@ -107,6 +113,13 @@
               src="../assets/styles/gosqas_logo.png"
               height="42px"
               alt="Global Open Source Quality Assurance System"
+              class="logo-light"
+            />
+            <img
+              src="../assets/styles/darkmode-logo.png"
+              height="42px"
+              alt="Global Open Source Quality Assurance System"
+              class="logo-dark"
             />
           </RouterLink>
         </div>
@@ -138,7 +151,7 @@
         </div>
       </div>
       <div class="row custom-copy-right">
-        <p class="text-muted">
+        <p class="p-text">
           © 2024 Global Open Source Quality Assurance System
         </p>
       </div>
@@ -161,38 +174,19 @@ export default {
       );
       let nav = <HTMLDivElement>document.getElementById("nav");
 
-      const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
       if (!showTrack) {
-      showTrack = true;
-      viewRecordDiv.style.display = "inline";
-
-      if (prefersDarkMode) {
-        viewRecordButton.style.backgroundColor = "#CCECFD"; 
-        viewRecordButton.style.color = "#000000"; 
-        viewRecordButton.style.borderColor = "#CCECFD";
+        //if showTrack is false
+        showTrack = true;
+        viewRecordDiv.style.display = "inline"; //make text input available
+        viewRecordButton.style.backgroundColor = "#322253";
+        viewRecordButton.style.borderColor = "#322253";
+        nav.style.paddingBottom = "80px";
       } else {
+        showTrack = false;
+        viewRecordDiv.style.display = "none";
         viewRecordButton.style.backgroundColor = "#4E3681";
-        viewRecordButton.style.color = "#FFFFFF"; 
         viewRecordButton.style.borderColor = "#4E3681";
-      }
-
-      nav.style.paddingBottom = "80px";
-    } else {
-      showTrack = false;
-      viewRecordDiv.style.display = "none";
-      
-      if (prefersDarkMode) {
-        viewRecordButton.style.backgroundColor = "#CCECFD";
-        viewRecordButton.style.color = "#000000"; 
-        viewRecordButton.style.borderColor = "#CCECFD";
-      } else {
-        viewRecordButton.style.backgroundColor = "#4E3681"; 
-        viewRecordButton.style.color = "#FFFFFF";
-        viewRecordButton.style.borderColor = "#4E3681"; 
-      }
-      
-      nav.style.paddingBottom = "24.5px";
+        nav.style.paddingBottom = "24.5px";
       }
     },
   },
@@ -352,7 +346,7 @@ export default {
   .custom-row-about {
     display: none; /* Hide the sections */
   }
-  .text-muted {
+  .p-text {
     font-size: 7px; /* Smaller font size for the copyright text */
   }
   .custom-nav {
@@ -362,7 +356,9 @@ export default {
   }
 
   /* Adjust mobile menu logo spacing when size is below 420px */
-  #logo {
+  #logo,
+  #logo-light,
+  #logo-dark {
     width: 100%;
     max-width: 58vw;
     height: auto;
@@ -383,7 +379,9 @@ export default {
 }
 
 @media (min-width: 420px) {
-  #logo {
+  #logo,
+  #logo-light,
+  #logo-dark {
     width: 100%;
     max-width: 25vw;
     min-width: 262px;
@@ -424,7 +422,7 @@ export default {
 
 .footer p {
   margin: 0;
-  color: #666;
+  /*color: #666;*/
 }
 
 /* Shift the row slightly to the left */
@@ -447,6 +445,7 @@ export default {
 .custom-logo {
   flex: 2;
   box-sizing: border-box;
+  
 }
 
 .custom-row-home {
@@ -514,7 +513,7 @@ export default {
 }
 
 /* Smaller copyright text */
-.text-muted {
+.p-text {
   font-size: 16px; /* Smaller font size for the copyright text */
   font-weight: 400;
   line-height: 24px;
@@ -526,13 +525,36 @@ export default {
   }
 }
 
+.logo {
+  display: none;
+  /*height: 65px;*/
+}
+
+.logo-light,
+.logo-dark {
+  display: none;
+  /*height: 42px;*/
+}
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #navbar {
       background-color: #1E2019;
     }
+    #logo-dark {
+      display: inline;
+    }
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+    }
+    #close-icon {
+      fill: white;
+    }
     #footer {
       background-color: #1E2019;
+    }
+    .logo-dark {
+      display: inline;
     }
     .h1-text {
       color: #CCECFD;
@@ -549,8 +571,8 @@ export default {
     .mobile-link {
       color: #FFFFFF;
     }
-    .text-muted {
-      color: #FFFFFF;
+    .p-text {
+      color: #f2f2f2;
     }
     .navbar-collapse .nav-link:hover,
     .navbar-collapse .nav-link.active,
@@ -562,15 +584,12 @@ export default {
     #viewRecordButton {
       background-color: #CCECFD; 
       color: #000000; 
-      borderColor: #CCECFD;
+      border-color: #CCECFD;
+      border-radius: 10px;
     }
     #footer a, 
     #footer RouterLink {
       color: #FFFFFF;
-    }
-    #footer p,
-    #footer .text-muted {
-      color: white 
     }
 }
 /* Light mode version*/
@@ -578,8 +597,18 @@ export default {
     #navbar {
         background-color: #E6F6FF;
     }
+    #logo-light {
+      display: inline;
+      height: 60.5px;
+    }
     #footer {
         background-color: #E6F6FF;
+    }
+    .logo-light {
+      display: inline;
+    }
+    #close-icon {
+      fill: currentColor;
     }
     .h1-text {
         color: #4E3681;
@@ -590,17 +619,14 @@ export default {
     .h2-text {
         color: #4E3681;
     }
-    .p-text {
-        color: #4E3681;
-    }
     .nav-link {
         color: #1e2019;
     }
     .mobile-link {
       color: #1e2019;
     }
-    .text-muted {
-      color: #1e2019;
+    .p-text {
+      color: #666;
     }
     .navbar-collapse .nav-link:hover,
     .navbar-collapse .nav-link.active,
@@ -612,15 +638,12 @@ export default {
     #viewRecordButton {
       background-color: #4E3681;
       color: #FFFFFF;  
-      borderColor: #4E3681;
+      border-color: #4E3681;
+      border-radius: 10px;
     } 
-    #footer p, 
+    #footer a, 
     #footer RouterLink {
       color: black;
-    }
-    #footer p,
-    #footer .text-muted {
-      color: white 
     }
 }
 

@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <style scoped>
 
-a{
+a {
     font-weight: normal;
     color: #4e3681;
 }

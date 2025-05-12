@@ -25,11 +25,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <span class="learn-more-desc text-decoration-underline" id="p-text"> gosqasystem@gmail.com</span> 
                     or visiting the links below.</p>
         <div>
-            <RouterLink to="/how-it-works"><button-component class="button first learn-more" buttonText="How It Works" margin="20px 20px 0px 0px"></button-component></RouterLink>
-            <RouterLink to="/data-privacy"><button-component class="button middle learn-more" buttonText="Data & Privacy"
-                margin="20px 20px 0px 0px"></button-component></RouterLink>
-            <button-component class="button learn-more" buttonText="GDT GitHub" onclick="window.location.href='https://github.com/gosqasorg/asset-provenance-tracking'"
-                margin="20px 0px 0px 0px"></button-component>
+            <RouterLink to="/how-it-works"><button class="baseButton button first learn-more" id="learn-more-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 20px 20px 0px 0px;
+                  font-size: 18px;
+                  border-radius: 10px;
+                ">
+                    How It Works
+                </button></RouterLink>
+            <RouterLink to="/data-privacy"><button class="baseButton button middle learn-more" id="learn-more-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 20px 20px 0px 0px;
+                  font-size: 18px;
+                  border-radius: 10px;
+                ">
+                    Data & Privacy
+                </button></RouterLink>
+            <button class="baseButton button learn-more" id="learn-more-button" onclick="window.location.href='https://github.com/gosqasorg/asset-provenance-tracking'" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 20px 20px 0px 0px;
+                  font-size: 18px;
+                  border-radius: 10px;
+                ">
+                    GDT GitHub
+                </button>
         </div>
         
     </div>
@@ -77,7 +102,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         color: #FFFFFF;
         backgroundColor: #FFFFFF;
     }
-  
+    #learn-more-button {
+        color: #CCECFD;
+        background-color: #1E2019;
+        border: 2px solid #CCECFD;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -88,22 +117,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         color: #4E3681;
     }
     .mb-0 {
-        color: #4E3681;
+        color: #1E2019;
     }
     .learn-more-desc {
         color: #4E3681;
     }
-    #button first learn-more {
+    #learn-more-button {
         color: #322253;
-        backgroundColor: #ffffff00;
-    }
-    #button middle learn-more {
-        color: #322253;
-        backgroundColor: #ffffff00;
-    }
-    #button learn-more {
-        color: #322253;
-        backgroundColor: #ffffff00;
+        background-color: #FFFFFF;
+        border: 2px solid #4E3681;
     }
 }
 

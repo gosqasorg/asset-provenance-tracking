@@ -120,7 +120,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         color: #4E3681;
     }
     .p-text {
-        color: #4E3681;
+        color: #1E2019;
     }
     .donate-btn {
         background-color: #4e3681;
