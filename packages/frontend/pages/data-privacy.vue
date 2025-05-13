@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <template>
-    <div class="container-fluid" id="about-container">
-        <h1 class="text-iris">Data & Privacy</h1>
+    <div class="container-fluid" id="data-privacy-container">
+        <h1>Data & Privacy</h1>
         <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
             which is linked to a QR code. A cryptographic hash function securely references data via the record key. 
@@ -45,7 +45,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 <style scoped>
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
-    #about-container{
+    #data-privacy-container{
         padding: 20px 20px 40px 20px;
     }
     .row{
@@ -57,13 +57,39 @@ import Learn_more from '~/layouts/learn_more.vue';
 
 /* For screens larger than 768px */
 @media (min-width: 768px) {
-    #about-container{
+    #data-privacy-container{
         padding: 80px 200px 100px 200px;
     }
     .row{
         margin-top:32px;
     }
 
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #data-privacy-container {
+        background-color: #1E2019;
+    }
+    h1 {
+        color: #CCECFD;
+    }
+    p {
+        color: #FFFFFF;
+    }
+  
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #data-privacy-container {
+        background-color: #FFFFFF;
+    }
+    h1 {
+        color: #4E3681;
+    }
+    p {
+        color: #1E2019;
+    }
 }
 
 </style>

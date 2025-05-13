@@ -24,8 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
-                <div class="row"> <h1>Trust and transparency when you need it most.</h1> </div>
-                <div class="row"> <h4>Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
+                <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
+                <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style="margin-top:20px; display:inline-flex">
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackDivVisible = !trackDivVisible">
                         <button-component class="button" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
@@ -47,15 +47,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
 
-        <div class="row bg-frost" id="second-row" >
+        <div class="row" id="second-row" >
             <div class="row rowtest">
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
-                    <h3 class="text-iris" id="second-row-cols-h3">{{item.title}}</h3>
-                    <p class="text-eggplant" style="font-weight: 400;">{{ item.descr }}</p>         
+                    <h3 id="second-row-cols-h3">{{item.title}}</h3>
+                    <p style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <RouterLink to="/about"><button-component class="button" buttonText="About Us" color="#322253" backgroundColor="#ffffff00"></button-component></RouterLink>
+                <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                "
+              >
+                About Us
+              </button></RouterLink>
             </div>
 
         </div> 
@@ -103,7 +113,7 @@ export default {
 
 #first-row {
     /* Set the hand background image on the homepage */
-    background-image: url(../assets/images/hand-icon.png);
+    /*background-image: url(../assets/images/hand-icon.png);*/
     background-repeat: no-repeat;
     background-position-x: 85%;
     background-position-y: bottom;
@@ -112,6 +122,10 @@ export default {
     height: auto;
     display: flex;  
     flex-wrap: wrap;
+}
+
+#about-button {
+    padding: 10px 20px
 }
 
 /* For screens less than 991px resize hand logo*/
@@ -198,5 +212,57 @@ export default {
     }
 }
 
+/* Dark mode version of first row */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-heading {
+    color: #FFFFFF;
+  }
+  #first-row {
+        background-color: #1E2019;
+    }
+}
+
+/* Dark mode version of second row */
+@media (prefers-color-scheme: dark) {
+    #first-row {
+        background-image: url(../assets/images/darkmode-hand.png);
+    }
+    #second-row{
+            background-color: #4E3681;
+        }
+
+    h3 {
+        color: #FFFFFF; 
+    }
+    p {
+        color: #E6F6FF; 
+    }
+    #about-button {
+        color: #FFFFFF;
+        background-color: #4E3681;
+        border: 2px solid #FFFFFF;
+  }
+}
+/* Light mode version of second row */
+@media (prefers-color-scheme: light) {
+    #first-row {
+        background-image: url(../assets/images/hand-icon.png);
+    }
+    #second-row {
+            background-color: #E6F6FF;
+        }
+
+    h3 {
+        color: #4E3681; 
+    }
+    p {
+        color: #322253; 
+    }
+    #about-button {
+        color: #322253;
+        background-color: #E6F6FF;
+        border: 2px solid #4E3681;
+  }
+}
 
 </style>
