@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="about-container">
-        <h1 class="text-iris">About Us</h1>
+        <h1>About Us</h1>
         <div class="row">
             <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) creates
                 opportunities for better practices across the diverse humanitarian
@@ -30,27 +30,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 communities. We employ open-source tools and principles to centralize
                 user solutions, despite location or resource environment. </p>
     
-            <p> <span class="text-iris" style="font-weight:600">Our current products</span> <br>
+            <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
                 Global Distributed Tracking - an open-source provenance tracker enabling closed-loop 
                 tracking for products, information, and logistics.</p>
         </div>
 
         <div class="row">
-            <h2 class="text-iris" id="subtitle">Our Mission: Trust Through Transparency</h2>
+            <h2 id="subtitle">Our Mission: Trust Through Transparency</h2>
             <p>As an open-source organization, GOSQAS prioritizes transparency in all projects. Because we know that 
                 openness and clarity build trust and promote wide user adoption, our commitment to Trust Through Transparency 
                 (TTT) ensures our initiatives are enacted with integrity and accountability.</p>
         </div>
 
         <div class="row">
-            <h2 class="text-iris" id="subtitle">Our Values</h2>
-            <p> <span class="text-iris" style="font-weight:600">Data Ownership</span> <br>
+            <h2 id="subtitle">Our Values</h2>
+            <p> <span class="p-text-color" style="font-weight:600">Data Ownership</span> <br>
                 Users maintain full ownership of the data generated within the GOSQAS flagship product, Global Distributed Tracking. 
                 We do not have access to any user data, ensuring complete privacy and independent ownership.</p>
-            <p> <span class="text-iris" style="font-weight:600">Simplicity & Accessibility</span> <br>
+            <p> <span class="p-text-color" style="font-weight:600">Simplicity & Accessibility</span> <br>
                 All users, especially laypersons in limited resource environments, have access to GOSQAS projects. 
                 We believe that open-source projects should be simple to use and understand.</p>
-            <p> <span class="text-iris" style="font-weight:600">Open Source</span> <br>
+            <p> <span class="p-text-color" style="font-weight:600">Open Source</span> <br>
                 Our projects are created for the public good and are available either free of charge or at minimal cost, 
                 reinforcing our dedication to community benefit and accessibility.</p>
         </div>
@@ -102,6 +102,40 @@ export default {
         margin-bottom:20px
     }
 
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #about-container {
+        background-color: #1E2019
+    }
+    h1,
+    h2 {
+        color: #CCECFD;
+    }
+    .p-text-color {
+        color: #E6F6FF;
+    }
+    p {
+        color: #FFFFFF;
+    }
+  
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #about-container {
+        background-color: #FFFFFF;
+    }
+    h1,
+    h2 {
+        color: #4E3681;
+    }
+    .p-text-color {
+        color: #4E3681;
+    }
+    p {
+        color: #1E2019;
+    }
 }
 
 </style>
