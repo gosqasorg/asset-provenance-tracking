@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <!-- UI Toolkit (for x icon on tags) -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
 
-    <h5 class="mt-3 mb-1 text-iris">Suggested Tags</h5>
+    <h5 class="mt-3 mb-1">Suggested Tags</h5>
     <div class="tag-container mb-2">
       <button class="tag" type="button" v-for="tag in TagName" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'" 
       @click="moveTagToForm(tag)">{{ tag }}</button>
@@ -242,4 +242,16 @@ export default {
     border: none;
     outline: none;
   }
+
+@media (prefers-color-scheme: dark) {
+    h5 {
+        color: #FFFFFF;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    h5 {
+        color: #4E3681;
+    }
+}
 </style>

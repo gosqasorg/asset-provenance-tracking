@@ -22,18 +22,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
-        <h4 class="text-iris mt-1 mb-3">Create New Record</h4>
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+        <h4 class="mt-1 mb-3">Create New Record</h4>
  
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description" maxlength="5000">
             <div style="display: block;">
-                <h4 class="mt-3 mb-3 text-iris">Record Image (optional)</h4>
-                <input type="file"  class="form-control " accept="*" @change="onFileChange" capture="environment" multiple />
+                <h4 class="mt-3 mb-3">Record Image (optional)</h4>
+                <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
  
-            <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
+            <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
 
             <div>
@@ -42,7 +42,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
  
         <div class="d-grid">
-            <ButtonComponent class="my-3 mb-0 submit-btn" buttonText="Create Record" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting"/>
+            <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  border-radius: 10px;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  font-weight: 400;
+                  line-height: 30px;
+                "
+                >
+                Create Record
+                </button>
         </div>
     </form>
 </template>
@@ -158,4 +170,42 @@ export default {
         margin-top: 30px;
 
     }
+
+    /* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #record-form {
+        background-color: #4B4D47;
+    }
+    h4 {
+        color: #FFFFFF;
+    }
+    #record-button {
+        background-color: #CCECFD;
+        color: black;
+        border-color: #CCECFD;
+    }
+    input[type="file"]::file-selector-button {
+        background-color: #CCECFD;  
+        color: black;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #record-form {
+        background-color: #E6F6FF;
+    }
+    h4 {
+        color: #4E3681;
+    }
+    #record-button {
+        background-color: #4E3681;
+        color: white;
+        border-color: #4E3681;
+    }
+    input[type="file"]::file-selector-button {
+        background-color: #4E3681;  
+        color: white;
+    }
+}
+
 </style>

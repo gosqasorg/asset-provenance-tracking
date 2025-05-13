@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="how-it-works-container"> 
-        <h1 class="text-iris" style="margin-bottom:32px;">How It Works</h1>
+        <h1 style="margin-bottom:32px;">How It Works</h1>
         <div class="row" id="how-it-works">
             <p>Designed by Global Open Source Quality Assurance System (GOSQAS), 
                 Global Distributed Tracking (GDT) is a software platform enabling closed-loop tracking for products, 
@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Distributed Tracking to function in low-resource environments where internet and electricity access is limited.</p>
 
             <div class="row" id="targets">
-                <ul class="text-iris" style="font-size: 20px; font-weight: 600;">Global Distributed Tracking targets solutions in:</ul>
+                <ul style="font-size: 20px; font-weight: 600;">Global Distributed Tracking targets solutions in:</ul>
                 <div class="col mx-2">
                     <li>Last mile verification</li>
                     <li>Fraud and theft prevention</li>
@@ -42,7 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <div class="row" id="features">
-                <ul class="text-iris" style="font-size: 20px; font-weight: 600;">Features include:</ul>
+                <ul style="font-size: 20px; font-weight: 600;">Features include:</ul>
                 <div class="col mx-2">
                     <li>Completely free service with no hidden fees</li>
                     <li>Fully encrypted data</li>
@@ -58,21 +58,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row" id="overview">
-            <h2 class="text-iris" style="margin-bottom:25px">Overview</h2>
+            <h2 style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px">
+                <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/darkmode-cross.png" style="height:50px; margin-bottom:20px" class="dark-icon">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/upload-icon.png" style="height:40px; margin-bottom:30px">
+                <img src="../assets/images/upload-icon.png" style="height:40px; margin-bottom:30px" class="light-icon">
+                <img src="../assets/images/darkmode-upload.png" style="height:40px; margin-bottom:30px" class="dark-icon">
                 <p>2. Testing agency uploads documentation</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px">
+                <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/darkmode-check.png" style="height:50px; margin-bottom:20px" class="dark-icon">
                 <p>3. Distributor views information within GDT and verifies product</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/gosqas-icon.png" style="height:55px; margin-bottom:15px">
+                <img src="../assets/images/gosqas-icon.png" style="height:55px; margin-bottom:15px" class="light-icon">
+                <img src="../assets/images/darkmode-gosqas.png" style="height:55px; margin-bottom:15px" class="dark-icon">
                 <p>4. Medical staff received verified product and records shipment receipt in GDT</p>
             </div>
 
@@ -123,8 +127,54 @@ li{
     #how-it-works-container{
         padding: 80px 200px 100px 200px;
     }
-   
+}
 
+.light-icon,
+.dark-icon {
+  display: none;
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #how-it-works-container {
+        background-color: #1E2019
+    }
+    .dark-icon {
+        display: inline;
+    }
+    h1,
+    h2 {
+        color: #CCECFD;
+    }
+    ul {
+        color: #E6F6FF;
+    }
+    p,
+    .col mx-2,
+    .col {
+        color: #FFFFFF;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #how-it-works-container {
+        background-color: #FFFFFF;
+    }
+    .light-icon {
+        display: inline;
+    }
+    h1,
+    h2 {
+        color: #4E3681;
+    }
+    ul {
+        color: #4E3681;
+    }
+    p,
+    .col mx-2,
+    .col {
+        color: #1E2019;
+    }
 }
 
 </style>
