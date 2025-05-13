@@ -22,13 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="terms-and-conditions-container">
-        <h1 class="h1-text">Terms and Conditions</h1>
-        <p class="p-text" style="margin-bottom:32px;">Last Updated September 23, 2024</p>
+        <h1>Terms and Conditions</h1>
+        <p style="margin-bottom:32px;">Last Updated September 23, 2024</p>
         <div class="row">
-            <h3 class="h3-text" id="subtitle">Agreement to Our Legal Terms</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Agreement to Our Legal Terms</h3>
+            <p style="margin-bottom:32px;">
                 We are the Global Open Source Quality Assurance System “GOSQAS.” We operate the website 
-                <a class="a-text" href="https://gosqas.org">https://gosqas.org</a>. You can contact us by email at 
+                <a href="https://gosqas.org">https://gosqas.org</a>. You can contact us by email at 
                 <span style="font-weight: 400;" class="text-decoration-underline"> 
                 gosqasystem@gmail.com</span>.<br><br>
 
@@ -63,8 +63,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 you may not use the Services. You may not use the Services in a way that would violate 
                 the Gramm-Leach-Bliley Act (GLBA).
             </p>
-            <h3 class="h3-text" id="subtitle">Prohibited Activities</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Prohibited Activities</h3>
+            <p style="margin-bottom:32px;">
                 You will not post, send, publish, upload, or transmit through the Services any Submission 
                 nor post any Contribution that is illegal, harassing, hateful, harmful, defamatory, obscene, 
                 bullying, abusive, discriminatory, threatening to any person or group, sexually explicit, 
@@ -75,16 +75,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 intended to cause harassment or harm to an individual or group, or that would generally be 
                 considered “doxxing”.
             </p>
-            <h3 class="h3-text" id="subtitle">Limitations of Liability</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Limitations of Liability</h3>
+            <p style="margin-bottom:32px;">
                 <strong>In no event will we or our directors, employees, or agents be liable to you or any 
                 third party for any direct, indirect, consequential, exemplary, incidental, special, or 
                 punitive damages, including lost profit, lost revenue, loss of data, or other damages 
                 arising from your use of the services, even if we have been advised of the possibility 
                 of such damages.</strong>
             </p>
-            <h3 class="h3-text" id="subtitle">Indemnification</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Indemnification</h3>
+            <p style="margin-bottom:32px;">
                 You agree to defend, indemnify, and hold us harmless, including our subsidiaries, affiliates, 
                 and all of our respective officers, agents, partners, and employees, from and against any 
                 loss, damage, liability, claim, or demand, including reasonable attorney's fees and expenses, 
@@ -97,8 +97,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 5. your violation of the rights of a third party, including but not limited to intellectual property rights;<br>
                 6. any overt harmful act toward any other user of the Services with whom you connected via the Services.
             </p>
-            <h3 class="h3-text" id="subtitle">User Data</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">User Data</h3>
+            <p style="margin-bottom:32px;">
                 We maintain certain data that you transmit to our Services for the purpose of managing 
                 performance, as well as data related to your use of the Services. While we perform regular 
                 backups, you are solely responsible for all data that you transmit, or that pertains to any 
@@ -106,8 +106,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 for any loss, disclosure, or corruption of such data, and you hereby waive any right of action 
                 against us arising from any such incidents.
             </p>
-            <h3 class="h3-text" id="subtitle">Data Encryption and Recovery</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Data Encryption and Recovery</h3>
+            <p style="margin-bottom:32px;">
                 Please be aware that we do not retain the ability to read your data. All data—including provenance 
                 records and attachments—is fully encrypted and stored in Azure Blob Storage. We do not store your 
                 encryption key; we only use it to generate a device ID by applying a SHA256 hash to the device key. 
@@ -115,8 +115,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 differs from other sites and applications; we intentionally do not have the ability to read your 
                 data to enhance your security and privacy.
             </p>
-            <h3 class="h3-text" id="subtitle">Electronic Communications, Transactions, and Signatures</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Electronic Communications, Transactions, and Signatures</h3>
+            <p style="margin-bottom:32px;">
                 Visiting the Services, sending us emails, and completing online forms constitute electronic 
                 communications. You consent to receive electronic communications, and you agree that all agreements, 
                 notices, disclosures, and other communications we provide to you electronically, via email, and 
@@ -131,15 +131,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 non-electronic records, or to payments or the granting of credits by any means other than electronic 
                 means.
             </p>
-            <h3 class="h3-text" id="subtitle">California Users and Residents</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">California Users and Residents</h3>
+            <p style="margin-bottom:32px;">
                 If any complaint with us is not satisfactorily resolved, you can contact the ComplaintAssistance Unit 
                 of the Division of Consumer Services of the California Department of Consumer Affairs in writing at 
                 1625 North Market Blvd., Suite N 112, Sacramento, California 95834 or by telephone at (800) 952-5210 
                 or (916) 445-1254.
             </p>
-            <h3 class="h3-text" id="subtitle">Miscellaneous</h3>
-            <p class="p-text" style="margin-bottom:32px;">
+            <h3 id="subtitle">Miscellaneous</h3>
+            <p style="margin-bottom:32px;">
                 These Legal Terms and any policies or operating rules posted by us on the Services or with respect 
                 to the Services constitute the entire agreement and understanding between you and us. Our failure to 
                 exercise or enforce any right or provision of these Legal Terms shall not operate as a waiver of such 
@@ -155,8 +155,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 on the electronic form of these Legal Terms and the lack of signing by the parties hereto to execute 
                 these Legal Terms.
             </p>
-            <h3 class="h3-text" id="subtitle">Contact Us</h3>
-            <p class="p-text">
+            <h3 id="subtitle">Contact Us</h3>
+            <p>
                 In order to resolve a complaint regarding the Services or to receive further information regarding 
                 use of the Services, please contact us at <span style="font-weight: 400;" 
                 class="text-decoration-underline"> gosqasystem@gmail.com</span>.
@@ -196,42 +196,33 @@ a {
     #terms-and-conditions-container {
         background-color: #1E2019
     }
-    .h1-text {
+    h1,
+    h3 {
         color: #CCECFD;
     }
-    .h3-text {
-        color: #CCECFD;
-    }
-    .p-text {
+    p {
         color: #FFFFFF;
     }
-    .text-decoration-underline {
+    .text-decoration-underline,
+    a {
         color: #CCECFD;
     }
-    .a-text {
-        color: #CCECFD;  
-    }
-  
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
     #terms-and-conditions-container {
         background-color: #FFFFFF;
     }
-    .h1-text {
+    h1,
+    h3 {
         color: #4E3681;
     }
-    .h3-text {
-        color: #4E3681;
+    p {
+        color: #1E2019;
     }
-    .p-text {
+    .text-decoration-underline,
+    a {
         color: #4E3681;
-    }
-    .text-decoration-underline {
-        color: #4E3681;
-    }
-    .a-text {
-        color: #4E3681; 
     }
 }
 

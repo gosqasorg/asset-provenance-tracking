@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="data-privacy-container">
-        <h1 class="h1-text">Data & Privacy</h1>
-        <div class="row"> <p class="p-text">
+        <h1>Data & Privacy</h1>
+        <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
             which is linked to a QR code. A cryptographic hash function securely references data via the record key. 
             AES encryption with 128 bit keys is used along with SHA-256 for cryptographic hashing. 
@@ -71,10 +71,10 @@ import Learn_more from '~/layouts/learn_more.vue';
     #data-privacy-container {
         background-color: #1E2019;
     }
-    .h1-text {
+    h1 {
         color: #CCECFD;
     }
-    .p-text {
+    p {
         color: #FFFFFF;
     }
   
@@ -84,10 +84,10 @@ import Learn_more from '~/layouts/learn_more.vue';
     #data-privacy-container {
         background-color: #FFFFFF;
     }
-    .h1-text {
+    h1 {
         color: #4E3681;
     }
-    .p-text {
+    p {
         color: #1E2019;
     }
 }

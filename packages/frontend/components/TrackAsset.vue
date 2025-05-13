@@ -88,20 +88,6 @@ form {
         border-color: #CCECFD;
         border-radius: 10px;
     } 
-    .view-record-button.navbar-button {
-        background-color: #CCECFD;
-        color: #000000;
-        border-color: #CCECFD;
-        border-radius: 10px;
-    }
-
-  /* Index page button — purple background with white text */
-  .view-record-button.index-page-button {
-        background-color: #322253;
-        color: #FFFFFF;
-        border-color: #322253;
-        border-radius: 10px;
-    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {

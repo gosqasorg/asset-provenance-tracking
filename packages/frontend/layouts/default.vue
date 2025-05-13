@@ -538,7 +538,8 @@ export default {
     #navbar {
       background-color: #1E2019;
     }
-    #logo-dark {
+    #logo-dark,
+    .logo-dark {
       display: inline;
     }
     .navbar-toggler-icon {
@@ -549,18 +550,6 @@ export default {
     }
     #footer {
       background-color: #1E2019;
-    }
-    .logo-dark {
-      display: inline;
-    }
-    .h1-text {
-      color: #CCECFD;
-    }
-    .p-text-color {
-      color: #E6F6FF;
-    }
-    .h2-text {
-      color: #CCECFD;
     }
     .nav-link {
       color: #FFFFFF;
@@ -605,26 +594,15 @@ export default {
     #navbar {
         background-color: #E6F6FF;
     }
-    #logo-light {
+    #logo-light,
+    .logo-light {
       display: inline;
     }
     #footer {
         background-color: #E6F6FF;
     }
-    .logo-light {
-      display: inline;
-    }
     #close-icon {
       fill: currentColor;
-    }
-    .h1-text {
-        color: #4E3681;
-    }
-    .p-text-color {
-        color: #4E3681;
-    }
-    .h2-text {
-        color: #4E3681;
     }
     .nav-link {
         color: #1e2019;

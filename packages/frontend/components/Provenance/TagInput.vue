@@ -243,7 +243,7 @@ export default {
     outline: none;
   }
 
-  @media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
     h5 {
         color: #FFFFFF;
     }

@@ -179,18 +179,6 @@ export default {
     h4 {
         color: #FFFFFF;
     }
-    .h1-text {
-        color: #CCECFD;
-    }
-    .p-text-color {
-        color: #E6F6FF;
-    }
-    .h2-text {
-        color: #CCECFD;
-    }
-    .p-text {
-        color: #FFFFFF;
-    }
     #record-button {
         background-color: #CCECFD;
         color: black;
@@ -208,18 +196,6 @@ export default {
     }
     h4 {
         color: #4E3681;
-    }
-    .h1-text {
-        color: #4E3681;
-    }
-    .p-text-color {
-        color: #4E3681;
-    }
-    .h2-text {
-        color: #4E3681;
-    }
-    .p-text {
-        color: black;
     }
     #record-button {
         background-color: #4E3681;

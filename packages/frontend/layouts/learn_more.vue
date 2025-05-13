@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
 
     <div class="row" id="learn-more">
-        <h2 class="h2-text"> Interested in learning more? </h2>
+        <h2> Interested in learning more? </h2>
         <p class ="mb-0" style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
             <span class="learn-more-desc text-decoration-underline" id="p-text"> gosqasystem@gmail.com</span> 
                     or visiting the links below.</p>
@@ -81,26 +81,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #learn-more {
         background-color: #1E2019
     }
-    .h2-text {
+    h2 {
         color: #CCECFD;
     }
-    .mb-0 {
+    p {
         color: #FFFFFF;
     }
     .learn-more-desc {
         color: #CCECFD;
-    }
-    #button first learn-more {
-        color: #FFFFFF;
-        backgroundColor: #FFFFFF;
-    }
-    #button middle learn-more {
-        color: #FFFFFF;
-        backgroundColor: #FFFFFF;
-    }
-    #button learn-more {
-        color: #FFFFFF;
-        backgroundColor: #FFFFFF;
     }
     #learn-more-button {
         color: #CCECFD;
@@ -113,10 +101,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #learn-more {
         background-color: #FFFFFF;
     }
-    .h2-text {
+    h2 {
         color: #4E3681;
     }
-    .mb-0 {
+    p {
         color: #1E2019;
     }
     .learn-more-desc {

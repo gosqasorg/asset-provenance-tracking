@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <div class="gdt" id="gdt-container">
         <div class="container-md">
-            <h1 class="h1-text my-4 fs-1">Global Distributed Tracking</h1>
+            <h1 class="my-4 fs-1">Global Distributed Tracking</h1>
     
     
             <!-- create toggle for single or group  -->
@@ -160,13 +160,7 @@ export default {
     #gdt-container {
         background-color: #1E2019
     }
-    .h1-text {
-        color: #CCECFD;
-    }
-    .p-text-color {
-        color: #E6F6FF;
-    }
-    .h2-text {
+    h1 {
         color: #CCECFD;
     }
     p {
@@ -177,41 +171,13 @@ export default {
         background-clip: padding-box;
         background-color: #1E2019;
     }
-    .toggle-label {
-        border: 2px solid #CCECFD;
-        background: #1E2019;
-    }
-    .toggle-label::before {
-        background: #CCECFD;
-    }
-    .toggle-label div {
-        color: #1E2019;
-    }
-    .toggleCheckbox:checked + .toggle-label .toggle-left {
-        color: white;
-    }
-    .toggleCheckbox:checked + .toggle-label .toggle-right {
-        color: black; /* Active text color */
-    }
-    .toggleCheckbox + .toggle-label .toggle-left {
-        color: black; /* Active text color */
-    }
-    .toggleCheckbox + .toggle-label .toggle-right {
-        color: white; /* Inactive text color */
-    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
     #gdt-container {
         background-color: #FFFFFF;
     }
-    .h1-text {
-        color: #4E3681;
-    }
-    .p-text-color {
-        color: #4E3681;
-    }
-    .h2-text {
+    h1 {
         color: #4E3681;
     }
     p {
@@ -221,28 +187,6 @@ export default {
     .form-control {
         background-clip: padding-box;
         background-color: #FFFFFF;
-    }
-    .toggle-label {
-        border: 2px solid #4a148c;
-        background: white;
-    }
-    .toggle-label::before {
-        background: #4a148c;
-    }
-    .toggle-label div {
-        color: white;
-    }
-    .toggleCheckbox:checked + .toggle-label .toggle-left {
-        color: white;
-    }
-    .toggleCheckbox:checked + .toggle-label .toggle-right {
-        color: black; /* Active text color */
-    }
-    .toggleCheckbox + .toggle-label .toggle-left {
-        color: black; /* Active text color */
-    }
-    .toggleCheckbox + .toggle-label .toggle-right {
-        color: white; /* Inactive text color */
     }
 }
 

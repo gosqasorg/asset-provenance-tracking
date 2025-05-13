@@ -318,24 +318,12 @@ export default {
         border-color:red;
     }
 
-        /* Dark mode version*/
+/* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
     h4 {
-        color: #FFFFFF;
-    }
-    .h1-text {
-        color: #CCECFD;
-    }
-    .p-text-color {
-        color: #E6F6FF;
-    }
-    .h2-text {
-        color: #CCECFD;
-    }
-    .p-text {
         color: #FFFFFF;
     }
     #group-button {
@@ -355,18 +343,6 @@ export default {
     }
     h4 {
         color: #4E3681;
-    }
-    .h1-text {
-        color: #4E3681;
-    }
-    .p-text-color {
-        color: #4E3681;
-    }
-    .h2-text {
-        color: #4E3681;
-    }
-    .p-text {
-        color: black;
     }
     #group-button {
         background-color: #4E3681;

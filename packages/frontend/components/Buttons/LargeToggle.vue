@@ -81,22 +81,6 @@
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #gdt-container {
-        background-color: #1E2019
-    }
-    .h1-text {
-        color: #CCECFD;
-    }
-    .p-text-color {
-        color: #E6F6FF;
-    }
-    .h2-text {
-        color: #CCECFD;
-    }
-    p {
-        color: #FFFFFF;
-        background-color: #1E2019
-    }
     .toggle-border {
       border: 2px solid #CCECFD;
     }
@@ -124,22 +108,6 @@
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-    #gdt-container {
-        background-color: #FFFFFF;
-    }
-    .h1-text {
-        color: #4E3681;
-    }
-    .p-text-color {
-        color: #4E3681;
-    }
-    .h2-text {
-        color: #4E3681;
-    }
-    p {
-        color: black;
-        background-color: #FFFFFF;
-    }
     .toggle-border {
       border: 2px solid #4E3681;
     }

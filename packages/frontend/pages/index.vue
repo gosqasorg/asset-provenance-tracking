@@ -50,8 +50,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row" id="second-row" >
             <div class="row rowtest">
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
-                    <h3 class="h3-text" id="second-row-cols-h3">{{item.title}}</h3>
-                    <p class="p-text" style="font-weight: 400;">{{ item.descr }}</p>         
+                    <h3 id="second-row-cols-h3">{{item.title}}</h3>
+                    <p style="font-weight: 400;">{{ item.descr }}</p>         
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
@@ -231,11 +231,10 @@ export default {
             background-color: #4E3681;
         }
 
-    .h3-text {
+    h3 {
         color: #FFFFFF; 
     }
-
-    .p-text {
+    p {
         color: #E6F6FF; 
     }
     #about-button {
@@ -253,11 +252,10 @@ export default {
             background-color: #E6F6FF;
         }
 
-    .h3-text {
+    h3 {
         color: #4E3681; 
     }
-
-    .p-text {
+    p {
         color: #322253; 
     }
     #about-button {

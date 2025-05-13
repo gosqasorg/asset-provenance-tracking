@@ -22,9 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="donate-container">
-        <h1 class="h1-text">Support GOSQAS</h1>
+        <h1>Support GOSQAS</h1>
         <div class="row">
-            <p class="p-text" style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) 
+            <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) 
                 creates open-source technology to encourage better practices in the diverse humanitarian response, 
                 open-source hardware, and scientific research communities.<br><br>
                 We believe that all communities, regardless of location or resource environment, deserve tools that 
@@ -99,10 +99,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #donate-container {
         background-color: #1E2019
     }
-    .h1-text {
+    h1 {
         color: #CCECFD;
     }
-    .p-text {
+    p {
         color: #FFFFFF;
     }
     .donate-btn {
@@ -116,10 +116,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #donate-container {
         background-color: #FFFFFF;
     }
-    .h1-text {
+    h1 {
         color: #4E3681;
     }
-    .p-text {
+    p {
         color: #1E2019;
     }
     .donate-btn {
