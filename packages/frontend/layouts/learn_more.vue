@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="row" id="learn-more">
         <h2> Interested in learning more? </h2>
         <p class ="mb-0" style="font-weight: 400;"> Learn more about Global Open Source Quality Assurance System (GOSQAS) by emailing us at 
-            <span class="learn-more-desc text-decoration-underline" id="p-text"> gosqasystem@gmail.com</span> 
+            <span class="learn-more-desc text-decoration-underline" id="p-text"> info@gosqas.org</span> 
                     or visiting the links below.</p>
         <div>
             <RouterLink to="/how-it-works"><button class="baseButton button first learn-more" id="learn-more-button" style="

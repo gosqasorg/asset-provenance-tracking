@@ -167,14 +167,14 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
     Please double-check your key. If you keep receiving this error, <br />
     email us at
     <span class="error-email">
-      gosqasystem@gmail.com
+      info@gosqas.org
     </span>.
   </p>
   <div class="error-buttons">
     <!-- Go home button -->
-    <RouterLink to="/" class="btn btn-primary">Go home</RouterLink>
+    <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
     <!-- Email us button -->
-    <RouterLink to="/contact" class="btn btn-secondary">Email us</RouterLink>
+    <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
   </div>
 </div>
 </div>
@@ -555,9 +555,13 @@ a:visited {
 
 .error-buttons {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   gap: 20px;
   margin-top: 20px;
+}
+
+.error-button {
+  width: 48% !important;
 }
 
 .btn {
