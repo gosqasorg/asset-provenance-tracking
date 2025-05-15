@@ -165,10 +165,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
   <p class="error-description">
     We’re sorry, the record you’re looking for could not be found. <br />
     Please double-check your key. If you keep receiving this error, <br />
-    email us at
-    <span class="error-email">
-      info@gosqas.org
-    </span>.
+    email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
   </p>
   <div class="error-buttons">
     <!-- Go home button -->
@@ -546,11 +543,10 @@ a:visited {
 
 .error-email {
   font-family: 'Poppins', sans-serif;
-  font-weight: 500;
   font-size: 20px;
   line-height: 30px;
   color: #4e3681;
-  text-decoration: underline;
+  text-decoration: underline !important;
 }
 
 .error-buttons {
