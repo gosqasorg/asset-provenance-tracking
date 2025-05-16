@@ -31,8 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 user solutions, despite location or resource environment. </p>
     
             <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
-                Global Distributed Tracking - an open-source provenance tracker enabling closed-loop 
-                tracking for products, information, and logistics.</p>
+                Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
         </div>
 
         <div class="row">
