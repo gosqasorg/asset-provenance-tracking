@@ -339,7 +339,7 @@ export default {
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
     #record-form {
-        background-color: #CCECFD;
+        background-color: #E6F6FF;
     }
     h4 {
         color: #4E3681;

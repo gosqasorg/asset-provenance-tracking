@@ -28,9 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h3 id="subtitle">Agreement to Our Legal Terms</h3>
             <p style="margin-bottom:32px;">
                 We are the Global Open Source Quality Assurance System “GOSQAS.” We operate the website 
-                <a href="https://gosqas.org">https://gosqas.org</a>. You can contact us by email at 
-                <span style="font-weight: 400;" class="text-decoration-underline"> 
-                gosqasystem@gmail.com</span>.<br><br>
+                <a class="link-font" href="https://gosqas.org">https://gosqas.org</a>. You can contact us by email at 
+                <a class="link-font" href="mailto:info@gosqas.org">info@gosqas.org</a>.<br><br>
 
                 These Legal Terms constitute a legally binding agreement made between you, whether 
                 personally or on behalf of an entity ("you"), and Global Open Source Quality Assurance 
@@ -158,8 +157,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h3 id="subtitle">Contact Us</h3>
             <p>
                 In order to resolve a complaint regarding the Services or to receive further information regarding 
-                use of the Services, please contact us at <span style="font-weight: 400;" 
-                class="text-decoration-underline"> gosqasystem@gmail.com</span>.
+                use of the Services, please contact us at <a class="link-font" href="mailto:info@gosqas.org">info@gosqas.org</a>.
             </p>
         </div>
 
@@ -189,6 +187,10 @@ a {
     #terms-and-conditions-container{
         padding: 80px 200px 100px 200px;
     } 
+    .link-font {
+        font-size: 20px;
+        line-height: 30px;
+    }
 }
 
 /* Dark mode version*/
