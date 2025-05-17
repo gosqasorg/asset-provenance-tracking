@@ -22,62 +22,78 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 </script>
 
 <template>
-  <div class="container-md my-4 mb-2" v-if="!isLoading" :key="loadingKey">
-    <div class="row justify-content-between">
-        <!-- DESCR -->
-        <div class="col-sm-6 col-lg-9 descr-container">
-            <h1 class="mt-4 mb-2 text-iris">{{deviceRecord?.deviceName}}</h1>
-            <h5>Record Key: {{ route.params.deviceKey }}</h5>
-            <div class="my-2 mb-2"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
+    <div class="record-container">
+        <div class="container-md my-4 mb-2" id="record-container" v-if="!isLoading" :key="loadingKey">
+            <div class="row justify-content-between">
+                <!-- DESCR -->
+                <div class="col-sm-6 col-lg-9 descr-container">
+                    <h1 class="mt-4 mb-2">{{ deviceRecord?.deviceName }}</h1>
+                    <h5>Record Key: {{ route.params.deviceKey }}</h5>
+                    <div class="my-2 mb-2" id="desc"><span v-html="clickableLink(deviceRecord?.description)"></span>
+                    </div>
 
-            <div>
-                <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
-                <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
-                
-                <!-- Share dropdown -->
-                <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
-                    Share Record Link
-                    <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-                    <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
-                </button>
+                    <div>
+                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History
+                            Records</button>
+                        <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR
+                            Code</button>
 
-                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="copy()" class="text-slate item-link">Copy</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="text()" class="text-slate item-link">Messages</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="mail()" class="text-slate item-link">Email</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="telegram()" class="text-slate item-link">Telegram</a>
-                    </li>
-                </ul>
+                        <!-- Share dropdown -->
+                        <button id="shareRecordBtn" class="btn share-btn device-btn" data-bs-toggle="collapse"
+                            data-bs-target="#share-dropdown" @click="buttonFormat">
+                            Share Record Link
+                            <picture v-if="!shareDropdown">
+                                <source srcset="../../assets/images/darkmode-dropdown.svg"
+                                    media="(prefers-color-scheme: dark)">
+                                <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                            </picture>
+                            <picture v-else>
+                                <source srcset="../../assets/images/darkmode-up-dropdown.svg"
+                                    media="(prefers-color-scheme: dark)">
+                                <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                            </picture>
+                        </button>
+
+                        <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
+                            <li class="dropdown-item" style="padding: 7px">
+                                <a @click="copy()" class="drop-text item-link">Copy</a>
+                            </li>
+                            <li class="dropdown-item" style="padding: 7px">
+                                <a @click="text()" class="drop-text item-link">Messages</a>
+                            </li>
+                            <li class="dropdown-item" style="padding: 7px">
+                                <a @click="mail()" class="drop-text item-link">Email</a>
+                            </li>
+                            <li class="dropdown-item" style="padding: 7px">
+                                <a @click="whatsApp()" class="drop-text item-link">WhatsApp</a>
+                            </li>
+                            <li class="dropdown-item" style="padding: 7px">
+                                <a @click="telegram()" class="drop-text item-link">Telegram</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- QR -->
+                <div class="col-sm-6 col-lg-3 mt-2">
+                    <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+                </div>
             </div>
-        </div>
 
-        <!-- QR -->
-        <div class="col-sm-6 col-lg-3 mt-2">
-            <QRCode :url="qrCodeUrl" ref="qrcode_component"/>
+            <div v-if="hasReportingKey"> Reporting Key:
+                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+            </div>
+            <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                <div> Child Keys:
+                    <div>
+                        <KeyList v-bind:keys="childKeys" />
+                    </div>
+                </div>
+                <CsvFile :recordKey="_recordKey"></CsvFile>
+            </div>
+            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
         </div>
     </div>
-
-    <div v-if="hasReportingKey"> Reporting Key:
-        <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
-    </div>
-    <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-        <div> Child Keys:
-            <div> <KeyList v-bind:keys="childKeys"/> </div>
-        </div>
-        <CsvFile :recordKey="_recordKey"></CsvFile>
-    </div>
-    <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-  </div>
 </template>
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
@@ -90,11 +106,11 @@ let deviceRecord: any;
 let dropdownVisible = false;
 
 // Here we are are going to want to read the device,
- //    but not all the provenance. We will use this to load
- //    the two components above, the reporting key component and
- //    the child list component.
- //    At present, get Provenance is our only function;
- //    we do not have a function for returning only the first
+//    but not all the provenance. We will use this to load
+//    the two components above, the reporting key component and
+//    the child list component.
+//    At present, get Provenance is our only function;
+//    we do not have a function for returning only the first
 //    record of a device, but we probably should.
 
 export default {
@@ -129,7 +145,7 @@ export default {
             let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
 
             if (!dropdownVisible) { // button clicked, dropdown now visible
-                dropdownVisible = true; 
+                dropdownVisible = true;
                 this.shareDropdown = true;
                 shareBtn.style.borderRadius = "10px 10px 0px 0px";
             } else {
@@ -143,13 +159,13 @@ export default {
         },
         copy() {
             navigator.clipboard.writeText(window.location.href)
-            .then(() => {
-                alert('Record Link copied to clipboard!');
-            })
-            .catch((error) => {
-                console.error('Failed to copy text: ', error);
-                alert('Failed to copy Record Link. Please try again.');
-            });
+                .then(() => {
+                    alert('Record Link copied to clipboard!');
+                })
+                .catch((error) => {
+                    console.error('Failed to copy text: ', error);
+                    alert('Failed to copy Record Link. Please try again.');
+                });
         },
         mail() {
             var shareDescr = this.getDescription();
@@ -172,7 +188,7 @@ export default {
     async mounted() {
         try {
             const route = useRoute();
-            this._recordKey = route.params.deviceKey as string; 
+            this._recordKey = route.params.deviceKey as string;
             const response = await getProvenance(this._recordKey);
             deviceRecord = response[response.length - 1].record;
             this.isLoading = false;
@@ -197,17 +213,23 @@ export default {
 </script>
 
 <style scoped>
+.record-container {
+    padding: 5px 5px 5px 5px
+}
+
 .btn {
     padding: 16px 20px;
     border-radius: 10px;
     margin-right: 30px;
     margin-top: 20px;
 }
+
 .share-btn {
     margin-right: 0px;
 }
+
 #share-dropdown {
-    width: 218px;
+    width: 216px;
     border-radius: 0px 0px 10px 10px;
     margin-left: auto;
     margin-right: 0;
@@ -215,40 +237,147 @@ export default {
     padding-left: 10px;
     padding-right: 10px;
 }
+
 .dropdown-item {
-  text-align: center;
-  border-radius: 10px;
-  padding: 7px;
+    text-align: center;
+    border-radius: 10px;
+    padding: 7px;
 }
-.dropdown-item:hover {
-  background-color: #e6f6ff;
-}
+
 .item-link {
-  text-decoration: none;
-  cursor: pointer;
+    text-decoration: none;
+    cursor: pointer;
 }
+
 .descr-container {
     width: fit-content;
 }
+
 .container-md {
     box-sizing: content-box;
 }
+
 
 /* Switches to mobile sizing */
 @media (max-width: 767px) {
     .descr-container {
         width: 100%;
     }
+
     .device-btn {
         width: 100%;
         margin-right: 0px;
     }
+
     #share-dropdown {
         width: 100%;
     }
+
     .container-md {
         margin-top: 0px !important;
         box-sizing: border-box;
+    }
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .record-container {
+        background-color: #1E2019
+    }
+
+    h1 {
+        color: #CCECFD;
+    }
+
+    h5 {
+        color: #FFFFFF;
+    }
+
+    #desc {
+        color: #FFFFFF;
+    }
+
+    .view-history {
+        background-color: #CCECFD;
+        border: 2px solid #CCECFD !important;
+        color: black;
+    }
+
+    .download-qr {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF;
+        color: white;
+    }
+
+    .share-btn {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF;
+        color: white;
+    }
+
+    #dropdown-item {
+        background-color: #1E2019;
+    }
+
+    #share-dropdown {
+        border: 2px solid #FFFFFF;
+    }
+
+    .drop-text {
+        color: white;
+    }
+
+    .dropdown-item:hover {
+        background-color: #4E3681;
+    }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .record-container {
+        background-color: #FFFFFF;
+    }
+
+    h1 {
+        color: #4E3681;
+    }
+
+    h5 {
+        color: #1E2019;
+    }
+
+    #desc {
+        color: #1E2019;
+    }
+
+    .view-history {
+        background-color: #4e3681;
+        border: #4e3681;
+        color: white;
+    }
+
+    .download-qr {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+
+    .share-btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+
+    #share-dropdown {
+        background-color: #CCECFD;
+    }
+
+    .drop-text {
+        color: black;
+    }
+
+    .dropdown-item:hover {
+        background-color: #e6f6ff;
     }
 }
 </style>

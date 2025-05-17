@@ -171,7 +171,7 @@ export default {
 
     }
 
-    /* Dark mode version*/
+/* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
