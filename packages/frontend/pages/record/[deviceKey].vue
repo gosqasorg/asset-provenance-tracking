@@ -31,33 +31,30 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             <div class="my-2 mb-2"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
 
             <div>
-                <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
-                <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
-                
-                <!-- Share dropdown -->
-                <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
-                    Share Record Link
-                    <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-                    <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
-                </button>
-
-                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="copy()" class="text-slate item-link">Copy</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="text()" class="text-slate item-link">Messages</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="mail()" class="text-slate item-link">Email</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
-                    </li>
-                    <li class="dropdown-item" style="padding: 7px">
-                        <a @click="telegram()" class="text-slate item-link">Telegram</a>
-                    </li>
-                </ul>
+              <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
+              <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
+              <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+                Share Record Link
+                <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+              </button>
+              <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+                <li class="dropdown-item">
+                  <a @click="copy()" class="text-slate item-link">Copy</a>
+                </li>
+                <li class="dropdown-item">
+                  <a @click="text()" class="text-slate item-link">Messages</a>
+                </li>
+                <li class="dropdown-item">
+                  <a @click="mail()" class="text-slate item-link">Email</a>
+                </li>
+                <li class="dropdown-item">
+                  <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
+                </li>
+                <li class="dropdown-item">
+                  <a @click="telegram()" class="text-slate item-link">Telegram</a>
+                </li>
+              </ul>
             </div>
         </div>
 

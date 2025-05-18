@@ -89,9 +89,16 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                   <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
                 </section>
               </div>
-
+              <div>Record Key: {{ _recordKey }}</div>
+              <button @click="copyRecordKey" class="btn bg-sky px-2 d-flex d-inline-flex"
+                      style="margin-left:10px; padding-top: 2px; padding-bottom: 2px;">
+                      <i class="fa fa-copy"></i>
+              </button>
+              <div>
+                <span v-html="clickableLink(deviceRecord?.description)"></span>
+              </div>
               <div class="qr-code-wrapper">
-                <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
+                <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
               </div>
           </section>
             
@@ -307,6 +314,17 @@ export default {
           }
         });
       },
+      copyRecordKey() {
+          const copyKey = `${this._recordKey}`;
+          navigator.clipboard.writeText(copyKey)
+            .then(() => {
+              alert('Record key copied to clipboard!');
+            })
+            .catch((error) => {
+              console.error('Failed to copy text: ', error);
+              alert('Failed to copy Record Key. Please try again.');
+            });
+        },
       async refreshFeed() {
         console.log("Refreshing feed...");
         this.isLoading = true;
