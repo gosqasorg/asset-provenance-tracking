@@ -1,9 +1,9 @@
 {
   "name": "gosqas-az-func",
-  "version": "0.0.0-placeholder",
+  "version": "0.0.3",
   "description": "",
   "main": "dist/src/functions/httpTrigger.js",
-  "type":"module",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
@@ -11,7 +11,8 @@
     "prestart": "npm run clean && npm run build",
     "start": "func start",
     "test": "ts-node ./test/test.ts",
-    "dev": "func start",
+    "dev": "npm run update-version && func start",
+    "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
     "vitest": "vitest",
     "coverage": "vitest run --coverage"
   },

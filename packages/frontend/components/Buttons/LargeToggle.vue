@@ -37,7 +37,6 @@
 
 .toggle-border {
   width: fit-content;
-  border: 2px solid #4a148c;
   border-radius: 12px;
   padding: 4px;
 }
@@ -63,7 +62,6 @@
     height: 100%;
     top: 0;
     left: 0;
-    background: #4e3681;
     border-radius: 10px;
     padding: 14px 18px;
     transition: left 0.3s;
@@ -81,19 +79,59 @@
   left: 50%;
 }
 
-.toggleCheckbox:checked + .toggle-label .toggle-left {
-  color: black; /* Inactive text color */
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .toggle-border {
+      border: 2px solid #CCECFD;
+    }
+    .toggle-label {
+        background: #1E2019;
+    }
+    .toggle-label::before {
+        background: #CCECFD;
+    }
+    .toggle-label div {
+        color: #1E2019;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-left {
+        color: white;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-right {
+        color: black; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-left {
+        color: black; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-right {
+        color: white; /* Inactive text color */
+    }
 }
-
-.toggleCheckbox:checked + .toggle-label .toggle-right {
-  color: white; /* Active text color */
-}
-
-.toggleCheckbox + .toggle-label .toggle-left {
-  color: white; /* Active text color */
-}
-
-.toggleCheckbox + .toggle-label .toggle-right {
-  color: black; /* Inactive text color */
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .toggle-border {
+      border: 2px solid #4E3681;
+    }
+    .toggle-label {
+        border: 2px solid #FFFFFF;
+        background: white;
+    }
+    .toggle-label::before {
+        background: #4E3681;
+    }
+    .toggle-label div {
+        color: white;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-left {
+        color: black;
+    }
+    .toggleCheckbox:checked + .toggle-label .toggle-right {
+        color: white; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-left {
+        color: white; /* Active text color */
+    }
+    .toggleCheckbox + .toggle-label .toggle-right {
+        color: black; /* Inactive text color */
+    }
 }
 </style>

@@ -14,15 +14,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-    Page will be the forum where users can keep track of the provenance of
-    their items.
-    -->
+Page will be the forum where users can keep track of the provenance of
+their items.
+-->
 
 <script setup lang="ts">
-  import { useRoute } from 'vue-router';
-  const route = useRoute()
-  const recordKey = route.params.deviceKey as string;
-  const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
+import { useRoute } from 'vue-router';
+const route = useRoute()
+const recordKey = route.params.deviceKey as string;
+const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
 
 </script>
 
@@ -34,126 +34,169 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       <div class="row pt-3 pb-6 mx-4">
         <div class="col-md-2 d-none d-md-block">
-        <!-- Scrollspy -->
-         <!-- When the screen size is md (>= 768px) and up  -->
-            <nav id="jump-to test" class="sticky-top text-slate"> 
-              <p class="menu-spacing">Jump to section</p>
-              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
-                <li id="item" class="py-2"
-                  style= "border-left: 2px solid #4e3681;"
-                  v-for="header in headers"
-                  :key="header"
-                  :class="{ active: header.id === currentSection }">
-                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
-                </li>
-              </ul>
-            </nav>
-          </div>
-
-          <!-- When the screen size is less than md (< 768px ) -->
-          <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
-            <button class="btn text-left rounded-0" 
-                    type="button" id="jump-to-mobile" data-bs-toggle="dropdown" aria-controls="toggle" aria-expanded="false"
-                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;"> 
-              <i id="toggle-right" class="fa fa-angle-right"></i>
-              <i id="toggle-down" class="fa fa-angle-down"></i>
-              Jump to section
-            </button>
-
-            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px; 
-                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
-              <li id="dropdown-item" style="padding: 7px"
-                  v-for="header in headers"
-                  :key="header">
+          <!-- Scrollspy -->
+          <!-- When the screen size is md (>= 768px) and up  -->
+          <nav id="jump-to" class="sticky-top text-slate">
+            <p class="menu-spacing">Jump to section</p>
+            <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
+              <li id="item" class="py-2" style="border-left: 2px solid #4e3681;" v-for="header in headers" :key="header"
+                :class="{ active: header.id === currentSection }">
                 <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
-          </div>
+          </nav>
+        </div>
+        
+        <!-- When the screen size is less than md (< 768px ) -->
+        <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
+          <button class="btn text-left rounded-0" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
+            aria-controls="toggle" aria-expanded="false"
+            style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
+            <i id="toggle-right" class="fa fa-angle-right"></i>
+            <i id="toggle-down" class="fa fa-angle-down"></i>
+            Jump to section
+          </button>
 
+          <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;
+                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
+            <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
+              <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+            </li>
+          </ul>
+        </div>
 
-    <!-- Scrollspy -->
+        <!-- Scrollspy -->
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <div  data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
-            <section id="device-details">
-              <div class="my-4 text-iris fs-1">
-                <p class="text-bold mb-0">Asset History Records</p>
-                <h1 class="mt-1 mb-1 text-iris">
-                  {{ deviceRecord?.deviceName }}
-                </h1>
-              </div>
-              <div class="qr-code-container">
-                <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;"/>
+          <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+
+            <section id="device-details" class="details-container">
+              <div class="record-description">
+                <div class="my-4 text-iris fs-1">
+                  <p class="text-bold mb-0">Asset History Records</p>
+                  <h1 class="mt-1 mb-1 text-iris">
+                    {{ deviceRecord?.deviceName }}
+                  </h1>
                 </div>
-                <div class="wrapper-download">
-                  <button class="btn mt-0 bg-sky px-5 p-3" @click="downloadQRCode">Download QR Code</button>
+
+                <div>Record Key: {{ _recordKey }}</div>
+                <div class="mb-3">
+                    <span v-html="clickableLink(deviceRecord?.description)"></span>
                 </div>
+
+                <section ref= "section" id="priority-notices">
+                  <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
+                </section>
               </div>
               <div>Record Key: {{ _recordKey }}</div>
               <button @click="copyRecordKey" class="btn bg-sky px-2 d-flex d-inline-flex"
                       style="margin-left:10px; padding-top: 2px; padding-bottom: 2px;">
                       <i class="fa fa-copy"></i>
-                    </button>
+              </button>
               <div>
-                  <span v-html="clickableLink(deviceRecord?.description)"></span>
+                <span v-html="clickableLink(deviceRecord?.description)"></span>
+              </div>
+              <div class="qr-code-wrapper">
+                <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
               </div>
           </section>
-            <section ref= "section" id="priority-notices">
-              <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
-            </section>
-
-            <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord"/>
-            </section>
-            <section id="device-creation">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord"/>
-            </section>
-            <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey"/>
-            </section>
-            <section id="child-keys">
-              <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
-              </div>
-              <div v-if="(childKeys?.length > 0) || hasReportingKey ">
-                <div> Child Keys:
-                  <div> <KeyList v-bind:keys="childKeys"/> </div>
-                </div>    
-                <CsvFile :recordKey="_recordKey"></CsvFile>
-              </div>
-            </section>
             
+          <div class="buttons-container">
+            <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
+
+            <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+              Share Record Link
+              <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+              <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+            </button>
+
+            <!-- Share dropdown -->
+            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="copy()" class="text-slate" id="item-link">Copy</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="text()" class="text-slate" id="item-link">Messages</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="mail()" class="text-slate" id="item-link">Email</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="whatsApp()" class="text-slate" id="item-link">WhatsApp</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="telegram()" class="text-slate" id="item-link">Telegram</a>
+              </li>
+            </ul>
+          </div>
+
+          <section id="recent">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
+          </section>
+          <section id="device-creation">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+          </section>
+          <section id="create-record">
+            <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+          </section>
+          <section id="child-keys">
+            <div v-if="hasReportingKey"> Reporting Key:
+              <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+            </div>
+            <div v-if="(childKeys?.length > 0) || hasReportingKey">
+              <div> Child Keys:
+                <div>
+                  <KeyList v-bind:keys="childKeys" />
+                </div>
+              </div>
+              <CsvFile :recordKey="_recordKey"></CsvFile>
+            </div>
+            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+          </section>
+
           </div>
           <!-- Spied element -->
         </div>
-
       </div>
 
-      <!-- TODO: Uncomment when  functionality is ready: 
+      <!-- TODO: Uncomment when  functionality is ready:
       <div>
           <ProvenanceNotificationSignUpModal/>
-      </div>   --> 
-      
+      </div>   -->
+
     </div>
-    <div v-else>
-      <p>Record key not found.</p>
-    </div>
+ <div v-else class="error-container">
+  <h1 class="error-title">Invalid history key</h1>
+  <h2 class="error-subtitle">No record attached to this key</h2>
+  <p class="error-description">
+    We’re sorry, the record you’re looking for could not be found. <br />
+    Please double-check your key. If you keep receiving this error, <br />
+    email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+  </p>
+  <div class="error-buttons">
+    <!-- Go home button -->
+    <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+    <!-- Email us button -->
+    <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
   </div>
+</div>
+</div>
   <div v-else>
-      <p>Loading... please wait.</p>
-    </div>
+    <p>Loading... please wait.</p>
+  </div>
 </template>
 
 <script lang="ts">
-import { getProvenance} from '~/services/azureFuncs';
+import { getProvenance } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
+let deviceRecord: any;
+let provenance, deviceCreationRecord, provenanceNoRecord;
 const currentSection = ref();
 let section = ref();
+let dropdownVisible = false;
 
 const headers = [
   { id: "device-details", name: "Record details" },
@@ -161,6 +204,13 @@ const headers = [
   { id: "recent", name: "Most recent updates" },
   { id: "device-creation", name: "Record creation" },
   { id: "create-record", name: "Create new record entry" }
+];
+const shareButtons = [
+  { id: "copy-qr", name: "Copy", func: "copy()" },
+  { id: "open-messages", name: "Messages", func: "text()" },
+  { id: "email-qr", name: "Email", func: "mail()" },
+  { id: "open-whatsapp", name: "WhatsApp", func: "whatsApp()" },
+  { id: "open-telegram", name: "Telegram", func: "telegram()" }
 ];
 
 
@@ -173,6 +223,7 @@ export default {
       isLoading: true,
       recordKeyFound: false,
       hasReportingKey: false,
+      shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
     }},
@@ -180,6 +231,8 @@ export default {
       try {
         const route = useRoute();
         this._recordKey = route.params.deviceKey as string; 
+        const response = await getProvenance(this._recordKey);
+        deviceRecord = response[response.length - 1].record;
 
         this.addScrollListener();
 
@@ -198,9 +251,52 @@ export default {
     },
     methods: {
       downloadQRCode() {
-            const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode()
-        },
+        const qrCodeComponent = this.$refs.qrcode_component as any;
+        qrCodeComponent?.downloadQRCode()
+      },
+      buttonFormat() {
+        let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
+
+        if (!dropdownVisible) { // button clicked, dropdown now visible
+          dropdownVisible = true; 
+          this.shareDropdown = true;
+          shareBtn.style.borderRadius = "10px 10px 0px 0px";
+        } else {
+          dropdownVisible = false;
+          this.shareDropdown = false;
+          shareBtn.style.borderRadius = "10px";
+        }
+      },
+      getDescription() {
+        return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
+      },
+      copy() {
+        navigator.clipboard.writeText(window.location.href)
+          .then(() => {
+              alert('Record Link copied to clipboard!');
+          })
+          .catch((error) => {
+              console.error('Failed to copy text: ', error);
+              alert('Failed to copy Record Link. Please try again.');
+          });
+      },
+      mail() {
+        var shareDescr = this.getDescription();
+        window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
+      },
+      text() {
+        var shareDescr = this.getDescription();
+        window.location = "sms:?&body=Record Link: " + shareDescr;
+      },
+      whatsApp() {
+        var shareDescr = this.getDescription();
+        window.location = "https://wa.me/send?text=" + shareDescr;
+      },
+      telegram() {
+        var shareLink = encodeURIComponent(window.location.href);
+        var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
+        window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
+      },
       addScrollListener() {
         // When user scrolls, the nav bar is updated
         window.addEventListener('scroll', () => {
@@ -234,107 +330,142 @@ export default {
         this.isLoading = true;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
+        this.shareDropdown = false;
         
         const provenance = await getProvenance(this._recordKey);
 
-        if (!provenance || provenance.length === 0) {
-          this.$snackbar.add({
-            type: 'error',
-            text: 'No provenance record found'
-          });
-          this.isLoading = false;
-          return;
-        }
-
-        this.recordKeyFound = true;
-
-        // Decompose the provenance records into parts to be rendered.
-        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
-        
+      if (!provenance || provenance.length === 0) {
+        this.$snackbar.add({
+          type: 'error',
+          text: 'No provenance record found'
+        });
         this.isLoading = false;
-        
-        // This functionality could be pushed into a component...
-        this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
-        
-        // We will remove the reportingKey, because although it is a child,
-        // we have already rendered it.
-        if (this.hasReportingKey) {
-            const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-            if (index > -1) {
-                deviceRecord.children_key.splice(index, 1);
-            }
-        }
-        this.childKeys = getChildKeys(provenance);
+        return;
+      }
 
-        // Add child key navigation if there are child keys
-        if ((this.childKeys?.length > 0) || this.hasReportingKey) {
-          headers.push({ id: "child-keys", name: "Child keys" });
+      this.recordKeyFound = true;
+
+      // Decompose the provenance records into parts to be rendered.
+      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+
+      this.isLoading = false;
+
+      // This functionality could be pushed into a component...
+      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+
+      // We will remove the reportingKey, because although it is a child,
+      // we have already rendered it.
+      if (this.hasReportingKey) {
+        const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+        if (index > -1) {
+          deviceRecord.children_key.splice(index, 1);
         }
-      },
-    }
+      }
+      this.childKeys = getChildKeys(provenance);
+
+      // Add child key navigation if there are child keys
+      if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+        headers.push({ id: "child-keys", name: "Child keys" });
+      }
+    },
+  }
 };
 
 </script>
 <style>
 #device-details {
     margin: 20px auto;
+    margin-bottom: 15px;
     position: relative;
 }
 
 .qr-code-wrapper {
-  background-color:#4e3681; /* Light blue background */
+  background-color:#4e3681; /* Purple outline */
   padding:13px;
   padding-bottom: 7px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform:scale(0.775);
+  transform: scale(0.775);
   margin: -20px;
+  margin-left: -40px;
   transition-duration: 0.4s;
 }
-.qr-code-wrapper:hover {
-  transform: scale(0.825);
-}
-.qr-code-container {
-  margin-top: -110px;
+
+.record-description {
   margin-right: 15px;
-  display: inline-block;
-  background-color: rgb(238, 247, 255); /* Light blue background */
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.details-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.buttons-container {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.download-btn {
+  margin-top: 10px;
+  width: 48% !important;
+}
+.share-btn {
+  margin-top: 10px;
+  width: 48% !important;
+}
+#share-dropdown {
+  width: 48% !important;
+  border-radius: 0px 0px 10px 10px;
+  margin-left: auto;
+  margin-right: 0;
+  list-style-type: none;
+}
+.dropdown-item {
   text-align: center;
-  position:absolute;
-  right: 0;
-  transform:scale(1.1);
-  /* transform-origin: top right; */
+  border-radius: 10px;
 }
-.wrapper-download {
-  padding: 0;
-  text-align: center;
-  padding-bottom: 15px;
-  transform: scale(0.95);
-  margin-top: -30px;
-  transition-duration: 0.4s;
+.dropdown-item:hover {
+  background-color: #e6f6ff;
 }
-.wrapper-download:hover {
-  transform: scale(1);
+
+/* Wrap buttons once screen gets below a certain size */
+@media (max-width: 665px) {
+  .share-btn {
+    width: 100% !important;
+  }
+  .download-btn {
+    width: 100% !important;
+  }
+  #share-dropdown {
+    width: 100% !important;
+  }
 }
+
+#item-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .download-button {
-    display: inline-block;
-    margin-top: 15px;
-    padding: 10px 20px;
-    color: #333;
-    font-size: 14px;
-    font-weight: bold;
-    text-align: center;
-    text-decoration: none;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  margin-top: 15px;
+  padding: 10px 20px;
+  color: #333;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .download-button:hover {
-    background-color:#4e3681; /* Slightly darker blue on hover */
+  background-color: #4e3681;
+  /* Slightly darker blue on hover */
 }
 
 .menu-spacing {
@@ -345,35 +476,36 @@ export default {
   white-space: pre-line;
 }
 
-a:link, a:visited {
-      text-decoration: none;
+a:link,
+a:visited {
+  text-decoration: none;
 }
 
-#item > a {
+#item>a {
   padding-left: 20px;
   box-decoration-break: clone;
 }
 
-
-#item > a:hover {
+#item>a:hover {
   padding-left: 20px;
   font-weight: bold;
 }
 
-.active > a {
+.active>a {
   border-left: 3px solid #4e3681;
   padding-left: 20px;
   font-weight: bold;
 }
 
-#dropdown-item > a:hover {
+#dropdown-item>a:hover {
   font-weight: bold;
 }
 
 #jump-to-mobile[aria-expanded="true"] {
   #toggle-down {
-    display:inline-block;
+    display: inline-block;
   }
+
   #toggle-right {
     display: none;
   }
@@ -381,12 +513,101 @@ a:link, a:visited {
 
 #jump-to-mobile[aria-expanded="false"] {
   #toggle-down {
-    display:none;
+    display: none;
   }
+
   #toggle-right {
     display: inline-block;
   }
 }
 
+.error-container {
+  text-align: center;
+  margin: 70px auto;
+  max-width: 655px;
+  padding: 20px;
+}
+
+.error-title {
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 150%;
+  margin-bottom: 10px;
+  color: #322253;
+  text-align: left;
+}
+
+.error-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 60px;
+  margin-bottom: 20px;
+  color:  #1E2019; /* Dark text color */
+  text-align: left;
+}
+
+.error-description {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 30px;
+  margin-bottom: 30px;
+  color: #1E2019;
+  text-align: left;
+}
+
+.error-email {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  line-height: 30px;
+  color: #4e3681;
+  text-decoration: underline !important;
+}
+
+.error-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.error-button {
+  width: 48% !important;
+}
+
+.btn {
+  height: 66px;
+  padding: 18px 22px;
+/*     margin: 5px;*/
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20pxpx;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #4E3681;
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: #3B2A6A; /* Darker purple */
+}
+
+.btn-secondary {
+  background-color: #CCECFD; /* Light blue */
+  color: #1E2019; /* Dark text */
+}
+
+.btn-secondary:hover {
+  background-color: #B3DFF5; /* Slightly darker blue */
+   color: #1E2019;
+}
 
 </style>

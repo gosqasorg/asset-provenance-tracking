@@ -22,15 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="terms-and-conditions-container">
-        <h1 class="text-iris">Terms and Conditions</h1>
+        <h1>Terms and Conditions</h1>
         <p style="margin-bottom:32px;">Last Updated September 23, 2024</p>
         <div class="row">
-            <h3 class="text-iris" id="subtitle">Agreement to Our Legal Terms</h3>
+            <h3 id="subtitle">Agreement to Our Legal Terms</h3>
             <p style="margin-bottom:32px;">
                 We are the Global Open Source Quality Assurance System “GOSQAS.” We operate the website 
-                <a href="https://gosqas.org">https://gosqas.org</a>. You can contact us by email at 
-                <span style="font-weight: 400;" class="text-decoration-underline text-iris"> 
-                gosqasystem@gmail.com</span>.<br><br>
+                <a class="link-font" href="https://gosqas.org">https://gosqas.org</a>. You can contact us by email at 
+                <a class="link-font" href="mailto:info@gosqas.org">info@gosqas.org</a>.<br><br>
 
                 These Legal Terms constitute a legally binding agreement made between you, whether 
                 personally or on behalf of an entity ("you"), and Global Open Source Quality Assurance 
@@ -63,7 +62,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 you may not use the Services. You may not use the Services in a way that would violate 
                 the Gramm-Leach-Bliley Act (GLBA).
             </p>
-            <h3 class="text-iris" id="subtitle">Prohibited Activities</h3>
+            <h3 id="subtitle">Prohibited Activities</h3>
             <p style="margin-bottom:32px;">
                 You will not post, send, publish, upload, or transmit through the Services any Submission 
                 nor post any Contribution that is illegal, harassing, hateful, harmful, defamatory, obscene, 
@@ -75,7 +74,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 intended to cause harassment or harm to an individual or group, or that would generally be 
                 considered “doxxing”.
             </p>
-            <h3 class="text-iris" id="subtitle">Limitations of Liability</h3>
+            <h3 id="subtitle">Limitations of Liability</h3>
             <p style="margin-bottom:32px;">
                 <strong>In no event will we or our directors, employees, or agents be liable to you or any 
                 third party for any direct, indirect, consequential, exemplary, incidental, special, or 
@@ -83,7 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 arising from your use of the services, even if we have been advised of the possibility 
                 of such damages.</strong>
             </p>
-            <h3 class="text-iris" id="subtitle">Indemnification</h3>
+            <h3 id="subtitle">Indemnification</h3>
             <p style="margin-bottom:32px;">
                 You agree to defend, indemnify, and hold us harmless, including our subsidiaries, affiliates, 
                 and all of our respective officers, agents, partners, and employees, from and against any 
@@ -97,7 +96,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 5. your violation of the rights of a third party, including but not limited to intellectual property rights;<br>
                 6. any overt harmful act toward any other user of the Services with whom you connected via the Services.
             </p>
-            <h3 class="text-iris" id="subtitle">User Data</h3>
+            <h3 id="subtitle">User Data</h3>
             <p style="margin-bottom:32px;">
                 We maintain certain data that you transmit to our Services for the purpose of managing 
                 performance, as well as data related to your use of the Services. While we perform regular 
@@ -106,7 +105,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 for any loss, disclosure, or corruption of such data, and you hereby waive any right of action 
                 against us arising from any such incidents.
             </p>
-            <h3 class="text-iris" id="subtitle">Data Encryption and Recovery</h3>
+            <h3 id="subtitle">Data Encryption and Recovery</h3>
             <p style="margin-bottom:32px;">
                 Please be aware that we do not retain the ability to read your data. All data—including provenance 
                 records and attachments—is fully encrypted and stored in Azure Blob Storage. We do not store your 
@@ -115,7 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 differs from other sites and applications; we intentionally do not have the ability to read your 
                 data to enhance your security and privacy.
             </p>
-            <h3 class="text-iris" id="subtitle">Electronic Communications, Transactions, and Signatures</h3>
+            <h3 id="subtitle">Electronic Communications, Transactions, and Signatures</h3>
             <p style="margin-bottom:32px;">
                 Visiting the Services, sending us emails, and completing online forms constitute electronic 
                 communications. You consent to receive electronic communications, and you agree that all agreements, 
@@ -131,14 +130,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 non-electronic records, or to payments or the granting of credits by any means other than electronic 
                 means.
             </p>
-            <h3 class="text-iris" id="subtitle">California Users and Residents</h3>
+            <h3 id="subtitle">California Users and Residents</h3>
             <p style="margin-bottom:32px;">
                 If any complaint with us is not satisfactorily resolved, you can contact the ComplaintAssistance Unit 
                 of the Division of Consumer Services of the California Department of Consumer Affairs in writing at 
                 1625 North Market Blvd., Suite N 112, Sacramento, California 95834 or by telephone at (800) 952-5210 
                 or (916) 445-1254.
             </p>
-            <h3 class="text-iris" id="subtitle">Miscellaneous</h3>
+            <h3 id="subtitle">Miscellaneous</h3>
             <p style="margin-bottom:32px;">
                 These Legal Terms and any policies or operating rules posted by us on the Services or with respect 
                 to the Services constitute the entire agreement and understanding between you and us. Our failure to 
@@ -155,11 +154,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 on the electronic form of these Legal Terms and the lack of signing by the parties hereto to execute 
                 these Legal Terms.
             </p>
-            <h3 class="text-iris" id="subtitle">Contact Us</h3>
+            <h3 id="subtitle">Contact Us</h3>
             <p>
                 In order to resolve a complaint regarding the Services or to receive further information regarding 
-                use of the Services, please contact us at <span style="font-weight: 400;" 
-                class="text-decoration-underline text-iris"> gosqasystem@gmail.com</span>.
+                use of the Services, please contact us at <a class="link-font" href="mailto:info@gosqas.org">info@gosqas.org</a>.
             </p>
         </div>
 
@@ -169,7 +167,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <style scoped>
 
-a{
+a {
     font-weight: normal;
     color: #4e3681;
 }
@@ -188,9 +186,46 @@ a{
 @media (min-width: 768px) {
     #terms-and-conditions-container{
         padding: 80px 200px 100px 200px;
+    } 
+    .link-font {
+        font-size: 20px;
+        line-height: 30px;
     }
-   
+}
 
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #terms-and-conditions-container {
+        background-color: #1E2019
+    }
+    h1,
+    h3 {
+        color: #CCECFD;
+    }
+    p {
+        color: #FFFFFF;
+    }
+    .text-decoration-underline,
+    a {
+        color: #CCECFD;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #terms-and-conditions-container {
+        background-color: #FFFFFF;
+    }
+    h1,
+    h3 {
+        color: #4E3681;
+    }
+    p {
+        color: #1E2019;
+    }
+    .text-decoration-underline,
+    a {
+        color: #4E3681;
+    }
 }
 
 </style>

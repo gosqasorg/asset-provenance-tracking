@@ -13,51 +13,63 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
-    <form enctype="multipart/form-data" class="bg-frost p-3" @submit.prevent="submitForm">
-        <h4 class="text-iris mt-1 mb-3">Create New Group</h4>
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+        <h4 class="mt-1 mb-3">Create New Group</h4>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description" maxlength="5000">
-            <h4 class="text-iris form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
+            <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
            
-            <h4 class="mt-3 mb-3 text-iris">Add Tags (optional)</h4>
+            <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
 
  
-            <h4 class="text-iris my-3 mb-0" for="children-keys">Number of Grouped Records (optional)
+            <h4 class="my-3 mb-0" for="children-keys">Number of Grouped Records (optional)
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
  
  
             <br>
-            <h4 class="text-iris p-1 mt-0 mb-0 ">
+            <h4 class="p-1 mt-0 mb-0 ">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
  
  
-            <div class="text-iris" id="num-fields" style="display:none" >
+            <div class="num-fields" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
  
  
             <br>
-            <h4 class="text-iris p-1 mt-0 mb-0 ">
+            <h4 class="p-1 mt-0 mb-0 ">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
             </h4>
  
  
             <br>
-            <h4 class="text-iris p-1 mt-0">
+            <h4 class="p-1 mt-0">
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
         </div>
        
         <div class="d-grid">
-            <ButtonComponent class="my-4 mb-0 submit-btn" buttonText="Create Group" type="submit" />
+            <button class="group-button my-4 mb-0" id="group-button" type="submit" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  border-radius: 10px;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  font-weight: 400;
+                  line-height: 30px;
+                "
+                >
+                Create Group
+                </button>
         </div>
     </form>
  </template>
@@ -305,4 +317,41 @@ export default {
         border:5px;
         border-color:red;
     }
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #record-form {
+        background-color: #4B4D47;
+    }
+    h4 {
+        color: #FFFFFF;
+    }
+    #group-button {
+        background-color: #CCECFD;
+        color: black;
+        border-color: #CCECFD;
+    }
+    input[type="file"]::file-selector-button {
+        background-color: #CCECFD;  
+        color: black;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #record-form {
+        background-color: #E6F6FF;
+    }
+    h4 {
+        color: #4E3681;
+    }
+    #group-button {
+        background-color: #4E3681;
+        color: white;
+        border-color: #4E3681;
+    }
+    input[type="file"]::file-selector-button {
+        background-color: #4E3681;  
+        color: white;
+    }
+}
 </style>
