@@ -14,9 +14,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-    Page will be the forum where users can keep track of the provenance of
-    their items.
-    -->
+Page will be the forum where users can keep track of the provenance of
+their items.
+-->
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
@@ -36,7 +36,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
         <div class="col-md-2 d-none d-md-block">
           <!-- Scrollspy -->
           <!-- When the screen size is md (>= 768px) and up  -->
-          <nav id="jump-to test" class="sticky-top text-slate">
+          <nav id="jump-to" class="sticky-top text-slate">
             <p class="menu-spacing">Jump to section</p>
             <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
               <li id="item" class="py-2" style="border-left: 2px solid #4e3681;" v-for="header in headers" :key="header"
@@ -46,12 +46,12 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             </ul>
           </nav>
         </div>
-
+        
         <!-- When the screen size is less than md (< 768px ) -->
         <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
           <button class="btn text-left rounded-0" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
             aria-controls="toggle" aria-expanded="false"
-            style="border: none; font-size: 18px; text-align: left; border-bottom: 3px;">
+            style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
             <i id="toggle-right" class="fa fa-angle-right"></i>
             <i id="toggle-down" class="fa fa-angle-down"></i>
             Jump to section
@@ -65,76 +65,92 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
           </ul>
         </div>
 
-
         <!-- Scrollspy -->
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
-               class="left-col">
-            <section id="device-details">
-              <div class="d-flex" id="deviceNameAndQR">
-                <div class="d-flex" id="nonQRFields">
-                  <div class="my-4 text-iris fs-1">
-                    <p class="text-bold mb-0">Asset History Records</p>
-                    <h1 class="mt-1 mb-1 text-iris">
-                      {{ deviceRecord?.deviceName }}
-                    </h1>
-                  </div>
-                  <div class="d-flex align-items-center">
-                    <div>Record Key: {{ _recordKey }}</div>
+          <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
 
-                  </div>
-                  <div>
+            <section id="device-details" class="details-container">
+              <div class="record-description">
+                <div class="my-4 text-iris fs-1">
+                  <p class="text-bold mb-0">Asset History Records</p>
+                  <h1 class="mt-1 mb-1 text-iris">
+                    {{ deviceRecord?.deviceName }}
+                  </h1>
+                </div>
+
+                <div>Record Key: {{ _recordKey }}</div>
+                <div class="mb-3">
                     <span v-html="clickableLink(deviceRecord?.description)"></span>
-                  </div>
                 </div>
-                <div class="qr-code-container">
-                  <div class="qr-code-wrapper">
-                    <QRCode :url="qrCodeUrl" ref="qrcode_component" style="border-radius: 15px; overflow: hidden;" />
-                  </div>
-                </div>
-              </div>
-              <div class="wrapper-download">
-                <button id="copyRecordKey" @click="copyRecordKey" class="btn bg-sky"
-                        >
-                  <i class="fa fa-copy"> </i>
-                  Share Record Key
-                </button>
-                <button class="btn bg-sky " @click="downloadQRCode">Download QR Code</button>
+
+                <section ref= "section" id="priority-notices">
+                  <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
+                </section>
               </div>
 
-            </section>
-            <section ref="section" id="priority-notices">
-              <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
-            </section>
+              <div class="qr-code-wrapper">
+                <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
+              </div>
+          </section>
+            
+          <div class="buttons-container">
+            <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
 
-            <section id="recalled">
-              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
-            </section>
-            <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
-            </section>
-            <section id="device-creation">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-            </section>
-            <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-            </section>
-            <section id="child-keys">
-              <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-              </div>
-              <div v-if="(childKeys?.length > 0) || hasReportingKey">
-                <div> Child Keys:
-                  <div>
-                    <KeyList v-bind:keys="childKeys" />
-                  </div>
+            <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+              Share Record Link
+              <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+              <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+            </button>
+
+            <!-- Share dropdown -->
+            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="copy()" class="text-slate" id="item-link">Copy</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="text()" class="text-slate" id="item-link">Messages</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="mail()" class="text-slate" id="item-link">Email</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="whatsApp()" class="text-slate" id="item-link">WhatsApp</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="telegram()" class="text-slate" id="item-link">Telegram</a>
+              </li>
+            </ul>
+          </div>
+
+          <section id="recalled">
+            <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+          </section>
+          <section id="recent">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
+          </section>
+          <section id="device-creation">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+          </section>
+          <section id="create-record">
+            <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+          </section>
+
+          <section id="child-keys">
+            <div v-if="hasReportingKey"> Reporting Key:
+              <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+            </div>
+            <div v-if="(childKeys?.length > 0) || hasReportingKey">
+              <div> Child Keys:
+                <div>
+                  <KeyList v-bind:keys="childKeys" />
                 </div>
-                <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
-              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-            </section>
+              <CsvFile :recordKey="_recordKey"></CsvFile>
+            </div>
+            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+          </section>
 
           </div>
           <!-- Spied element -->
@@ -153,16 +169,13 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
   <p class="error-description">
     We’re sorry, the record you’re looking for could not be found. <br />
     Please double-check your key. If you keep receiving this error, <br />
-    email us at
-    <span class="error-email">
-      gosqasystem@gmail.com
-    </span>.
+    email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
   </p>
   <div class="error-buttons">
     <!-- Go home button -->
-    <RouterLink to="/" class="btn btn-primary">Go home</RouterLink>
+    <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
     <!-- Email us button -->
-    <RouterLink to="/contact" class="btn btn-secondary">Email us</RouterLink>
+    <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
   </div>
 </div>
 </div>
@@ -176,13 +189,16 @@ import { getProvenance } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
-let deviceRecord, provenance, deviceCreationRecord, provenanceNoRecord;
+let deviceRecord: any;
+let provenance, deviceCreationRecord, provenanceNoRecord;
+
 let recalledRecords = [];
 let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
+let dropdownVisible = false;
 
-const headers = [
+let headers = [
   { id: "device-details", name: "Record details" },
   { id: "priority-notices", name: "Priority notices" },
   { id: "recent", name: "Most recent updates" },
@@ -200,6 +216,7 @@ export default {
       isLoading: true,
       recordKeyFound: false,
       hasReportingKey: false,
+      shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
       valid: false
@@ -208,6 +225,9 @@ export default {
     try {
       const route = useRoute();
       this._recordKey = route.params.deviceKey as string;
+      
+      const response = await getProvenance(this._recordKey);
+      deviceRecord = response[response.length - 1].record;
 
       this.addScrollListener();
 
@@ -222,12 +242,55 @@ export default {
     }
   },
   beforeDestroy() {
-    EventBus.off('feedRefresh', this.refreshFeed);
+      EventBus.off('feedRefresh', this.refreshFeed);
   },
   methods: {
     downloadQRCode() {
       const qrCodeComponent = this.$refs.qrcode_component as any;
       qrCodeComponent?.downloadQRCode()
+    },
+    buttonFormat() {
+      let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
+
+      if (!dropdownVisible) { // button clicked, dropdown now visible
+        dropdownVisible = true; 
+        this.shareDropdown = true;
+        shareBtn.style.borderRadius = "10px 10px 0px 0px";
+      } else {
+        dropdownVisible = false;
+        this.shareDropdown = false;
+        shareBtn.style.borderRadius = "10px";
+      }
+    },
+    getDescription() {
+      return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
+    },
+    copy() {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+            alert('Record Link copied to clipboard!');
+        })
+        .catch((error) => {
+            console.error('Failed to copy text: ', error);
+            alert('Failed to copy Record Link. Please try again.');
+        });
+    },
+    mail() {
+      var shareDescr = this.getDescription();
+      window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
+    },
+    text() {
+      var shareDescr = this.getDescription();
+      window.location = "sms:?&body=" + shareDescr;
+    },
+    whatsApp() {
+      var shareDescr = this.getDescription();
+      window.location = "https://wa.me/send?text=" + shareDescr;
+    },
+    telegram() {
+      var shareLink = encodeURIComponent(window.location.href);
+      var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
+      window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
     },
     addScrollListener() {
       // When user scrolls, the nav bar is updated
@@ -246,22 +309,12 @@ export default {
         }
       });
     },
-    copyRecordKey() {
-      const copyKey = `${this._recordKey}`;
-      navigator.clipboard.writeText(copyKey)
-        .then(() => {
-          alert('Record key copied to clipboard!');
-        })
-        .catch((error) => {
-          console.error('Failed to copy text: ', error);
-          alert('Failed to copy Record Key. Please try again.');
-        });
-    },
     async refreshFeed() {
       console.log("Refreshing feed...");
       this.isLoading = true;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
+      this.shareDropdown = false;
 
       const provenance = await getProvenance(this._recordKey);
 
@@ -276,35 +329,35 @@ export default {
 
       this.recordKeyFound = true;
 
-        // Decompose the provenance records into parts to be rendered.
-        ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+      // Decompose the provenance records into parts to be rendered.
+      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
-        // Pin recalled records to the top of the feed
-        recalledRecords = [];
-        recordsInFeed = [];
+      // Pin recalled records to the top of the feed
+      recalledRecords = [];
+      recordsInFeed = [];
 
-        provenanceNoRecord.forEach(record => {
-          if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
-            recalledRecords.push(record);
-          } else {
-            recordsInFeed.push(record);
-          }
-        });
-
-        this.isLoading = false;
-        
-        // This functionality could be pushed into a component...
-        this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
-        
-        // We will remove the reportingKey, because although it is a child,
-        // we have already rendered it.
-        if (this.hasReportingKey) {
-            const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-            if (index > -1) {
-                deviceRecord.children_key.splice(index, 1);
-            }
+      provenanceNoRecord.forEach(record => {
+        if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
+          recalledRecords.push(record);
+        } else {
+          recordsInFeed.push(record);
         }
-        this.childKeys = getChildKeys(provenance);
+      });
+
+      this.isLoading = false;
+
+      // This functionality could be pushed into a component...
+      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+
+      // We will remove the reportingKey, because although it is a child,
+      // we have already rendered it.
+      if (this.hasReportingKey) {
+          const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+          if (index > -1) {
+              deviceRecord.children_key.splice(index, 1);
+          }
+      }
+      this.childKeys = getChildKeys(provenance);
 
       // This functionality could be pushed into a component...
       this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
@@ -321,6 +374,13 @@ export default {
 
       // Add child key navigation if there are child keys
       if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+        headers = [
+          { id: "device-details", name: "Record details" },
+          { id: "priority-notices", name: "Priority notices" },
+          { id: "recent", name: "Most recent updates" },
+          { id: "device-creation", name: "Record creation" },
+          { id: "create-record", name: "Create new record entry" }
+        ];
         headers.push({ id: "child-keys", name: "Child keys" });
       }
     },
@@ -330,59 +390,78 @@ export default {
 </script>
 <style>
 #device-details {
-  margin: 20px auto;
-  position: relative;
+    margin: 20px auto;
+    margin-bottom: 15px;
+    position: relative;
 }
 
 .qr-code-wrapper {
-  background-color: #4e3681;
-  /* Light blue background */
-  padding: 13px;
+  background-color:#4e3681; /* Purple outline */
+  padding:13px;
   padding-bottom: 7px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transform: scale(0.775);
   margin: -20px;
+  margin-left: -40px;
   transition-duration: 0.4s;
 }
 
-.qr-code-wrapper:hover {
-  transform: scale(0.825);
+.record-description {
+  margin-right: 15px;
 }
-#copyRecordKey {
-}
-#deviceNameAndQR {
-  flex-flow: row wrap;
+
+.details-container {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
 }
 
-#nonQRFields {
-   padding: 10px;
+.buttons-container {
+  margin-bottom: 20px;
   display: flex;
-  flex-flow: column wrap;
-}
-
-.qr-code-container {
-  /* Light blue background */
-  background-color: rgb(238, 247, 255);
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.wrapper-download {
-  margin: 10px;
-  gap: 10px;
-  text-align: center;
-  transform: scale(0.95);
-  display: flex;
-  flex-flow: row wrap;
+  flex-wrap: wrap;
   justify-content: space-between;
-  transition-duration: 0.4s;
+}
+.download-btn {
+  margin-top: 10px;
+  width: 48% !important;
+}
+.share-btn {
+  margin-top: 10px;
+  width: 48% !important;
+}
+#share-dropdown {
+  width: 48% !important;
+  border-radius: 0px 0px 10px 10px;
+  margin-left: auto;
+  margin-right: 0;
+  list-style-type: none;
+}
+.dropdown-item {
+  text-align: center;
+  border-radius: 10px;
+}
+.dropdown-item:hover {
+  background-color: #e6f6ff;
 }
 
-.wrapper-download:hover {
-  transform: scale(1);
+/* Wrap buttons once screen gets below a certain size */
+@media (max-width: 665px) {
+  .share-btn {
+    width: 100% !important;
+  }
+  .download-btn {
+    width: 100% !important;
+  }
+  #share-dropdown {
+    width: 100% !important;
+  }
+}
+
+#item-link {
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .download-button {
@@ -422,7 +501,6 @@ a:visited {
   padding-left: 20px;
   box-decoration-break: clone;
 }
-
 
 #item>a:hover {
   padding-left: 20px;
@@ -465,6 +543,7 @@ a:visited {
   max-width: 655px;
   padding: 20px;
 }
+
 .error-title {
   text-align: left;
   font-family: 'Poppins', sans-serif;
@@ -498,18 +577,21 @@ a:visited {
 
 .error-email {
   font-family: 'Poppins', sans-serif;
-  font-weight: 500;
   font-size: 20px;
   line-height: 30px;
   color: #4e3681;
-  text-decoration: underline;
+  text-decoration: underline !important;
 }
 
 .error-buttons {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   gap: 20px;
   margin-top: 20px;
+}
+
+.error-button {
+  width: 48% !important;
 }
 
 .btn {
