@@ -15,6 +15,7 @@
     "packages/legacy"
   ],
   "dependencies": {
-    "@azure/communication-email": "^1.0.0"
+    "@azure/communication-email": "^1.0.0",
+    "axios": "^1.9.0"
   }
 }
