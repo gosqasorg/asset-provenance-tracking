@@ -22,18 +22,46 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 </script>
 
 <template>
-  <div class="container-md my-4" v-if="!isLoading" :key="loadingKey">
+  <div class="container-md my-4 mb-2" v-if="!isLoading" :key="loadingKey">
     <div class="row justify-content-between">
-        <div class="col-sm-6 col-lg-9">
+        <!-- DESCR -->
+        <div class="col-sm-6 col-lg-9 descr-container">
             <h1 class="mt-4 mb-2 text-iris">{{deviceRecord?.deviceName}}</h1>
             <h5>Record Key: {{ route.params.deviceKey }}</h5>
-            <div class="my-2"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
+            <div class="my-2 mb-2"><span v-html="clickableLink(deviceRecord?.description)"></span></div>
 
             <div>
-                <button class="btn mt-1 bg-iris text-white me-4 px-4" @click="viewRecord">View History Records</button>
-                <button class="btn mt-1 bg-sky px-5" @click="downloadQRCode">Download QR Code</button>
+                <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
+                <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
+                
+                <!-- Share dropdown -->
+                <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+                    Share Record Link
+                    <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                    <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                </button>
+
+                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="copy()" class="text-slate item-link">Copy</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="text()" class="text-slate item-link">Messages</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="mail()" class="text-slate item-link">Email</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="telegram()" class="text-slate item-link">Telegram</a>
+                    </li>
+                </ul>
             </div>
         </div>
+
+        <!-- QR -->
         <div class="col-sm-6 col-lg-3 mt-2">
             <QRCode :url="qrCodeUrl" ref="qrcode_component"/>
         </div>
@@ -59,8 +87,9 @@ import clickableLink from '~/utils/clickableLink';
 import QRCode from '@/components/QRCode.vue';
 
 let deviceRecord: any;
+let dropdownVisible = false;
 
- // Here we are are going to want to read the device,
+// Here we are are going to want to read the device,
  //    but not all the provenance. We will use this to load
  //    the two components above, the reporting key component and
  //    the child list component.
@@ -79,11 +108,12 @@ export default {
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
-            _recordKey: ""
+            _recordKey: "",
+            shareDropdown: false
         }
     },
     methods: {
-        //This method helps rerendering the site
+        // This method helps rerendering the site
         forceRerender() {
             this.loadingKey += 1;
         },
@@ -94,7 +124,50 @@ export default {
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
             navigateTo(`/history/${route.params.deviceKey}`);
-        }
+        },
+        buttonFormat() {
+            let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
+
+            if (!dropdownVisible) { // button clicked, dropdown now visible
+                dropdownVisible = true; 
+                this.shareDropdown = true;
+                shareBtn.style.borderRadius = "10px 10px 0px 0px";
+            } else {
+                dropdownVisible = false;
+                this.shareDropdown = false;
+                shareBtn.style.borderRadius = "10px";
+            }
+        },
+        getDescription() {
+            return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
+        },
+        copy() {
+            navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                alert('Record Link copied to clipboard!');
+            })
+            .catch((error) => {
+                console.error('Failed to copy text: ', error);
+                alert('Failed to copy Record Link. Please try again.');
+            });
+        },
+        mail() {
+            var shareDescr = this.getDescription();
+            window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
+        },
+        text() {
+            var shareDescr = this.getDescription();
+            window.location = "sms:?&body=Record Link: " + shareDescr;
+        },
+        whatsApp() {
+            var shareDescr = this.getDescription();
+            window.location = "https://wa.me/send?text=" + shareDescr;
+        },
+        telegram() {
+            var shareLink = encodeURIComponent(window.location.href);
+            var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
+            window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
+        },
     },
     async mounted() {
         try {
@@ -121,6 +194,61 @@ export default {
         }
     }
 };
-
-
 </script>
+
+<style scoped>
+.btn {
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-right: 30px;
+    margin-top: 20px;
+}
+.share-btn {
+    margin-right: 0px;
+}
+#share-dropdown {
+    width: 218px;
+    border-radius: 0px 0px 10px 10px;
+    margin-left: auto;
+    margin-right: 0;
+    list-style-type: none;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.dropdown-item {
+  text-align: center;
+  border-radius: 10px;
+  padding: 7px;
+}
+.dropdown-item:hover {
+  background-color: #e6f6ff;
+}
+.item-link {
+  text-decoration: none;
+  cursor: pointer;
+}
+.descr-container {
+    width: fit-content;
+}
+.container-md {
+    box-sizing: content-box;
+}
+
+/* Switches to mobile sizing */
+@media (max-width: 767px) {
+    .descr-container {
+        width: 100%;
+    }
+    .device-btn {
+        width: 100%;
+        margin-right: 0px;
+    }
+    #share-dropdown {
+        width: 100%;
+    }
+    .container-md {
+        margin-top: 0px !important;
+        box-sizing: border-box;
+    }
+}
+</style>

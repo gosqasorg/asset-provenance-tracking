@@ -1,10 +1,11 @@
 <template>
   <div class="root-div">
     <!-- Mobile Menu -->
-    <nav class="navbar navbar-expand-lg bg-frost">
+    <nav class="navbar navbar-expand-lg" id="navbar">
       <div class="container-fluid" id="nav">
         <a href="/" class="navbar-brand">
-          <img src="../assets/styles/gosqas_logo.png" id="logo" />
+          <img src="../assets/styles/gosqas_logo.png" id="logo-light" class="logo"/>
+          <img src="../assets/styles/dark-mode-logo.png" id="logo-dark" class="logo" />
         </a>
         <button
           class="navbar-toggler"
@@ -22,13 +23,11 @@
               xmlns="http://www.w3.org/2000/svg"
               width="25.5px"
               height="19.5px"
-              fill="currentColor"
               class="bi bi-x-lg"
             >
               <path
                 d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
-              /></svg
-          ></span>
+              /></svg></span>
         </button>
         <div class="collapse navbar-collapse flex-column" id="main-nav">
           <ul class="navbar-nav ms-auto">
@@ -66,24 +65,34 @@
               </li>
             </div>
             <span>
-              <ButtonComponent
+              <button
                 @click="trackingForm()"
                 id="viewRecordButton"
-                buttonText="View Record"
-                padding="12px 16px"
-                margin="0px 20px 0px 0px"
-                style="font-size: 18px"
-              ></ButtonComponent>
+                class="baseButton view-record-button"
+                style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 12px 16px;
+                  margin: 0px 20px 0px 0px;
+                  font-size: 18px;
+                "
+              >
+                View Record
+              </button>
               <RouterLink to="/gdt"
-                ><ButtonComponent
+                ><button
                   class="mobile-nav"
-                  buttonText="Create Record"
-                  backgroundColor="#e6f6ff"
-                  color="#4e3681"
-                  padding="12px 16px"
-                  margin="20px 0px 0px 0px"
-                  style="font-size: 18px"
-                ></ButtonComponent
+                  id="createRecordButton"
+                  style="
+                    border-width: 2px;
+                    border-style: solid;
+                    padding: 12px 16px;
+                    margin: 20px 0px 0px 0px;
+                    font-size: 18px;
+                "
+                >
+                  Create Record
+                </button
               ></RouterLink>
             </span>
           </ul>
@@ -99,7 +108,7 @@
     </div>
 
     <!-- Footer Section -->
-    <footer class="footer footer-light bg-frost">
+    <footer class="footer footer-light" id="footer">
       <div class="container custom-row-position custom-container">
         <div class="col-md-5 text-md-start mb-3 mb-md-0 custom-logo">
           <RouterLink to="/">
@@ -107,6 +116,13 @@
               src="../assets/styles/gosqas_logo.png"
               height="42px"
               alt="Global Open Source Quality Assurance System"
+              class="logo-light"
+            />
+            <img
+              src="../assets/styles/darkmode-logo.png"
+              height="42px"
+              alt="Global Open Source Quality Assurance System"
+              class="logo-dark"
             />
           </RouterLink>
         </div>
@@ -138,7 +154,7 @@
         </div>
       </div>
       <div class="row custom-copy-right">
-        <p class="text-muted">
+        <p class="p-text">
           © 2024 Global Open Source Quality Assurance System
         </p>
       </div>
@@ -165,14 +181,12 @@ export default {
         //if showTrack is false
         showTrack = true;
         viewRecordDiv.style.display = "inline"; //make text input available
-        viewRecordButton.style.backgroundColor = "#322253";
-        viewRecordButton.style.borderColor = "#322253";
+        viewRecordButton.classList.add("active");
         nav.style.paddingBottom = "80px";
       } else {
         showTrack = false;
         viewRecordDiv.style.display = "none";
-        viewRecordButton.style.backgroundColor = "#4E3681";
-        viewRecordButton.style.borderColor = "#4E3681";
+        viewRecordButton.classList.remove("active");
         nav.style.paddingBottom = "24.5px";
       }
     },
@@ -218,14 +232,6 @@ export default {
 .navbar-toggler-icon:focus {
   border: none;
   box-shadow: none;
-}
-
-.navbar-collapse .nav-link:hover,
-.navbar-collapse .nav-link.active,
-.mobile-link:hover,
-.mobile-link.active {
-  color: #4e3681;
-  font-weight: 600;
 }
 
 #button-toggler {
@@ -320,7 +326,6 @@ export default {
   .nav-link {
     font-size: 20px;
     font-weight: 400;
-    color: #1e2019;
   }
   li {
     align-content: center;
@@ -342,7 +347,7 @@ export default {
   .custom-row-about {
     display: none; /* Hide the sections */
   }
-  .text-muted {
+  .p-text {
     font-size: 7px; /* Smaller font size for the copyright text */
   }
   .custom-nav {
@@ -352,7 +357,9 @@ export default {
   }
 
   /* Adjust mobile menu logo spacing when size is below 420px */
-  #logo {
+  #logo,
+  #logo-light,
+  #logo-dark {
     width: 100%;
     max-width: 58vw;
     height: auto;
@@ -373,7 +380,9 @@ export default {
 }
 
 @media (min-width: 420px) {
-  #logo {
+  #logo,
+  #logo-light,
+  #logo-dark {
     width: 100%;
     max-width: 25vw;
     min-width: 262px;
@@ -414,7 +423,7 @@ export default {
 
 .footer p {
   margin: 0;
-  color: #666;
+  /*color: #666;*/
 }
 
 /* Shift the row slightly to the left */
@@ -437,6 +446,7 @@ export default {
 .custom-logo {
   flex: 2;
   box-sizing: border-box;
+  
 }
 
 .custom-row-home {
@@ -504,7 +514,7 @@ export default {
 }
 
 /* Smaller copyright text */
-.text-muted {
+.p-text {
   font-size: 16px; /* Smaller font size for the copyright text */
   font-weight: 400;
   line-height: 24px;
@@ -515,4 +525,121 @@ export default {
     padding-bottom: 20px;
   }
 }
+
+.logo,
+.logo-light,
+.logo-dark {
+  display: none;
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #navbar {
+      background-color: #1E2019;
+    }
+    #logo-dark,
+    .logo-dark {
+      display: inline;
+    }
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+    }
+    #close-icon {
+      fill: white;
+    }
+    #footer {
+      background-color: #1E2019;
+    }
+    .nav-link {
+      color: #FFFFFF;
+    }
+    .mobile-link {
+      color: #FFFFFF;
+    }
+    .p-text {
+      color: #f2f2f2;
+    }
+    .navbar-collapse .nav-link:hover,
+    .navbar-collapse .nav-link.active,
+    .mobile-link:hover,
+    .mobile-link.active {
+      color: #CCECFD;
+      font-weight: 600;
+    }
+    #viewRecordButton {
+      background-color: #CCECFD; 
+      color: #000000; 
+      border-color: #CCECFD;
+      border-radius: 10px;
+    }
+    #viewRecordButton.active {
+      background-color: #B0E3FF; 
+      border-color: #B0E3FF;
+      color: #000000;
+    }
+    #createRecordButton {
+      background-color: #4E3681; 
+      color: #FFFFFF; 
+      border-color: #4E3681;
+      border-radius: 10px;
+    }
+    #footer a, 
+    #footer RouterLink {
+      color: #FFFFFF;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #navbar {
+        background-color: #E6F6FF;
+    }
+    #logo-light,
+    .logo-light {
+      display: inline;
+    }
+    #footer {
+        background-color: #E6F6FF;
+    }
+    #close-icon {
+      fill: currentColor;
+    }
+    .nav-link {
+        color: #1e2019;
+    }
+    .mobile-link {
+      color: #1e2019;
+    }
+    .p-text {
+      color: #666;
+    }
+    .navbar-collapse .nav-link:hover,
+    .navbar-collapse .nav-link.active,
+    .mobile-link:hover,
+    .mobile-link.active {
+      color: #4e3681;
+      font-weight: 600;
+    }
+    #createRecordButton {
+      background-color: #e6f6ff; 
+      color: #4e3681; 
+      border-color: #4e3681;
+      border-radius: 10px;
+    }
+    #viewRecordButton {
+      background-color: #4E3681;
+      color: #FFFFFF;  
+      border-color: #4E3681;
+      border-radius: 10px;
+    } 
+    #viewRecordButton.active {
+      background-color: #322253; 
+      border-color: #322253;
+      color: #FFFFFF;
+    }
+    #footer a, 
+    #footer RouterLink {
+      color: black;
+    }
+}
+
 </style>
