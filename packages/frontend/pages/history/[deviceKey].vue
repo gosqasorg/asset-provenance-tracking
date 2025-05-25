@@ -82,7 +82,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
                 <div>Record Key: {{ _recordKey }}</div>
                 <div class="mb-3">
-                    <span v-html="clickableLink(deviceRecord?.description)"></span>
+                    <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
                 </div>
 
                 <section ref= "section" id="priority-notices">
@@ -93,60 +93,60 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
               <div class="qr-code-wrapper">
                 <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
               </div>
-          </section>
+            </section>
             
-          <div class="buttons-container">
-            <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
+            <div class="buttons-container">
+              <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
 
-            <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
-              Share Record Link
-              <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-              <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
-            </button>
+              <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+                Share Record Link
+                <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+              </button>
 
-            <!-- Share dropdown -->
-            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
-              <li class="dropdown-item" style="padding: 7px">
-                <a @click="copy()" class="text-slate" id="item-link">Copy</a>
-              </li>
-              <li class="dropdown-item" style="padding: 7px">
-                <a @click="text()" class="text-slate" id="item-link">Messages</a>
-              </li>
-              <li class="dropdown-item" style="padding: 7px">
-                <a @click="mail()" class="text-slate" id="item-link">Email</a>
-              </li>
-              <li class="dropdown-item" style="padding: 7px">
-                <a @click="whatsApp()" class="text-slate" id="item-link">WhatsApp</a>
-              </li>
-              <li class="dropdown-item" style="padding: 7px">
-                <a @click="telegram()" class="text-slate" id="item-link">Telegram</a>
-              </li>
-            </ul>
-          </div>
-
-          <section id="recent">
-            <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
-          </section>
-          <section id="device-creation">
-            <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-          </section>
-          <section id="create-record">
-            <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-          </section>
-          <section id="child-keys">
-            <div v-if="hasReportingKey"> Reporting Key:
-              <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+              <!-- Share dropdown -->
+              <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+                <li class="dropdown-item" style="padding: 7px">
+                  <a @click="copy()" class="text-slate" id="item-link">Copy</a>
+                </li>
+                <li class="dropdown-item" style="padding: 7px">
+                  <a @click="text()" class="text-slate" id="item-link">Messages</a>
+                </li>
+                <li class="dropdown-item" style="padding: 7px">
+                  <a @click="mail()" class="text-slate" id="item-link">Email</a>
+                </li>
+                <li class="dropdown-item" style="padding: 7px">
+                  <a @click="whatsApp()" class="text-slate" id="item-link">WhatsApp</a>
+                </li>
+                <li class="dropdown-item" style="padding: 7px">
+                  <a @click="telegram()" class="text-slate" id="item-link">Telegram</a>
+                </li>
+              </ul>
             </div>
-            <div v-if="(childKeys?.length > 0) || hasReportingKey">
-              <div> Child Keys:
-                <div>
-                  <KeyList v-bind:keys="childKeys" />
-                </div>
+
+            <section id="recent">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
+            </section>
+            <section id="device-creation">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+            </section>
+            <section id="create-record">
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+            </section>
+            <section id="child-keys">
+              <div v-if="hasReportingKey"> Reporting Key:
+                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
               </div>
-              <CsvFile :recordKey="_recordKey"></CsvFile>
-            </div>
-            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-          </section>
+              <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                <div> Child Keys:
+                  <div>
+                    <KeyList v-bind:keys="childKeys" />
+                  </div>
+                </div>
+                <CsvFile :recordKey="_recordKey"></CsvFile>
+              </div>
+              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+            </section>
 
           </div>
           <!-- Spied element -->
@@ -370,11 +370,12 @@ export default {
   transform: scale(0.775);
   margin: -20px;
   margin-left: -40px;
-  transition-duration: 0.4s;
+  height: min-content;
 }
 
 .record-description {
   margin-right: 15px;
+  max-width: 60%;
 }
 
 .details-container {
@@ -410,6 +411,15 @@ export default {
 }
 .dropdown-item:hover {
   background-color: #e6f6ff;
+}
+.descr-container {
+  word-wrap: break-word !important;
+}
+
+@media (max-width: 995px) {
+  .record-description {
+    max-width: 100%;
+  }
 }
 
 /* Wrap buttons once screen gets below a certain size */
