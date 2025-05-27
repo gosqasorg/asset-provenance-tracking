@@ -1,5 +1,5 @@
 <template>
-    <button type="button" class="btn mt-1 bg-sky px-5 mb-5" v-on:click="downloadProvenanceCSV">
+    <button type="button" class="btn mt-1 px-5 mb-5" v-on:click="downloadProvenanceCSV">
         Download Provenance as CSV
     </button>
 </template>
@@ -21,7 +21,7 @@ export default {
             try {
                 // Fetch provenance provenanceItem using the provided recordKey
                 const provenanceData = await getProvenance(this.recordKey);
-                
+
                 if (!provenanceData || provenanceData.length === 0) {
                     // Handle case where no provenance record are found
                     console.error('No provenance record found');
@@ -55,11 +55,11 @@ export default {
 
                     const childrenNames = `[${children}]`
 
-                     //Find Children Keys and format them
+                    //Find Children Keys and format them
                     const childrenKeys = (provenanceItem.record?.children_key || [])
                         .map(tag => `"${tag.replace(/"/g, "''")}"`)
                         .join(';');
-                    
+
                     const formattedChildrenKeys = `[${childrenKeys}]`
 
                     // Get attachment filename
@@ -76,8 +76,8 @@ export default {
 
                     const attachmentName = await Promise.all(attachmentPromises);
                     const stringifyAttachmentName = attachmentName
-                        .map(name => `"${name.replace(/"/g, '""')}"`);    
-                    
+                        .map(name => `"${name.replace(/"/g, '""')}"`);
+
                     // Concatenate relevant data for csv file
                     csvContent += `${timestamp},${description},${deviceName},${formattedTags},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
                 }
@@ -95,3 +95,31 @@ export default {
     }
 }
 </script>
+<style>
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .btn {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF !important;
+        color: white;
+    }
+
+    .btn:hover {
+        border: 0px !important;
+        color: white;
+    }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+
+    .btn:hover {
+        color: black;
+    }
+}
+</style>
