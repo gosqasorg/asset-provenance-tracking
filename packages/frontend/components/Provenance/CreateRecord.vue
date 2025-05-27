@@ -1,5 +1,5 @@
 <!--
-CreateRecord.vue -- Creation of provenance record 
+CreateRecord.vue -- Creation of provenance record
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -77,7 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="popup-inner recall-popup">
             <h2 class="text-iris">Recall all children</h2>
             <p>You've selected "Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
-            
+
             <div>
                 <!-- Cancels the record creation (close pop up) -->
                 <button-component @click="closePopUpR()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
@@ -93,7 +93,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="popup-inner">
             <h2 class="text-iris">Annotate all children</h2>
             <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
-            
+
             <div>
                 <!-- Cancels the record creation (close pop up) -->
                 <button-component @click="closePopUpA()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
@@ -106,7 +106,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     </div>
  </template>
- 
+
  <script lang="ts">
  import { postProvenance, getProvenance } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
@@ -205,7 +205,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 })
                 return;
             }
- 
+
             // User wants to add this record to an existing group.
             if (this.groupKey != '') {
                 if (validateKey(this.groupKey)) {
@@ -225,7 +225,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     });
                 }
             }
- 
+
             // The record already is a group - add the child keys.
             try {
                 if (this.childKeyText.length > 0) {
@@ -257,7 +257,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     text: `Error adding child keys: ${error}`
                 });
             }
- 
+
             if (this.recallAll) {
                 // Recall children (update their records w/ tags AND description), move to top of record
                 this.tags.push("recall");
@@ -267,7 +267,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 this.tags.push("annotate");
                 notifyChildren(records, this.tags);
             }
- 
+
             // Append the record to the records.
             try {
                 const record = {
@@ -276,12 +276,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     tags: this.tags,
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
- 
+
                 await postProvenance(this.recordKey, record, this.pictures || []);
 
                 // Refresh CreateRecord component
                 this.refresh();
- 
+
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
 
@@ -291,7 +291,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     text: `Error creating record: ${error}`
                 });
             }
-        },
+        }
     }
  };
 };
