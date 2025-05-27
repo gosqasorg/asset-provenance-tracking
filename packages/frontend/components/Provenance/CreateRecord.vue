@@ -1,6 +1,6 @@
-<!-- 
-CreateRecord.vue -- Creation of provenance record  
-Copyright (C) 2024 GOSQAS Team 
+<!--
+CreateRecord.vue -- Creation of provenance record 
+Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
@@ -15,10 +15,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-    This component is a form. The form is used to create a new record that we will track the
-    providence for.
-    Resourses:
-    https://test-utils.vuejs.org/guide/essentials/forms
+   This component is a form. The form is used to create a new record that we will track the
+   providence for.
+   Resourses:
+   https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
 <template>
@@ -72,15 +72,48 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </button>
         </div>
     </form>
-</template>
 
-<script lang="ts">
-import { postProvenance, getProvenance } from '~/services/azureFuncs';
-import { EventBus } from '~/utils/event-bus';
-import { addChildKeys, addToGroup, notifyChildren } from '~/utils/descendantList';
-import { validateKey } from '~/utils/keyFuncs';
+    <div class="popup" v-if="recallPopUp">
+        <div class="popup-inner recall-popup">
+            <h2 class="text-iris">Recall all children</h2>
+            <p>You've selected "Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
+            
+            <div>
+                <!-- Cancels the record creation (close pop up) -->
+                <button-component @click="closePopUpR()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
+                    borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
 
-export default {
+                <!-- Continues the record creation (call submit function) -->
+                <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
+            </div>
+
+        </div>
+    </div>
+    <div class="popup" v-if="annotatePopUp">
+        <div class="popup-inner">
+            <h2 class="text-iris">Annotate all children</h2>
+            <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
+            
+            <div>
+                <!-- Cancels the record creation (close pop up) -->
+                <button-component @click="closePopUpA()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
+                    borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
+
+                <!-- Continues the record creation (call submit function) -->
+                <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
+            </div>
+
+        </div>
+    </div>
+ </template>
+ 
+ <script lang="ts">
+ import { postProvenance, getProvenance } from '~/services/azureFuncs';
+ import { EventBus } from '~/utils/event-bus';
+ import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
+ import { validateKey } from '~/utils/keyFuncs';
+
+ export default {
     data() {
         return {
             description: '',
@@ -89,7 +122,10 @@ export default {
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
-            notifyAll: false,
+            annotateAll: false,
+            recallAll: false,
+            annotatePopUp: false,
+            recallPopUp: false
         }
     },
     props: {
@@ -116,6 +152,27 @@ export default {
         },
     },
     methods: {
+        closePopUpA() {
+            this.annotatePopUp = false
+        },
+        closePopUpR() {
+            this.recallPopUp = false
+        },
+        async trackingForm() {
+            const annotateCheckBox = document.getElementById("annotate-all");
+            const recallCheckBox = document.getElementById("recall-all");
+
+            if (Object.is(annotateCheckBox, null) || Object.is(recallCheckBox, null)) {
+                // Check for null (in case this is a child node)
+                this.submitRecord()
+            } else if (recallCheckBox.checked == true) {
+                this.recallPopUp = true
+            } else if (annotateCheckBox.checked == true) {
+                this.annotatePopUp = true
+            } else {
+                this.submitRecord()
+            }
+        },
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
@@ -132,7 +189,10 @@ export default {
             this.tags = [];
             this.groupKey = '';
             this.newChildKeys = [];
-            this.notifyAll = false;
+            this.annotateAll = false;
+            this.recallAll = false;
+            this.annotatePopUp = false;
+            this.recallPopUp = false;
         },
         async submitRecord() {
             // Get a refreshed copy of the records
@@ -145,7 +205,7 @@ export default {
                 })
                 return;
             }
-
+ 
             // User wants to add this record to an existing group.
             if (this.groupKey != '') {
                 if (validateKey(this.groupKey)) {
@@ -165,7 +225,7 @@ export default {
                     });
                 }
             }
-
+ 
             // The record already is a group - add the child keys.
             try {
                 if (this.childKeyText.length > 0) {
@@ -197,10 +257,17 @@ export default {
                     text: `Error adding child keys: ${error}`
                 });
             }
-
-            // Notify children (update their records) depending on the tags
-            notifyChildren(records, this.tags);
-
+ 
+            if (this.recallAll) {
+                // Recall children (update their records w/ tags AND description), move to top of record
+                this.tags.push("recall");
+                recallChildren(records, this.tags, this.description);
+            } else if (this.annotateAll) {
+                // Annotate children (update their records w/ tags)
+                this.tags.push("annotate");
+                notifyChildren(records, this.tags);
+            }
+ 
             // Append the record to the records.
             try {
                 const record = {
@@ -209,14 +276,15 @@ export default {
                     tags: this.tags,
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
-
+ 
                 await postProvenance(this.recordKey, record, this.pictures || []);
 
                 // Refresh CreateRecord component
                 this.refresh();
-
+ 
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
+
             } catch (error) {
                 this.$snackbar.add({
                     type: 'error',
@@ -225,7 +293,7 @@ export default {
             }
         },
     }
-
+ };
 };
 </script>
 
@@ -258,6 +326,7 @@ input[type=checkbox] {
     border-radius: 6px;
     width: 100%;
     font-size: 18px;
+
 }
 
 /*  For screens smaller than 768px */

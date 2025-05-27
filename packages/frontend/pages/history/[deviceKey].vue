@@ -197,23 +197,19 @@ import KeyList from '~/components/KeyList.vue';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
+
+let recalledRecords = [];
+let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
 
-const headers = [
+let headers = [
   { id: "device-details", name: "Record details" },
   { id: "priority-notices", name: "Priority notices" },
   { id: "recent", name: "Most recent updates" },
   { id: "device-creation", name: "Record creation" },
   { id: "create-record", name: "Create new record entry" }
-];
-const shareButtons = [
-  { id: "copy-qr", name: "Copy", func: "copy()" },
-  { id: "open-messages", name: "Messages", func: "text()" },
-  { id: "email-qr", name: "Email", func: "mail()" },
-  { id: "open-whatsapp", name: "WhatsApp", func: "whatsApp()" },
-  { id: "open-telegram", name: "Telegram", func: "telegram()" }
 ];
 
 
@@ -341,7 +337,32 @@ export default {
       // Decompose the provenance records into parts to be rendered.
       ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
+      // Pin recalled records to the top of the feed
+      recalledRecords = [];
+      recordsInFeed = [];
+
+      provenanceNoRecord.forEach(record => {
+        if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
+          recalledRecords.push(record);
+        } else {
+          recordsInFeed.push(record);
+        }
+      });
+
       this.isLoading = false;
+
+      // This functionality could be pushed into a component...
+      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+
+      // We will remove the reportingKey, because although it is a child,
+      // we have already rendered it.
+      if (this.hasReportingKey) {
+          const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+          if (index > -1) {
+              deviceRecord.children_key.splice(index, 1);
+          }
+      }
+      this.childKeys = getChildKeys(provenance);
 
       // This functionality could be pushed into a component...
       this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
@@ -358,6 +379,13 @@ export default {
 
       // Add child key navigation if there are child keys
       if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+        headers = [
+          { id: "device-details", name: "Record details" },
+          { id: "priority-notices", name: "Priority notices" },
+          { id: "recent", name: "Most recent updates" },
+          { id: "device-creation", name: "Record creation" },
+          { id: "create-record", name: "Create new record entry" }
+        ];
         headers.push({ id: "child-keys", name: "Child keys" });
       }
     },
