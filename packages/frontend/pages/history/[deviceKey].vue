@@ -123,20 +123,23 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 </li>
               </ul>
             </div>
+          <section id="recalled">
+            <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+          </section>
+          <section id="recent">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
+          </section>
+          <section id="device-creation">
+            <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+          </section>
+          <section id="create-record">
+            <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+          </section>
 
-            <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="provenanceNoRecord" />
-            </section>
-            <section id="device-creation">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-            </section>
-            <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-            </section>
-            <section id="child-keys">
-              <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-              </div>
+          <section id="child-keys">
+            <div v-if="hasReportingKey"> Reporting Key:
+              <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+            </div>
               <div v-if="(childKeys?.length > 0) || hasReportingKey">
                 <div> Child Keys:
                   <div>
@@ -187,23 +190,19 @@ import KeyList from '~/components/KeyList.vue';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
+
+let recalledRecords = [];
+let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
 
-const headers = [
+let headers = [
   { id: "device-details", name: "Record details" },
   { id: "priority-notices", name: "Priority notices" },
   { id: "recent", name: "Most recent updates" },
   { id: "device-creation", name: "Record creation" },
   { id: "create-record", name: "Create new record entry" }
-];
-const shareButtons = [
-  { id: "copy-qr", name: "Copy", func: "copy()" },
-  { id: "open-messages", name: "Messages", func: "text()" },
-  { id: "email-qr", name: "Email", func: "mail()" },
-  { id: "open-whatsapp", name: "WhatsApp", func: "whatsApp()" },
-  { id: "open-telegram", name: "Telegram", func: "telegram()" }
 ];
 
 
@@ -219,102 +218,104 @@ export default {
       shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
-    }},
-    async mounted() {
-      try {
-        const route = useRoute();
-        this._recordKey = route.params.deviceKey as string; 
-        const response = await getProvenance(this._recordKey);
-        deviceRecord = response[response.length - 1].record;
+      valid: false
+  }},
+  async mounted() {
+    try {
+      const route = useRoute();
+      this._recordKey = route.params.deviceKey as string;
+      
+      const response = await getProvenance(this._recordKey);
+      deviceRecord = response[response.length - 1].record;
 
-        this.addScrollListener();
+      this.addScrollListener();
 
-        EventBus.on('feedRefresh', this.refreshFeed);
-        
-        await this.refreshFeed();
-      } catch (error) {
-          this.isLoading = false;
-          this.recordKeyFound = false;
-          this.hasReportingKey = false;
-          console.log(error)
+      EventBus.on('feedRefresh', this.refreshFeed);
+
+      await this.refreshFeed();
+    } catch (error) {
+      this.isLoading = false;
+      this.recordKeyFound = false;
+      this.hasReportingKey = false;
+      console.log(error)
+    }
+  },
+  beforeDestroy() {
+      EventBus.off('feedRefresh', this.refreshFeed);
+  },
+  methods: {
+    downloadQRCode() {
+      const qrCodeComponent = this.$refs.qrcode_component as any;
+      qrCodeComponent?.downloadQRCode()
+    },
+    buttonFormat() {
+      let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
+
+      if (!dropdownVisible) { // button clicked, dropdown now visible
+        dropdownVisible = true; 
+        this.shareDropdown = true;
+        shareBtn.style.borderRadius = "10px 10px 0px 0px";
+      } else {
+        dropdownVisible = false;
+        this.shareDropdown = false;
+        shareBtn.style.borderRadius = "10px";
       }
     },
-    beforeDestroy() {
-        EventBus.off('feedRefresh', this.refreshFeed);
+    getDescription() {
+      return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
     },
-    methods: {
-      downloadQRCode() {
-        const qrCodeComponent = this.$refs.qrcode_component as any;
-        qrCodeComponent?.downloadQRCode()
-      },
-      buttonFormat() {
-        let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
-
-        if (!dropdownVisible) { // button clicked, dropdown now visible
-          dropdownVisible = true; 
-          this.shareDropdown = true;
-          shareBtn.style.borderRadius = "10px 10px 0px 0px";
-        } else {
-          dropdownVisible = false;
-          this.shareDropdown = false;
-          shareBtn.style.borderRadius = "10px";
-        }
-      },
-      getDescription() {
-        return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
-      },
-      copy() {
-        navigator.clipboard.writeText(window.location.href)
-          .then(() => {
-              alert('Record Link copied to clipboard!');
-          })
-          .catch((error) => {
-              console.error('Failed to copy text: ', error);
-              alert('Failed to copy Record Link. Please try again.');
-          });
-      },
-      mail() {
-        var shareDescr = this.getDescription();
-        window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
-      },
-      text() {
-        var shareDescr = this.getDescription();
-        window.location = "sms:?&body=Record Link: " + shareDescr;
-      },
-      whatsApp() {
-        var shareDescr = this.getDescription();
-        window.location = "https://wa.me/send?text=" + shareDescr;
-      },
-      telegram() {
-        var shareLink = encodeURIComponent(window.location.href);
-        var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
-        window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
-      },
-      addScrollListener() {
-        // When user scrolls, the nav bar is updated
-        window.addEventListener('scroll', () => {
-          for(let num in headers) {
-            let current_id = headers[num].id;
-            let sec = document.getElementById(current_id);
-
-            let top = window.scrollY;
-            const baseOffset = 150;
-            let offset = sec?.offsetTop ? sec?.offsetTop + baseOffset : baseOffset; // can customize how far from the section to become active
-            let height = sec?.offsetHeight ?? 0;
-            if (top >= offset && top < offset + height) {
-              currentSection.value = current_id;
-            }
-          }
+    copy() {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+            alert('Record Link copied to clipboard!');
+        })
+        .catch((error) => {
+            console.error('Failed to copy text: ', error);
+            alert('Failed to copy Record Link. Please try again.');
         });
-      },
-      async refreshFeed() {
-        console.log("Refreshing feed...");
-        this.isLoading = true;
-        this.recordKeyFound = false;
-        this.hasReportingKey = false;
-        this.shareDropdown = false;
-        
-        const provenance = await getProvenance(this._recordKey);
+    },
+    mail() {
+      var shareDescr = this.getDescription();
+      window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
+    },
+    text() {
+      var shareDescr = this.getDescription();
+      window.location = "sms:?&body=" + shareDescr;
+    },
+    whatsApp() {
+      var shareDescr = this.getDescription();
+      window.location = "https://wa.me/send?text=" + shareDescr;
+    },
+    telegram() {
+      var shareLink = encodeURIComponent(window.location.href);
+      var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
+      window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
+    },
+    addScrollListener() {
+      // When user scrolls, the nav bar is updated
+      window.addEventListener('scroll', () => {
+        for (let num in headers) {
+          let current_id = headers[num].id;
+          let sec = document.getElementById(current_id);
+
+          let top = window.scrollY;
+          const baseOffset = 150;
+          let offset = sec?.offsetTop ? sec?.offsetTop + baseOffset : baseOffset; // can customize how far from the section to become active
+          let height = sec?.offsetHeight ?? 0;
+          if (top >= offset && top < offset + height) {
+            currentSection.value = current_id;
+          }
+        }
+      });
+    },
+    async refreshFeed() {
+      console.log("Refreshing feed...");
+      this.isLoading = true;
+      this.recordKeyFound = false;
+      this.hasReportingKey = false;
+      this.shareDropdown = false;
+
+      const provenance = await getProvenance(this._recordKey);
 
       if (!provenance || provenance.length === 0) {
         this.$snackbar.add({
@@ -330,7 +331,32 @@ export default {
       // Decompose the provenance records into parts to be rendered.
       ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
+      // Pin recalled records to the top of the feed
+      recalledRecords = [];
+      recordsInFeed = [];
+
+      provenanceNoRecord.forEach(record => {
+        if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
+          recalledRecords.push(record);
+        } else {
+          recordsInFeed.push(record);
+        }
+      });
+
       this.isLoading = false;
+
+      // This functionality could be pushed into a component...
+      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+
+      // We will remove the reportingKey, because although it is a child,
+      // we have already rendered it.
+      if (this.hasReportingKey) {
+          const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+          if (index > -1) {
+              deviceRecord.children_key.splice(index, 1);
+          }
+      }
+      this.childKeys = getChildKeys(provenance);
 
       // This functionality could be pushed into a component...
       this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
@@ -347,6 +373,13 @@ export default {
 
       // Add child key navigation if there are child keys
       if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+        headers = [
+          { id: "device-details", name: "Record details" },
+          { id: "priority-notices", name: "Priority notices" },
+          { id: "recent", name: "Most recent updates" },
+          { id: "device-creation", name: "Record creation" },
+          { id: "create-record", name: "Create new record entry" }
+        ];
         headers.push({ id: "child-keys", name: "Child keys" });
       }
     },
