@@ -24,7 +24,6 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 <template>
   <div class="my-4 mb-2 parent-container" v-if="!isLoading" :key="loadingKey">
     <div class="row justify-content-between main-container">
-        <!-- DESCR -->
         <section id="device-details" class="details-container">
             <div class="record-description">
                 <div class="my-4 text-iris fs-1">
@@ -40,62 +39,41 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 </div>
             </div>
 
-            <!-- QR -->
             <div class="qr-code-wrapper">
                 <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
             </div>
         </section>
 
-        <!-- BUTTONS -->
         <div class="buttons-container">
             <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
             <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
-            
-            <!-- Share dropdown -->
-            <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
-                Share Record Link
-                <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-                <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
-            </button>
 
-            <!-- TODO: dropdown here..? but we removed wrap so it's on the same line -->
-            <!-- <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="copy()" class="text-slate item-link">Copy</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="text()" class="text-slate item-link">Messages</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="mail()" class="text-slate item-link">Email</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="telegram()" class="text-slate item-link">Telegram</a>
-                </li>
-            </ul> -->
-             
-        </div>
-        <div class="dropdown-container">
-            <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="copy()" class="text-slate item-link">Copy</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="text()" class="text-slate item-link">Messages</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="mail()" class="text-slate item-link">Email</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
-                </li>
-                <li class="dropdown-item" style="padding: 7px">
-                    <a @click="telegram()" class="text-slate item-link">Telegram</a>
-                </li>
-            </ul>
+            <!-- Share dropdown -->
+            <div class="share-container">
+                <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+                    Share Record Link
+                    <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                    <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                </button>
+
+                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="copy()" class="text-slate item-link">Copy</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="text()" class="text-slate item-link">Messages</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="mail()" class="text-slate item-link">Email</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="whatsApp()" class="text-slate item-link">WhatsApp</a>
+                    </li>
+                    <li class="dropdown-item" style="padding: 7px">
+                        <a @click="telegram()" class="text-slate item-link">Telegram</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -235,12 +213,12 @@ export default {
     border-radius: 10px;
     margin-right: 30px;
     margin-top: 20px;
+    max-height: 61px;
 }
 .share-btn {
     margin-right: 0px;
 }
 #share-dropdown {
-    width: 218px;
     border-radius: 0px 0px 10px 10px;
     margin-left: auto;
     margin-right: 0;
@@ -261,15 +239,11 @@ export default {
   cursor: pointer;
 }
 .descr-container {
-    /* width: fit-content; */
     width: 60%;
     word-wrap: break-word;
 }
 .qr-container {
     width: 30%;
-}
-.container-md {
-    box-sizing: content-box;
 }
 .main-container {
     justify-content: space-between;
@@ -278,13 +252,6 @@ export default {
     margin-left: 4%;
     margin-right: 4%;
 }
-/* .buttons-container { */
-    /* TODO: container only as wide as buttons? */
-    /* width: min-content; */
-    /* display: inline-block; */
-/* } */
-
-/* TODO: remove ALL unsused new styles */
 .details-container {
   display: flex;
   flex-wrap: wrap;
@@ -306,18 +273,9 @@ export default {
   height: min-content;
 }
 .buttons-container {
-  /* margin-bottom: 20px; */
+  margin-bottom: 20px;
   display: flex;
-  /* width: auto; */
-
-  /* flex-wrap: wrap; */
-  /* justify-content: space-between; */
-  /* max-width: 60%; */
-}
-
-/* TODO: hard px values make formatting weird */
-.dropdown-container {
-    width: 739px;  /* Make dropdown line up with buttons */
+  flex-wrap: wrap;
 }
 
 /* Switches to mobile sizing */
@@ -325,14 +283,12 @@ export default {
     .descr-container {
         width: 100%;
     }
+    .share-container {
+        width: 100%;
+    }
     .buttons-container {
-        /* max-width: 100%; */
-        flex-wrap: wrap;
         width: 100%;
         margin-right: 40px;
-    }
-    .dropdown-container {
-        width: 100%;
     }
     .qr-container {
         width: 100%;
@@ -343,10 +299,6 @@ export default {
     }
     #share-dropdown {
         width: 100%;
-    }
-    .container-md {
-        margin-top: 0px !important;
-        box-sizing: border-box;
     }
     .record-description {
         max-width: 100%;
