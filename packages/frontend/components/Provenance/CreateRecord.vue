@@ -1,5 +1,5 @@
 <!--
-CreateRecord.vue -- Creation of provenance record 
+CreateRecord.vue -- Creation of provenance record
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -21,50 +21,63 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
    https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
-<template>    
-    <form enctype="multipart/form-data" class='bg-frost mb-5' @submit.prevent="trackingForm">
-      <h5 class="text-iris">Create New Record Entry</h5>
-      <div>
-        <input type="text" class="form-control" name="description" id="provenance-description" v-model="description" placeholder="Description" maxlength="5000" required/>
-        <div v-if="isGroup">           
-            <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText" placeholder="Group Record Keys (optional, separated with a comma)"/>
-        </div>
-        <div v-else>
-            <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey" placeholder="Group Key (optional)"/>
-        </div>
- 
+<template>
+    <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="submitRecord">
+        <h5>Create New Record Entry</h5>
         <div>
-            <span v-for="(childkey1, index) in newChildKeys" :key="childkey1">
-                {{ childkey1 }}{{ index !== newChildKeys.length - 1 && childkey1.endsWith(',') ? ' ' : ''}}
-            </span>
-        </div>
-        <div>
-            <h5 class="text-iris">Image (optional)</h5>
-            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
-        </div>
-        <h5 class="text-iris">Add Tags (optional)</h5>
-        <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags" placeholder="Record Tag"/>
-        <div>
-            <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }} </span>
-        </div>
+            <input type="text" class="form-control" name="description" id="provenance-description" v-model="description"
+                placeholder="Description" maxlength="5000" required />
+            <div v-if="isGroup">
+                <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
+                    placeholder="Group Record Keys (optional, separated with a comma)" />
+            </div>
+            <div v-else>
+                <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey"
+                    placeholder="Group Key (optional)" />
+            </div>
 
-        <h5 class="text-iris p-1 mt-3" v-if="isGroup">
-            <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
-        </h5>
-        <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-            <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
-        </h5>
-    </div>
-    <div class="d-grid" id="submit-button">
-        <button-component buttonText="Create Record Entry" type="submit" />
-    </div>
+            <div>
+                <span v-for="(childkey1, index) in newChildKeys" :key="childkey1">
+                    {{ childkey1 }}{{ index !== newChildKeys.length - 1 && childkey1.endsWith(',') ? ' ' : '' }}
+                </span>
+            </div>
+            <div>
+                <h5>Image (optional)</h5>
+                <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment"
+                    multiple />
+            </div>
+            <h5>Add Tags (optional)</h5>
+            <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags"
+                placeholder="Record Tag" />
+            <div>
+                <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
+                </span>
+            </div>
+            <!-- <h5 class="text-iris p-1 mt-0" v-if="isGroup">
+            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> Notify all Children?
+        </h5> -->
+        </div>
+        <div class="d-grid mt-3" id="submit-button">
+            <button class="mb-0 record-button" type="submit" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  border-radius: 10px;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  font-weight: 400;
+                  line-height: 30px;
+                ">
+                Create Record Entry
+            </button>
+        </div>
     </form>
 
     <div class="popup" v-if="recallPopUp">
         <div class="popup-inner recall-popup">
             <h2 class="text-iris">Recall all children</h2>
             <p>You've selected "Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
-            
+
             <div>
                 <!-- Cancels the record creation (close pop up) -->
                 <button-component @click="closePopUpR()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
@@ -80,7 +93,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="popup-inner">
             <h2 class="text-iris">Annotate all children</h2>
             <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
-            
+
             <div>
                 <!-- Cancels the record creation (close pop up) -->
                 <button-component @click="closePopUpA()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
@@ -93,7 +106,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     </div>
  </template>
- 
+
  <script lang="ts">
  import { postProvenance, getProvenance } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
@@ -184,7 +197,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         async submitRecord() {
             // Get a refreshed copy of the records
             const records = await getProvenance(this.recordKey);
-           
+
             if (!records || records.length === 0) {
                 this.$snackbar.add({
                     type: 'error',
@@ -192,7 +205,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 })
                 return;
             }
- 
+
             // User wants to add this record to an existing group.
             if (this.groupKey != '') {
                 if (validateKey(this.groupKey)) {
@@ -212,7 +225,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     });
                 }
             }
- 
+
             // The record already is a group - add the child keys.
             try {
                 if (this.childKeyText.length > 0) {
@@ -227,7 +240,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                             this.newChildKeys = this.newChildKeys.filter(key => key !== childKey);
                         }
                     }
-                   
+
                     if (this.newChildKeys.length > 0) {
                         console.log("Adding child keys...", this.newChildKeys);
                         await addChildKeys(records, this.newChildKeys, []);
@@ -244,7 +257,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     text: `Error adding child keys: ${error}`
                 });
             }
- 
+
             if (this.recallAll) {
                 // Recall children (update their records w/ tags AND description), move to top of record
                 this.tags.push("recall");
@@ -254,7 +267,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 this.tags.push("annotate");
                 notifyChildren(records, this.tags);
             }
- 
+
             // Append the record to the records.
             try {
                 const record = {
@@ -263,123 +276,138 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     tags: this.tags,
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
- 
+
                 await postProvenance(this.recordKey, record, this.pictures || []);
-               
+
                 // Refresh CreateRecord component
                 this.refresh();
- 
+
                 // Emit an event to notify the Feed.vue component
                 EventBus.emit('feedRefresh');
-            } catch (error) {       
+
+            } catch (error) {
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating record: ${error}`
                 });
             }
-        },
+        }
     }
- };
+};
+</script>
 
- </script>
- 
- <style scoped>
-  form {
-      border-radius: 6px;
-      display: block;
-      margin-bottom: 30px;
-  }
-  /* Style for the placeholder text */
-    .form-control::placeholder {
-    color: gray;
-    font-size: 18px;
- }
+<style scoped>
+form {
+    border-radius: 6px;
+    display: block;
+    margin-bottom: 70px;
+}
 
-  #submit-button {
-      margin-top: 24px;
-  }
- 
-  input {
+#submit-button {
+    margin-top: 24px;
+}
+
+input {
     border: 0;
-  }
- 
-  input[type=text] {
+}
+
+input[type=text] {
     height: 36px;
-    font-size:18px;
-  }
- 
-  input[type=file] {
-    height:36px;
     font-size: 18px;
-    line-height: 27px;
-  }
- 
-  input[type=checkbox] {
+}
+
+input[type=checkbox] {
     margin-right: 10px;
-  }
- 
-  #provenanceTag{
+}
+
+#provenanceTag {
     /* height: 36px; */
     border-radius: 6px;
     width: 100%;
     font-size: 18px;
-  }
- 
-  .popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 99;
-    background-color: rgba(0, 0, 0, 0.2);
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+}
 
-  .popup-inner {
-    background: white;
-    padding: 32px 32px 32px 32px;
-    width: 665px;
-    height: 300px;
-    border-radius: 20px;
-  }
-
-  .recall-popup {
-    height: 275px;
-  }
-
-  .confirmBtn {
-    display: inline-block;
-    width: 48%;
-  }
-
-  /* For screens smaller than 768px */
-  @media (max-width: 768px) {
-    h5{
+/*  For screens smaller than 768px */
+@media (max-width: 768px) {
+    h5 {
         margin-top: 20px;
     }
+
     input[type=text] {
         margin-top: 12px;
     }
+
     form {
         padding: 2px 17px 17px 17px;
     }
-  }
+}
 
-  /* For screens larger than 768px */
-  @media (min-width: 768px) {
-    h5{
+/* For screens larger than 768px */
+@media (min-width: 768px) {
+    h5 {
         margin-top: 24px;
     }
+
     input[type=text] {
         margin-top: 16px;
     }
+
     form {
         padding: 2px 20px 20px 20px;
     }
-  }
+}
 
- </style>
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .record-form {
+        background-color: #4B4D47;
+    }
+
+    h5 {
+        color: #FFFFFF;
+    }
+
+    .record-button {
+        background-color: #CCECFD;
+        color: black;
+        border-color: #CCECFD;
+    }
+
+    input[type="file"]::file-selector-button {
+        background-color: #CCECFD;
+        color: black;
+    }
+
+    input[type="file"]::file-selector-button-hover {
+        background-color: #67b0d7 !important;
+        color: black;
+    }
+
+    input[type="file"]::-webkit-file-upload-button:hover {
+        background-color: #0056b3;
+    }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .record-form {
+        background-color: #E6F6FF;
+    }
+
+    h5 {
+        color: #4E3681;
+    }
+
+    .record-button {
+        background-color: #4E3681;
+        color: white;
+        border-color: #4E3681;
+    }
+
+    input[type="file"]::file-selector-button {
+        background-color: #4E3681;
+        color: white;
+    }
+}
+</style>
