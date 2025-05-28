@@ -14,7 +14,7 @@
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  css: ['~/assets/styles/main.scss'],
+  css: ['bootstrap/dist/css/bootstrap.min.css','~/assets/styles/main.scss'],
   runtimeConfig: {
     // The private keys which are only available server-side
     // Keys within public are also exposed client-side
