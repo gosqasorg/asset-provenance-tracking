@@ -40,25 +40,25 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             <p class="menu-spacing">Jump to section</p>
             <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
               <li id="item" class="py-2" style="border-left: 2px solid #4e3681;" v-for="header in headers" :key="header"
-                :class="{ active: header.id === currentSection }">
+                  :class="{ active: header.id === currentSection }">
                 <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
           </nav>
         </div>
-      
+
         <!-- When the screen size is less than md (< 768px ) -->
         <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
           <button class="btn text-left rounded-0" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
-            aria-controls="toggle" aria-expanded="false"
-            style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
+                  aria-controls="toggle" aria-expanded="false"
+                  style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
             <i id="toggle-right" class="fa fa-angle-right"></i>
             <i id="toggle-down" class="fa fa-angle-down"></i>
             Jump to section
           </button>
 
           <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;
-                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
+                                                              background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
             <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
               <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
             </li>
@@ -82,7 +82,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
                 <div>Record Key: {{ _recordKey }}</div>
                 <div class="mb-3">
-                    <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
+                  <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
                 </div>
 
                 <section ref= "section" id="priority-notices">
@@ -94,7 +94,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
               </div>
             </section>
-          
+
             <div class="buttons-container">
               <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
 
@@ -123,23 +123,23 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 </li>
               </ul>
             </div>
-          <section id="recalled">
-            <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
-          </section>
-          <section id="recent">
-            <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
-          </section>
-          <section id="device-creation">
-            <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-          </section>
-          <section id="create-record">
-            <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-          </section>
+            <section id="recalled">
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+            </section>
+            <section id="recent">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
+            </section>
+            <section id="device-creation">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+            </section>
+            <section id="create-record">
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+            </section>
 
-          <section id="child-keys">
-            <div v-if="hasReportingKey"> Reporting Key:
-              <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-            </div>
+            <section id="child-keys">
+              <div v-if="hasReportingKey"> Reporting Key:
+                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+              </div>
               <div v-if="(childKeys?.length > 0) || hasReportingKey">
                 <div> Child Keys:
                   <div>
@@ -157,27 +157,27 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
       </div>
 
       <!-- TODO: Uncomment when  functionality is ready:
-      <div>
-          <ProvenanceNotificationSignUpModal/>
-      </div>   -->
+           <div>
+             <ProvenanceNotificationSignUpModal/>
+           </div>   -->
 
     </div>
-  <div v-else class="error-container">
-  <h1 class="error-title">Invalid history key</h1>
-  <h2 class="error-subtitle">No record attached to this key</h2>
-  <p class="error-description">
-    We’re sorry, the record you’re looking for could not be found. <br />
-    Please double-check your key. If you keep receiving this error, <br />
-    email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-  </p>
-  <div class="error-buttons">
-    <!-- Go home button -->
-    <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-    <!-- Email us button -->
-    <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+    <div v-else class="error-container">
+      <h1 class="error-title">Invalid history key</h1>
+      <h2 class="error-subtitle">No record attached to this key</h2>
+      <p class="error-description">
+        We’re sorry, the record you’re looking for could not be found. <br />
+        Please double-check your key. If you keep receiving this error, <br />
+        email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+      </p>
+      <div class="error-buttons">
+        <!-- Go home button -->
+        <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+        <!-- Email us button -->
+        <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+      </div>
+    </div>
   </div>
-</div>
-</div>
   <div v-else>
     <p>Loading... please wait.</p>
   </div>
@@ -343,7 +343,7 @@ export default {
           recordsInFeed.push(record);
         }
       });
-      
+
       // Decompose the provenance records into parts to be rendered.
       ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
