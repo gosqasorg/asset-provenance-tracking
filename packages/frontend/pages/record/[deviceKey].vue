@@ -22,78 +22,96 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 </script>
 
 <template>
-    <div class="record-container">
-        <div class="container-md my-4 mb-2" id="record-container" v-if="!isLoading" :key="loadingKey">
-            <div class="row justify-content-between">
-                <!-- DESCR -->
-                <div class="col-sm-6 col-lg-9 descr-container">
-                    <h1 class="mt-4 mb-2">{{ deviceRecord?.deviceName }}</h1>
-                    <h5>Record Key: {{ route.params.deviceKey }}</h5>
-                    <div class="my-2 mb-2" id="desc"><span v-html="clickableLink(deviceRecord?.description)"></span>
-                    </div>
 
-                    <div>
-                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History
-                            Records</button>
-                        <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR
-                            Code</button>
-
-                        <!-- Share dropdown -->
-                        <button id="shareRecordBtn" class="btn share-btn device-btn" data-bs-toggle="collapse"
-                            data-bs-target="#share-dropdown" @click="buttonFormat">
-                            Share Record Link
-                            <picture v-if="!shareDropdown">
-                                <source srcset="../../assets/images/darkmode-dropdown.svg"
-                                    media="(prefers-color-scheme: dark)">
-                                <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-                            </picture>
-                            <picture v-else>
-                                <source srcset="../../assets/images/darkmode-up-dropdown.svg"
-                                    media="(prefers-color-scheme: dark)">
-                                <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
-                            </picture>
-                        </button>
-
-                        <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="copy()" class="drop-text item-link">Copy</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="text()" class="drop-text item-link">Messages</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="mail()" class="drop-text item-link">Email</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="whatsApp()" class="drop-text item-link">WhatsApp</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="telegram()" class="drop-text item-link">Telegram</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- QR -->
-                <div class="col-sm-6 col-lg-3 mt-2">
-                    <QRCode :url="qrCodeUrl" ref="qrcode_component" />
-                </div>
+  <div class="record-container">
+    <div class="my-4 mb-2 parent-container" v-if="!isLoading" :key="loadingKey">
+      <div class="row justify-content-between main-container">
+        <section id="device-details" class="details-container">
+          <div class="record-description">
+            <div class="my-4 text-iris fs-1">
+              <p class="text-bold mb-0">Asset History Records</p>
+              <h1 class="mt-1 mb-1 text-iris">
+                {{ deviceRecord?.deviceName }}
+              </h1>
             </div>
 
-            <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+            <div>Record Key: {{ route.params.deviceKey }}</div>
+            <div class="mb-3">
+              <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
             </div>
-            <div v-if="(childKeys?.length > 0) || hasReportingKey">
-                <div> Child Keys:
-                    <div>
-                        <KeyList v-bind:keys="childKeys" />
-                    </div>
-                </div>
-                <CsvFile :recordKey="_recordKey"></CsvFile>
-            </div>
-            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+          </div>
+
+          <div class="qr-code-wrapper">
+            <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
+          </div>
+        </section>
+
+        <div class="buttons-container">
+          <button class="btn bg-iris text-white px-3 device-btn" @click="viewRecord">View History Records</button>
+          <button class="btn bg-sky px-3 device-btn" @click="downloadQRCode">Download QR Code</button>
+
+          <!-- Share dropdown -->
+          <div class="share-container">
+            <button id="shareRecordBtn" class="btn bg-sky share-btn device-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+              Share Record Link
+              <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+              <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+            </button>
+            <!-- Share dropdown -->
+            <button id="shareRecordBtn" class="btn share-btn device-btn" data-bs-toggle="collapse"
+                    data-bs-target="#share-dropdown" @click="buttonFormat">
+              Share Record Link
+              <picture v-if="!shareDropdown">
+                <source srcset="../../assets/images/darkmode-dropdown.svg"
+                        media="(prefers-color-scheme: dark)">
+                <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+              </picture>
+              <picture v-else>
+                <source srcset="../../assets/images/darkmode-up-dropdown.svg"
+                        media="(prefers-color-scheme: dark)">
+                <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+              </picture>
+            </button>
+
+            <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="copy()" class="drop-text item-link">Copy</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="text()" class="drop-text item-link">Messages</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="mail()" class="drop-text item-link">Email</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="whatsApp()" class="drop-text item-link">WhatsApp</a>
+              </li>
+              <li class="dropdown-item" style="padding: 7px">
+                <a @click="telegram()" class="drop-text item-link">Telegram</a>
+              </li>
+            </ul>
+          </div>
         </div>
+
+        <!-- QR -->
+        <div class="col-sm-6 col-lg-3 mt-2">
+          <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+        </div>
+      </div>
     </div>
+
+
+  <div v-if="hasReportingKey"> Reporting Key:
+    <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{deviceRecord?.reportingKey}}</a></div>
+  </div>
+  <div v-if="(childKeys?.length > 0) || hasReportingKey ">
+    <div> Child Keys:
+      <div> <KeyList v-bind:keys="childKeys"/> </div>
+    </div>
+    <CsvFile :recordKey="_recordKey"></CsvFile>
+  </div>
+  <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+</div>
 </template>
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
@@ -222,6 +240,7 @@ export default {
     border-radius: 10px;
     margin-right: 30px;
     margin-top: 20px;
+    max-height: 61px;
 }
 
 .share-btn {
@@ -229,7 +248,6 @@ export default {
 }
 
 #share-dropdown {
-    width: 216px;
     border-radius: 0px 0px 10px 10px;
     margin-left: auto;
     margin-right: 0;
@@ -250,20 +268,62 @@ export default {
 }
 
 .descr-container {
-    width: fit-content;
+    width: 60%;
+    word-wrap: break-word;
 }
 
-.container-md {
-    box-sizing: content-box;
+.qr-container {
+    width: 30%;
+}
+.main-container {
+    justify-content: space-between;
+}
+.parent-container {
+    margin-left: 4%;
+    margin-right: 4%;
+}
+.details-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.record-description {
+  margin-right: 15px;
+  max-width: 60%;
+}
+.qr-code-wrapper {
+  background-color:#4e3681; /* Purple outline */
+  padding:13px;
+  padding-bottom: 7px;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: scale(0.775);
+  margin: -20px;
+  margin-left: -40px;
+  height: min-content;
+}
+.buttons-container {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 
 /* Switches to mobile sizing */
-@media (max-width: 767px) {
+@media (max-width: 991px) {
     .descr-container {
         width: 100%;
     }
-
+    .share-container {
+        width: 100%;
+    }
+    .buttons-container {
+        width: 100%;
+        margin-right: 40px;
+    }
+    .qr-container {
+        width: 100%;
+    }
     .device-btn {
         width: 100%;
         margin-right: 0px;
