@@ -12,17 +12,40 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
+
 <template>
-    <div>
-    <div v-for="event in timestamppairs">{{ tzDate(event.timestamp) }}, {{event.deviceID}}</div>
-    </div>
+  <table class="table table-striped table-hover shadow-sm">
+    <thead class="thead-dark">
+      <tr>
+        <th scope="col">Timestamp</th>
+        <th scope="col">Device ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="(event, i) in timestamppairs" :key="i">
+        <td>{{ formatTimestamp(event.timestamp) }}</td>
+        <td class="text-monospace">{{ event.deviceID }}</td>
+      </tr>
+    </tbody>
+  </table>
 </template>
 
 <script>
-import { tzDate } from '~/utils/dateUtility';
+import { tzDate } from '~/utils/dateUtility'
 
 export default {
-    name: 'TimestampList',
-    props: ['timestamppairs']
-};
+  name: 'TimestampList',
+  props: {
+    timestamppairs: {
+      type: Array,
+      required: true
+    }
+  },
+  methods: {
+    formatTimestamp(ts) {
+      return tzDate(String(ts))
+    }
+  }
+}
 </script>

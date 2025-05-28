@@ -12,69 +12,89 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
 <template>
-  <div>
-    <div>Time-based Activitiy</div>
-    <div v-if="!isLoading">
-    <TimestampList v-bind:timestamppairs="myTimestampPairs"/>
-  </div>
-  <div v-else>
-    Show your prendered data here
-  </div>
-    <div></div>
-    <div></div>
-  </div>
-    </template>
+  <div class="container mt-5">
+    <h2 class="mb-4">Time-based Activity</h2>
 
-    <script>
-import { useRoute } from 'vue-router'
-import { getStatistics} from '~/services/azureFuncs';
-import { EventBus } from '~/utils/event-bus';
-import { ref, onMounted } from 'vue'
-import TimestampList from "@/components/TimestampList.vue";
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+      <div class="col-md-6 mb-3">
+        <div class="card text-center shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Today’s Provenances</h5>
+            <p class="display-4">{{ summary.today }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <div class="card text-center shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">This Week’s Provenances</h5>
+            <p class="display-4">{{ summary.thisWeek }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="text-center py-5">
+      <div class="spinner-border" role="status"></div>
+    </div>
+
+    <!-- Timestamp Table -->
+    <div v-else>
+      <TimestampList :timestamppairs="myTimestampPairs" />
+    </div>
+  </div>
+</template>
+
+<script>
+import TimestampList from '@/components/TimestampList.vue'
+import { getStatistics } from '~/services/azureFuncs'
 
 export default {
-    components: {
-        TimestampList
-    },
-    data() {
-        return {
-            isLoading: true,
-            myTimestampPairs: []
-        }},
-
-    methods: {
-        async fetchData() {
-            try {
-                return await getStatistics();
-            } catch (error) {
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error fetching data ${error}`
-                });
-            }
-        },
-    },
-    async mounted(){
-        const pairs = await this.fetchData();
-        if (!pairs) {
-            this.$snackbar.add({
-                    type: 'error',
-                    text: `Error fetching data ${error}`
-                });
-            return;
-        }  else {
-            pairs.sort( (a,b) => {
-                if (a && b)
-                    return (a.timestamp < b.timestamp) ? 1 : -1;
-                else
-                    return 0;
-            });
-            this.myTimestampPairs = pairs;
-            this.isLoading = false;
-        }
+  components: { TimestampList },
+  data() {
+    return {
+      isLoading: true,
+      myTimestampPairs: [],
+      summary: { today: 0, thisWeek: 0 }
     }
-}
+  },
 
+  async mounted() {
+    // 1) Fetch & sort
+    const pairs = await this.fetchData()
+    pairs.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1))
+    this.myTimestampPairs = pairs
+
+    // 2) Compute summaries
+    this.calculateSummary(pairs)
+
+    this.isLoading = false
+  },
+
+  methods: {
+    async fetchData() {
+      try {
+        return await getStatistics()
+      } catch (e) {
+        console.error('Error fetching data:', e)
+        this.$snackbar.add({ type: 'error', text: 'Failed to load statistics.' })
+        return []
+      }
+    },
+
+    calculateSummary(pairs) {
+      const now = new Date()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const startOfWeek = new Date(now)
+      startOfWeek.setDate(now.getDate() - now.getDay())
+
+      this.summary.today = pairs.filter(p => new Date(p.timestamp) >= startOfToday).length
+      this.summary.thisWeek = pairs.filter(p => new Date(p.timestamp) >= startOfWeek).length
+    }
+  }
+}
 </script>
