@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div class="col-md-6 mb-3">
             <div class="card">
               <div class="card-body">
-                <h6 class="card-title">Total Devices</h6>
+                <h6 class="card-title">Total Records</h6>
                 <!-- Computed property totalDevices -->
                 <p class="display-4">{{ totalDevices }}</p>
               </div>
@@ -40,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div class="col-md-6 mb-3">
             <div class="card">
               <div class="card-body">
-                <h6 class="card-title">Total Records</h6>
+                <h6 class="card-title">Total Record Entries</h6>
                 <!-- Computed property totalRecords -->
                 <p class="display-4">{{ totalRecords }}</p>
               </div>
@@ -49,7 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
   
         <!--Devices added in time windows-->
-        <p class="h6 mb-2">Devices added:</p>
+        <p class="h6 mb-2">Records added:</p>
         <div class="row text-center mb-4">
           <!-- Last 1 hour -->
           <div class="col-md-4 mb-3">
@@ -84,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
   
         <!-- Records added in time windows -->
-        <p class="h6 mb-2">Provenance records added:</p>
+        <p class="h6 mb-2">Record entries added:</p>
         <div class="row text-center">
           <!-- Last 1 hour -->
           <div class="col-md-4 mb-3">
