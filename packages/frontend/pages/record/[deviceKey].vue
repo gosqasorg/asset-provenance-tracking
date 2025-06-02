@@ -35,23 +35,14 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
               </h1>
             </div>
 
-            <div>Record Key: {{ _recordKey }}</div>
-
-            <!-- Have key type in the title (rather than alwyas calling it a "record key") -->
-            <!-- <div v-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+            <div v-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
             <div v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
             <div v-else-if="deviceRecord.hasParent">Child Record Key: {{ _recordKey }}</div>
-            <div v-else>Record Key: {{ _recordKey }}</div> -->
+            <div v-else>Record Key: {{ _recordKey }}</div>
 
             <div class="mb-3">
               <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
             </div>
-
-            <!-- Display key type down here instead -->
-            <div class="mb-3" v-if="deviceRecord?.children_key">Key Type: Group</div>
-            <div class="mb-3" v-else-if="deviceRecord.isReportingKey">Key Type: Reporting</div>
-            <div class="mb-3" v-else-if="deviceRecord.hasParent">Key Type: Child</div>
-            <div class="mb-3" v-else>Key Type: Record</div>
           </div>
 
           <div class="qr-code-wrapper">

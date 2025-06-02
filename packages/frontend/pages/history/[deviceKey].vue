@@ -80,20 +80,14 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                     </h1>
                   </div>
 
-                  <div>Record Key: {{ _recordKey }}</div>
-                  <!-- <div v-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                  <div v-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
                   <div v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
                   <div v-else-if="deviceRecord.hasParent">Child Record Key: {{ _recordKey }}</div>
-                  <div v-else>Record Key: {{ _recordKey }}</div> -->
+                  <div v-else>Record Key: {{ _recordKey }}</div>
 
                   <div class="mb-3">
                     <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
                   </div>
-
-                  <div v-if="deviceRecord?.children_key">Key Type: Group</div>
-                  <div v-else-if="deviceRecord.isReportingKey">Key Type: Reporting</div>
-                  <div v-else-if="deviceRecord.hasParent">Key Type: Child</div>
-                  <div v-else>Key Type: Record</div>
 
                   <section ref= "section" id="priority-notices">
                     <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
