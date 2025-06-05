@@ -80,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row second-row" >
           <div class="dmdmcontainer">
             <img src="/dmdmCropped.png" alt="Logo" class="dmdmimage" />
-            <div>
+            <div id="flexright">
               <h3>Decentralized Medical Device Manufacturing (DMDM)</h3>
               <p class="text" style="font-weight: 400;">Inspired by the need for life-saving tourniquets in Sudan and Gaza,
   the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.
@@ -137,14 +137,22 @@ export default {
 
 .dmdmcontainer {
   display: flex;
-  align-items: stretch;  /* Makes image match text block height */
-  gap: 1rem;
+  flex-direction: row;
+  flex-wrap: wrap;       /* Allows wrapping onto a new line */
+align-items: stretch;
+justify-content: space-around;
 }
 
 .dmdmimage {
-  height: 100%;
-  max-width: 15em;    /* Optional: size constraint */
+  height: auto;
+  max-height: 100%;
+  flex: 0 0 auto;         /* Don’t shrink, don’t grow */
+  max-width: 12em;    /* Optional: size constraint */
   object-fit: contain;
+}
+
+#flexright {
+max-width: 70%;
 }
 
 .text-block {
