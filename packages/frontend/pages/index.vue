@@ -21,8 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid">
-
-        <div class="row" id="first-row">
+        <div class="row odd-stripe" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
                 <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
@@ -42,9 +41,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     </div>
                     <div v-else style="padding-bottom: 20px;"></div>
                 </div>
-
             </div>
-
         </div>
 
 
@@ -57,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                </iframe>
         </div>
 
-        <div class="row" id="third-row" >
+        <div class="row odd-stripe"  >
             <div class="row rowtest">
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
@@ -187,6 +184,10 @@ export default {
         background-size: 50% !important;
         height: auto;
     }
+    .odd-stripe {
+        background-size: 50% !important;
+        height: auto;
+    }
     h1 {
         font-size: 32px !important;
         line-height: 50px !important;
@@ -242,6 +243,10 @@ export default {
     #first-row-col{
         padding: 60px 78px;
     }
+    .odd-stripe {
+        padding: 60px 78px;
+    }
+
     .second-row {
         padding: 70px 100px;
     }
@@ -270,9 +275,9 @@ export default {
   .dark-mode-heading {
     color: #FFFFFF;
   }
-  #first-row {
+  .odd-stripe{
         background-color: #1E2019;
-    }
+  }
 }
 
 /* Dark mode version of second row */
@@ -282,7 +287,9 @@ export default {
     }
     .second-row{
             background-color: #4E3681;
-        }
+    }
+    .odd-stripe{
+    }
 
     h3 {
         color: #FFFFFF;
