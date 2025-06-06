@@ -86,6 +86,18 @@ const route = useRoute()
             </div>
 
         </div>
+       <div class="row" id="tutorials">
+         <h2 style="margin-bottom:25px">Tutorials</h2>
+         <div class="videos">
+           <iframe src="https://player.vimeo.com/video/1083699274?h=ff0b41174c&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                   style="width: 100%; height: 480px;"
+                   frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Tutorial: Creating A Record"></iframe>
+           <div style="width : 100%; height: 2em; background-color: #F1FAFE;"> </div>
+           <iframe src="https://player.vimeo.com/video/1083699286?h=e63a8e8c21&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                   style="width: 100%; height: 480px;"
+                   frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Tutorial: Using A Record"></iframe>
+         </div>
+      </div>
 
         <Learn_more id="learn"></Learn_more>
     </div>
@@ -98,6 +110,24 @@ import Learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <style scoped>
+div {
+  background-color: white;
+}
+#tutorials {
+background-color: #F1FAFE;
+}
+#how-it-works-container.container-fluid {
+  background-color: #F1FAFE;
+}
+
+.videos {
+ background-color: #F1FAFE;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+justify-content: space-around;
+  }
+
 li {
     font-weight: 400;
     text-indent: -20px;
@@ -115,6 +145,8 @@ li {
 #learn {
     margin-top: 20px;
 }
+
+
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
