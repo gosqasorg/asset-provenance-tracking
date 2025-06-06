@@ -86,11 +86,21 @@ const route = useRoute()
             </div>
 
         </div>
+       <div class="row" id="tutorials">
+         <h2 style="margin-bottom:25px">Tutorials</h2>
+         <div class="videos">
+           <iframe src="https://player.vimeo.com/video/1083699274?h=ff0b41174c&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                   style="width: 100%; height: 480px;"
+                   frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Tutorial: Creating A Record"></iframe>
+           <div class="divider"> </div>
+           <iframe src="https://player.vimeo.com/video/1083699286?h=e63a8e8c21&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                   style="width: 100%; height: 480px;"
+                   frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Tutorial: Using A Record"></iframe>
+         </div>
+      </div>
 
         <Learn_more id="learn"></Learn_more>
     </div>
-
-
 </template>
 
 <script lang="ts">
@@ -98,6 +108,13 @@ import Learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <style scoped>
+.videos {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+justify-content: space-around;
+  }
+
 li {
     font-weight: 400;
     text-indent: -20px;
@@ -115,6 +132,8 @@ li {
 #learn {
     margin-top: 20px;
 }
+
+
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -141,9 +160,25 @@ li {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #how-it-works-container {
-        background-color: #1E2019
-    }
+#how-it-works-container {
+  background-color: black;
+}
+div {
+  background-color: black;
+}
+
+
+#tutorials {
+background-color: black;
+}
+
+.videos {
+ background-color: black;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+justify-content: space-around;
+  }
 
     .dark-icon {
         display: inline;
@@ -167,6 +202,29 @@ li {
 
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
+
+div {
+  background-color: white;
+}
+.divider {
+  background-color: #F1FAFE;
+  width : 100%;
+  height: 2em;
+}
+.videos {
+ background-color: #F1FAFE;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+justify-content: space-around;
+  }
+#tutorials {
+background-color: #F1FAFE;
+}
+#how-it-works-container {
+  background-color: #F1FAFE;
+}
+
     #how-it-works-container {
         background-color: #FFFFFF;
     }
