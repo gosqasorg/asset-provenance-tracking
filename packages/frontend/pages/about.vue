@@ -29,28 +29,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 response, open-source hardware, and scientific research
                 communities. We employ open-source tools and principles to centralize
                 user solutions, despite location or resource environment. </p>
-    
+
             <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
                 Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
         </div>
 
+         <div class="row" >
+          <h3>Global Distributed Tracking</h3>
+          <p style="font-weight: 400;">The Global Open Soruce Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
+               <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                       style="width: 100%; height: 480px;"
+                       frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+               </iframe>
+        </div>
+
         <div class="row">
             <h2 id="subtitle">Our Mission: Trust Through Transparency</h2>
-            <p>As an open-source organization, GOSQAS prioritizes transparency in all projects. Because we know that 
-                openness and clarity build trust and promote wide user adoption, our commitment to Trust Through Transparency 
+            <p>As an open-source organization, GOSQAS prioritizes transparency in all projects. Because we know that
+                openness and clarity build trust and promote wide user adoption, our commitment to Trust Through Transparency
                 (TTT) ensures our initiatives are enacted with integrity and accountability.</p>
         </div>
 
         <div class="row">
             <h2 id="subtitle">Our Values</h2>
             <p> <span class="p-text-color" style="font-weight:600">Data Ownership</span> <br>
-                Users maintain full ownership of the data generated within the GOSQAS flagship product, Global Distributed Tracking. 
+                Users maintain full ownership of the data generated within the GOSQAS flagship product, Global Distributed Tracking.
                 We do not have access to any user data, ensuring complete privacy and independent ownership.</p>
             <p> <span class="p-text-color" style="font-weight:600">Simplicity & Accessibility</span> <br>
-                All users, especially laypersons in limited resource environments, have access to GOSQAS projects. 
+                All users, especially laypersons in limited resource environments, have access to GOSQAS projects.
                 We believe that open-source projects should be simple to use and understand.</p>
             <p> <span class="p-text-color" style="font-weight:600">Open Source</span> <br>
-                Our projects are created for the public good and are available either free of charge or at minimal cost, 
+                Our projects are created for the public good and are available either free of charge or at minimal cost,
                 reinforcing our dedication to community benefit and accessibility.</p>
         </div>
 
@@ -118,7 +127,7 @@ export default {
     p {
         color: #FFFFFF;
     }
-  
+
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {

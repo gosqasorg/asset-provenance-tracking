@@ -24,26 +24,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container-fluid" id="donate-container">
         <h1>Support GOSQAS</h1>
         <div class="row">
-            <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) 
-                creates open-source technology to encourage better practices in the diverse humanitarian response, 
+            <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS)
+                creates open-source technology to encourage better practices in the diverse humanitarian response,
                 open-source hardware, and scientific research communities.<br><br>
-                We believe that all communities, regardless of location or resource environment, deserve tools that 
+                We believe that all communities, regardless of location or resource environment, deserve tools that
                 increase accessibility to quality information and products.<br><br>
-                GOSQAS/GDT is a project of Public Invention, a tax-exempt nonprofit organization under section 
-                501(c)(3) in the United States. Contributions by check should be made payable to “Public Invention” 
+            </p>
+        </div>
+
+        <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                       style="width: 100%; height: 540px;"
+                       frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+         </iframe>
+
+
+        <form class="mt-3 mb-3" action="https://www.paypal.com/donate" method="post" target="_top">
+            <input type="hidden" name="hosted_button_id" value="L4XU6TL2UYSA2" />
+            <input type="submit" class="donate-btn" value="Make a Donation on Paypal" />
+        </form>
+        <div class="row">
+          <p>
+          GOSQAS/GDT is a project of Public Invention, a tax-exempt nonprofit organization under section
+                501(c)(3) in the United States. Contributions by check should be made payable to “Public Invention”
                 and include “GOSQAS” in the memo line to designate your support.<br><br>
                 Our EIN is 83-4036254.<br><br>
                 Mailing Address:<br>
                 Public Invention<br>
                 1709 Norris Dr.<br>
                 Address 2<br>
-                Austin, TX, 78704, USA</p>
+        Austin, TX, 78704, USA</p>
         </div>
-        
-        <form class="mt-3 mb-3" action="https://www.paypal.com/donate" method="post" target="_top">
-            <input type="hidden" name="hosted_button_id" value="L4XU6TL2UYSA2" />
-            <input type="submit" class="donate-btn" value="Make a Donation on Paypal" />
-        </form>
     </div>
 </template>
 
