@@ -101,8 +101,6 @@ const route = useRoute()
 
         <Learn_more id="learn"></Learn_more>
     </div>
-
-
 </template>
 
 <script lang="ts">
