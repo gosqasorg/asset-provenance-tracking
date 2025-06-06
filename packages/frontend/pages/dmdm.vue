@@ -66,29 +66,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   justify-content: space-between;
 }
 
-.dmdm-btn {
-    font-size: 18px;
-    font-weight: 400;
-    line-height: 31px;
-
-    /*background-color: #4e3681;
-    border: #4e3681;
-    color: white;*/
-    padding: 10px 20px;
-    border-radius: 10px;
-
-    display: block;
-    width: 100%;
-    white-space: normal;
-}
-
-@media (min-width: 768px) {
-   .dmdm-btn {
-        font-size: 20px;
-        font-weight: 400;
-        line-height: 34px;
-   }
-}
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -115,16 +92,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #dmdm-container {
         background-color: #1E2019
     }
-    h1 {
+    h1,h3 {
         color: #CCECFD;
     }
-    p {
+
+    p,li {
         color: #FFFFFF;
-    }
-    .dmdm-btn {
-        background-color: #CCECFD;
-        border: #CCECFD;
-        color: black;
     }
 }
 /* Light mode version*/
@@ -132,16 +105,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #dmdm-container {
         background-color: #FFFFFF;
     }
-    h1 {
+    h1,h3 {
         color: #4E3681;
     }
-    p {
+    p,li {
         color: #1E2019;
-    }
-    .dmdm-btn {
-        background-color: #4e3681;
-        border: #4e3681;
-        color: white;
     }
 }
 </style>
