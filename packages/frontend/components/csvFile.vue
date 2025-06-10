@@ -40,7 +40,7 @@ export default {
                     const record = provenanceList?.[0]?.record || {};
 
                     const childName = record.deviceName || '';
-                    const childUrl = `https://gosqas.org/history/${childKey}`;
+                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/{childKey}`
 
                     csvRows.push([
                         `"${childName.replace(/"/g, '""')}"`,
