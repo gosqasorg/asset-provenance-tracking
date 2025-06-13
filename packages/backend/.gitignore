@@ -50,3 +50,6 @@ __azurite_db*__.json
 
 # Test coverage
 coverage/
+
+# Ignore tag
+*.ignore
