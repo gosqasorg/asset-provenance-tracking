@@ -24,11 +24,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container-fluid" id="dmdm-container">
         <h1>Making a Difference with DMDM</h1>
         <div class="row">
-            <p style="font-weight: 400; margin-bottom: 30px;" >
-    Manufacturing open source medical hardware at scale, while meeting quality assurance standards,
-    can sometimes be a mysterious process to the outside observer. Through GOSQAS-sponsored
-    pilot program with Decentralized Medical Device Manufacturing (DMDM), this process is
-    becoming more tranparent and accessible.
+            <p style="font-weight: 400;" >
+                Manufacturing open source medical hardware at scale, while meeting quality assurance standards, 
+                can sometimes be a mysterious process to the outside observer. Through the GOSQAS-sponsored 
+                pilot program with Decentralized Medical Device Manufacturing 
+                (<a href="https://dmdm.icu/" class="dmdm-link">DMDM</a>), 
+                this process is becoming more transparent and accessible.
+            </p><br>
+            <p style="font-weight: 400; margin-bottom: 30px;">
+                As a non-profit, FDA-registered cooperative, DMDM is committed to manufacturing trustworthy and 
+                reliable humanitarian aid while honoring democratic operation, flexibility and resilience. 
+                While manufacturing the open source Glia tourniquet for Sudan, Gaza, and Lebanon, DMDM used 
+                Global Distributed Tracking (GDT) as part of their open source Quality Management System (QMS) 
+                and logistics management. Watch our video to learn how the GDT Group Record helps document 
+                their open source process.
             </p>
         </div>
 
@@ -36,12 +45,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <h3>Open Source:</h3>
             <div class="flexcontainer">
 <ul>
-  <li>Design</li>
-  <li>QMS</li>
+    <li>Design</li>
 </ul>
- <ul>
-  <li>Product Testing</li>
-  <li>Logistics Management</li>
+<ul>
+    <li>QMS</li>
+</ul>
+<ul>
+    <li>Product Testing</li>
+</ul>
+<ul>
+    <li>Logistics Management</li>
 </ul>
     </div>
         </div>
@@ -66,6 +79,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   justify-content: space-between;
 }
 
+.dmdm-link {
+    font-weight: 400;
+    overflow-wrap: break-word;
+}
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -85,6 +102,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .row{
         margin-top:32px;
     }
+    .dmdm-link {
+        font-size: 20px;
+    }
 }
 
 /* Dark mode version*/
@@ -99,6 +119,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     p,li {
         color: #FFFFFF;
     }
+    .dmdm-link {
+        color: #CCECFD;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -110,6 +133,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     }
     p,li {
         color: #1E2019;
+    }
+    .dmdm-link {
+        color: #4E3681;
     }
 }
 </style>
