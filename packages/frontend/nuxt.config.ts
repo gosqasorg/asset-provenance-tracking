@@ -26,6 +26,10 @@ export default defineNuxtConfig({
       baseUrl: process.env.BACKEND_URL ?? 'https://gosqasbe.azurewebsites.net/api', 
       frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
       handIconBackground: '/assets/images/hand-icon.png',
+      environment: detectEnvironment(),
+      buildDate: process.env.BUILD_DATE,
+      buildVersion: process.env.BUILD_VERSION,
+      gitCommit: process.env.GIT_COMMIT,
     }
   },
   modules: ['@nuxt/test-utils/module', 'nuxt-snackbar'],
@@ -47,3 +51,28 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
   },
   compatibilityDate: '2024-11-12'
 });
+
+// Environment detection by checking the frontend URL and NODE_ENV
+function detectEnvironment(): string {
+  const frontendUrl = process.env.FRONTEND_URL;
+  const nodeEnv = process.env.NODE_ENV;
+
+  const PRODUCTION_FRONTEND = 'https://blue-stone-05ede120f.5.azurestaticapps.net/';    // Production URL
+  const STAGING_FRONTEND = 'https://red-stone-00f5d251e.5.azurestaticapps.net/';          // Staging URL
+
+  if (frontendUrl === PRODUCTION_FRONTEND) {
+    return 'production';
+  }
+
+  else if (frontendUrl === STAGING_FRONTEND) {
+    return 'staging';
+  }
+  
+  // Check for localhost/development patterns
+  else if (frontendUrl?.includes('localhost')) {
+    return 'development';
+  }
+  
+  // Fall back to NODE_ENV
+  return nodeEnv || 'unknown';
+}
