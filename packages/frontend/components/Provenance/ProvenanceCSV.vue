@@ -29,7 +29,8 @@ export default {
                 }
 
                 // Create CSV header
-                let csvContent = 'Timestamp,Description,Device Name,Tags,Children Names,Children Keys,Attachment File\n';
+                let csvContent = 'Timestamp,Description,Device Name,Tags,Reporting Key,Children Names,Children Keys,Attachment File\n';
+                let hasReportingKey = false;
 
                 for (const provenanceItem of provenanceData) {
                     // Format timestamp in UTC with both local and UTC time
@@ -48,19 +49,30 @@ export default {
                         .join(';');
                     const formattedTags = `[${tags}]`;
 
+
                     //Find Children Names and format them
-                    const children = (provenanceItem.record?.children_name || [])
-                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
+                    let children = (provenanceItem.record?.children_name || [])
+                        .map(tag => `"${tag.replace(/"/g, "''")}"`);
 
-                    const childrenNames = `[${children}]`
+                    // Find Children Keys and format them
+                    let childrenKeys = (provenanceItem.record?.children_key || [])
+                        .map(tag => `"${tag.replace(/"/g, "''")}"`);
+                    
+                    let reportingKey = '';
 
-                    //Find Children Keys and format them
-                    const childrenKeys = (provenanceItem.record?.children_key || [])
-                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
+                    if (children[0] == '""') {
+                        children.shift()
+                        reportingKey = childrenKeys[0];
+                        childrenKeys.shift()
+                        hasReportingKey = true;
+                    }
 
-                    const formattedChildrenKeys = `[${childrenKeys}]`
+                    const childrenNames = `[${children.join(';')}]`
+
+                    const formattedChildrenKeys = `[${childrenKeys.join(';')}]`;
+
+                    const formattedReportingKey = reportingKey;
+
 
                     // Get attachment filename
                     const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -79,7 +91,7 @@ export default {
                         .map(name => `"${name.replace(/"/g, '""')}"`);
 
                     // Concatenate relevant data for csv file
-                    csvContent += `${timestamp},${description},${deviceName},${formattedTags},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
+                csvContent += `${timestamp},${description},${deviceName},${formattedTags},${formattedReportingKey},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
                 }
 
                 // Create and trigger download
