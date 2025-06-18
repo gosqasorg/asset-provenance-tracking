@@ -132,8 +132,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                 </ul>
               </div>
               <section id="recalled">
-                <ProvenanceFeed style="border: 2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey"
-                  :provenance="recalledRecords" />
+                <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
               </section>
               <section id="recent">
                 <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
@@ -228,6 +227,7 @@ export default {
       shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
+      valid: false
     }
   },
   async mounted() {

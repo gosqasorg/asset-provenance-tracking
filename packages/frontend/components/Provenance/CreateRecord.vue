@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="submitRecord">
+    <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="trackingForm">
         <h5>Create New Record Entry</h5>
         <div>
             <input type="text" class="form-control" name="description" id="provenance-description" v-model="description"
@@ -53,9 +53,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
                 </span>
             </div>
-            <!-- <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> Notify all Children?
-        </h5> -->
+            
+            <h5 class="text-iris p-1 mt-3" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
+            </h5>
+            <h5 class="text-iris p-1 mt-0" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
+            </h5>
         </div>
         <div class="d-grid mt-3" id="submit-button">
             <button class="mb-0 record-button" type="submit" style="
@@ -325,8 +329,35 @@ input[type=checkbox] {
     border-radius: 6px;
     width: 100%;
     font-size: 18px;
-
 }
+
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99;
+    background-color: rgba(0, 0, 0, 0.2);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .popup-inner {
+    background: white;
+    padding: 32px 32px 32px 32px;
+    width: 665px;
+    height: auto;
+    border-radius: 20px;
+  }
+
+  .confirmBtn {
+    display: inline-block;
+    width: 48%;
+  }
+
 
 /*  For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -340,6 +371,17 @@ input[type=checkbox] {
 
     form {
         padding: 2px 17px 17px 17px;
+    }
+
+    .popup-inner {
+        width: auto;
+        margin: 0px 20px 0px 20px;
+    }
+    .confirmBtn {
+        width: 100%;
+    }
+    #continueBtn {
+        margin-top: 10px !important;
     }
 }
 
