@@ -55,6 +55,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
         </div>
+
+        <!-- TODO: marker -->
+        <div>
+            <p>Here?</p>
+            <h4 class="p-1 mt-0">
+                <input type="checkbox" class="form-check-input" id="notify-all"/> Feedback <!-- TODO: phrasing -->
+            </h4>
+        </div>
        
         <div class="d-grid">
             <button class="group-button my-4 mb-0" id="group-button" type="submit" style="

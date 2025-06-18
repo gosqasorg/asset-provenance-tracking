@@ -40,6 +40,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
         </div>
+
+        <div class="flex flex row">
+            <h4 class="p-1 mt-0">
+                <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> Feedback <!-- TODO: phrasing -->
+            </h4>
+
+            <div v-if="isChecked">
+                <!-- TODO: API call function -->
+                <input
+                    type="text"
+                    v-model="textInput"
+                    placeholder="Enter contact email"
+                    @keyup.enter=""
+                />
+                <p>User entered: {{ textInput }} </p>
+            </div>
+
+        </div>
  
         <div class="d-grid">
             <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
@@ -58,6 +76,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     </form>
 </template>
+
+<script setup lang="ts">
+const isChecked = ref(false);
+const textInput = ref('');
+// TODO: validate email, look for a package to do this as opposed to diy
+</script>
 
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';
