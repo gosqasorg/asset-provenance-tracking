@@ -210,7 +210,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (this.groupKey != '') {
                 if (validateKey(this.groupKey)) {
                     try {
-                        await addToGroup(this.groupKey, records);
+                        console.log("Adding to group...", this.groupKey);
+                        const groupRecords = await getProvenance(this.groupKey);
+                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.$snackbar.add({

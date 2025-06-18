@@ -14,10 +14,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
+import { hasParent } from '~/utils/descendantList';
 
 const route = useRoute();
 const recordKey = route.params.deviceKey;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
+
+const provenance = await getProvenance(String(recordKey));
+
+const recordHasParent = hasParent(provenance);
 
 </script>
 
@@ -35,9 +40,10 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
               </h1>
             </div>
 
-            <div v-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+            <div v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+            <div v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
             <div v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-            <div v-else-if="deviceRecord.hasParent">Child Record Key: {{ _recordKey }}</div>
+            <div v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
             <div v-else>Record Key: {{ _recordKey }}</div>
 
             <div class="mb-3">
