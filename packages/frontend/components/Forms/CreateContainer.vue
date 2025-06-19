@@ -14,12 +14,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+
         <h4 class="mt-1 mb-3">Create New Group</h4>
+
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description" maxlength="5000">
+
+           
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
+           
            
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
@@ -32,38 +37,49 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
  
- 
+
             <br>
+
+
             <h4 class="p-1 mt-0 mb-0 ">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
- 
  
             <div class="num-fields" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
  
- 
-            <br>
             <h4 class="p-1 mt-0 mb-0 ">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
             </h4>
  
- 
-            <br>
-            <h4 class="p-1 mt-0">
+            <h4 class="p-1 mt-0 mb-0">
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
+
+
+            <!-- Volunteer Feedback Email --> 
+            <h4 class="p-1 mt-0">
+                <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+            </h4>
+    
+            <div v-if="isChecked">
+                <!-- TODO: API call function -->
+                <input
+                    type="text"
+                    class="form-control"
+                    v-model="textInput"
+                    placeholder="Email"
+                    @keyup.enter=""
+                />
+    
+                <!-- TODO: Dev; remove before flight --> 
+                <!--
+                <p>User entered: {{ textInput }} </p>
+                -->
+            </div>
         </div>
 
-        <!-- TODO: marker -->
-        <div>
-            <p>Here?</p>
-            <h4 class="p-1 mt-0">
-                <input type="checkbox" class="form-check-input" id="notify-all"/> Feedback <!-- TODO: phrasing -->
-            </h4>
-        </div>
-       
         <div class="d-grid">
             <button class="group-button my-4 mb-0" id="group-button" type="submit" style="
                   border-width: 2px;
@@ -81,6 +97,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     </form>
  </template>
+
+<script setup lang="ts">
+    const isChecked = ref(false);
+    const textInput = ref('');
+    // TODO: validate email, look for a package to do this as opposed to diy
+</script>
 
 <script lang="ts">
 import { postProvenance } from '~/services/azureFuncs';

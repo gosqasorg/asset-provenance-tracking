@@ -39,28 +39,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
-        </div>
 
-        <div class="flex flex row">
-            <h4 class="p-1 mt-0">
-                <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> Feedback <!-- TODO: phrasing -->
-            </h4>
+            <!-- Volunteer Feedback Email --> 
+            <div class="my-3">
+                <h4>
+                    <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                </h4>
+    
+                <div v-if="isChecked">
+                    <!-- TODO: API call function -->
+                    <input
+                        type="text"
+                        class="form-control"
+                        v-model="textInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+    
+                    <!-- TODO: Dev; remove before flight --> 
+                    <!--
+                    <p>User entered: {{ textInput }} </p>
+                    -->
 
-            <div v-if="isChecked">
-                <!-- TODO: API call function -->
-                <input
-                    type="text"
-                    v-model="textInput"
-                    placeholder="Enter contact email"
-                    @keyup.enter=""
-                />
-                <p>User entered: {{ textInput }} </p>
+                </div>
+
             </div>
-
         </div>
  
         <div class="d-grid">
-            <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -78,9 +85,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script setup lang="ts">
-const isChecked = ref(false);
-const textInput = ref('');
-// TODO: validate email, look for a package to do this as opposed to diy
+    const isChecked = ref(false);
+    const textInput = ref('');
+    // TODO: validate email, look for a package to do this as opposed to diy
 </script>
 
 <script lang="ts">
