@@ -5,7 +5,7 @@ import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 
 const account = process.env.account;
 const key     = process.env.storage_key;
-const table   = process.env.table
+const table   = process.env.table;
 
 const credential = new AzureNamedKeyCredential(account, key);
 const tableClient = new TableClient(
