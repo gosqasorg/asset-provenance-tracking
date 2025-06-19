@@ -4,7 +4,7 @@ export interface VersionInfo {
     buildTime: string;
 }
 export const VERSION_INFO: VersionInfo = {
-  "version": "0.0.3",
-  "gitCommit": "4f5491d",
-  "buildTime": "2025-05-16T18:43:14.324Z"
+  "version": "0.0.4",
+  "gitCommit": "d79e925",
+  "buildTime": "2025-06-19T20:00:49.432Z"
 };

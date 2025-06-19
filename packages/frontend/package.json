@@ -12,7 +12,7 @@
     "coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@azure/static-web-apps-cli": "^1.1.8",
+    "@azure/static-web-apps-cli": "^2.0.6",
     "@nuxt/devtools": "latest",
     "@nuxt/test-utils": "^3.14.2",
     "@types/bootstrap": "^5.2.10",
