@@ -54,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Volunteer Feedback Email --> 
             <h4 class="p-1">
-                <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
             <div v-if="isChecked">
@@ -321,21 +321,10 @@ export default {
         margin-right: auto;
         width: 100%;
         margin-top: 30px;
-
     }
     input[type=number] {
         border: 0px;
         border-radius: 4px;
-    }
-    input[type=checkbox] {
-        width:25px;
-        border: 0px;
-        margin-right: 15px;
-    }
-    .num-fields {
-        border: 0px;
-        border-radius: 4px;
-        border-color:red;
     }
     input[type=text] {
         border:5px;
