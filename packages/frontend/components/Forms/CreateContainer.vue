@@ -33,33 +33,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
  
-            <h4 class="my-3 mb-0" for="children-keys">Number of Grouped Records (optional)
+            <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
  
 
-            <br>
 
 
-            <h4 class="p-1 mt-0 mb-0 ">
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
  
-            <div class="num-fields" id="num-fields" style="display:none" >
-                <label for="input"></label>
-            </div>
- 
-            <h4 class="p-1 mt-0 mb-0 ">
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
             </h4>
  
-            <h4 class="p-1 mt-0 mb-0">
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
 
-
             <!-- Volunteer Feedback Email --> 
-            <h4 class="p-1 mt-0">
+            <h4 class="p-1">
                 <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
@@ -81,12 +75,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="d-grid">
-            <button class="group-button my-4 mb-0" id="group-button" type="submit" style="
+            <button class="group-button p-1 mt-3" id="group-button" type="submit" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
-                  padding: 10px 20px;
-                  margin: 0px;
                   font-size: 20px;
                   font-weight: 400;
                   line-height: 30px;
