@@ -74,11 +74,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
 
-        <div class="d-grid">
-            <button class="group-button p-1 mt-3" id="group-button" type="submit" style="
+        <div class="d-grid mt-3">
+            <button class="group-button" id="group-button" type="submit" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
+                  padding: 10px 20px;
+                  margin: 0px;
                   font-size: 20px;
                   font-weight: 400;
                   line-height: 30px;
