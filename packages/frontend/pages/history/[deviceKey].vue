@@ -42,30 +42,30 @@ const recordHasParent = hasParent(provenance);
             <!-- Scrollspy -->
             <!-- When the screen size is md (>= 768px) and up  -->
             <nav id="jump-to" class="sticky-top text-slate">
-              <p class="menu-spacing">Jump to section</p>
+              <p class="menu-spacing jump-sec">Jump to section</p>
               <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
-                <li id="item" class="py-2" style="border-left: 2px solid #4e3681;" v-for="header in headers" :key="header"
-                    :class="{ active: header.id === currentSection }">
-                  <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+                <li id="item" class="py-2 scroll" v-for="header in headers" :key="header"
+                  :class="{ active: header.id === currentSection }">
+                  <a :href="'#' + header.id" class="py-2 h" id="item-link">{{ header.name }}</a>
                 </li>
               </ul>
             </nav>
           </div>
 
           <!-- When the screen size is less than md (< 768px ) -->
-          <div class="dropdown d-md-none" style="border-bottom: 2px solid #4e3681;">
-            <button class="btn text-left rounded-0" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
-                    aria-controls="toggle" aria-expanded="false"
-                    style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
+          <div class="dropdown d-md-none nav-line">
+            <button class="btn text-left rounded-0 jump-sec" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
+              aria-controls="toggle" aria-expanded="false"
+              style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
               <i id="toggle-right" class="fa fa-angle-right"></i>
               <i id="toggle-down" class="fa fa-angle-down"></i>
               Jump to section
             </button>
 
-            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;
-                                                                background-color:#F1F5F9" aria-labelledby="dropdownMenuButton">
+            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;"
+              aria-labelledby="dropdownMenuButton">
               <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
-                <a :href="'#' + header.id" class="text-slate py-2" id="item-link">{{ header.name }}</a>
+                <a :href="'#' + header.id" class="py-2 h-mobile" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
           </div>
@@ -74,70 +74,79 @@ const recordHasParent = hasParent(provenance);
 
           <div class="col-md-10">
             <!-- Spied element -->
-            <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0" class="left-col" >
+            <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
+              class="left-col">
 
               <section id="device-details" class="details-container">
                 <div class="record-description">
                   <div class="my-4 text-iris fs-1">
-                    <p class="text-bold mb-0">Asset History Records</p>
-                    <h1 class="mt-1 mb-1 text-iris">
+                    <p class="text-bold mb-0 device-name">Asset History Records</p>
+                    <h1 class="mt-1 mb-1">
                       {{ deviceRecord?.deviceName }}
                     </h1>
                   </div>
 
-                  <div v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
-                  <div v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-                  <div v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-                  <div v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
-                  <div v-else>Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
-                  <div class="mb-3">
+                  <div class="mb-3 rec">
                     <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
                   </div>
 
-                  <section ref= "section" id="priority-notices">
-                    <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance"/>
+                  <section ref="section" id="priority-notices">
+                    <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
                   </section>
                 </div>
 
                 <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;"/>
+                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
                 </div>
               </section>
 
               <div class="buttons-container">
-                <button class="btn bg-sky download-btn" @click="downloadQRCode">Download QR Code</button>
+                <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-                <button id="shareRecordBtn" class="btn bg-sky share-btn" data-bs-toggle="collapse" data-bs-target="#share-dropdown" @click="buttonFormat">
+                <button id="shareRecordBtn" class="btn share-btn" data-bs-toggle="collapse"
+                  data-bs-target="#share-dropdown" @click="buttonFormat">
                   Share Record Link
-                  <img v-if="!shareDropdown" src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-                  <img v-else src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                  <picture v-if="!shareDropdown">
+                    <source srcset="../../assets/images/darkmode-dropdown.svg" media="(prefers-color-scheme: dark)">
+                    <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                  </picture>
+                  <picture v-else>
+                    <source srcset="../../assets/images/darkmode-up-dropdown.svg" media="(prefers-color-scheme: dark)">
+                    <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                  </picture>
                 </button>
 
                 <!-- Share dropdown -->
-                <ul id="share-dropdown" class="collapse border-0" style="padding: 5px 20px 15px 20px; background-color:#ccecfd;">
+                <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
                   <li class="dropdown-item" style="padding: 7px">
-                    <a @click="copy()" class="text-slate" id="item-link">Copy</a>
+                    <a @click="copy()" class="drop-text" id="item-link">Copy</a>
                   </li>
                   <li class="dropdown-item" style="padding: 7px">
-                    <a @click="text()" class="text-slate" id="item-link">Messages</a>
+                    <a @click="text()" class="drop-text" id="item-link">Messages</a>
                   </li>
                   <li class="dropdown-item" style="padding: 7px">
-                    <a @click="mail()" class="text-slate" id="item-link">Email</a>
+                    <a @click="mail()" class="drop-text" id="item-link">Email</a>
                   </li>
                   <li class="dropdown-item" style="padding: 7px">
-                    <a @click="whatsApp()" class="text-slate" id="item-link">WhatsApp</a>
+                    <a @click="whatsApp()" class="drop-text" id="item-link">WhatsApp</a>
                   </li>
                   <li class="dropdown-item" style="padding: 7px">
-                    <a @click="telegram()" class="text-slate" id="item-link">Telegram</a>
+                    <a @click="telegram()" class="drop-text" id="item-link">Telegram</a>
                   </li>
                 </ul>
               </div>
               <section id="recalled">
-                <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+                <ProvenanceFeed style="border: 2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey"
+                  :provenance="recalledRecords" />
               </section>
               <section id="recent">
-                <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed"/>
+                <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
               </section>
               <section id="device-creation">
                 <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
@@ -170,26 +179,26 @@ const recordHasParent = hasParent(provenance);
 
         </div>
       </div>
+    </div>
+    <div v-else class="error-container">
+      <h1 class="error-title">Invalid history key</h1>
+      <h2 class="error-subtitle">No record attached to this key</h2>
+      <p class="error-description">
+        We’re sorry, the record you’re looking for could not be found. <br />
+        Please double-check your key. If you keep receiving this error, <br />
+        email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+      </p>
+      <div class="error-buttons">
+        <!-- Go home button -->
+        <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+        <!-- Email us button -->
+        <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
       </div>
-        <div v-else class="error-container">
-          <h1 class="error-title">Invalid history key</h1>
-          <h2 class="error-subtitle">No record attached to this key</h2>
-          <p class="error-description">
-            We’re sorry, the record you’re looking for could not be found. <br />
-            Please double-check your key. If you keep receiving this error, <br />
-            email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-          </p>
-          <div class="error-buttons">
-            <!-- Go home button -->
-            <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-            <!-- Email us button -->
-            <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
-          </div>
-        </div>
-      </div>
-      <div v-else>
-        <p>Loading... please wait.</p>
-      </div>
+    </div>
+  </div>
+  <div v-else>
+    <p>Loading... please wait.</p>
+  </div>
 </template>
 
 <script lang="ts">
@@ -372,11 +381,11 @@ export default {
       // Add child key navigation if there are child keys
       if ((this.childKeys?.length > 0) || this.hasReportingKey) {
         headers = [
-            { id: "device-details", name: "Record details" },
-            { id: "priority-notices", name: "Priority notices" },
-            { id: "recent", name: "Most recent updates" },
-            { id: "device-creation", name: "Record creation" },
-            { id: "create-record", name: "Create new record entry" }
+          { id: "device-details", name: "Record details" },
+          { id: "priority-notices", name: "Priority notices" },
+          { id: "recent", name: "Most recent updates" },
+          { id: "device-creation", name: "Record creation" },
+          { id: "create-record", name: "Create new record entry" }
         ];
         headers.push({ id: "child-keys", name: "Child keys" });
       }
@@ -392,6 +401,7 @@ export default {
   margin-bottom: 15px;
   position: relative;
 }
+
 .qr-code-wrapper {
   background-color: #4e3681;
   /* Purple outline */
@@ -404,15 +414,18 @@ export default {
   margin-left: -40px;
   height: min-content;
 }
+
 .record-description {
   margin-right: 15px;
   max-width: 60%;
 }
+
 .details-container {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
 }
+
 .buttons-container {
   margin-bottom: 20px;
   display: flex;
@@ -442,9 +455,11 @@ export default {
   text-align: center;
   border-radius: 10px;
 }
+
 .dropdown-item:hover {
   background-color: #e6f6ff;
 }
+
 .descr-container {
   word-wrap: break-word !important;
 }
@@ -528,23 +543,23 @@ a:visited {
 }
 
 #jump-to-mobile[aria-expanded="true"] {
- #toggle-down {
+  #toggle-down {
     display: inline-block;
- }
+  }
 
- #toggle-right {
+  #toggle-right {
     display: none;
- }
+  }
 }
 
 #jump-to-mobile[aria-expanded="false"] {
- #toggle-down {
+  #toggle-down {
     display: none;
- }
+  }
 
- #toggle-right {
+  #toggle-right {
     display: inline-block;
- }
+  }
 }
 
 .error-container {
@@ -611,7 +626,7 @@ a:visited {
   /*     margin: 5px;*/
   border-radius: 10px;
   font-family: 'Poppins', sans-serif;
-  font-size: 20pxpx;
+  font-size: 20px;
   font-weight: 400;
   text-align: center;
   cursor: pointer;
@@ -636,7 +651,8 @@ a:visited {
 }
 
 .btn-secondary:hover {
-  background-color: #B3DFF5; /* Slightly darker blue */
+  background-color: #B3DFF5;
+  /* Slightly darker blue */
   color: #1E2019;
 }
 
@@ -653,12 +669,6 @@ a:visited {
   .device-name {
     color: #CCECFD;
   }
-    /* Rob thinks this is NOT taking affect because it is being
-    overridden by utilities, but I don't know how to fix that.
-  .text-slate {
-    color: #FFFFFF;
-  }
-    */
 
   .rec,
   #priority-notices,
