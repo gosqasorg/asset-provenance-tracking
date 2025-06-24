@@ -29,7 +29,7 @@ export default {
                 }
 
                 // Create CSV header
-                let csvContent = 'Timestamp,Description,Device Name,Tags,Reporting Key,Children Names,Children Keys,Attachment File\n';
+                let csvContent = 'Device Name,Timestamp,Description,Tags,Reporting Key,Attachment File\n';
                 let hasReportingKey = false;
 
                 for (const provenanceItem of provenanceData) {
@@ -57,7 +57,7 @@ export default {
                     // Find Children Keys and format them
                     let childrenKeys = (provenanceItem.record?.children_key || [])
                         .map(tag => `"${tag.replace(/"/g, "''")}"`);
-                    
+
                     let reportingKey = '';
 
                     if (children[0] == '""') {
@@ -91,7 +91,7 @@ export default {
                         .map(name => `"${name.replace(/"/g, '""')}"`);
 
                     // Concatenate relevant data for csv file
-                csvContent += `${timestamp},${description},${deviceName},${formattedTags},${formattedReportingKey},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
+                    csvContent += `${this.recordKey},${deviceName},${timestamp},${description},${formattedReportingKey},${formattedTags},${stringifyAttachmentName}\n`;
                 }
 
                 // Create and trigger download
