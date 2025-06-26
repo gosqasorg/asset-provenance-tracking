@@ -29,7 +29,7 @@ export default {
                 }
 
                 // Create CSV header
-                let csvContent = 'Timestamp,Description,Device Name,Tags,Children Names,Children Keys,Attachment File\n';
+                let csvContent = 'Timestamp,Device Name,Device Key,Device Url,Description,Tags,Reporting Key,Attachment File\n';
 
                 for (const provenanceItem of provenanceData) {
                     // Format timestamp in UTC with both local and UTC time
@@ -48,19 +48,8 @@ export default {
                         .join(';');
                     const formattedTags = `[${tags}]`;
 
-                    //Find Children Names and format them
-                    const children = (provenanceItem.record?.children_name || [])
-                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
-
-                    const childrenNames = `[${children}]`
-
-                    //Find Children Keys and format them
-                    const childrenKeys = (provenanceItem.record?.children_key || [])
-                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
-
-                    const formattedChildrenKeys = `[${childrenKeys}]`
+                    //Get reporting key
+                    const reportingKey = provenanceItem.record?.reportingKey?.replace(/"/g, '""') || '';
 
                     // Get attachment filename
                     const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -73,13 +62,16 @@ export default {
                             return attachmentId;
                         }
                     });
-
                     const attachmentName = await Promise.all(attachmentPromises);
                     const stringifyAttachmentName = attachmentName
                         .map(name => `"${name.replace(/"/g, '""')}"`);
+                    
+                    //Stores device url and device key
+                    const deviceUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
+                    const deviceKey = this.recordKey;
 
                     // Concatenate relevant data for csv file
-                    csvContent += `${timestamp},${description},${deviceName},${formattedTags},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
+                    csvContent += `"${timestamp}","${deviceName}","${deviceKey}","${deviceUrl}","${description}","${formattedTags}","${reportingKey}","${stringifyAttachmentName}"\n`;
                 }
 
                 // Create and trigger download
