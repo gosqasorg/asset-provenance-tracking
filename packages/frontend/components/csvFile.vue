@@ -32,10 +32,12 @@ export default {
 
                 // Skip the parent
                 const filteredChildrenKeys = childrenKeys.filter(key =>
-                    key !== this.recordKey && key !== reportingKey
+                    key !== this.recordKey
                 );
 
-                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL']];
+                let isReportingKey = ''; //Flag to check if row is the record key row or not
+
+                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
                 for (const childKey of filteredChildrenKeys) {
 
@@ -43,7 +45,14 @@ export default {
                     const record = provenanceList?.[0]?.record || {};
 
                     const childName = record.deviceName || '';
-                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/${childKey}`
+                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/${childKey}`;
+
+                    if (childKey == reportingKey){
+                        isReportingKey = 'T';
+                    }
+                    else{
+                        isReportingKey = 'F';
+                    }
 
                     csvRows.push([
                         `"${this.recordKey}"`,
@@ -52,7 +61,8 @@ export default {
                         `"${reportingKey}"`,
                         `"${childName.replace(/"/g, '""')}"`,
                         `"${childKey}"`,
-                        `"${childUrl}"`
+                        `"${childUrl}"`,
+                        `"${isReportingKey}"`
                     ]);
                 }
 
