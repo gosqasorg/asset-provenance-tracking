@@ -29,7 +29,7 @@ export default {
                 }
 
                 // Create CSV header
-                let csvContent = 'Timestamp,Device Name,Device Key,Device Url,Description,Tags,Reporting Key,Attachment File\n';
+                let csvContent = 'Timestamp,Device Key,Device Name,Device Url,Description,Tags,Reporting Key,Attachment File\n';
 
                 for (const provenanceItem of provenanceData) {
                     // Format timestamp in UTC with both local and UTC time
@@ -71,7 +71,7 @@ export default {
                     const deviceKey = this.recordKey;
 
                     // Concatenate relevant data for csv file
-                    csvContent += `"${timestamp}","${deviceName}","${deviceKey}","${deviceUrl}","${description}","${formattedTags}","${reportingKey}","${stringifyAttachmentName}"\n`;
+                    csvContent += `"${timestamp}","${deviceKey}","${deviceName}","${deviceUrl}","${description}","${formattedTags}","${reportingKey}","${stringifyAttachmentName}"\n`;
                 }
 
                 // Create and trigger download
