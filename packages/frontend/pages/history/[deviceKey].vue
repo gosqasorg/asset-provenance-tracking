@@ -20,9 +20,14 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
+import { hasParent } from '~/utils/descendantList';
 const route = useRoute()
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
+
+const provenance = await getProvenance(recordKey);
+
+const recordHasParent = hasParent(provenance);
 
 </script>
 
@@ -81,7 +86,12 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                     </h1>
                   </div>
 
-                  <div class="rec">Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else>Record Key: {{ _recordKey }}</div>
+
                   <div class="mb-3 rec">
                     <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
                   </div>
@@ -228,6 +238,7 @@ export default {
       shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
+      valid: false
     }
   },
   async mounted() {
@@ -352,21 +363,6 @@ export default {
         }
       });
 
-      // Decompose the provenance records into parts to be rendered.
-      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
-
-      // Pin recalled records to the top of the feed
-      recalledRecords = [];
-      recordsInFeed = [];
-
-      provenanceNoRecord.forEach(record => {
-        if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
-          recalledRecords.push(record);
-        } else {
-          recordsInFeed.push(record);
-        }
-      });
-
       this.isLoading = false;
 
       // This functionality could be pushed into a component...
@@ -375,23 +371,10 @@ export default {
       // We will remove the reportingKey, because although it is a child,
       // we have already rendered it.
       if (this.hasReportingKey) {
-        const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-        if (index > -1) {
-          deviceRecord.children_key.splice(index, 1);
-        }
-      }
-      this.childKeys = getChildKeys(provenance);
-
-      // This functionality could be pushed into a component...
-      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
-
-      // We will remove the reportingKey, because although it is a child,
-      // we have already rendered it.
-      if (this.hasReportingKey) {
-        const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-        if (index > -1) {
-          deviceRecord.children_key.splice(index, 1);
-        }
+          const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+          if (index > -1) {
+              deviceRecord.children_key.splice(index, 1);
+          }
       }
       this.childKeys = getChildKeys(provenance);
 

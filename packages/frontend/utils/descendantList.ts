@@ -57,7 +57,7 @@ export function deduplicateKeys(keys: string[]): string[] {
 
 export function isGroup(records: any): boolean {
     for (let record of records) {
-        if (Boolean(record.children_key)) {
+        if (Boolean(record.record.children_key)) {
             return true;
         }
     }
@@ -66,7 +66,7 @@ export function isGroup(records: any): boolean {
 
 export function hasParent(records: any): boolean {
     for (let record of records) {
-        if (record.hasParent) {
+        if (record.record.hasParent) {
             return true;
         }
     }
@@ -133,26 +133,39 @@ export async function addChildKeys(record: any, childKeys: string[], attachments
     }
 }
 
-export async function addToGroup(recordKey: string, records: any, attachments?: File[]) {
-    if (records[0].record.hasParent as boolean) {
+export async function addToGroup(childKey: string, groupKey: string, records: any, groupRecords: any, attachments?: File[]) {
+    if (!childKey || !groupKey) {
+        console.log("No child/parent key provided.");
+        throw new Error("No child/parent key provided.");
+    }
+    if (hasParent(records)) {
         throw new Error("This record already belongs to a group.");
     }
-    if (isGroup(records)) {
-        throw new Error("This record is already a group.");
+    if (!isGroup(groupRecords)) {
+        throw new Error("Group key provided is not a group.");
     }
 
     try {
         // records[0].record.hasParent = true;
-        const response = postProvenance(recordKey, {
+
+        // Inform child it has been added to a group
+        const response2 = postProvenance(childKey, {
             blobType: 'deviceRecord',
             description:  "Added to group",
             hasParent: true,
         }, attachments || []);
 
+        // Add child to group
+        const response = postProvenance(groupKey, {
+            blobType: 'deviceRecord',
+            description:  "Child added to group",
+            children_key: [`${childKey}`],
+        }, attachments || []);
+
         // const response = await postProvenance(recordKey, records, []);
         console.log("Updated records: ", response);
     } catch (error) {
-        console.error(`Error updating record ${recordKey}: ${error}`);
+        console.error(`Error updating record ${groupKey}: ${error}`);
     }
 }
 
