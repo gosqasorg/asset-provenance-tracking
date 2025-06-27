@@ -43,9 +43,11 @@ export default {
                     const deviceName = provenanceItem.record?.deviceName?.replace(/"/g, '""') || '';
 
                     // Format tags
+                    console.log("tags = ",provenanceItem.record?.tags);
                     const tags = (provenanceItem.record?.tags || [])
                         .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
+                          .join(';');
+                    console.log("replaced tags = ",tags);
                     const formattedTags = `[${tags}]`;
 
                     //Get reporting key
@@ -65,13 +67,14 @@ export default {
                     const attachmentName = await Promise.all(attachmentPromises);
                     const stringifyAttachmentName = attachmentName
                         .map(name => `"${name.replace(/"/g, '""')}"`);
-                    
+
                     //Stores device url and device key
                     const deviceUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
                     const deviceKey = this.recordKey;
 
                     // Concatenate relevant data for csv file
-                    csvContent += `"${timestamp}","${deviceName}","${deviceKey}","${deviceUrl}","${description}","${formattedTags}","${reportingKey}","${stringifyAttachmentName}"\n`;
+                    // csvContent += `"${timestamp}","${deviceName}","${deviceKey}","${deviceUrl}","${description}","${formattedTags}","${reportingKey}","${stringifyAttachmentName}"\n`;
+                    csvContent += `"${timestamp}","${deviceName}","${deviceKey}","${deviceUrl}","${description}",${formattedTags},"${reportingKey}","${stringifyAttachmentName}"\n`;
                 }
 
                 // Create and trigger download
