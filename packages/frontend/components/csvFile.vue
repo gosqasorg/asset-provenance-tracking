@@ -27,12 +27,17 @@ export default {
                 const reportingRecord = reportingProvenance?.[0]?.record;
                 const reportingKey = reportingRecord?.children_key?.[0] || reportingRecord?.reportingKey || '';
 
+                const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
+                const parentName = reportingRecord.deviceName?.replace(/"/g, '""') || '';
+
                 // Skip the parent
                 const filteredChildrenKeys = childrenKeys.filter(key =>
-                    key !== this.recordKey && key !== reportingKey
+                    key !== this.recordKey
                 );
 
-                const csvRows = [['Child Name', 'Parent Record Key', 'Reporting Key', 'Child Key URL']];
+                let isReportingKey = ''; //Flag to check if row is the record key row or not
+
+                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
                 for (const childKey of filteredChildrenKeys) {
 
@@ -40,13 +45,24 @@ export default {
                     const record = provenanceList?.[0]?.record || {};
 
                     const childName = record.deviceName || '';
-                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/{childKey}`
+                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/${childKey}`;
+
+                    if (childKey == reportingKey){
+                        isReportingKey = 'T';
+                    }
+                    else{
+                        isReportingKey = 'F';
+                    }
 
                     csvRows.push([
-                        `"${childName.replace(/"/g, '""')}"`,
                         `"${this.recordKey}"`,
+                        `"${parentUrl}"`,
+                        `"${parentName}"`,
                         `"${reportingKey}"`,
-                        `"${childUrl}"`
+                        `"${childName.replace(/"/g, '""')}"`,
+                        `"${childKey}"`,
+                        `"${childUrl}"`,
+                        `"${isReportingKey}"`
                     ]);
                 }
 
