@@ -43,35 +43,62 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     v-bind:style="'color: ' + textColorForTag(tag) + '; background-color: ' + getColorForTag(tag) + ';'">
                     {{ tag }}</span>
             </div>
+<div
+  v-for="(attachment, i) in attachmentURLs[index.toString()]"
+  :key="i"
+  class="attachment-wrapper"
+>
+  <img
+    :src="attachment.url"
+    :alt="attachment.fileName"
+    class="thumbnail"
+    data-bs-toggle="modal"
+    :data-bs-target="'#imageModal'+ _uid"
+    @click="openPreview(attachment.url)" 
+  />
 
+  <a
+    :href="attachment.url"
+    :download="attachment.fileName"
+    class="download-link"
+  >
+    Download File
+  </a>
+        </div>      <!-- closes v-for ATTACHMENT wrapper -->
+      </div>        <!-- closes v-for REPORT wrapper -->
+    </div>          <!-- closes the single root wrapper opened at top -->
 
-            <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
-                    data-bs-target="#imageModal" @click="modalImage = attachment.url">
-                <a :href="attachment.url" :download="attachment.fileName" class="download-link">
-                    Download File
-                </a>
-            </div>
-
-
-        </div>
-    </div>
-
-    <!-- Image Preview Modal -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <!-- Image preview modal -->
+    <!--added teleport because it was not showing in the body so teleported it 
+    to the end -->
+    <Teleport to="body">
+      <div class="modal fade" id="'imageModal-' + _uid"  tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <img v-bind:src="modalImage" alt="Image" class="modal-image">
-                </div>
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"></button>
             </div>
-        </div>
-    </div>
 
-</template>
+            <div class="modal-body">
+              <img v-if="modalImage"
+                   :src="modalImage"
+                   alt="preview"
+                   class="modal-image"
+                   style="max-width:100%;
+                          max-height:80vh;
+                          display:block;
+                          margin:auto;" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+</template>     
+
 
 <script>
 import { getAttachment } from '~/services/azureFuncs';
@@ -109,6 +136,14 @@ export default {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
+        //added this method to be able to open preview
+        openPreview (url) {
+    this.modalImage = url;          // reactive src for the modal
+    //Optional debug – see the img’s final src after DOM update
+    //this.$nextTick(() =>
+    //console.log('modal img src ➜',
+     //document.querySelector('#imageModal img')?.src));
+  },
         async fetchAttachmentsForReport(report, index) {
             try {
                 if (report.attachments.length > 0) {
@@ -117,16 +152,23 @@ export default {
                     const attachments = await Promise.all(attachmentPromises);
 
                     // Create object URLs for attachments and include filenames
-                    const urls = attachments.map(attachment => ({
+                    const urls = attachments.map(attachment => {
+
+
+                    return {
                         url: URL.createObjectURL(attachment.blob),
                         fileName: attachment.fileName
-                    }));
+                    };
+                });
+
 
                     this.attachmentURLs[index.toString()] = urls;
                 }
             } catch (error) {
                 console.error('Error occurred during getAttachment request:', error);
             }
+
+
         },
         refreshPage() {
             // set attachmentURLs to empty object to clear out old attachment URLs
@@ -137,6 +179,7 @@ export default {
             this.recalledRecord = (this.disabled ? true : false);
         }
     },
+
 };
 </script>
 
@@ -289,4 +332,36 @@ export default {
         color: black;
     }
 }
+
+/* -------------------------------------------------
+   Zoom-in animation for the Bootstrap modal dialog
+   ------------------------------------------------- */
+
+/* ❶  Keyframes */
+@keyframes zoomInModal {
+  0%   { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+/* ❷  Start slightly smaller while hidden */
+:deep(.modal.fade) .modal-dialog {
+  transform: scale(0.85);
+  transition: transform .25s ease-out;
+}
+
+/* ❸  When Bootstrap adds .show, play the zoom */
+:deep(.modal.fade.show) .modal-dialog {
+  animation: zoomInModal .25s both;
+}
+
+/* -------------------------------------------------
+   Optional: tactile press effect on the thumbnail
+   ------------------------------------------------- */
+.thumbnail {
+  transition: transform .15s ease-in-out;
+}
+.thumbnail:active {
+  transform: scale(0.94);
+}
+
 </style>
