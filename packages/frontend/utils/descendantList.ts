@@ -57,7 +57,7 @@ export function deduplicateKeys(keys: string[]): string[] {
 
 export function isGroup(records: any): boolean {
     for (let record of records) {
-        if (Boolean(record.children_key)) {
+        if (Boolean(record.record.children_key)) {
             return true;
         }
     }
@@ -66,7 +66,7 @@ export function isGroup(records: any): boolean {
 
 export function hasParent(records: any): boolean {
     for (let record of records) {
-        if (record.hasParent) {
+        if (record.record.hasParent) {
             return true;
         }
     }
@@ -91,7 +91,7 @@ export function getFeatures(records: any) {
     return features;
 }
 
-export async function addChildKeys(record: any, childKeys: string[], attachments: File[]) {
+export async function addChildKeys(recordKey: any, record: any, childKeys: string[], attachments: File[]) {
     if (!record) {
         console.log("No record provided.");
         throw new Error("No record provided.");
@@ -101,73 +101,102 @@ export async function addChildKeys(record: any, childKeys: string[], attachments
         throw new Error("No child keys provided.");
     }
 
+    let badRecords: string[] = [];
+
     for (let childKey of deduplicateKeys(childKeys)) {
-        console.log(`Adding child ${childKey} to group.`);
+        console.log(`Adding child ${childKey} to group...`);
         try {
             const records = await getProvenance(childKey);
-            const features = getFeatures(records);
-
             console.log("Records: ", records);
-            console.log("Features: ", features);
 
-            if (features.hasParent) {
-                console.log(`Cannot update child ${childKey} - it already belongs to a group.`);
-                continue;
+            if (childKey == recordKey) {
+                console.log(`Child record is same as group record.`);
+                throw new Error(`Child record is same as group record.`);
             }
 
-            if (features.isGroup) {
-                console.log(`Cannot update child ${childKey} - it already is a group`);
-                continue;
-            }
+            if (hasParent(records)) {
+                console.log(`Child record ${childKey} could not be added.`);
+                badRecords.push(childKey);
+            } else {
+                const response = await postProvenance(childKey, {
+                    blobType: 'deviceRecord',
+                    description:  "Added to group",
+                    hasParent: true,
+                }, []);
 
-            const response = await postProvenance(childKey, {
-                blobType: 'deviceRecord',
-                description:  "Added to group",
-                hasParent: true,
-            }, []);
-            console.log("Updated records: ", response);
+                console.log("Updated records: ", response);
+            }
         }
         catch (error) {
             console.error(`Error updating child record ${childKey}: ${error}`);
+            throw new Error(`${error}`);
         }
+    }
+
+    if (badRecords.length != 0) {
+        throw new Error(`${badRecords}`);
     }
 }
 
-export async function addToGroup(recordKey: string, records: any, attachments?: File[]) {
-    if (records[0].record.hasParent as boolean) {
+export async function addToGroup(childKey: string, groupKey: string, records: any, attachments?: File[]) {
+    if (!childKey || !groupKey) {
+        console.log("No child/parent key provided.");
+        throw new Error("No child/parent key provided.");
+    }
+    if (hasParent(records)) {
         throw new Error("This record already belongs to a group.");
     }
-    if (isGroup(records)) {
-        throw new Error("This record is already a group.");
+    let groupRecords = await getProvenance(groupKey);
+    if (!isGroup(groupRecords)) {
+        throw new Error("Group key provided is not a group.");
     }
 
     try {
         // records[0].record.hasParent = true;
-        const response = postProvenance(recordKey, {
+
+        // Inform child it has been added to a group
+        const response2 = postProvenance(childKey, {
             blobType: 'deviceRecord',
             description:  "Added to group",
             hasParent: true,
         }, attachments || []);
 
+        // Add child to group
+        const response = postProvenance(groupKey, {
+            blobType: 'deviceRecord',
+            description:  "Child added to group",
+            children_key: [`${childKey}`],
+        }, attachments || []);
+
         // const response = await postProvenance(recordKey, records, []);
         console.log("Updated records: ", response);
     } catch (error) {
-        console.error(`Error updating record ${recordKey}: ${error}`);
+        console.error(`Error updating record ${groupKey}: ${error}`);
     }
 }
 
-// Annotate: Send new record entry to all children
-export async function notifyChildren(records: any, tags: string[], attachments?: File[]) {
+// Annotate: Send new record's tags to all children
+export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
     try {
         if (tags.includes(InternalTagName.Annotate)) {
-            if (records[0].isReportingKey) {
-                // Reporting keys do not have the ability to recall
-                console.log("Cannot notify children with the 'annotate' tag. This is a reporting key.");
-            } else {
-                const uniqueChildKeys = deduplicateKeys(getChildKeys(records));
- 
+            let records = await getProvenance(recordKey);
+            let keysToCheck = deduplicateKeys(getChildKeys(records));
 
-                for (const key of uniqueChildKeys) {
+            // Send annotated record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let keyProvenance = await getProvenance(key);
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
+                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
+
+                    if (uniqueChildKeys.includes(recordKey)) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(recordKey), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
                     postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: "Annotated by admin",
@@ -175,26 +204,39 @@ export async function notifyChildren(records: any, tags: string[], attachments?:
                         tags: tags,
                     }, attachments || [])
                 }
-                console.log("Finished updating children with 'annotate' tag.");
+
+                keysToCheck.shift();
             }
+
+            console.log("Finished updating children with 'annotate' tag.");
         }
     } catch (error) {
         console.error(`Error annotating children: ${error}`);
     }
  }
  
- // Recall: Pin new record entry
- export async function recallChildren(records: any, tags: string[], description: string, attachments?: File[]) {
+ // Recall: Pin and send new record entry to all children
+ export async function recallChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
     try {
         if (tags.includes(InternalTagName.Recall)) {
-            if (records[0].isReportingKey) {
-                // Reporting keys do not have the ability to recall
-                console.log("Cannot notify children with the 'recall' tag. This is a reporting key.");
-            } else {
-                const uniqueChildKeys = deduplicateKeys(getChildKeys(records));
- 
- 
-                for (const key of uniqueChildKeys) {
+            let records = await getProvenance(recordKey);
+            let keysToCheck = deduplicateKeys(getChildKeys(records));
+
+            // Send recalled record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let keyProvenance = await getProvenance(key);
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
+
+                    if (uniqueChildKeys.includes(recordKey)) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(recordKey), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
                     postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: description,
@@ -202,8 +244,11 @@ export async function notifyChildren(records: any, tags: string[], attachments?:
                         tags: tags,
                     }, attachments || [])
                 }
-                console.log("Finished updating children with 'recall' tag.");
+
+                keysToCheck.shift();
             }
+
+            console.log("Finished updating children with 'recall' tag.");
         }
     } catch (error) {
         console.error(`Error notifying children: ${error}`);

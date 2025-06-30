@@ -352,35 +352,7 @@ export default {
         }
       });
 
-      // Decompose the provenance records into parts to be rendered.
-      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
-
-      // Pin recalled records to the top of the feed
-      recalledRecords = [];
-      recordsInFeed = [];
-
-      provenanceNoRecord.forEach(record => {
-        if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
-          recalledRecords.push(record);
-        } else {
-          recordsInFeed.push(record);
-        }
-      });
-
       this.isLoading = false;
-
-      // This functionality could be pushed into a component...
-      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
-
-      // We will remove the reportingKey, because although it is a child,
-      // we have already rendered it.
-      if (this.hasReportingKey) {
-        const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-        if (index > -1) {
-          deviceRecord.children_key.splice(index, 1);
-        }
-      }
-      this.childKeys = getChildKeys(provenance);
 
       // This functionality could be pushed into a component...
       this.hasReportingKey = (deviceRecord.reportingKey ? true : false);

@@ -214,7 +214,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (this.groupKey != '') {
                 if (validateKey(this.groupKey)) {
                     try {
-                        await addToGroup(this.groupKey, records);
+                        await addToGroup(this.recordKey, this.groupKey, records);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.$snackbar.add({
@@ -246,8 +246,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     }
 
                     if (this.newChildKeys.length > 0) {
-                        console.log("Adding child keys...", this.newChildKeys);
-                        await addChildKeys(records, this.newChildKeys, []);
+                        await addChildKeys(this.recordKey, records, this.newChildKeys, []);
                     } else {
                         this.$snackbar.add({
                             type: 'warning',
@@ -255,21 +254,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         });
                     }
                 }
-            } catch (error) {
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error adding child keys: ${error}`
-                });
+            } catch (error: any) {
+                const badKeys = error.message.split(",");
+                
+                if (error.message.split(" ").length > badKeys.length) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `${error.message}`
+                    });
+                } else {
+                    this.newChildKeys = this.newChildKeys.filter(key => !badKeys.includes(key));
+
+                    for (const key of badKeys) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Child record ${key} already belongs to a group.`
+                        });
+                    }
+                }
             }
 
             if (this.recallAll) {
-                // Recall children (update their records w/ tags AND description), move to top of record
                 this.tags.push("recall");
-                recallChildren(records, this.tags, this.description);
             } else if (this.annotateAll) {
-                // Annotate children (update their records w/ tags)
                 this.tags.push("annotate");
-                notifyChildren(records, this.tags);
             }
 
             // Append the record to the records.
@@ -282,6 +290,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 };
 
                 await postProvenance(this.recordKey, record, this.pictures || []);
+
+                if (this.recallAll) {
+                    recallChildren(this.recordKey, this.tags, this.description);
+                } else if (this.annotateAll) {
+                    notifyChildren(this.recordKey, this.tags);
+                }
 
                 // Refresh CreateRecord component
                 this.refresh();
