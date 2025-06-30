@@ -14,10 +14,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
+import { hasParent } from '~/utils/descendantList';
 
 const route = useRoute();
 const recordKey = route.params.deviceKey;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
+
+const provenance = await getProvenance(String(recordKey));
+
+const recordHasParent = hasParent(provenance);
 
 </script>
 
@@ -35,12 +40,16 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
                             </h1>
                         </div>
 
-                        <div class="h5">Record Key: {{ route.params.deviceKey }}</div>
-                        <div class="mb-3" id="desc">
-                            <span style="word-wrap: break-word;"
-                                v-html="clickableLink(deviceRecord?.description)"></span>
-                        </div>
-                    </div>
+            <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+            <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+            <div class="h5" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+            <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+            <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
+
+            <div class="mb-3">
+              <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
+            </div>
+          </div>
 
                     <div class="qr-code-wrapper">
                         <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />

@@ -62,35 +62,50 @@ const route = useRoute()
             <h2 style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
                 <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
-                <img src="../assets/images/darkmode-cross.png" style="height:50px; margin-bottom:20px"
+                <img src="../assets/images/darkmode-cross.svg" style="height:50px; margin-bottom:20px"
                     class="dark-icon">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/upload-icon.png" style="height:40px; margin-bottom:30px" class="light-icon">
-                <img src="../assets/images/darkmode-upload.png" style="height:40px; margin-bottom:30px"
+                <img src="../assets/images/upload-icon.svg" style="height:40px; margin-bottom:30px" class="light-icon">
+                <img src="../assets/images/darkmode-upload.svg" style="height:40px; margin-bottom:30px"
                     class="dark-icon">
                 <p>2. Testing agency uploads documentation</p>
             </div>
             <div class="col text-center" id="overview-cols">
                 <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
-                <img src="../assets/images/darkmode-check.png" style="height:50px; margin-bottom:20px"
+                <img src="../assets/images/darkmode-check.svg" style="height:50px; margin-bottom:20px"
                     class="dark-icon">
                 <p>3. Distributor views information within GDT and verifies product</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/gosqas-icon.png" style="height:55px; margin-bottom:15px" class="light-icon">
-                <img src="../assets/images/darkmode-gosqas.png" style="height:55px; margin-bottom:15px"
-                    class="dark-icon">
+                <img src="../assets/images/gosqas-icon.svg" style="height:105px; margin-bottom:0px; margin-top: -35px;"
+                    class="light-icon">
+                <img src="../assets/images/darkmode-gosqas.svg"
+                    style="height:40px; margin-bottom:20px; margin-top: 10px;" class="dark-icon">
                 <p>4. Medical staff received verified product and records shipment receipt in GDT</p>
             </div>
 
         </div>
+        <div class="row" id="tutorials">
+            <h2 style="margin-bottom:25px">Tutorials</h2>
+            <div class="videos">
+                <iframe
+                    src="https://player.vimeo.com/video/1083699274?h=ff0b41174c&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; height: 480px;" frameborder="0"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                    title="Tutorial: Creating A Record"></iframe>
+                <div class="divider"> </div>
+                <iframe
+                    src="https://player.vimeo.com/video/1083699286?h=e63a8e8c21&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; height: 480px;" frameborder="0"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                    title="Tutorial: Using A Record"></iframe>
+            </div>
+        </div>
 
         <Learn_more id="learn"></Learn_more>
     </div>
-
-
 </template>
 
 <script lang="ts">
@@ -98,6 +113,13 @@ import Learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <style scoped>
+.videos {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-around;
+}
+
 li {
     font-weight: 400;
     text-indent: -20px;
@@ -115,6 +137,8 @@ li {
 #learn {
     margin-top: 20px;
 }
+
+
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -142,7 +166,24 @@ li {
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #how-it-works-container {
-        background-color: #1E2019
+        background-color: #1E2019;
+    }
+
+    div {
+        background-color: #1E2019;
+    }
+
+
+    #tutorials {
+        background-color: #1E2019;
+    }
+
+    .videos {
+        background-color: #1E2019;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: space-around;
     }
 
     .dark-icon {
@@ -167,6 +208,33 @@ li {
 
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
+
+    div {
+        background-color: white;
+    }
+
+    .divider {
+        background-color: #F1FAFE;
+        width: 100%;
+        height: 2em;
+    }
+
+    .videos {
+        background-color: #F1FAFE;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: space-around;
+    }
+
+    #tutorials {
+        background-color: #F1FAFE;
+    }
+
+    #how-it-works-container {
+        background-color: #F1FAFE;
+    }
+
     #how-it-works-container {
         background-color: #FFFFFF;
     }
