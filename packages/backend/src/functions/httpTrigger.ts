@@ -236,7 +236,7 @@ const baseUrl = accountName === "devstoreaccount1"
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
-async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -261,7 +261,7 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
     return { jsonBody: records };
 }
 
-async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
+export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
@@ -277,7 +277,7 @@ async function getDecryptedBlob(request: HttpRequest, context: InvocationContext
     return await decryptBlob(blobClient, deviceKey);
 }
 
-async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
 
@@ -293,7 +293,7 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     return { body: data, headers };
 };
 
-async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
 
@@ -337,7 +337,7 @@ function findDeviceIdFromName(blobName: string): string {
     return blobName.split("/", 4)[1];
 }
 
-async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
@@ -426,8 +426,4 @@ app.get("getVersion", {
     route: 'version',
     handler: getVersion
 })
-
-
-
-
 
