@@ -1,8 +1,13 @@
 import { File } from 'node:buffer';
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, lstat } from 'node:fs/promises'
 import { join, extname} from 'node:path'
 import { lookup as mimeLookup} from 'mime-types'
 import { Command } from 'commander';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const localBaseUrl = "http://localhost:7071/api"
 const cloudBaseUrl = "https://gosqasbe.azurewebsites.net/api"
@@ -109,10 +114,13 @@ program.parse(process.argv);
 async function getTestImages(): Promise<readonly File[]> {
     const images = new Array<File>();
     for (const fileName of await readdir(__dirname)) {
+        const filePath = join(__dirname, fileName);
+        const stat = await lstat(filePath);
+        if (!stat.isFile()) continue; // Skip if not a file
         const ext = extname(fileName);
         if (ext === ".ts") continue;
         const type = mimeLookup(ext) || 'application/octet-stream';
-        const buffer = await readFile(join(__dirname, fileName));
+        const buffer = await readFile(filePath);
         const file = new File([buffer], fileName, { type });
         images.push(file)
     }
