@@ -408,9 +408,14 @@ export async function postEmail(request: HttpRequent, context: InvocationContext
         const credential = new AzureNamedKeyCredential(account, key);
         const tableClient = new TableClient(tableUrl, table, credential)
 
+        const formData = await request.formData();
+        let email; if (typeof (email = formData.get('email')) !== 'string') { 
+            throw new Error('postEmail: Unexpected non-string value received')
+        }
+
         const entity = {
             partitionKey: 'UserFeedbackVolunteers',
-            rowKey: request.params.email,
+            rowKey: email,
         }
 
         tableClient.createEntity(entity);
