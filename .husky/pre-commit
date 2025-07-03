@@ -1,4 +1,4 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npx lint-staged
+/c/Program\ Files/nodejs/node.exe node_modules/lint-staged/lib/index.js
