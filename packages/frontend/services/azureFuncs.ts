@@ -110,20 +110,3 @@ export async function getStatistics() {
     });
     return await response.json() as { record: string, timestamp: number }[];
 }
-
-
-/* Note: left off here */
-export async function postFeedbackEmail(userEmail: string) {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const formData = new FormData();
-    formData.append("userEmail", JSON.stringify(userEmail));
-    
-    const response = await fetch(`${baseUrl}/userFeedbackEmail`, {
-        method: "POST",
-        body: formData,
-    });
-
-    if (response.status !== 200) {
-        throw new Error(`Failed to post user email`);
-    }
-}
