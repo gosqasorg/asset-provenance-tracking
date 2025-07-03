@@ -5,6 +5,7 @@ import bs58 from 'bs58';
 import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
+import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -391,8 +392,7 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
-import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-export async function postEmail(request: HttpRequent, context: InvocationContext): Promise<HttpResponseInit> {
+export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         let account, key;
         if(isEmpty(account = process.env['AZURE_STORAGE_ACCOUNT_NAME'])) {
@@ -402,15 +402,17 @@ export async function postEmail(request: HttpRequent, context: InvocationContext
         }
 
         const tableUrl = accountName === "devstoreaccount1"
-            ? `http://127.0.0.1:10000/devstoreaccount1`
+            ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
         let table = 'UserFeedbackEmails'
         const credential = new AzureNamedKeyCredential(account, key);
-        const tableClient = new TableClient(tableUrl, table, credential)
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
 
         const formData = await request.formData();
-        let email; if (typeof (email = formData.get('email')) !== 'string') { 
+        let email; if (typeof (email = formData.get('email')) !== 'string') {
             throw new Error('postEmail: Unexpected non-string value received')
+            return { status: 404 };
         }
 
         const entity = {
@@ -418,9 +420,15 @@ export async function postEmail(request: HttpRequent, context: InvocationContext
             rowKey: email,
         }
 
-        tableClient.createEntity(entity);
+        const response = await tableClient.createEntity(entity);
+        console.log(response)
 
         console.log('postEmail: Added feedback volunteer contact info')
+        return {
+            status: 200,
+            body: "Created",
+            headers: { "Content-Type": "text/plain" }
+        }
     } catch(error) {
         console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
     }

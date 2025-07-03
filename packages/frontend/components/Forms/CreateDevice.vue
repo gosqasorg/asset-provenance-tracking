@@ -84,14 +84,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </form>
 </template>
 
-<script setup lang="ts">
-    const isChecked = ref(false);
-    const textInput = ref('');
-    // TODO: validate email, look for a package to do this as opposed to diy
-</script>
 
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -106,7 +101,9 @@ export default {
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
-            isSubmitting: false  // bool to check that form is submitted
+            isSubmitting: false,  // bool to check that form is submitted
+            isChecked: false,
+            textInput: '',
         }
     },
     computed: {
@@ -144,7 +141,11 @@ export default {
                     hasParent: false,
                     isReportingKey: false,
                 }, this.pictures || []);
-                
+
+                if (response && this.isChecked && this.textInput) {
+                    await postEmail(this.textInput);
+                }
+
                 this.$snackbar.add({
                     type: 'success',
                     text: 'Successfully created the record'
