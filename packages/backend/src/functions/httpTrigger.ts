@@ -227,6 +227,7 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
+console.log(process.env)
 const accountName = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_NAME"]) ? "devstoreaccount1" : process.env["AZURE_STORAGE_ACCOUNT_NAME"];
 const accountKey = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_KEY"]) ? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==" : process.env["AZURE_STORAGE_ACCOUNT_KEY"];
 const baseUrl = accountName === "devstoreaccount1"
@@ -384,6 +385,42 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
         headers: { "Content-Type": "application/json" }
     };
 }
+
+import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
+export async function postEmail(request: HttpRequent, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        let account, key;
+        if(isEmpty(account = process.env['AZURE_STORAGE_ACCOUNT_NAME'])) {
+            throw new Error('Table Insert: Env vars not set')
+        } else if(isEmpty(key = process.env['AZURE_TABLE_ACCOUNT_KEY'])) {
+            throw new Error('Table Insert: Env vars not set')
+        }
+
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10000/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+        let table = 'UserFeedbackEmails'
+        const credential = new AzureNamedKeyCredential(account, key);
+        const tableClient = new TableClient(tableUrl, table, credential)
+
+        const entity = {
+            partitionKey: 'UserFeedbackVolunteers',
+            rowKey: request.params.email,
+        }
+
+        tableClient.createEntity(entity);
+
+        console.log('postEmail: Added feedback volunteer contact info')
+    } catch(error) {
+        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+    }
+}
+
+app.post('postEmail', {
+    authLevel: 'anonymous',
+    route: 'feedbackVolunteer',
+    handler: postEmail,
+})
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
