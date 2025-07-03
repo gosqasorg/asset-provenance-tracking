@@ -92,14 +92,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </form>
  </template>
 
-<script setup lang="ts">
-    const isChecked = ref(false);
-    const textInput = ref('');
-    // TODO: validate email, look for a package to do this as opposed to diy
-</script>
-
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -115,6 +109,8 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            isChecked: false,
+            textInput: '',
         }
     },
     methods: {
@@ -189,7 +185,7 @@ export default {
                 let tag_set = (this.tags).concat(['reportingkey']);
 
                 try {
-                    await postProvenance(reportingKey, {
+                    const response = await postProvenance(reportingKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
                         // Is this a proper description? Should it say "reporting key" or something?
@@ -256,7 +252,7 @@ export default {
                 }
             };
             try {
-                await postProvenance(deviceKey, {
+                const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -272,6 +268,10 @@ export default {
                     type: 'success',
                     text: 'Successfully created the group'
                 })
+
+                if (response && this.isChecked && this.textInput) {
+                        await postEmail(this.textInput);
+                }
 
                 // Navigate to the new group page
                 const failure = await this.$router.push({ path: `/record/${deviceKey}` });
