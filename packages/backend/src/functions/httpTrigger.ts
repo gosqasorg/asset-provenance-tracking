@@ -227,9 +227,14 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
-console.log(process.env)
-const accountName = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_NAME"]) ? "devstoreaccount1" : process.env["AZURE_STORAGE_ACCOUNT_NAME"];
-const accountKey = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_KEY"]) ? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==" : process.env["AZURE_STORAGE_ACCOUNT_KEY"];
+
+let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
+    throw new Error('Env vars not set')
+}
+let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"])) {
+    throw new Error('Env vars not set')
+} 
+
 const baseUrl = accountName === "devstoreaccount1"
     ? `http://127.0.0.1:10000/devstoreaccount1`
     : `https://${accountName}.blob.core.windows.net`;
