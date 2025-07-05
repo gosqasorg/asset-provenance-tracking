@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid">
-        <div class="row odd-stripe" id="first-row">
+        <div class="row odd-stripe" id="first-row" :style="{ backgroundImage: `url(${backgroundUrl})` }">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
                 <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
@@ -124,13 +124,26 @@ const second_row = [
     { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."}
 ];
 
+const runtimeConfig = useRuntimeConfig();
+
 export default {
     data() {
-    return {
-    trackDivVisible: false
-    }
+        return {
+            trackDivVisible: false,
+            backgroundUrl: window.matchMedia("(prefers-color-scheme: dark)").matches ? runtimeConfig.public.handIconBackgroundDark : runtimeConfig.public.handIconBackground,
+        }
+    },
+    mounted() {
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        mediaQuery.addEventListener("change", this.updateBackgroundUrl);
+    },
+    methods: {
+        updateBackgroundUrl() {
+            this.backgroundUrl = window.matchMedia("(prefers-color-scheme: dark)").matches ? runtimeConfig.public.handIconBackgroundDark : runtimeConfig.public.handIconBackground;
+        }
     }
 }
+
 </script>
 
 
@@ -140,8 +153,8 @@ export default {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;       /* Allows wrapping onto a new line */
-align-items: stretch;
-justify-content: space-around;
+  align-items: stretch;
+  justify-content: space-around;
 }
 
 .dmdmimage {
@@ -298,7 +311,9 @@ max-width: 70%;
 /* Dark mode version of second row */
 @media (prefers-color-scheme: dark) {
     #first-row {
-        background-image: url(../assets/images/darkmode-hand.png);
+        /* TODO: implement new background image? */
+        /* background-image: url(../assets/images/darkmode-hand.png); */
+        /* background-image: handIconBackgroundDark; */
     }
     .second-row{
             background-color: #4E3681;
@@ -332,7 +347,8 @@ max-width: 70%;
 /* Light mode version of second row */
 @media (prefers-color-scheme: light) {
     #first-row {
-        background-image: url(../assets/images/hand-icon.png);
+        /* background-image: url(../assets/images/hand-icon.png); */
+        /* background-image: handIconBackground; */
     }
     .second-row {
             background-color: #E6F6FF;
