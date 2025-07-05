@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script setup lang="ts">
 const route = useRoute()
-const a = 6 // semicolon
+const a = 5 // semicolon
 const msg = "hello"; // single quote
 const obj = {
   name: 'John',
