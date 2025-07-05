@@ -56,7 +56,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row odd-stripe"  >
             <div class="row rowtest">
-                <!-- TODO: fix colors in dark mode, make sure dark mode matches FIGMA -->
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
                     <p style="font-weight: 400;">{{ item.descr }}</p>
@@ -310,11 +309,6 @@ max-width: 70%;
 
 /* Dark mode version of second row */
 @media (prefers-color-scheme: dark) {
-    #first-row {
-        /* TODO: implement new background image? */
-        /* background-image: url(../assets/images/darkmode-hand.png); */
-        /* background-image: handIconBackgroundDark; */
-    }
     .second-row{
             background-color: #4E3681;
     }
@@ -346,10 +340,6 @@ max-width: 70%;
 }
 /* Light mode version of second row */
 @media (prefers-color-scheme: light) {
-    #first-row {
-        /* background-image: url(../assets/images/hand-icon.png); */
-        /* background-image: handIconBackground; */
-    }
     .second-row {
             background-color: #E6F6FF;
         }
