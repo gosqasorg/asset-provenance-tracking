@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 const route = useRoute();
 const num = 5;
 const str = 'hello';
+const obj = 'cucumber';
 </script>
 
 <template>
