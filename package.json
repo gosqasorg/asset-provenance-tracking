@@ -18,7 +18,8 @@
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
     "@azure/core-rest-pipeline": "^1.17.0",
-    "@azure/core-util": "^1.10.0"
+    "@azure/core-util": "^1.10.0",
+    "debug": "^4.3.4"
   },
   "devDependencies": {
     "husky": "^9.1.7",
