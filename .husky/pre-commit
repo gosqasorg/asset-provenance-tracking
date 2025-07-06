@@ -1,4 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-/c/Program\ Files/nodejs/node.exe node_modules/lint-staged/lib/index.js
+export PATH="/c/Program Files/nodejs:$PATH"
+npx lint-staged
