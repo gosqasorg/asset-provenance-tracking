@@ -16,14 +16,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script setup lang="ts">
 const route = useRoute();
-const num = 5 // semicolon
-const testing = "what are you doin"; // single quote
+const num = 5; // semicolon
+const testing = 'what are you doin'; // single quote
 const obj = {
-  name: 'Marissa',
-  age: 30, // trailing comma
+  name: 'Jessica',
+  age: 30 // trailing comma
 };
-console.log("lets hope it finally works")
-console.log("I forgot something")
+console.log('okay lets try now');
+console.log('we got this');
 </script>
 
 <template>
