@@ -13,10 +13,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
-    <div v-if="isLoading" class="text-center mb-5 mt-5">
-        Creating records...
-    </div>
-    <form v-else enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form v-if="!isLoading" enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Group</h4>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
@@ -75,6 +72,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </button>
         </div>
     </form>
+    <div v-else class="text-center mb-5 mt-5">
+        Creating records...
+    </div>
  </template>
 
 <script lang="ts">

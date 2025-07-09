@@ -21,11 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <div v-if="isLoading" class="text-center mb-5 mt-5">
-        Creating records...
-    </div>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form v-else enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form v-if="!isLoading" enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
  
         <div>
@@ -60,6 +57,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </button>
         </div>
     </form>
+    <div v-else class="text-center mb-5 mt-5">
+        Creating record...
+    </div>
 </template>
 
 <script lang="ts">
