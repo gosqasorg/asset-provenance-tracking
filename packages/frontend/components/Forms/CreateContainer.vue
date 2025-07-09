@@ -13,7 +13,10 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
-    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <div v-if="isLoading" class="text-center mb-5 mt-5">
+        Creating records...
+    </div>
+    <form v-else enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Group</h4>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
@@ -91,6 +94,7 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            isLoading: false,
         }
     },
     methods: {
@@ -156,52 +160,39 @@ export default {
             const childrenDeviceName = [];
             let reportingKey;
 
+            // Get all elements from the DOM
             if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
                 this.tags = (this.tags).concat(['notify_all'])
             } 
+            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes")).checked;
 
-            if (hasReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+            let custom_child_names = [];
+            if (numChildren) {
+                for (let i = 0; i < Number(numChildren); i++) {
+                    if (customize_yes) {
+                        // user has selected to customize names. use the inputted names.
+                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
+                        custom_child_names.push(childName);
+                    } else {
+                        // user not customizing names. use default.                        
+                        childName = this.name + " #" + String(i + 1);
+                    }
+                }
+            };
 
-                try {
-                    await postProvenance(reportingKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
-                        tags: tag_set,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
-                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: 'Successfully created reporting key'
-                    })
-                } catch (error) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
-                };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
-            }
+            // Then change to the loading screen
+            this.isLoading = true;
+            window.scrollTo(0, 0);
 
             if (numChildren) {
-                const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
                 var childName;
 
                 for (let i = 0; i < Number(numChildren); i++) {
                     const childKey =  await makeEncodedDeviceKey();
 
-                    if (customize_yes.checked) {
-                        // user has selected to customize names. use the inputted names.
-                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
-                    } else {
-                        // user not customizing names. use default.                        
+                    if (customize_yes) {
+                        childName = custom_child_names[i];
+                    } else {                      
                         childName = this.name + " #" + String(i + 1);
                     }
 
@@ -263,6 +254,36 @@ export default {
                     type: 'error',
                     text: `Error creating the group: ${error}`
                 })
+            }
+
+            if (hasReportingKey) {
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
+
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
+                    })
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
+                childrenDeviceList.push(reportingKey);
+                childrenDeviceName.push(name);
             }
         },
     }
@@ -331,6 +352,10 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
+    #group-button:active {
+        background-color: #E6F6FF;
+        border-color: #E6F6FF;
+    }
     input[type="file"]::file-selector-button {
         background-color: #CCECFD;  
         color: black;
@@ -348,6 +373,10 @@ export default {
         background-color: #4E3681;
         color: white;
         border-color: #4E3681;
+    }
+    #group-button:active {
+        background-color: #322253;
+        border-color: #322253;
     }
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  

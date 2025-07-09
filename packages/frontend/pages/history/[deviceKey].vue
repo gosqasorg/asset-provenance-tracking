@@ -197,7 +197,7 @@ const recordHasParent = hasParent(provenance);
     </div>
   </div>
   <div v-else>
-    <p>Loading... please wait.</p>
+    <p class="text-center mt-5">Loading... please wait.</p>
   </div>
 </template>
 

@@ -21,8 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
+    <div v-if="isLoading" class="text-center mb-5 mt-5">
+        Creating records...
+    </div>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form v-else enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
  
         <div>
@@ -42,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
  
         <div class="d-grid">
-            <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button my-3 mb-0" id="record-button" type="submit" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -75,7 +78,8 @@ export default {
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
-            isSubmitting: false  // bool to check that form is submitted
+            isSubmitting: false,  // bool to check that form is submitted
+            isLoading: false,
         }
     },
     computed: {
@@ -99,6 +103,9 @@ export default {
             }
         },
         async submitForm() {
+            this.isLoading = true;
+            window.scrollTo(0, 0);
+
             if (this.isSubmitting) return;
             
             this.isSubmitting = true;
@@ -184,6 +191,10 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
+    #record-button:active {
+        background-color: #E6F6FF;
+        border-color: #E6F6FF;
+    }
     input[type="file"]::file-selector-button {
         background-color: #CCECFD;  
         color: black;
@@ -201,6 +212,10 @@ export default {
         background-color: #4E3681;
         color: white;
         border-color: #4E3681;
+    }
+    #record-button:active {
+        background-color: #322253;
+        border-color: #322253;
     }
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  
