@@ -13,7 +13,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
-    <form v-if="!isLoading" enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Group</h4>
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
@@ -72,9 +72,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </button>
         </div>
     </form>
-    <div v-else class="text-center mb-5 mt-5">
-        Creating records...
-    </div>
  </template>
 
 <script lang="ts">
@@ -94,7 +91,6 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
-            isLoading: false,
         }
     },
     methods: {
@@ -180,9 +176,8 @@ export default {
                 }
             };
 
-            // Then change to the loading screen
-            this.isLoading = true;
-            window.scrollTo(0, 0);
+            // Emit an event to notify the gdt.vue page to display loading screen
+            EventBus.emit('isLoading');
 
             if (numChildren) {
                 var childName;

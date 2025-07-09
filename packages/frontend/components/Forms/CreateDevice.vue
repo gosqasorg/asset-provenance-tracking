@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form v-if="!isLoading" enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
  
         <div>
@@ -57,9 +57,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </button>
         </div>
     </form>
-    <div v-else class="text-center mb-5 mt-5">
-        Creating record...
-    </div>
 </template>
 
 <script lang="ts">
@@ -79,7 +76,6 @@ export default {
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
-            isLoading: false,
         }
     },
     computed: {
@@ -103,8 +99,8 @@ export default {
             }
         },
         async submitForm() {
-            this.isLoading = true;
-            window.scrollTo(0, 0);
+            // Emit an event to notify the gdt.vue page to display loading screen
+            EventBus.emit('isLoading');
 
             if (this.isSubmitting) return;
             

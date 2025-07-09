@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the landing page where you can create a new record to track
 -->
 <template>
-    <div class="gdt" id="gdt-container">
+    <div v-if="!isLoading" class="gdt" id="gdt-container">
         <div class="container-md">
             <h1 class="my-4 fs-1">Global Distributed Tracking</h1>
 
@@ -75,12 +75,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
+    <div v-else class="text-center mb-5 mt-5">
+        Creating record(s)...
+    </div>
  </template>
 
 <script lang="ts">
+import { FormsCreateContainer } from '#build/components';
+import { EventBus } from '~/utils/event-bus';
+
 
 export default {
-
+    data() {
+        return {
+            isLoading: false,
+        }
+    },
+    mounted() {
+        // switch to loading screen when a form is submitted
+        EventBus.on('isLoading', () => {
+            this.isLoading = true;
+        })
+    },
     methods: {
         toggleView() {
             const toggle = document.getElementById("toggle") as HTMLInputElement;
