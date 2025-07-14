@@ -244,6 +244,15 @@ export default {
     max-width: 100%;
 }
 
+.recalled_records {
+  border: 2px;
+  border-color: #4e3681;
+}
+
+.pin-image {
+    float: right;
+}
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     .report-box {

@@ -63,7 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
  
         <div class="d-grid">
-            <button class="record-button" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button my-3 mb-0" id="record-button" type="submit" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;

@@ -19,8 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
-            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description" maxlength="5000">
-
+            <input type="text" class="form-control mt-3" v-model="description" id="device-description" required placeholder="Group Description" maxlength="5000">
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
 
