@@ -18,6 +18,7 @@ import type { Emitter } from 'mitt';
 // Define the events for type safety
 interface Events {
   feedRefresh: void;
+  isLoading: void;
   // Add other events here
 }
 
