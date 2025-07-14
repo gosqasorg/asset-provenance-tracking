@@ -10,7 +10,7 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "start": "func start",
-    "test": "./run_tests.sh",
+    "test": "./scripts/run_tests.sh",
     "unittest": "npx vitest run",
     "dev": "npm run update-version && func start",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",

@@ -5,9 +5,11 @@ export LOCATION=eastus2
 export RG_NAME=rg-gdt-test
 export STG_NAME=gdtteststorage
 export AZURE_STORAGE_ACCOUNT_NAME=gdtteststorage
-# Run this command to get the account storage key
-# az storage account keys list  --account-name $STG_NAME --resource-group $RG_NAME | jq '.[0].value'
-export AZURE_STORAGE_ACCOUNT_KEY=
+
+# Get storage account keykey
+az login
+export AZURE_STORAGE_ACCOUNT_KEY=$(az storage account keys list  --account-name $STG_NAME --resource-group $RG_NAME | jq '.[0].value')
+
 export FUNC_NAME=gosqasbe
 export MY_STATIC_WEB_APP_NAME=gdt-test-frontend
 
