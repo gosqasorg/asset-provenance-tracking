@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
- 
+
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description" maxlength="5000">
@@ -32,20 +32,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
                 <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
- 
+
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
 
-            <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
-            </div>
-
-            <!-- Volunteer Feedback Email --> 
+            <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
                     <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
-    
+
                 <div v-if="isChecked">
                     <!-- TODO: API call function -->
                     <input
@@ -55,8 +51,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         placeholder="Email"
                         @keyup.enter=""
                     />
-    
-                    <!-- TODO: Dev; remove before flight --> 
+
+                    <!-- TODO: Dev; remove before flight -->
                     <!--
                     <p>User entered: {{ textInput }} </p>
                     -->
