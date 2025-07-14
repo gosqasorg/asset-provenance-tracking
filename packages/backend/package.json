@@ -10,7 +10,8 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "start": "func start",
-    "test": "ts-node ./test/test.ts",
+    "test": "./run_tests.sh",
+    "unittest": "npx vitest run",
     "dev": "npm run update-version && func start",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
     "vitest": "vitest",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
+    "@azure/data-tables": "^13.3.1",
     "@azure/functions": "^4.5.1",
     "@azure/storage-blob": "^12.24.0",
     "bs58": "^5.0.0",

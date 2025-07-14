@@ -5,6 +5,7 @@ import bs58 from 'bs58';
 import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
+import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -227,8 +228,14 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
-const accountName = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_NAME"]) ? "devstoreaccount1" : process.env["AZURE_STORAGE_ACCOUNT_NAME"];
-const accountKey = isEmpty(process.env["AZURE_STORAGE_ACCOUNT_KEY"]) ? "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==" : process.env["AZURE_STORAGE_ACCOUNT_KEY"];
+
+let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
+    throw new Error('Env vars not set')
+}
+let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"])) {
+    throw new Error('Env vars not set')
+} 
+
 const baseUrl = accountName === "devstoreaccount1"
     ? `http://127.0.0.1:10000/devstoreaccount1`
     : `https://${accountName}.blob.core.windows.net`;
@@ -236,7 +243,7 @@ const baseUrl = accountName === "devstoreaccount1"
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
-async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -261,7 +268,7 @@ async function getProvenance(request: HttpRequest, context: InvocationContext): 
     return { jsonBody: records };
 }
 
-async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
+export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
@@ -277,7 +284,7 @@ async function getDecryptedBlob(request: HttpRequest, context: InvocationContext
     return await decryptBlob(blobClient, deviceKey);
 }
 
-async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
 
@@ -293,7 +300,7 @@ async function getAttachment(request: HttpRequest, context: InvocationContext): 
     return { body: data, headers };
 };
 
-async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
 
@@ -337,7 +344,7 @@ function findDeviceIdFromName(blobName: string): string {
     return blobName.split("/", 4)[1];
 }
 
-async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
@@ -385,6 +392,54 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
+export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        let account, key;
+        if(isEmpty(account = process.env['AZURE_STORAGE_ACCOUNT_NAME'])) {
+            throw new Error('Table Insert: Env vars not set')
+        } else if(isEmpty(key = process.env['AZURE_TABLE_ACCOUNT_KEY'])) {
+            throw new Error('Table Insert: Env vars not set')
+        }
+
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+        let table = 'UserFeedbackEmails'
+        const credential = new AzureNamedKeyCredential(account, key);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
+        const formData = await request.formData();
+        let email; if (typeof (email = formData.get('email')) !== 'string') {
+            throw new Error('postEmail: Unexpected non-string value received')
+            return { status: 404 };
+        }
+
+        const entity = {
+            partitionKey: 'UserFeedbackVolunteers',
+            rowKey: email,
+        }
+
+        const response = await tableClient.createEntity(entity);
+        console.log(response)
+
+        console.log('postEmail: Added feedback volunteer contact info')
+        return {
+            status: 200,
+            body: "Created",
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+    }
+}
+
+app.post('postEmail', {
+    authLevel: 'anonymous',
+    route: 'feedbackVolunteer',
+    handler: postEmail,
+})
+
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
@@ -426,8 +481,4 @@ app.get("getVersion", {
     route: 'version',
     handler: getVersion
 })
-
-
-
-
 
