@@ -81,7 +81,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { FormsCreateContainer } from '#build/components';
 import { EventBus } from '~/utils/event-bus';
 
 
