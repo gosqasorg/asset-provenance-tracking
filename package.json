@@ -16,5 +16,8 @@
   ],
   "dependencies": {
     "@azure/communication-email": "^1.0.0"
+  },
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "2.0.6"
   }
 }

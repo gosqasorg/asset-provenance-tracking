@@ -14,50 +14,62 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+
         <h4 class="mt-1 mb-3">Create New Group</h4>
+
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description" maxlength="5000">
+
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
-           
+
+
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
-            <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
-            </div>
 
- 
-            <h4 class="my-3 mb-0" for="children-keys">Number of Grouped Records (optional)
+
+            <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
- 
- 
-            <br>
-            <h4 class="p-1 mt-0 mb-0 ">
+
+
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
- 
- 
-            <div class="num-fields" id="num-fields" style="display:none" >
-                <label for="input"></label>
-            </div>
- 
- 
-            <br>
-            <h4 class="p-1 mt-0 mb-0 ">
+
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
             </h4>
  
- 
-            <br>
-            <h4 class="p-1 mt-0">
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
+
+            <!-- Volunteer Feedback Email --> 
+            <h4 class="p-1">
+                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
+            </h4>
+    
+            <div v-if="isChecked">
+                <!-- TODO: API call function -->
+                <input
+                    type="text"
+                    class="form-control"
+                    v-model="textInput"
+                    placeholder="Email"
+                    @keyup.enter=""
+                />
+    
+                <!-- TODO: Dev; remove before flight --> 
+                <!--
+                <p>User entered: {{ textInput }} </p>
+                -->
+            </div>
         </div>
-       
-        <div class="d-grid">
-            <button class="group-button my-4 mb-0" id="group-button" type="submit" style="
+
+        <div class="d-grid mt-3">
+            <button class="group-button" id="group-button" type="submit" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -75,7 +87,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -91,6 +103,8 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            isChecked: false,
+            textInput: '',
         }
     },
     methods: {
@@ -218,7 +232,7 @@ export default {
                 }
             };
             try {
-                await postProvenance(deviceKey, {
+                const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -234,6 +248,10 @@ export default {
                     type: 'success',
                     text: 'Successfully created the group'
                 })
+
+                if (response && this.isChecked && this.textInput) {
+                        await postEmail(this.textInput);
+                }
 
                 // Navigate to the new group page
                 const failure = await this.$router.push({ path: `/record/${deviceKey}` });
@@ -313,21 +331,10 @@ export default {
         margin-right: auto;
         width: 100%;
         margin-top: 30px;
-
     }
     input[type=number] {
         border: 0px;
         border-radius: 4px;
-    }
-    input[type=checkbox] {
-        width:25px;
-        border: 0px;
-        margin-right: 15px;
-    }
-    .num-fields {
-        border: 0px;
-        border-radius: 4px;
-        border-color:red;
     }
     input[type=text] {
         border:5px;
