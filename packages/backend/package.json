@@ -10,7 +10,7 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "start": "func start",
-    "test": "bash -c 'set -a; . src/functions/.env; npx tsx ./test/integrationTests.ts --put; npx tsx ./test/integrationTests.ts; npx tsx ./test/integrationTests.ts --statistics; npx vitest run'",
+    "test": "./run_tests.sh",
     "unittest": "npx vitest run",
     "dev": "npm run update-version && func start",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
