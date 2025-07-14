@@ -21,29 +21,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description" maxlength="5000">
 
-           
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
-           
-           
+
+
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
-            <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
-            </div>
 
- 
+
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
- 
-
 
 
             <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
- 
+
             <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
             </h4>
