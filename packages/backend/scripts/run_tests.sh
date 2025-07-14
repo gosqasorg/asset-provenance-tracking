@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 # Get azure default env vars
 eval $(cat local.settings.json | grep -i azure | egrep -vi 'comment|index' | sed 's,^  *,,' | sed 's,",,g' | sed 's/,//' | sed 's,: ,=,' | sed "s,=,=\'," | sed "s,$,',"  | sed 's,^,export ,')
 
@@ -13,4 +12,4 @@ npx vitest run
 npx tsx ./test/integrationTests.ts --put
 npx tsx ./test/integrationTests.ts
 npx tsx ./test/integrationTests.ts --statistics
-    
+

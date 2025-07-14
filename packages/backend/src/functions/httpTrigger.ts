@@ -394,18 +394,12 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        let account, key;
-        if(isEmpty(account = process.env['AZURE_STORAGE_ACCOUNT_NAME'])) {
-            throw new Error('Table Insert: Env vars not set')
-        } else if(isEmpty(key = process.env['AZURE_TABLE_ACCOUNT_KEY'])) {
-            throw new Error('Table Insert: Env vars not set')
-        }
-
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
+
         let table = 'UserFeedbackEmails'
-        const credential = new AzureNamedKeyCredential(account, key);
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
         await tableClient.createTable();  // Create if not exist, no error if it does
 
@@ -431,6 +425,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         }
     } catch(error) {
         console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+        // Deliberate lack of error message to client
     }
 }
 

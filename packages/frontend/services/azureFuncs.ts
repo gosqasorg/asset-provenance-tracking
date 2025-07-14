@@ -94,7 +94,8 @@ export async function postEmail(email: string) {
     const formData = new FormData();
     formData.append("email", email);
 
-    const response = await fetch(`${baseUrl}/feedbackVolunteer`, {
+                                            // backend urls are converted to all lowercase on deployment
+    const response = await fetch(`${baseUrl}/feedbackvolunteer`, {
         method: 'POST',
         body: formData,
     });
