@@ -101,6 +101,12 @@ const route = useRoute()
                     style="width: 100%; height: 480px;" frameborder="0"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
                     title="Tutorial: Using A Record"></iframe>
+                <div class="divider"> </div>
+                <iframe src="https://player.vimeo.com/video/1086646484?h=f0cbc7fd6d&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; height: 480px;" frameborder="0"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                    title="Tutorial: How to Create a Group Record with Decentralized Medical Device Manufacturing (DMDM)"></iframe>
+                <div class="divider"> </div>
             </div>
         </div>
 

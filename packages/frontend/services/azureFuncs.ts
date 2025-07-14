@@ -89,6 +89,21 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     return await response.json() as { record: string, attachments?: string[] };
 }
 
+export async function postEmail(email: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const formData = new FormData();
+    formData.append("email", email);
+
+                                            // backend urls are converted to all lowercase on deployment
+    const response = await fetch(`${baseUrl}/feedbackvolunteer`, {
+        method: 'POST',
+        body: formData,
+    });
+    if (response.status != 200) {
+        throw new Error('postEmail: Failed to save email address')
+    }
+}
+
 export async function getStatistics() {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/statistics`, {
