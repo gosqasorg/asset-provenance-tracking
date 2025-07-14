@@ -39,10 +39,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div>
                 <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
             </div>
+
+            <!-- Volunteer Feedback Email --> 
+            <div class="my-3">
+                <h4>
+                    <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                </h4>
+    
+                <div v-if="isChecked">
+                    <!-- TODO: API call function -->
+                    <input
+                        type="text"
+                        class="form-control"
+                        v-model="textInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+    
+                    <!-- TODO: Dev; remove before flight --> 
+                    <!--
+                    <p>User entered: {{ textInput }} </p>
+                    -->
+
+                </div>
+
+            </div>
         </div>
  
         <div class="d-grid">
-            <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -59,8 +84,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </form>
 </template>
 
+
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -75,7 +101,9 @@ export default {
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
-            isSubmitting: false  // bool to check that form is submitted
+            isSubmitting: false,  // bool to check that form is submitted
+            isChecked: false,
+            textInput: '',
         }
     },
     computed: {
@@ -113,7 +141,11 @@ export default {
                     hasParent: false,
                     isReportingKey: false,
                 }, this.pictures || []);
-                
+
+                if (response && this.isChecked && this.textInput) {
+                    await postEmail(this.textInput);
+                }
+
                 this.$snackbar.add({
                     type: 'success',
                     text: 'Successfully created the record'
