@@ -47,7 +47,7 @@ const recordHasParent = hasParent(provenance);
             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
             <div class="mb-3">
-              <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
+              <span style="word-wrap: break-word;" id="desc" v-html="clickableLink(deviceRecord?.description)"></span>
             </div>
           </div>
 
@@ -60,41 +60,7 @@ const recordHasParent = hasParent(provenance);
                     <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
                     <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
 
-                    <!-- Share dropdown -->
-                    <div class="share-container">
-                        <button id="shareRecordBtn" class="btn share-btn device-btn" data-bs-toggle="collapse"
-                            data-bs-target="#share-dropdown" @click="buttonFormat">
-                            Share Record Link
-                            <picture v-if="!shareDropdown">
-                                <source srcset="../../assets/images/darkmode-dropdown.svg"
-                                    media="(prefers-color-scheme: dark)">
-                                <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
-                            </picture>
-                            <picture v-else>
-                                <source srcset="../../assets/images/darkmode-up-dropdown.svg"
-                                    media="(prefers-color-scheme: dark)">
-                                <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
-                            </picture>
-                        </button>
-
-                        <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="copy()" class="drop-text item-link">Copy</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="text()" class="drop-text item-link">Messages</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="mail()" class="drop-text item-link">Email</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="whatsApp()" class="drop-text item-link">WhatsApp</a>
-                            </li>
-                            <li class="dropdown-item" style="padding: 7px">
-                                <a @click="telegram()" class="drop-text item-link">Telegram</a>
-                            </li>
-                        </ul>
-                    </div>
+                    <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
                 </div>
 
                 <!-- QR -->
@@ -127,7 +93,6 @@ import clickableLink from '~/utils/clickableLink';
 import QRCode from '@/components/QRCode.vue';
 
 let deviceRecord: any;
-let dropdownVisible = false;
 
 // Here we are are going to want to read the device,
 //    but not all the provenance. We will use this to load
@@ -149,7 +114,6 @@ export default {
             childKeys: [] as string[],
             loadingKey: 0,
             _recordKey: "",
-            shareDropdown: false
         }
     },
     methods: {
@@ -164,49 +128,6 @@ export default {
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
             navigateTo(`/history/${route.params.deviceKey}`);
-        },
-        buttonFormat() {
-            let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
-
-            if (!dropdownVisible) { // button clicked, dropdown now visible
-                dropdownVisible = true;
-                this.shareDropdown = true;
-                shareBtn.style.borderRadius = "10px 10px 0px 0px";
-            } else {
-                dropdownVisible = false;
-                this.shareDropdown = false;
-                shareBtn.style.borderRadius = "10px";
-            }
-        },
-        getDescription() {
-            return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
-        },
-        copy() {
-            navigator.clipboard.writeText(window.location.href)
-                .then(() => {
-                    alert('Record Link copied to clipboard!');
-                })
-                .catch((error) => {
-                    console.error('Failed to copy text: ', error);
-                    alert('Failed to copy Record Link. Please try again.');
-                });
-        },
-        mail() {
-            var shareDescr = this.getDescription();
-            window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
-        },
-        text() {
-            var shareDescr = this.getDescription();
-            window.location = "sms:?&body=Record Link: " + shareDescr;
-        },
-        whatsApp() {
-            var shareDescr = this.getDescription();
-            window.location = "https://wa.me/send?text=" + shareDescr;
-        },
-        telegram() {
-            var shareLink = encodeURIComponent(window.location.href);
-            var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
-            window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
         },
     },
     async mounted() {
@@ -247,30 +168,6 @@ export default {
     margin-right: 30px;
     margin-top: 20px;
     max-height: 61px;
-}
-
-.share-btn {
-    margin-right: 0px;
-}
-
-#share-dropdown {
-    border-radius: 0px 0px 10px 10px;
-    margin-left: auto;
-    margin-right: 0;
-    list-style-type: none;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
-.dropdown-item {
-    text-align: center;
-    border-radius: 10px;
-    padding: 7px;
-}
-
-.item-link {
-    text-decoration: none;
-    cursor: pointer;
 }
 
 .record-description {
@@ -328,13 +225,8 @@ export default {
         width: 100%;
     }
 
-    .share-container {
-        width: 100%;
-    }
-
     .buttons-container {
         width: 100%;
-        margin-right: 40px;
     }
 
     .qr-container {
@@ -344,10 +236,6 @@ export default {
     .device-btn {
         width: 100%;
         margin-right: 0px;
-    }
-
-    #share-dropdown {
-        width: 100%;
     }
 
     .container-md {
@@ -386,28 +274,6 @@ export default {
         border: 2px solid #FFFFFF;
         color: white;
     }
-
-    .share-btn {
-        background-color: #1E2019;
-        border: 2px solid #FFFFFF;
-        color: white;
-    }
-
-    #dropdown-item {
-        background-color: #1E2019;
-    }
-
-    #share-dropdown {
-        border: 2px solid #FFFFFF;
-    }
-
-    .drop-text {
-        color: white;
-    }
-
-    .dropdown-item:hover {
-        background-color: #4E3681;
-    }
 }
 
 /* Light mode version*/
@@ -439,24 +305,6 @@ export default {
         background-color: #CCECFD;
         border: #CCECFD;
         color: black;
-    }
-
-    .share-btn {
-        background-color: #CCECFD;
-        border: #CCECFD;
-        color: black;
-    }
-
-    #share-dropdown {
-        background-color: #CCECFD;
-    }
-
-    .drop-text {
-        color: black;
-    }
-
-    .dropdown-item:hover {
-        background-color: #e6f6ff;
     }
 }
 </style>
