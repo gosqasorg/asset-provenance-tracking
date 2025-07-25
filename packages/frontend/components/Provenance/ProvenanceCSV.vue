@@ -1,5 +1,5 @@
 <template>
-    <button type="button" class="btn mt-1 bg-sky px-5 mb-5" v-on:click="downloadProvenanceCSV">
+    <button type="button" class="btn mt-1 px-5 mb-5" v-on:click="downloadProvenanceCSV">
         Download Provenance as CSV
     </button>
 </template>
@@ -21,7 +21,7 @@ export default {
             try {
                 // Fetch provenance provenanceItem using the provided recordKey
                 const provenanceData = await getProvenance(this.recordKey);
-                
+
                 if (!provenanceData || provenanceData.length === 0) {
                     // Handle case where no provenance record are found
                     console.error('No provenance record found');
@@ -29,7 +29,7 @@ export default {
                 }
 
                 // Create CSV header
-                let csvContent = 'Timestamp,Description,Device Name,Tags,Children Names,Children Keys,Attachment File\n';
+                let csvContent = 'Timestamp,Device Key,Device Name,Device Url,Description,Tags,Reporting Key,Attachment File\n';
 
                 for (const provenanceItem of provenanceData) {
                     // Format timestamp in UTC with both local and UTC time
@@ -43,24 +43,15 @@ export default {
                     const deviceName = provenanceItem.record?.deviceName?.replace(/"/g, '""') || '';
 
                     // Format tags
+                    console.log("tags = ",provenanceItem.record?.tags);
                     const tags = (provenanceItem.record?.tags || [])
                         .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
+                          .join(';');
+                    console.log("replaced tags = ",tags);
                     const formattedTags = `[${tags}]`;
 
-                    //Find Children Names and format them
-                    const children = (provenanceItem.record?.children_name || [])
-                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
-
-                    const childrenNames = `[${children}]`
-
-                     //Find Children Keys and format them
-                    const childrenKeys = (provenanceItem.record?.children_key || [])
-                        .map(tag => `"${tag.replace(/"/g, "''")}"`)
-                        .join(';');
-                    
-                    const formattedChildrenKeys = `[${childrenKeys}]`
+                    //Get reporting key
+                    const reportingKey = provenanceItem.record?.reportingKey?.replace(/"/g, '""') || '';
 
                     // Get attachment filename
                     const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -73,13 +64,16 @@ export default {
                             return attachmentId;
                         }
                     });
-
                     const attachmentName = await Promise.all(attachmentPromises);
                     const stringifyAttachmentName = attachmentName
-                        .map(name => `"${name.replace(/"/g, '""')}"`);    
-                    
+                        .map(name => `"${name.replace(/"/g, '""')}"`);
+
+                    //Stores device url and device key
+                    const deviceUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
+                    const deviceKey = this.recordKey;
+
                     // Concatenate relevant data for csv file
-                    csvContent += `${timestamp},${description},${deviceName},${formattedTags},${childrenNames},${formattedChildrenKeys},${stringifyAttachmentName}\n`;
+                    csvContent += `"${timestamp}","${deviceKey}","${deviceName}","${deviceUrl}","${description}",${formattedTags},"${reportingKey}","${stringifyAttachmentName}"\n`;
                 }
 
                 // Create and trigger download
@@ -95,3 +89,31 @@ export default {
     }
 }
 </script>
+<style>
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .btn {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF !important;
+        color: white;
+    }
+
+    .btn:hover {
+        border: 0px !important;
+        color: white;
+    }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+
+    .btn:hover {
+        color: black;
+    }
+}
+</style>

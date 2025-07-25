@@ -21,18 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid">
-
-        <div class="row" id="first-row">
+        <div class="row odd-stripe" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
                 <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
-                <div class="row" style="margin-top:20px; display:inline-flex">
-                    <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px;" @submit.prevent="trackDivVisible = !trackDivVisible">
+                <div class="row" style="display:inline-flex">
+                    <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
                         <button-component class="button" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
                     </form>
 
-                    <div id="createRecordButton" style="width: 60%; width: 230px;">
+                    <div id="createRecordButton" style="width: 60%; width: 230px; margin-top: 20px;">
                         <RouterLink to="/gdt"><button-component class="button" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
                             borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
@@ -42,23 +41,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     </div>
                     <div v-else style="padding-bottom: 20px;"></div>
                 </div>
-
             </div>
-
         </div>
 
-        <div class="row" id="second-row" >
+
+        <div class="row second-row" >
+          <h3>Global Distributed Tracking</h3>
+          <p style="font-weight: 400; padding-bottom: 15px">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
+               <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                       style="width: 100%; height: 480px;"
+                       frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+               </iframe>
+        </div>
+
+        <div class="row odd-stripe"  >
             <div class="row rowtest">
+                <!-- TODO: fix colors in dark mode, make sure dark mode matches FIGMA -->
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
-                    <p style="font-weight: 400;">{{ item.descr }}</p>         
+                    <p style="font-weight: 400;">{{ item.descr }}</p>
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
                 <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
                   border-width: 2px;
                   border-style: solid;
-                  padding: 10px 20px;
+                  padding: 18px 22px;
                   margin: 0px;
                   font-size: 20px;
                   border-radius: 10px;
@@ -68,7 +76,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </button></RouterLink>
             </div>
 
-        </div> 
+        </div>
+
+        <div class="row second-row" >
+          <div class="dmdmcontainer">
+            <img src="/dmdmCropped.png" alt="Logo" class="dmdmimage" />
+            <div id="flexright">
+              <h3>Decentralized Medical Device Manufacturing (DMDM)</h3>
+              <p class="text" style="font-weight: 400;">Inspired by the need for life-saving tourniquets in Sudan and Gaza,
+  the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.
+  Explore how the DMDM and GOSQAS partnership expands open-source technology access
+  for medical device compliance and distribution.
+              </p>
+            </div>
+          </div>
+          <div class="col" style="text-align: center; margin-top: 50px;">
+          <RouterLink to="/dmdm"><button class="baseButton button" id="dmdm-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 18px 22px;
+                  margin: 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                "
+              >
+               View our pilot program
+          </button></RouterLink>
+          </div>
+        </div>
 
         <Learn_more id="learn-more"></Learn_more>
 
@@ -101,6 +136,35 @@ export default {
 
 <style scoped>
 
+.dmdmcontainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;       /* Allows wrapping onto a new line */
+align-items: stretch;
+justify-content: space-around;
+}
+
+.dmdmimage {
+  max-width: 12em;
+  max-height: 12em;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+
+  margin-bottom: 15px;
+  margin-right: 15px;
+
+  border: 2px solid #4E3681;
+}
+
+#flexright {
+max-width: 70%;
+}
+
+.text-block {
+  flex: 1;              /* Let the text block take remaining space */
+}
+
 #wrap-word {
     overflow-wrap: break-word;
 }
@@ -120,17 +184,21 @@ export default {
     background-size: 60%;
 
     height: auto;
-    display: flex;  
+    display: flex;
     flex-wrap: wrap;
 }
 
-#about-button {
-    padding: 10px 20px
+.odd-stripe {
+    padding: 30px 39px;
 }
 
 /* For screens less than 991px resize hand logo*/
 @media (max-width: 991px) {
     #first-row {
+        background-size: 50% !important;
+        height: auto;
+    }
+    .odd-stripe {
         background-size: 50% !important;
         height: auto;
     }
@@ -149,7 +217,7 @@ export default {
     #first-row-col{
         padding: 41px 33px 80px 33px;
     }
-    #second-row{
+    .second-row{
         padding: 40px 30px;
     }
     #second-row-cols{
@@ -172,7 +240,8 @@ export default {
         width: 180px !important;
     }
     #createRecordButton {
-        order: 1; 
+        order: 1;
+        margin-top: 0px !important;
     }
 }
 
@@ -189,7 +258,11 @@ export default {
     #first-row-col{
         padding: 60px 78px;
     }
-    #second-row {
+    .odd-stripe {
+        padding: 60px 78px;
+    }
+
+    .second-row {
         padding: 70px 100px;
     }
     #second-row-cols{
@@ -201,7 +274,7 @@ export default {
     .button{
         font-size: 20px;
         padding: 1px;
-        
+
     }
 
 }
@@ -217,9 +290,9 @@ export default {
   .dark-mode-heading {
     color: #FFFFFF;
   }
-  #first-row {
+  .odd-stripe{
         background-color: #1E2019;
-    }
+  }
 }
 
 /* Dark mode version of second row */
@@ -227,42 +300,60 @@ export default {
     #first-row {
         background-image: url(../assets/images/darkmode-hand.png);
     }
-    #second-row{
+    .second-row{
             background-color: #4E3681;
-        }
+    }
+    .odd-stripe{
+    }
 
     h3 {
-        color: #FFFFFF; 
+        color: #FFFFFF;
     }
     p {
-        color: #E6F6FF; 
+        color: #E6F6FF;
     }
     #about-button {
         color: #FFFFFF;
+        background-color: transparent;
+        border: 2px solid #FFFFFF;
+    }
+    #dmdm-button {
+        color: #FFFFFF;
         background-color: #4E3681;
         border: 2px solid #FFFFFF;
-  }
+    }
+    .dmdmimage {
+        border: 2px solid #FFFFFF;
+    }
+    #second-row-cols-h3 {
+        color: #CCECFD;
+    }
 }
 /* Light mode version of second row */
 @media (prefers-color-scheme: light) {
     #first-row {
         background-image: url(../assets/images/hand-icon.png);
     }
-    #second-row {
+    .second-row {
             background-color: #E6F6FF;
         }
 
     h3 {
-        color: #4E3681; 
+        color: #4E3681;
     }
     p {
-        color: #322253; 
+        color: #322253;
     }
     #about-button {
+        color: #1E2019;;
+        background-color: #CCECFD;
+        border: 2px solid #CCECFD;
+    }
+    #dmdm-button {
         color: #322253;
         background-color: #E6F6FF;
         border: 2px solid #4E3681;
-  }
+    }
 }
 
 </style>

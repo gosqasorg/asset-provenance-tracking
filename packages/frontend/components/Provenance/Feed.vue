@@ -30,11 +30,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h3 id="createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
             </template>
 
-            <div
-                style="font-size: small; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 12px; line-height: 30px; color: #1E2019;">
+            <div class="text"
+                style="font-size: small; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 12px; line-height: 30px;">
                 {{ new Date(report.timestamp) }}
             </div>
-            <div style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
+            <div class="text"
+                style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
                 <span v-html="clickableLink(report.record?.description)"></span>
             </div>
             <div class="mb-1 tag-container">
@@ -55,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
- 
+
     <!-- Image Preview Modal -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -140,19 +141,17 @@ export default {
 </script>
 
 <style scoped>
-
 .report-box {
     display: list-item;
     list-style-type: decimal;
-    counter-increment: item -1; /* Add this line */
-    background-color: #F1F5F9;
+    counter-increment: item -1;
     padding: 20px;
     margin-bottom: 14px;
     margin-top: 14px;
     border-radius: 20px;
-    /* Assuming the width is to fill the container */
     word-wrap: break-word;
 }
+
 .tag-container {
     display: flex;
     flex-wrap: wrap;
@@ -245,13 +244,49 @@ export default {
     max-width: 100%;
 }
 
-.recalled_records {
-  border: 2px;
-  border-color: #4e3681;
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .report-box {
+        background-color: #353535;
+    }
+
+    .download-link {
+        color: #CCECFD;
+    }
+
+    h3 {
+        color: white;
+    }
+
+    .text {
+        color: white;
+    }
+
+    .report-box::marker {
+        color: white;
+    }
 }
 
-.pin-image {
-    float: right;
-}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .report-box {
+        background-color: #F1F5F9;
+    }
 
+    .download-link {
+        color: #4e3681;
+    }
+
+    h3 {
+        color: black;
+    }
+
+    .text {
+        color: #1E2019;
+    }
+
+    .report-box::marker {
+        color: black;
+    }
+}
 </style>

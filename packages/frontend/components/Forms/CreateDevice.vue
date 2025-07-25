@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
- 
+
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description" maxlength="5000">
@@ -32,17 +32,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
                 <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
- 
+
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
 
-            <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
+            <!-- Volunteer Feedback Email -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                </h4>
+
+                <div v-if="isChecked">
+                    <!-- TODO: API call function -->
+                    <input
+                        type="text"
+                        class="form-control"
+                        v-model="textInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+
+                    <!-- TODO: Dev; remove before flight -->
+                    <!--
+                    <p>User entered: {{ textInput }} </p>
+                    -->
+
+                </div>
+
             </div>
         </div>
  
         <div class="d-grid">
-            <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -59,8 +80,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </form>
 </template>
 
+
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -75,7 +97,9 @@ export default {
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
-            isSubmitting: false  // bool to check that form is submitted
+            isSubmitting: false,  // bool to check that form is submitted
+            isChecked: false,
+            textInput: '',
         }
     },
     computed: {
@@ -113,7 +137,11 @@ export default {
                     hasParent: false,
                     isReportingKey: false,
                 }, this.pictures || []);
-                
+
+                if (response && this.isChecked && this.textInput) {
+                    await postEmail(this.textInput);
+                }
+
                 this.$snackbar.add({
                     type: 'success',
                     text: 'Successfully created the record'
@@ -171,7 +199,7 @@ export default {
 
     }
 
-    /* Dark mode version*/
+/* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;

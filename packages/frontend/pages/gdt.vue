@@ -1,7 +1,7 @@
 <!-- gdt.vue
 
 © 2024 Global Open Source Quality Assurance System. All rights reserved.
-We are committed to keeping our code open source, but all GOSQAS and GDT 
+We are committed to keeping our code open source, but all GOSQAS and GDT
 branding, including logos, is subject to the copyright above.
 
 Copyright (C) 2024 GOSQAS
@@ -24,29 +24,55 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="gdt" id="gdt-container">
         <div class="container-md">
             <h1 class="my-4 fs-1">Global Distributed Tracking</h1>
-    
-    
+
+
             <!-- create toggle for single or group  -->
-            <ButtonsLargeToggle 
-                @toggle-change="toggleView" 
-                :left-label="'New Record'" 
+            <ButtonsLargeToggle
+                @toggle-change="toggleView"
+                :left-label="'New Record'"
                 :right-label="'New Group'"
             />
-        
+
             <!-- <div>Create a Single Asset:</div> -->
             <div id="create_record"><FormsCreateDevice/></div>
             <!-- <CreateDevice/> -->
             <!-- <div>Or, if you want to create a group of keys:</div> -->
             <!-- <div></div> -->
-        
+
             <div id="create_group" style="display:none"><FormsCreateContainer/></div>
-    
-    
+
+
+            <div class="col" style="text-align: center; margin-top: 50px;">
+              <RouterLink to="/how-it-works"><button class="baseButton button" id="about-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                "
+              >
+              How It Works
+              </button></RouterLink>
+              <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                "
+              >
+              Our Pilot Program
+              </button></RouterLink>
+          </div>
+
+
             <p class="my-4 mb-5 form-control">
                 The Global Open Source Quality Assurance System (GOSQAS) enables transparent documentation through our Global Distributed Tracking (GDT) system, allowing secure data logging for low-resource settings and promoting global communication in humanitarian response, open source hardware, and scientific research.
             </p>
-    
-    
+
+
         </div>
     </div>
  </template>
@@ -54,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 
 export default {
-    
+
     methods: {
         toggleView() {
             const toggle = document.getElementById("toggle") as HTMLInputElement;
