@@ -389,6 +389,12 @@ input[type=checkbox] {
     input[type="file"]::-webkit-file-upload-button:hover {
         background-color: #0056b3;
     }
+    .record-button:hover { 
+        background-color: #e6f6ff;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
+    }
 }
 
 /* Light mode version*/
@@ -410,6 +416,9 @@ input[type=checkbox] {
     input[type="file"]::file-selector-button {
         background-color: #4E3681;
         color: white;
+    }
+    .record-button:hover { 
+        background-color: #322253;
     }
 }
 </style>

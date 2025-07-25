@@ -113,12 +113,16 @@ const recordHasParent = hasParent(provenance);
                   data-bs-target="#share-dropdown" @click="buttonFormat">
                   Share Record Link
                   <picture v-if="!shareDropdown">
-                    <source srcset="../../assets/images/darkmode-dropdown.svg" media="(prefers-color-scheme: dark)">
-                    <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                    <img id="hover-icon" src="../../assets/images/dropdown-icon.svg" style="display:none;">
+                    <source srcset="../../assets/images/darkmode-dropdown.svg" media="(prefers-color-scheme: dark)" 
+                      class="dropdown-image" style="display:inline;">
+                    <img id="light-share-icon" src="../../assets/images/dropdown-icon.svg" class="dropdown-image" style="display:inline;">
                   </picture>
                   <picture v-else>
-                    <source srcset="../../assets/images/darkmode-up-dropdown.svg" media="(prefers-color-scheme: dark)">
-                    <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                    <img id="hover-icon" src="../../assets/images/up-dropdown-icon.svg" style="display:none;">
+                    <source srcset="../../assets/images/darkmode-up-dropdown.svg" media="(prefers-color-scheme: dark)" 
+                      class="dropdown-image" style="display:inline;">
+                    <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image" style="display:inline;">
                   </picture>
                 </button>
 
@@ -456,8 +460,27 @@ export default {
   border-radius: 10px;
 }
 
-.dropdown-item:hover {
+/* .dropdown-item:hover {
   background-color: #e6f6ff;
+} */
+
+.btn-primary {
+  background-color: #4E3681;
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: #CCECFD;
+  color: #1E2019;
+}
+
+.btn-primary:hover {
+  background-color: #322253;
+}
+
+.btn-secondary:hover {
+  background-color: #e6f6ff;
+  color: #1E2019;
 }
 
 .descr-container {
@@ -503,11 +526,6 @@ export default {
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.download-button:hover {
-  background-color: #4e3681;
-  /* Slightly darker blue on hover */
 }
 
 .menu-spacing {
@@ -633,31 +651,22 @@ a:visited {
   border: none;
 }
 
-.btn-primary {
-  background-color: #4E3681;
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background-color: #3B2A6A;
-  /* Darker purple */
-}
-
-.btn-secondary {
-  background-color: #CCECFD;
-  /* Light blue */
-  color: #1E2019;
-  /* Dark text */
-}
-
-.btn-secondary:hover {
-  background-color: #B3DFF5;
-  /* Slightly darker blue */
-  color: #1E2019;
-}
-
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1E2019;
+  }
+  
+  .error-subtitle,
+  .error-description {
+    color: white;
+  }
+
+  .error-title,
+  .error-email {
+    color: #e6f6ff;
+  }
+
   .deviceKey-history {
     background-color: #1E2019;
   }
@@ -720,9 +729,17 @@ a:visited {
     color: white;
   }
 
+  /* TODO: move share hover to the share component */
   .download-btn:hover,
   .share-btn:hover {
-    color: white;
+    background-color: white;
+    color: black;
+  }
+  .dropdown-item:hover {
+    background-color: white !important;
+  }
+  .dropdown-item:hover .drop-text {
+    color: black;
   }
 
   #share-dropdown {
@@ -736,6 +753,13 @@ a:visited {
 
   .dropdown-item:hover {
     background-color: #4E3681;
+  }
+  #shareRecordBtn:hover .dropdown-image {
+    display: none !important;
+  }
+
+  #shareRecordBtn:hover #hover-icon {
+    display: inline !important;
   }
 }
 
@@ -804,7 +828,7 @@ a:visited {
 
   .download-btn:hover,
   .share-btn:hover {
-    color: black;
+    background-color: #e6f6ff !important;
   }
 
   #share-dropdown {

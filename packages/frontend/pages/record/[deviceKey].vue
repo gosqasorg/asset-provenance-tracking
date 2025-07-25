@@ -66,11 +66,13 @@ const recordHasParent = hasParent(provenance);
                             data-bs-target="#share-dropdown" @click="buttonFormat">
                             Share Record Link
                             <picture v-if="!shareDropdown">
+                                <img id="hover-icon" src="../../assets/images/dropdown-icon.svg" style="display:none;">
                                 <source srcset="../../assets/images/darkmode-dropdown.svg"
                                     media="(prefers-color-scheme: dark)">
                                 <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
                             </picture>
                             <picture v-else>
+                                <img id="hover-icon" src="../../assets/images/up-dropdown-icon.svg" style="display:none;">
                                 <source srcset="../../assets/images/darkmode-up-dropdown.svg"
                                     media="(prefers-color-scheme: dark)">
                                 <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
@@ -405,8 +407,30 @@ export default {
         color: white;
     }
 
-    .dropdown-item:hover {
-        background-color: #4E3681;
+    .view-history:hover {
+        background-color: #e6f6ff
+    }
+    .download-qr:hover {
+        background-color: white;
+        color: black;
+    }
+    /* TODO: move share hover to the share component */
+    .share-btn:hover {
+        background-color: white;
+        color: black;
+    }
+    .dropdown-item:hover,
+    .dropdown-item:hover .drop-text {
+        background-color: white;
+        color: black;
+    }
+
+    #shareRecordBtn:hover .dropdown-image {
+        display: none !important;
+    }
+
+    #shareRecordBtn:hover #hover-icon {
+        display: inline !important;
     }
 }
 
@@ -433,6 +457,16 @@ export default {
         background-color: #4e3681;
         border: #4e3681;
         color: white;
+    }
+    .view-history:hover {
+        background-color: #322253
+    }
+    .download-qr:hover {
+        background-color: #e6f6ff
+    }
+    /* TODO: move share hover to the share component */
+    .share-btn:hover {
+        background-color: #e6f6ff
     }
 
     .download-qr {
