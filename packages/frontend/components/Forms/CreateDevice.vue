@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description" maxlength="5000">
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
-                <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
+                <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
@@ -63,7 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
  
         <div class="d-grid">
-            <button class="record-button" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button" id="record-button" type="submit" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -212,9 +212,15 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
-    input[type="file"]::file-selector-button {
+    #record-button:hover { 
+        background-color: #e6f6ff;
+    }
+    input::file-selector-button {
         background-color: #CCECFD;  
         color: black;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
     }
 }
 /* Light mode version*/
@@ -230,9 +236,8 @@ export default {
         color: white;
         border-color: #4E3681;
     }
-    input[type="file"]::file-selector-button {
-        background-color: #4E3681;  
-        color: white;
+    #record-button:hover { 
+        background-color: #322253;
     }
 }
 

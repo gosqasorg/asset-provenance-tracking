@@ -42,8 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div id="create_group" style="display:none"><FormsCreateContainer/></div>
 
 
-            <div class="col" style="text-align: center; margin-top: 50px;">
-              <RouterLink to="/how-it-works"><button class="baseButton button" id="about-button" style="
+            <div class="col" style="margin-top: 40px;">
+              <RouterLink to="/how-it-works"><button class="baseButton button about-buttons" id="how-it-works" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
@@ -54,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               >
               How It Works
               </button></RouterLink>
-              <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
+              <RouterLink to="/about"><button class="baseButton button about-buttons" id="pilot-program" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
@@ -170,6 +170,9 @@ export default {
 .mb-3 {
     margin-bottom: 1rem;
 }
+#how-it-works {
+    margin-right: 20px !important;
+}
 
 @media (min-width:768px) {
     .fs-1 {
@@ -197,6 +200,15 @@ export default {
         background-clip: padding-box;
         background-color: #1E2019;
     }
+    .about-buttons {
+        background-color: transparent;
+        border-color: #CCECFD;
+        color: #CCECFD;
+    }
+    .about-buttons:hover {
+        background-color: #CCECFD;
+        color: black;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -213,6 +225,15 @@ export default {
     .form-control {
         background-clip: padding-box;
         background-color: #FFFFFF;
+    }
+    .about-buttons {
+        background-color: transparent;
+        border-color: #4e3681;
+        color: #4e3681;
+    }
+    .about-buttons:hover {
+        background-color: #4e3681;
+        color: white;
     }
 }
 

@@ -120,6 +120,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         border: #CCECFD;
         color: black;
     }
+    .donate-btn:hover {
+        background-color: #e6f6ff;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -136,6 +139,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         background-color: #4e3681;
         border: #4e3681;
         color: white;
+    }
+    .donate-btn:hover {
+        background-color: #322253;
     }
 }
 </style>
