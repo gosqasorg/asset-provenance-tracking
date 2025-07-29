@@ -21,10 +21,10 @@ export default {
     methods: {
         async downloadCSV() {
             try {
+                const provenance = await getProvenance(this.recordKey);
                 const childrenKeys = await getChildrenKeys(this.recordKey);
-                const reportingProvenance = await getProvenance(this.recordKey);
 
-                const reportingRecord = reportingProvenance?.[0]?.record;
+                const reportingRecord = provenance?.[0]?.record;
                 const reportingKey = reportingRecord?.children_key?.[0] || reportingRecord?.reportingKey || '';
 
                 const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
@@ -39,14 +39,12 @@ export default {
 
                 const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
-                for (const childKey of filteredChildrenKeys) {
+                for (let i=0; i < provenance?.[0]?.record.children_key.length; i++) {
 
-                    const provenanceList = await getProvenance(childKey);
-                    const record = provenanceList?.[0]?.record || {};
-
-                    const childName = record.deviceName || '';
+                    const childKey = provenance?.[0]?.record.children_key[i] || {};
+                    const childName = provenance?.[0]?.record.children_name[i] || '';
                     const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/${childKey}`;
-
+                    // Check if the childKey is the same as the reportingKey
                     if (childKey == reportingKey){
                         isReportingKey = 'T';
                     }
