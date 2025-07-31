@@ -25,11 +25,19 @@ export async function makeDeviceKey(): Promise<Uint8Array> {
 }
 
 function encodeDeviceKey(key: Uint8Array): string {
-    return base58encode(key);
+  return base58encode(key);
 }
 
 export async function makeEncodedDeviceKey(): Promise<string> {
-        return encodeDeviceKey(await makeDeviceKey());
+  let newEncodedKey = encodeDeviceKey(await makeDeviceKey());
+  // Try a few times to make sure the key is valid (length == 22)
+  for (let count = 0; count < 10; count++) {
+    newEncodedKey = encodeDeviceKey(await makeDeviceKey());
+    if (newEncodedKey.length == 22) {
+      break;
+    }
+  }
+  return newEncodedKey;
 }
 
 export function validateKey(key: string): boolean {
