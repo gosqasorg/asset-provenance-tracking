@@ -69,7 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <p class="my-4 mb-5 form-control">
-                The Global Open Source Quality Assurance System (GOSQAS) enables transparent documentation through our Global Distributed Tracking (GDT) system, allowing secure data logging for low-resource settings and promoting global communication in humanitarian response, open source hardware, and scientific research.
+                Global Distributed Tracking is a free, open source, and fully encrypted software solution enabling closed-loop tracking for products, information, and logistics.
             </p>
 
 
