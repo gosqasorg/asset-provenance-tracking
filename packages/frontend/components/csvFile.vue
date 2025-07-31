@@ -45,7 +45,7 @@ export default {
                     const record = provenanceList?.[0]?.record || {};
 
                     const childName = record.deviceName || '';
-                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/${childKey}`;
+                    const childUrl = `${window.location.origin}/history/${childKey}`;
 
                     if (childKey == reportingKey){
                         isReportingKey = 'T';
