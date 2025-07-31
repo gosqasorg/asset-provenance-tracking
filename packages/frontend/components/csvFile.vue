@@ -40,11 +40,13 @@ export default {
                 const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
                 for (let i=0; i < provenance?.[0]?.record.children_key.length; i++) {
+                
+                    const provenanceList = await getProvenance(childKey);
+                    const record = provenanceList?.[0]?.record || {};
 
-                    const childKey = provenance?.[0]?.record.children_key[i] || {};
-                    const childName = provenance?.[0]?.record.children_name[i] || '';
-                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/${childKey}`;
-                    // Check if the childKey is the same as the reportingKey
+                    const childName = record.deviceName || '';
+                    const childUrl = `${window.location.origin}/history/${childKey}`;
+
                     if (childKey == reportingKey){
                         isReportingKey = 'T';
                     }
