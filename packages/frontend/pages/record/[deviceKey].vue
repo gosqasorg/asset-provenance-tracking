@@ -237,7 +237,8 @@ export default {
 
 <style scoped>
 .record-container {
-    padding: 5px 5px 5px 5px
+    padding: 5px 5px 5px 5px;
+    width: 100%;
 }
 
 .btn {

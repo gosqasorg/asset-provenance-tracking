@@ -75,8 +75,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <div v-else class="text-center mb-5 mt-5">
-        Creating record(s)...
+    <div v-else id="loading-screen">
+        <p class="text-center pb-5 pt-5">Creating record(s)...</p>
     </div>
  </template>
 
@@ -186,6 +186,11 @@ export default {
     margin-bottom: 1rem;
 }
 
+#gdt-container,
+#loading-screen {
+    width: 100%;
+}
+
 @media (min-width:768px) {
     .fs-1 {
         font-size: 32px;
@@ -198,8 +203,9 @@ export default {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #gdt-container {
-        background-color: #1E2019
+    #gdt-container,
+    #loading-screen {
+        background-color: #1E2019;
     }
     h1 {
         color: #CCECFD;
