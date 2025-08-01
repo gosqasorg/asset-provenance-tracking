@@ -59,11 +59,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     placeholder="Email"
                     @keyup.enter=""
                 />
-    
-                <!-- TODO: Dev; remove before flight --> 
-                <!--
-                <p>User entered: {{ textInput }} </p>
-                -->
             </div>
         </div>
 

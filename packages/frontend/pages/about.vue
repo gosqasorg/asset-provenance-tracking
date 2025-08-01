@@ -118,7 +118,8 @@ export default {
         background-color: #1E2019
     }
     h1,
-    h2 {
+    h2,
+    h3 {
         color: #CCECFD;
     }
     .p-text-color {
