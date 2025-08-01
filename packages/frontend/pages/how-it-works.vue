@@ -220,13 +220,13 @@ li {
     }
 
     .divider {
-        background-color: #F1FAFE;
+        background-color: #FFFFFF;
         width: 100%;
         height: 2em;
     }
 
     .videos {
-        background-color: #F1FAFE;
+        background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
         align-items: stretch;
@@ -234,7 +234,7 @@ li {
     }
 
     #tutorials {
-        background-color: #F1FAFE;
+        background-color: #FFFFFF;
     }
 
     #how-it-works-container {
