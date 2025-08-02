@@ -36,6 +36,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
+            <div class="text-iris" id="num-fields" style="display:none" >
+                <label for="input"></label>
+            </div>
 
             <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
