@@ -203,6 +203,8 @@ export default {
 
 .content {
   flex: 1 0 auto;
+  display: flex;
+  justify-content: center;
 }
 
 .navbar-collapse {

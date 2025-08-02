@@ -34,7 +34,7 @@ const recordHasParent = hasParent(provenance);
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <div v-if="!isLoading">
+  <div v-if="!isLoading" id="history-page">
     <div v-if="recordKeyFound">
       <div class="deviceKey-history">
         <div class="row pt-3 pb-6 mx-4">
@@ -171,8 +171,8 @@ const recordHasParent = hasParent(provenance);
       </div>
     </div>
   </div>
-  <div v-else>
-    <p>Loading... please wait.</p>
+  <div v-else id="loading-screen">
+      <p class="text-center pb-5 pt-5">Creating record(s)...</p>
   </div>
 </template>
 
@@ -372,6 +372,11 @@ export default {
   word-wrap: break-word !important;
 }
 
+#history-page,
+#loading-screen {
+  width: 100%;
+}
+
 @media (max-width: 995px) {
   .record-description {
     max-width: 100%;
@@ -556,6 +561,11 @@ a:visited {
 @media (prefers-color-scheme: dark) {
   .deviceKey-history {
     background-color: #1E2019;
+  }
+
+  #loading-screen {
+    background-color: #1E2019;
+    color: white;
   }
 
   h1 {
