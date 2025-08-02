@@ -6,6 +6,7 @@ import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
+import { sendEmail } from './sendEmail.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -428,6 +429,29 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         // Deliberate lack of error message to client
     }
 }
+
+export async function testEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const response = sendEmail("info@gosqas.org", "vincesteffens@gmail.com", "Testing the Email Func", 
+            "Testing testing!", "Display name?");
+
+        console.log("Got a response from sendEmail:", response);
+        
+        return {
+            status: 200,
+            body: "Test success!",
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(e) {
+        console.error('Failed to create email:', e);
+    }
+}
+
+app.get("testEmail", {
+    authLevel: 'anonymous',
+    route: 'testEmail',
+    handler: testEmail,
+})
 
 app.post('postEmail', {
     authLevel: 'anonymous',

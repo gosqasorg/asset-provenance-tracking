@@ -51,6 +51,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
       return { status: KnownEmailSendStatus.Succeeded, message: message };
     }
     else {
+      console.log("Email sending failed")
       throw poller.getResult().error;
     }
 
