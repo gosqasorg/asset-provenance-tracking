@@ -42,8 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div id="create_group" style="display:none"><FormsCreateContainer/></div>
 
 
-            <div class="col" style="text-align: center; margin-top: 50px;">
-              <RouterLink to="/how-it-works"><button class="baseButton button" id="about-button" style="
+            <div class="col mt-4" style="text-align: left;">
+              <RouterLink to="/how-it-works"><button class="baseButton button" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
@@ -54,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               >
               How It Works
               </button></RouterLink>
-              <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
+              <RouterLink to="/dmdm"><button class="baseButton button mx-3" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
@@ -69,7 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <p class="my-4 mb-5 form-control">
-                The Global Open Source Quality Assurance System (GOSQAS) enables transparent documentation through our Global Distributed Tracking (GDT) system, allowing secure data logging for low-resource settings and promoting global communication in humanitarian response, open source hardware, and scientific research.
+                Global Distributed Tracking is a free, open source, and fully encrypted software solution enabling closed-loop tracking for products, information, and logistics.
             </p>
 
 
@@ -197,6 +197,11 @@ export default {
         background-clip: padding-box;
         background-color: #1E2019;
     }
+    #learn-more-button {
+        color: #CCECFD;
+        background-color: #1E2019;
+        border: 2px solid #CCECFD;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -213,6 +218,11 @@ export default {
     .form-control {
         background-clip: padding-box;
         background-color: #FFFFFF;
+    }
+    #learn-more-button {
+        color: #322253;
+        background-color: #FFFFFF;
+        border: 2px solid #4E3681;
     }
 }
 
