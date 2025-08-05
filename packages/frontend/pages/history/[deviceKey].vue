@@ -109,45 +109,16 @@ const recordHasParent = hasParent(provenance);
               <div class="buttons-container">
                 <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-                <button id="shareRecordBtn" class="btn share-btn" data-bs-toggle="collapse"
-                  data-bs-target="#share-dropdown" @click="buttonFormat">
-                  Share Record Link
-                  <picture v-if="!shareDropdown">
-                    <img id="hover-icon" src="../../assets/images/dropdown-icon.svg" style="display:none;">
-                    <source srcset="../../assets/images/darkmode-dropdown.svg" media="(prefers-color-scheme: dark)" 
-                      class="dropdown-image" style="display:inline;">
-                    <img id="light-share-icon" src="../../assets/images/dropdown-icon.svg" class="dropdown-image" style="display:inline;">
-                  </picture>
-                  <picture v-else>
-                    <img id="hover-icon" src="../../assets/images/up-dropdown-icon.svg" style="display:none;">
-                    <source srcset="../../assets/images/darkmode-up-dropdown.svg" media="(prefers-color-scheme: dark)" 
-                      class="dropdown-image" style="display:inline;">
-                    <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image" style="display:inline;">
-                  </picture>
-                </button>
-
-                <!-- Share dropdown -->
-                <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
-                  <li class="dropdown-item" style="padding: 7px">
-                    <a @click="copy()" class="drop-text" id="item-link">Copy</a>
-                  </li>
-                  <li class="dropdown-item" style="padding: 7px">
-                    <a @click="text()" class="drop-text" id="item-link">Messages</a>
-                  </li>
-                  <li class="dropdown-item" style="padding: 7px">
-                    <a @click="mail()" class="drop-text" id="item-link">Email</a>
-                  </li>
-                  <li class="dropdown-item" style="padding: 7px">
-                    <a @click="whatsApp()" class="drop-text" id="item-link">WhatsApp</a>
-                  </li>
-                  <li class="dropdown-item" style="padding: 7px">
-                    <a @click="telegram()" class="drop-text" id="item-link">Telegram</a>
-                  </li>
-                </ul>
+                <ProvenanceShareDropdown 
+                  :deviceName="deviceRecord.deviceName" 
+                  :description="deviceRecord.description"
+                  :fontSize="20"
+                  :height="66"
+                  :width="48">
+                </ProvenanceShareDropdown>
               </div>
               <section id="recalled">
-                <ProvenanceFeed style="border: 2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey"
-                  :provenance="recalledRecords" />
+                <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
               </section>
               <section id="recent">
                 <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
@@ -239,7 +210,6 @@ export default {
       isLoading: true,
       recordKeyFound: false,
       hasReportingKey: false,
-      shareDropdown: false,
       childKeys: [] as string[],
       _recordKey: "",
       valid: false
@@ -272,49 +242,6 @@ export default {
       const qrCodeComponent = this.$refs.qrcode_component as any;
       qrCodeComponent?.downloadQRCode()
     },
-    buttonFormat() {
-      let shareBtn = <HTMLDivElement>document.getElementById("shareRecordBtn");
-
-      if (!dropdownVisible) { // button clicked, dropdown now visible
-        dropdownVisible = true;
-        this.shareDropdown = true;
-        shareBtn.style.borderRadius = "10px 10px 0px 0px";
-      } else {
-        dropdownVisible = false;
-        this.shareDropdown = false;
-        shareBtn.style.borderRadius = "10px";
-      }
-    },
-    getDescription() {
-      return encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"\nClick Link & View Records: ${window.location.href}`);
-    },
-    copy() {
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => {
-          alert('Record Link copied to clipboard!');
-        })
-        .catch((error) => {
-          console.error('Failed to copy text: ', error);
-          alert('Failed to copy Record Link. Please try again.');
-        });
-    },
-    mail() {
-      var shareDescr = this.getDescription();
-      window.location = "mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=" + shareDescr;
-    },
-    text() {
-      var shareDescr = this.getDescription();
-      window.location = "sms:?&body=Record Link: " + shareDescr;
-    },
-    whatsApp() {
-      var shareDescr = this.getDescription();
-      window.location = "https://wa.me/send?text=" + shareDescr;
-    },
-    telegram() {
-      var shareLink = encodeURIComponent(window.location.href);
-      var shareDescr = encodeURIComponent(`Device Name: "${deviceRecord.deviceName}"\nDescription: "${deviceRecord.description}"`);
-      window.location = "https://t.me/share?url=" + shareLink + "&text=" + shareDescr;
-    },
     addScrollListener() {
       // When user scrolls, the nav bar is updated
       window.addEventListener('scroll', () => {
@@ -337,7 +264,6 @@ export default {
       this.isLoading = true;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
-      this.shareDropdown = false;
 
       const provenance = await getProvenance(this._recordKey);
 
@@ -399,7 +325,7 @@ export default {
 
 </script>
 
-<style>
+<style scoped>
 .history-container #device-details {
   margin: 20px auto;
   margin-bottom: 15px;
@@ -438,31 +364,9 @@ export default {
 }
 
 .download-btn {
-  margin-top: 10px;
+  margin-top: 20px;
   width: 48% !important;
 }
-
-.share-btn {
-  margin-top: 10px;
-  width: 48% !important;
-}
-
-#share-dropdown {
-  width: 48% !important;
-  border-radius: 0px 0px 10px 10px;
-  margin-left: auto;
-  margin-right: 0;
-  list-style-type: none;
-}
-
-.dropdown-item {
-  text-align: center;
-  border-radius: 10px;
-}
-
-/* .dropdown-item:hover {
-  background-color: #e6f6ff;
-} */
 
 .btn-primary {
   background-color: #4E3681;
@@ -494,16 +398,8 @@ export default {
 }
 
 /* Wrap buttons once screen gets below a certain size */
-@media (max-width: 665px) {
-  .share-btn {
-    width: 100% !important;
-  }
-
+@media (max-width: 991px) {
   .download-btn {
-    width: 100% !important;
-  }
-
-  #share-dropdown {
     width: 100% !important;
   }
 }
@@ -553,10 +449,6 @@ a:visited {
 
 .active>a {
   padding-left: 20px;
-  font-weight: bold;
-}
-
-#dropdown-item>a:hover {
   font-weight: bold;
 }
 
@@ -729,37 +621,9 @@ a:visited {
     color: white;
   }
 
-  /* TODO: move share hover to the share component */
-  .download-btn:hover,
-  .share-btn:hover {
+  .download-btn:hover {
     background-color: white;
     color: black;
-  }
-  .dropdown-item:hover {
-    background-color: white !important;
-  }
-  .dropdown-item:hover .drop-text {
-    color: black;
-  }
-
-  #share-dropdown {
-    background-color: #1E2019;
-    border: 2px solid #FFFFFF;
-  }
-
-  .drop-text {
-    color: white;
-  }
-
-  .dropdown-item:hover {
-    background-color: #4E3681;
-  }
-  #shareRecordBtn:hover .dropdown-image {
-    display: none !important;
-  }
-
-  #shareRecordBtn:hover #hover-icon {
-    display: inline !important;
   }
 }
 
@@ -820,27 +684,8 @@ a:visited {
     color: black;
   }
 
-  .share-btn {
-    background-color: #CCECFD;
-    border: #CCECFD;
-    color: black;
-  }
-
-  .download-btn:hover,
-  .share-btn:hover {
+  .download-btn:hover {
     background-color: #e6f6ff !important;
-  }
-
-  #share-dropdown {
-    background-color: #CCECFD;
-  }
-
-  .drop-text {
-    color: black;
-  }
-
-  .dropdown-item:hover {
-    background-color: #e6f6ff;
   }
 }
 </style>
