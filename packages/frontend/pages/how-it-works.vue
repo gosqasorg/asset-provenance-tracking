@@ -101,6 +101,9 @@ const route = useRoute()
                     style="width: 100%; height: 480px;" frameborder="0"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
                     title="Tutorial: Using A Record"></iframe>
+                    <p class="video-production" style="margin-left:100px; text-align: left; font-size: inherit;">
+  Video production by <a href="https://www.prodigium-pictures.com/" target="_blank" rel="noopener noreferrer">Prodigium Pictures</a>
+</p>
             </div>
         </div>
 
@@ -148,6 +151,10 @@ li {
 
     #overview-cols {
         min-width: 390px;
+    }
+    .video-production {
+      margin-left: 0 !important;
+      width: 100%;
     }
 }
 
@@ -204,6 +211,13 @@ li {
     .col {
         color: #FFFFFF;
     }
+    .video-production {
+    color: #FFFFFF;  
+  }
+  .video-production a {
+    color: #CCECFD;  
+    text-decoration: underline;
+  }
 }
 
 /* Light mode version*/
@@ -257,5 +271,12 @@ li {
     .col {
         color: #1E2019;
     }
+    .video-production {
+    color: #1E2019;  
+  }
+  .video-production a {
+    color: #4E3681; 
+    text-decoration: underline;
+  }
 }
 </style>

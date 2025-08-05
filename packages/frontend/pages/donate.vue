@@ -31,11 +31,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 increase accessibility to quality information and products.<br><br>
             </p>
         </div>
-
-        <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+        <div style="width: 100%; max-width: 1200px;   margin: 0 auto;">
+            <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                        style="width: 100%; height: 540px;"
                        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
          </iframe>
+         <p class="video-production" style="margin-top:0px; margin-left:50px; text-align: left; font-size: inherit;">
+  Video production by <a href="https://www.prodigium-pictures.com/" target="_blank" rel="noopener noreferrer">Prodigium Pictures</a>
+</p>
+        </div>
 
 
         <form class="mt-3 mb-3" action="https://www.paypal.com/donate" method="post" target="_top">
@@ -92,6 +96,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .row{
         margin-top:32px;
     }
+    .video-production {
+      margin-left: 0 !important;
+      width: 100%;
+    }
 }
 
 /* For screens larger than 768px */
@@ -120,6 +128,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         border: #CCECFD;
         color: black;
     }
+    .video-production {
+    color: #FFFFFF;  
+  }
+  .video-production a {
+    color: #CCECFD;  
+    text-decoration: underline;
+  }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -137,5 +152,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         border: #4e3681;
         color: white;
     }
+    .video-production {
+    color: #1E2019;  
+  }
+  .video-production a {
+    color: #4E3681;  
+    text-decoration: underline;
+  }
 }
 </style>

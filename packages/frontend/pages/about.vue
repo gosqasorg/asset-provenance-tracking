@@ -36,11 +36,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
          <div class="row" >
           <h3>Global Distributed Tracking</h3>
-          <p style="font-weight: 400;">The Global Open Soruce Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
-               <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-                       style="width: 100%; height: 480px;"
+          <p style="font-weight: 400;">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
+          <div style="width: 100%; max-width: 1200px;   margin: 0 auto;">
+  <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+          style="width: 100%; height: 480px;"
                        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
-               </iframe>
+  </iframe>
+    <p class="video-production" style="margin-left: 100px; font-size: inherit;">
+    Video production by <a href="https://www.prodigium-pictures.com/" target="_blank" rel="noopener noreferrer">Prodigium Pictures</a>
+  </p>
+</div>    
         </div>
 
         <div class="row">
@@ -94,6 +99,10 @@ export default {
     #subtitle{
         margin-bottom:16px
     }
+    .video-production {
+      margin-left: 0 !important;
+      width: 100%;
+    }
 
 
 }
@@ -127,6 +136,13 @@ export default {
     p {
         color: #FFFFFF;
     }
+    .video-production {
+    color: #FFFFFF;  
+  }
+  .video-production a {
+    color: #CCECFD;  
+    text-decoration: underline;
+  }
 
 }
 /* Light mode version*/
@@ -144,6 +160,13 @@ export default {
     p {
         color: #1E2019;
     }
+    .video-production {
+    color: #1E2019;  
+  }
+  .video-production a {
+    color: #4E3681;  
+    text-decoration: underline;
+  }
 }
 
 </style>
