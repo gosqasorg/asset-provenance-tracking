@@ -49,6 +49,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row">
+            Lorem Ipsum
+        </div>
+
+        <div class="text-center my-4">
+            <PilotProgram />
+        </div>
+
+
+        <div class="row">
             <h2 id="subtitle">Our Mission: Trust Through Transparency</h2>
             <p>As an open-source organization, GOSQAS prioritizes transparency in all projects. Because we know that
                 openness and clarity build trust and promote wide user adoption, our commitment to Trust Through Transparency
@@ -79,11 +88,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import Learn_more from '~/layouts/learn_more.vue';
 import HowItWorks from '~/components/Buttons/HowItWorks.vue';
+import PilotProgram from '~/components/Buttons/PilotProgram.vue';
+
+
 
 export default {
     components: {
         ButtonComponent,
-        HowItWorks
+        HowItWorks,
+        PilotProgram
     }
 };
 </script>
