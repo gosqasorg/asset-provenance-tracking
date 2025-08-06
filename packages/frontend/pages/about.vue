@@ -32,15 +32,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
                 Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
-        </div>
-
-         <div class="row" >
-          <h3>Global Distributed Tracking</h3>
-          <p style="font-weight: 400;">The Global Open Soruce Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
-               <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                        style="width: 100%; height: 480px;"
                        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
                </iframe>
+        </div>
+
+        <div class="row" >
+        <RouterLink to="/how-it-works"><button class="baseButton button first about-button" id="about-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 20px 20px 0px 0px;
+                  font-size: 18px;
+                  border-radius: 10px;
+                  width: 100%;
+                ">
+                    How It Works
+                </button></RouterLink>
+        
+        <div class="dmdm" >
+                  <img src="../assets/images/dmdm-lightmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image lightmode-dmdm">
+                 <img src="../assets/images/dmdm-darkmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image darkmode-dmdm">
+                <div class="dmdm-description" style="max-width: 100%;">
+                    <p class="dmdm-header">Decentralized Medical Device Manufacturing (DMDM)</p>
+                    <p class="dmdm-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA–registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process. Explore how the DMDM and GOSQAS partnership expands open-source technology access for medical device compliance and distribution.</p>
+                </div>
+        </div>
+                
+
+        <RouterLink to="/dmdm"><button class="baseButton button first about-button" id="about-button" style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 20px 20px 0px 0px;
+                  font-size: 18px;
+                  border-radius: 10px;
+                  width: 100%;
+                ">
+                    View our pilot program
+                </button></RouterLink>
         </div>
 
         <div class="row">
@@ -83,6 +114,7 @@ export default {
 
 <style scoped>
 
+
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
     #about-container{
@@ -94,8 +126,22 @@ export default {
     #subtitle{
         margin-bottom:16px
     }
+    .dmdm{
+        flex-direction: column;
+        align-items: center;
+    }
 
+    .dmdm-description {
+        max-width: 100%;
+        margin-top: 15px;
+        font-size: 18px;
+    }
 
+    .dmdm-image {
+        height: auto;
+        width: 100%;
+        height:390px;
+    }
 }
 
 /* For screens larger than 768px */
@@ -109,8 +155,29 @@ export default {
     #subtitle{
         margin-bottom:20px
     }
-
+    .dmdm-image {
+        height: auto;
+        width: 100%;
+        height: 235px;
+    }
+    .dmdm-description {
+        max-width: 100%;
+        margin-top: 15px;
+        font-size: 18px;
+        margin-left:40px;
+    }
 }
+
+.dmdm {
+    display: flex;
+    align-items: center; 
+  }
+
+.lightmode-dmdm,
+.darkmode-dmdm {
+    display: none;
+}
+
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
@@ -126,6 +193,20 @@ export default {
     }
     p {
         color: #FFFFFF;
+    }
+    #about-button {
+        color: white;
+        background-color: #1E2019;
+        border: 2px solid #CCECFD;
+    }
+    .dmdm-header {
+        margin-bottom:12px;
+        margin-top:-20px;
+        font-weight: 600;
+        color: #CCECFD;
+    }
+    .darkmode-dmdm {
+        display: inline;
     }
 
 }
@@ -143,6 +224,24 @@ export default {
     }
     p {
         color: #1E2019;
+    }
+    #about-button {
+        color: #322253;
+        background-color: #FFFFFF;
+        border: 2px solid #322253;
+    }
+    .dmdm-header {
+        margin-bottom:15px;
+        margin-top:-20px;
+        font-weight: 600;
+        color: #4E3681;
+    }
+    .dmdm-text {
+        margin-bottom:5px;
+        color: #1E2019;
+    }
+    .lightmode-dmdm {
+        display: inline;
     }
 }
 
