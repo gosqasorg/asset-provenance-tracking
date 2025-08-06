@@ -137,4 +137,13 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
     expect(res).toHaveProperty('headers');
   });
-}); 
+
+  //new test
+  it('hello world test', async () => {
+    const req= makeHttpRequest();
+    const res= await httpTrigger.myfunction(req,context);
+    expect(res).toHaveProperty('body');
+    expect(res['body']).toBe('test');
+  });
+
+});
