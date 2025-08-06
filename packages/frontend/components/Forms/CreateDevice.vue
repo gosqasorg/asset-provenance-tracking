@@ -41,7 +41,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h4>
                     <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
-
                 <div v-if="isChecked">
                     <!-- TODO: API call function -->
                     <input
@@ -51,15 +50,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         placeholder="Email"
                         @keyup.enter=""
                     />
-
-                    <!-- TODO: Dev; remove before flight -->
-                    <!--
-                    <p>User entered: {{ textInput }} </p>
-                    -->
-
                 </div>
-
             </div>
+
         </div>
  
         <div class="d-grid">
