@@ -49,8 +49,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row">
-            Lorem Ipsum
+            <img 
+                src="../assets/images/dmdm.jpg" 
+                class="
+                    object-fit-cover
+                    d-inline-block
+                    mx-3
+                    col-md-4
+                "
+                style="  
+                    border-width: 2px;                                                     
+                    border-style: solid;                                                   
+                    padding: 0px 0px;                                                    
+                    margin: 0px;                                                           
+                    border-radius: 10px;
+                    width: 25%;
+                    aspect-ratio: 1/1;
+                "                                                  
+            >
+
+            <div class="mx-1 col-md-8">
+                <p>LLorem IpsumLorem ILorem IpsumLorem ILorem IpsumLorem ILorem IpsumLorem ILorem IpsumLorem ILorem IpsumLorem ILorem IpsumLorem Iorem IpsumLorem Ipsum</p>
+                <p>Lorem IpsumLorem Ipsum</p>
+                <p>Lorem IpsumLorem Ipsum</p>
+                <p>Lorem IpsumLorem Ipsum</p>
+            
+            </div>
         </div>
+
+
+
+
+
+
+
+
+
+
+
 
         <div class="text-center my-4">
             <PilotProgram />
