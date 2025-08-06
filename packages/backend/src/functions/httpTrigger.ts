@@ -428,6 +428,16 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         // Deliberate lack of error message to client
     }
 }
+//new function that handles Api getting hit
+export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    
+        console.log("my testendpoint was hit");
+        return {
+            status: 200,
+            body: "test",
+            headers: { "Content-Type": "text/plain" }
+        }
+} 
 
 app.post('postEmail', {
     authLevel: 'anonymous',
@@ -476,4 +486,9 @@ app.get("getVersion", {
     route: 'version',
     handler: getVersion
 })
-
+//new test api endpoint
+app.get("myfunction", {
+    authLevel: 'anonymous',
+    route: 'test-k',
+    handler: myfunction,
+})
