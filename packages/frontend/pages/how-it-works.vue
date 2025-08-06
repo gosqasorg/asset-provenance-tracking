@@ -61,7 +61,7 @@ const route = useRoute()
         <div class="row" id="overview">
             <h2 style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/cross-icon.svg" style="height:50px; margin-bottom:20px" class="light-icon">
                 <img src="../assets/images/darkmode-cross.svg" style="height:50px; margin-bottom:20px"
                     class="dark-icon">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
@@ -73,16 +73,16 @@ const route = useRoute()
                 <p>2. Testing agency uploads documentation</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/check-icon.svg" style="height:50px; margin-bottom:20px" class="light-icon">
                 <img src="../assets/images/darkmode-check.svg" style="height:50px; margin-bottom:20px"
                     class="dark-icon">
                 <p>3. Distributor views information within GDT and verifies product</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/gosqas-icon.svg" style="height:105px; margin-bottom:0px; margin-top: -35px;"
+                <img src="../assets/images/gosqas-icon.svg" style="margin-top: -55px;"
                     class="light-icon">
                 <img src="../assets/images/darkmode-gosqas.svg"
-                    style="height:40px; margin-bottom:20px; margin-top: 10px;" class="dark-icon">
+                    style="margin-top: -55px;" class="dark-icon">
                 <p>4. Medical staff received verified product and records shipment receipt in GDT</p>
             </div>
 
