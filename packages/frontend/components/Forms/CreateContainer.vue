@@ -167,52 +167,38 @@ export default {
             const childrenDeviceName = [];
             let reportingKey;
 
+            // Get all elements from the DOM
             if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
                 this.tags = (this.tags).concat(['notify_all'])
             } 
+            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes")).checked;
 
-            if (hasReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+            let custom_child_names = [];
+            if (numChildren) {
+                for (let i = 0; i < Number(numChildren); i++) {
+                    if (customize_yes) {
+                        // user has selected to customize names. use the inputted names.
+                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
+                        custom_child_names.push(childName);
+                    } else {
+                        // user not customizing names. use default.                        
+                        childName = this.name + " #" + String(i + 1);
+                    }
+                }
+            };
 
-                try {
-                    const response = await postProvenance(reportingKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
-                        tags: tag_set,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
-                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: 'Successfully created reporting key'
-                    })
-                } catch (error) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
-                };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
-            }
+            // Emit an event to notify the gdt.vue page to display loading screen
+            EventBus.emit('isLoading');
 
             if (numChildren) {
-                const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
                 var childName;
 
                 for (let i = 0; i < Number(numChildren); i++) {
                     const childKey =  await makeEncodedDeviceKey();
 
-                    if (customize_yes.checked) {
-                        // user has selected to customize names. use the inputted names.
-                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
-                    } else {
-                        // user not customizing names. use default.                        
+                    if (customize_yes) {
+                        childName = custom_child_names[i];
+                    } else {                      
                         childName = this.name + " #" + String(i + 1);
                     }
 
@@ -279,6 +265,36 @@ export default {
                     text: `Error creating the group: ${error}`
                 })
             }
+
+            if (hasReportingKey) {
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
+
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
+                    })
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
+                childrenDeviceList.push(reportingKey);
+                childrenDeviceName.push(name);
+            }
         },
     }
 
@@ -335,6 +351,10 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
+    #group-button:active {
+        background-color: #E6F6FF;
+        border-color: #E6F6FF;
+    }
     input[type="file"]::file-selector-button {
         background-color: #CCECFD;  
         color: black;
@@ -352,6 +372,10 @@ export default {
         background-color: #4E3681;
         color: white;
         border-color: #4E3681;
+    }
+    #group-button:active {
+        background-color: #322253;
+        border-color: #322253;
     }
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  
