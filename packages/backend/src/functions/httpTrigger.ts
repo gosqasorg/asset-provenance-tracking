@@ -437,7 +437,7 @@ export async function myfunction(request: HttpRequest, context: InvocationContex
             body: "test",
             headers: { "Content-Type": "text/plain" }
         }
-    } 
+} 
 
 app.post('postEmail', {
     authLevel: 'anonymous',
@@ -487,8 +487,8 @@ app.get("getVersion", {
     handler: getVersion
 })
 //new test api endpoint
-app.post("myfunction", {
+app.get("myfunction", {
     authLevel: 'anonymous',
-    route: 'test',
+    route: 'test-k',
     handler: myfunction,
 })
