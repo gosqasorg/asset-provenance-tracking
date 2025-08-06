@@ -140,8 +140,10 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   //new test
   it('hello world test', async () => {
-  console.log("Hello, world from the test!");
-  expect(1 + 1).toBe(2); 
+    const req= makeHttpRequest();
+    const res= await httpTrigger.myfunction(req,context);
+    expect(res).toHaveProperty('body');
+    expect(res['body']).toBe('test');
   });
 
 });
