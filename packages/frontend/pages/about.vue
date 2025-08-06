@@ -24,19 +24,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container-fluid" id="about-container">
         <h1>About Us</h1>
         <div class="row">
-            <p style="font-weight: 400; margin-bottom: 30px;" > The Global Open Source Quality Assurance System (GOSQAS) creates
+            <p style="font-weight: 400" > The Global Open Source Quality Assurance System (GOSQAS) creates
                 opportunities for better practices across the diverse humanitarian
                 response, open-source hardware, and scientific research
                 communities. We employ open-source tools and principles to centralize
                 user solutions, despite location or resource environment. </p>
 
-            <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
-                Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
+            <p>
+                <span class="p-text-color" style="font-weight:600">Our current products</span> 
+                <br className="my-3">
+                Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.
+            </p>
         </div>
 
          <div class="row" >
-          <h3>Global Distributed Tracking</h3>
-          <p style="font-weight: 400;">The Global Open Soruce Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                        style="width: 100%; height: 480px;"
                        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
