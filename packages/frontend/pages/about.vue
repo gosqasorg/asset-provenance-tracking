@@ -37,11 +37,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </p>
         </div>
 
-         <div class="row" >
+        <div class="row">
                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                        style="width: 100%; height: 480px;"
                        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
                </iframe>
+        </div>
+
+        <div class="text-center my-4">
+            <HowItWorks />
         </div>
 
         <div class="row">
@@ -64,7 +68,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 reinforcing our dedication to community benefit and accessibility.</p>
         </div>
 
-            <Learn_more></Learn_more>
+        <Learn_more />
 
     </div>
 
@@ -74,10 +78,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import Learn_more from '~/layouts/learn_more.vue';
+import HowItWorks from '~/components/Buttons/HowItWorks.vue';
 
 export default {
     components: {
-        ButtonComponent
+        ButtonComponent,
+        HowItWorks
     }
 };
 </script>
