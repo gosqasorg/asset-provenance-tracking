@@ -62,6 +62,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <iframe src="https://player.vimeo.com/video/1086646484?h=f0cbc7fd6d&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                         style="width: 100%; height: 540px;"
     frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="How to Create a Group Record with Decentralized Medical Device Manufacturing (DMDM)"></iframe>
+    <p id="video-caption" style="margin-top: 10px; font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
 
 
     </div>
@@ -105,6 +106,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .dmdm-link {
         font-size: 20px;
     }
+    #video-caption {
+      text-align: left;      
+      padding-left: 50px; 
+    }
 }
 
 /* Dark mode version*/
@@ -122,6 +127,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .dmdm-link {
         color: #CCECFD;
     }
+    #video-caption {
+      color: #FFFFFF; 
+    }
+    #video-caption a {
+      color: #CCECFD; 
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -137,5 +148,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .dmdm-link {
         color: #4E3681;
     }
+    #video-caption {
+    color: #1E2019; 
+    }  
+  #video-caption a {
+    text-decoration: underline;
+    color: #4E3681; 
+  }
 }
 </style>

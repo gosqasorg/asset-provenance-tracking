@@ -109,6 +109,7 @@ const route = useRoute()
                     class="my-2"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
                     title="Tutorial: How to Create a Group Record with Decentralized Medical Device Manufacturing (DMDM)"></iframe>
+                    <p id="video-caption" style="margin-top: 10px; font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
                 <div class="divider"> </div>
             </div>
         </div>
@@ -165,6 +166,10 @@ li {
     #how-it-works-container {
         padding: 80px 200px 100px 200px;
     }
+    #video-caption {
+      text-align: left;      
+      padding-left: 100px; 
+    }
 }
 
 .light-icon,
@@ -212,6 +217,12 @@ li {
     .col mx-2,
     .col {
         color: #FFFFFF;
+    }
+    #video-caption {
+      color: #FFFFFF; 
+    }
+    #video-caption a {
+      color: #CCECFD; 
     }
 }
 
@@ -266,5 +277,12 @@ li {
     .col {
         color: #1E2019;
     }
+    #video-caption {
+    color: #1E2019; 
+    }  
+  #video-caption a {
+    text-decoration: underline;
+    color: #4E3681; 
+  }
 }
 </style>
