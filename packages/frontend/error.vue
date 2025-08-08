@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <NuxtLayout>
         <div class="page-404-padding">
             <div>
-                <h1 class="mb-0 error-heading" style="color: #322253;">404</h1>
+                <h1 class="mb-0 error-heading">404</h1>
                 <h2 class="error-body">Page not found</h2>
                 <p class="mb-2 error-body">We're sorry, the page you're looking for could not be found.</p>
                 <div>
@@ -37,6 +37,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <style scoped>
     .button-404 {
         margin-top: 20px !important;
+    }
+    
+    .error-heading {
+        color: #322253;
     }
 
     /* For screens less than 768px*/
@@ -69,7 +73,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     @media (prefers-color-scheme: dark) {
         .error-heading {
-            color: #e6f6ff !important;
+            color: #ccecfd;
         }
         .error-body {
             color: white;

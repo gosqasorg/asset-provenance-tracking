@@ -159,8 +159,8 @@ const recordHasParent = hasParent(provenance);
       <h1 class="error-title">Invalid history key</h1>
       <h2 class="error-subtitle">No record attached to this key</h2>
       <p class="error-description">
-        We’re sorry, the record you’re looking for could not be found. <br />
-        Please double-check your key. If you keep receiving this error, <br />
+        We’re sorry, the record you’re looking for could not be found.
+        Please double-check your key. If you keep receiving this error,
         email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
       </p>
       <div class="error-buttons">
@@ -546,7 +546,7 @@ a:visited {
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #1E2019;
+    background-color: #1E2019 !important;
   }
   
   .error-subtitle,
@@ -556,7 +556,7 @@ a:visited {
 
   .error-title,
   .error-email {
-    color: #e6f6ff;
+    color: #ccecfd;
   }
 
   .deviceKey-history {

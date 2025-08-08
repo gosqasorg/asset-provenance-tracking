@@ -28,7 +28,7 @@ const recordHasParent = hasParent(provenance);
 
 <template>
 
-    <div class="record-container">
+    <div v-if="recordKeyFound" class="record-container">
         <div class="my-4 mb-2 parent-container" v-if="!isLoading" :key="loadingKey">
             <div class="row justify-content-between main-container">
                 <section id="device-details" class="details-container">
@@ -84,6 +84,21 @@ const recordHasParent = hasParent(provenance);
         </div>
         <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
     </div>
+    <div v-else class="error-container">
+      <h1 class="error-title">Invalid history key</h1>
+      <h2 class="error-subtitle">No record attached to this key</h2>
+      <p class="error-description">
+        We’re sorry, the record you’re looking for could not be found.
+        Please double-check your key. If you keep receiving this error,
+        email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+      </p>
+      <div class="error-buttons">
+        <!-- Go home button -->
+        <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+        <!-- Email us button -->
+        <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+      </div>
+    </div>
 </template>
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
@@ -110,6 +125,7 @@ export default {
     data() {
         return {
             isLoading: true,
+            recordKeyFound: true,
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
@@ -148,6 +164,7 @@ export default {
             }
             this.childKeys = deviceRecord.children_key;
         } catch (error) {
+            this.recordKeyFound = false;
             this.$snackbar.add({
                 type: 'error',
                 text: 'No record found'
@@ -218,6 +235,89 @@ export default {
     flex-wrap: wrap;
 }
 
+.error-container {
+  text-align: center;
+  margin: 70px auto;
+  max-width: 655px;
+  padding: 20px;
+}
+
+.error-title {
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 150%;
+  margin-bottom: 10px;
+  color: #322253;
+  text-align: left;
+}
+
+.error-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 60px;
+  margin-bottom: 20px;
+  color: #1E2019;
+  /* Dark text color */
+  text-align: left;
+}
+
+.error-description {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 30px;
+  margin-bottom: 30px;
+  color: #1E2019;
+  text-align: left;
+}
+
+.error-email {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  line-height: 30px;
+  color: #4e3681;
+  text-decoration: underline !important;
+}
+
+.error-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.error-button {
+  width: 48% !important;
+  border: none;
+  /* TODO: style buttons to be same size as /history ones */
+  padding: 18px 22px !important;
+  max-height: 66px;
+  height: 66px;
+  font-size: 20px;
+  margin: 0px;
+}
+
+.btn-primary {
+  background-color: #4E3681;
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: #CCECFD;
+  color: #1E2019;
+}
+
+.btn-primary:hover {
+  background-color: #322253;
+}
+
+.btn-secondary:hover {
+  background-color: #e6f6ff;
+  color: #1E2019;
+}
 
 /* Switches to mobile sizing */
 @media (max-width: 991px) {
@@ -246,6 +346,16 @@ export default {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
+    .error-subtitle,
+    .error-description {
+        color: white;
+    }
+
+    .error-title,
+    .error-email {
+        color: #ccecfd;
+    }
+
     .record-container {
         background-color: #1E2019
     }
