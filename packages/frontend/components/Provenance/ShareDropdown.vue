@@ -25,14 +25,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 data-bs-target="#share-dropdown" @click="buttonFormat">
                 Share Record Link
                 <picture v-if="!shareDropdown">
-                    <source srcset="../../assets/images/darkmode-dropdown.svg"
-                        media="(prefers-color-scheme: dark)">
-                    <img src="../../assets/images/dropdown-icon.svg" class="dropdown-image">
+                    <img id="hover-icon" src="../../assets/images/dropdown-icon.svg" style="display:none;">
+                    <source srcset="../../assets/images/darkmode-dropdown.svg" media="(prefers-color-scheme: dark)" 
+                      class="dropdown-image" style="display:inline;">
+                    <img id="light-share-icon" src="../../assets/images/dropdown-icon.svg" class="dropdown-image" style="display:inline;">
                 </picture>
                 <picture v-else>
-                    <source srcset="../../assets/images/darkmode-up-dropdown.svg"
-                        media="(prefers-color-scheme: dark)">
-                    <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image">
+                    <img id="hover-icon" src="../../assets/images/up-dropdown-icon.svg" style="display:none;">
+                    <source srcset="../../assets/images/darkmode-up-dropdown.svg" media="(prefers-color-scheme: dark)" 
+                      class="dropdown-image" style="display:inline;">
+                    <img src="../../assets/images/up-dropdown-icon.svg" class="dropdown-image" style="display:inline;">
                 </picture>
             </button>
 
@@ -240,12 +242,32 @@ export default {
         color: white;
     }
 
+    .share-btn:hover {
+        background-color: white;
+        color: black;
+    }
+    .dropdown-item:hover {
+        background-color: white !important;
+    }
+    .dropdown-item:hover .drop-text {
+        color: black;
+    }
+
     #dropdown-item {
         background-color: #1E2019;
     }
 
     #share-dropdown {
+        background-color: #1E2019;
         border: 2px solid #FFFFFF;
+    }
+
+    #shareRecordBtn:hover .dropdown-image {
+        display: none !important;
+    }
+
+    #shareRecordBtn:hover #hover-icon {
+        display: inline !important;
     }
 
     .drop-text {
@@ -284,6 +306,10 @@ export default {
 
     .share-btn:active {
         background-color: #CCECFD;
+    }
+
+    .share-btn:hover {
+        background-color: #e6f6ff !important;
     }
 
     .drop-text {
