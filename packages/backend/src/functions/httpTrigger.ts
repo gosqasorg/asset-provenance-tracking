@@ -432,10 +432,11 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 export async function testEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
+        // TODO: This function currently gives an error (variable in sendEmail.ts is not defined)
         const response = sendEmail("info@gosqas.org", "vincesteffens@gmail.com", "Testing the Email Func", 
             "Testing testing!", "Display name?");
 
-        console.log("Got a response from sendEmail:", response);
+        // console.log("Got a response from sendEmail:", response);
         
         return {
             status: 200,
