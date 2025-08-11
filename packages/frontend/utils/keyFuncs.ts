@@ -13,23 +13,35 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import {encode as base58encode } from '@urlpack/base58'
+import { encode as base58encode } from '@urlpack/base58';
 
 export async function makeDeviceKey(): Promise<Uint8Array> {
-  const key = await crypto.subtle.generateKey({
-    name: "AES-CBC",
-    length: 128
-  }, true, ['encrypt', 'decrypt']);
-  const buffer = await crypto.subtle.exportKey("raw", key);
+  const key = await crypto.subtle.generateKey(
+    {
+      name: 'AES-CBC',
+      length: 128
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+  const buffer = await crypto.subtle.exportKey('raw', key);
   return new Uint8Array(buffer).slice();
 }
 
 function encodeDeviceKey(key: Uint8Array): string {
-    return base58encode(key);
+  return base58encode(key);
 }
 
 export async function makeEncodedDeviceKey(): Promise<string> {
-        return encodeDeviceKey(await makeDeviceKey());
+  let newEncodedKey = encodeDeviceKey(await makeDeviceKey());
+  // Try a few times to make sure the key is valid (length == 22)
+  for (let count = 0; count < 10; count++) {
+    newEncodedKey = encodeDeviceKey(await makeDeviceKey());
+    if (newEncodedKey.length == 22) {
+      break;
+    }
+  }
+  return newEncodedKey;
 }
 
 export function validateKey(key: string): boolean {
