@@ -14,50 +14,59 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+
         <h4 class="mt-1 mb-3">Create New Group</h4>
+
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
-            <input type="text" class="form-control mt-3" v-model="description" id="device-description" placeholder="Group Description" maxlength="5000">
+            <input type="text" class="form-control mt-3" v-model="description" id="device-description" required placeholder="Group Description" maxlength="5000">
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
-           
+
+
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
-            <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
-            </div>
 
- 
-            <h4 class="my-3 mb-0" for="children-keys">Number of Grouped Records (optional)
+
+            <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
                 <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
             </h4>
- 
- 
-            <br>
-            <h4 class="p-1 mt-0 mb-0 ">
+
+
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
             </h4>
- 
- 
-            <div class="num-fields" id="num-fields" style="display:none" >
+            <div class="text-iris" id="num-fields" style="display:none" >
                 <label for="input"></label>
             </div>
- 
- 
-            <br>
-            <h4 class="p-1 mt-0 mb-0 ">
+
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
             </h4>
  
- 
-            <br>
-            <h4 class="p-1 mt-0">
+            <h4 class="p-1 my-0">
                 <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
             </h4>
+
+            <!-- Volunteer Feedback Email --> 
+            <h4 class="p-1">
+                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
+            </h4>
+    
+            <div v-if="isChecked">
+                <!-- TODO: API call function -->
+                <input
+                    type="text"
+                    class="form-control"
+                    v-model="textInput"
+                    placeholder="Email"
+                    @keyup.enter=""
+                />
+            </div>
         </div>
-       
-        <div class="d-grid">
-            <button class="group-button my-4 mb-0" id="group-button" type="submit" style="
+
+        <div class="d-grid mt-3">
+            <button class="group-button" id="group-button" type="submit" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -75,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -91,6 +100,8 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            isChecked: false,
+            textInput: '',
         }
     },
     methods: {
@@ -156,52 +167,38 @@ export default {
             const childrenDeviceName = [];
             let reportingKey;
 
+            // Get all elements from the DOM
             if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
                 this.tags = (this.tags).concat(['notify_all'])
             } 
+            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes")).checked;
 
-            if (hasReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+            let custom_child_names = [];
+            if (numChildren) {
+                for (let i = 0; i < Number(numChildren); i++) {
+                    if (customize_yes) {
+                        // user has selected to customize names. use the inputted names.
+                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
+                        custom_child_names.push(childName);
+                    } else {
+                        // user not customizing names. use default.                        
+                        childName = this.name + " #" + String(i + 1);
+                    }
+                }
+            };
 
-                try {
-                    await postProvenance(reportingKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
-                        tags: tag_set,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
-                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: 'Successfully created reporting key'
-                    })
-                } catch (error) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
-                };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
-            }
+            // Emit an event to notify the gdt.vue page to display loading screen
+            EventBus.emit('isLoading');
 
             if (numChildren) {
-                const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
                 var childName;
 
                 for (let i = 0; i < Number(numChildren); i++) {
                     const childKey =  await makeEncodedDeviceKey();
 
-                    if (customize_yes.checked) {
-                        // user has selected to customize names. use the inputted names.
-                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
-                    } else {
-                        // user not customizing names. use default.                        
+                    if (customize_yes) {
+                        childName = custom_child_names[i];
+                    } else {                      
                         childName = this.name + " #" + String(i + 1);
                     }
 
@@ -232,7 +229,7 @@ export default {
                 }
             };
             try {
-                await postProvenance(deviceKey, {
+                const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -249,6 +246,10 @@ export default {
                     text: 'Successfully created the group'
                 })
 
+                if (response && this.isChecked && this.textInput) {
+                        await postEmail(this.textInput);
+                }
+
                 // Navigate to the new group page
                 const failure = await this.$router.push({ path: `/record/${deviceKey}` });
 
@@ -263,6 +264,36 @@ export default {
                     type: 'error',
                     text: `Error creating the group: ${error}`
                 })
+            }
+
+            if (hasReportingKey) {
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
+
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
+                    })
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
+                childrenDeviceList.push(reportingKey);
+                childrenDeviceName.push(name);
             }
         },
     }
@@ -297,21 +328,10 @@ export default {
         margin-right: auto;
         width: 100%;
         margin-top: 30px;
-
     }
     input[type=number] {
         border: 0px;
         border-radius: 4px;
-    }
-    input[type=checkbox] {
-        width:25px;
-        border: 0px;
-        margin-right: 15px;
-    }
-    .num-fields {
-        border: 0px;
-        border-radius: 4px;
-        border-color:red;
     }
     input[type=text] {
         border:5px;
@@ -331,6 +351,10 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
+    #group-button:active {
+        background-color: #E6F6FF;
+        border-color: #E6F6FF;
+    }
     input[type="file"]::file-selector-button {
         background-color: #CCECFD;  
         color: black;
@@ -348,6 +372,10 @@ export default {
         background-color: #4E3681;
         color: white;
         border-color: #4E3681;
+    }
+    #group-button:active {
+        background-color: #322253;
+        border-color: #322253;
     }
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  

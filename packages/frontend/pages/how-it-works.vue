@@ -61,7 +61,7 @@ const route = useRoute()
         <div class="row" id="overview">
             <h2 style="margin-bottom:25px">Overview</h2>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/cross-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/cross-icon.svg" style="height:50px; margin-bottom:20px" class="light-icon">
                 <img src="../assets/images/darkmode-cross.svg" style="height:50px; margin-bottom:20px"
                     class="dark-icon">
                 <p>1. Manufacturer creates a GDT identifier to share with testing agency</p>
@@ -73,16 +73,16 @@ const route = useRoute()
                 <p>2. Testing agency uploads documentation</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/check-icon.png" style="height:50px; margin-bottom:20px" class="light-icon">
+                <img src="../assets/images/check-icon.svg" style="height:50px; margin-bottom:20px" class="light-icon">
                 <img src="../assets/images/darkmode-check.svg" style="height:50px; margin-bottom:20px"
                     class="dark-icon">
                 <p>3. Distributor views information within GDT and verifies product</p>
             </div>
             <div class="col text-center" id="overview-cols">
-                <img src="../assets/images/gosqas-icon.svg" style="height:105px; margin-bottom:0px; margin-top: -35px;"
+                <img src="../assets/images/gosqas-icon.svg" style="margin-top: -55px;"
                     class="light-icon">
                 <img src="../assets/images/darkmode-gosqas.svg"
-                    style="height:40px; margin-bottom:20px; margin-top: 10px;" class="dark-icon">
+                    style="margin-top: -55px;" class="dark-icon">
                 <p>4. Medical staff received verified product and records shipment receipt in GDT</p>
             </div>
 
@@ -92,15 +92,24 @@ const route = useRoute()
             <div class="videos">
                 <iframe
                     src="https://player.vimeo.com/video/1083699274?h=ff0b41174c&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    class="my-2"
                     style="width: 100%; height: 480px;" frameborder="0"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
                     title="Tutorial: Creating A Record"></iframe>
                 <div class="divider"> </div>
                 <iframe
                     src="https://player.vimeo.com/video/1083699286?h=e63a8e8c21&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    class="my-2"
                     style="width: 100%; height: 480px;" frameborder="0"
                     allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
                     title="Tutorial: Using A Record"></iframe>
+                <div class="divider"> </div>
+                <iframe src="https://player.vimeo.com/video/1086646484?h=f0cbc7fd6d&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; height: 480px;" frameborder="0"
+                    class="my-2"
+                    allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+                    title="Tutorial: How to Create a Group Record with Decentralized Medical Device Manufacturing (DMDM)"></iframe>
+                <div class="divider"> </div>
             </div>
         </div>
 
@@ -214,13 +223,13 @@ li {
     }
 
     .divider {
-        background-color: #F1FAFE;
+        background-color: #FFFFFF;
         width: 100%;
         height: 2em;
     }
 
     .videos {
-        background-color: #F1FAFE;
+        background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
         align-items: stretch;
@@ -228,7 +237,7 @@ li {
     }
 
     #tutorials {
-        background-color: #F1FAFE;
+        background-color: #FFFFFF;
     }
 
     #how-it-works-container {
