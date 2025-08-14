@@ -25,8 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="submitRecord">
         <h5>Create New Record Entry</h5>
         <div>
-            <input type="text" class="form-control" name="description" id="provenance-description" v-model="description"
-                placeholder="Description" maxlength="5000" required />
+            <textarea id="provenance-description" v-model="description"
+                placeholder="Description" maxlength="5000" rows="3"></textarea>
             <div v-if="isGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Group Record Keys (optional, separated with a comma)" />
@@ -307,6 +307,20 @@ form {
 
 #submit-button {
     margin-top: 24px;
+}
+
+#provenance-description {
+    padding: 5px;
+    margin: 5px;
+    display: flex;
+    margin-left: auto;
+    margin-right:auto;
+    border-radius: 5px;
+    width: 100%
+}
+
+#provenance-description::placeholder{
+        color: black;
 }
 
 input {
