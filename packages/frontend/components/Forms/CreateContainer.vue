@@ -45,7 +45,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </h4>
  
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="notify-all"/> Notify all Children?
+                <input type="checkbox" class="form-check-input" id="annotate-all"/> Annotate all Children?
             </h4>
 
             <!-- Volunteer Feedback Email --> 
@@ -168,7 +168,7 @@ export default {
             let reportingKey;
 
             // Get all elements from the DOM
-            if ((<HTMLInputElement>document.getElementById("notify-all")).checked) {
+            if ((<HTMLInputElement>document.getElementById("annotate-all")).checked) {
                 this.tags = (this.tags).concat(['notify_all'])
             } 
             const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes")).checked;
