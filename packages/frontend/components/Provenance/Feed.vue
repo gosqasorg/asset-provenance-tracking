@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This component is used to display the feed of reports for a record.
     It is used in the providence/[deviceKey].vue page.
 -->
+
 <template>
     <div>
         <div v-for="(report, index) in provenance" class="report-box" :style="{ border }">
@@ -46,8 +47,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
-                    data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                <img :src="attachment.url" 
+                    :alt="attachment.fileName" 
+                    class="thumbnail"
+                    @click="onThumbClick(attachment)">
+
+
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">
                     Download File
                 </a>
@@ -58,18 +63,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
 
     <!-- Image Preview Modal -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <img v-bind:src="modalImage" alt="Image" class="modal-image">
-                </div>
+    <div class="modal-backdrop fade show" v-if="showModal"></div>
+    <div class="modal fade show" style="display: block;" id="imageModal" tabindex="-1" aria-hidden="true" v-if="showModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img v-bind:src="modalImage" alt="Image" class="modal-image">
             </div>
         </div>
-    </div>
+</div>
 
 </template>
 
@@ -99,7 +103,8 @@ export default {
         return {
             attachmentURLs: {},
             modalImage: "",
-            recalledRecord: false
+            recalledRecord: false,
+            showModal: false
         };
     },
     mounted() {
@@ -109,6 +114,13 @@ export default {
         EventBus.off('feedRefresh', this.refreshPage);
     },
     methods: {
+        onThumbClick(attachment) {
+            this.modalImage = attachment.url;
+            this.showModal = true;
+        }, 
+
+
+
         async fetchAttachmentsForReport(report, index) {
             try {
                 if (report.attachments.length > 0) {
