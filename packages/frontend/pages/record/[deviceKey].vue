@@ -27,8 +27,7 @@ const recordHasParent = hasParent(provenance);
 </script>
 
 <template>
-
-    <div class="record-container">
+    <div v-if="!isLoading" class="record-container">
         <div class="my-4 mb-2 parent-container" v-if="!isLoading" :key="loadingKey">
             <div class="row justify-content-between main-container">
                 <section id="device-details" class="details-container">
@@ -159,7 +158,8 @@ export default {
 
 <style scoped>
 .record-container {
-    padding: 5px 5px 5px 5px
+    padding: 5px 5px 5px 5px;
+    width: 100%;
 }
 
 .btn {

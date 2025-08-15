@@ -14,6 +14,8 @@ const cloudBaseUrl = "https://gosqasbe.azurewebsites.net/api"
 
 async function getStatistics(baseUrl: string) {
     const response = await fetch(`${baseUrl}/statistics`, { method: "GET", });
+    //trying to see what is stored in the response
+    console.log(response.status)
     return await response.json();
 
 }

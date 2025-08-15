@@ -41,7 +41,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h4>
                     <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
-
                 <div v-if="isChecked">
                     <!-- TODO: API call function -->
                     <input
@@ -51,15 +50,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         placeholder="Email"
                         @keyup.enter=""
                     />
-
-                    <!-- TODO: Dev; remove before flight -->
-                    <!--
-                    <p>User entered: {{ textInput }} </p>
-                    -->
-
                 </div>
-
             </div>
+
         </div>
  
         <div class="d-grid">
@@ -123,6 +116,9 @@ export default {
             }
         },
         async submitForm() {
+            // Emit an event to notify the gdt.vue page to display loading screen
+            EventBus.emit('isLoading');
+
             if (this.isSubmitting) return;
             
             this.isSubmitting = true;
@@ -212,6 +208,10 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
+    #record-button:active {
+        background-color: #E6F6FF;
+        border-color: #E6F6FF;
+    }
     input[type="file"]::file-selector-button {
         background-color: #CCECFD;  
         color: black;
@@ -229,6 +229,10 @@ export default {
         background-color: #4E3681;
         color: white;
         border-color: #4E3681;
+    }
+    #record-button:active {
+        background-color: #322253;
+        border-color: #322253;
     }
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  
