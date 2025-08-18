@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 <script setup lang="ts">
 const route = useRoute();
+const name = 'simon';
 </script>
 
 <template>
