@@ -1,5 +1,3 @@
-#!/bin/sh
+# !/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-export PATH="/c/Program Files/nodejs:$PATH"
-npx lint-staged
