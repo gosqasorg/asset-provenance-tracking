@@ -1,5 +1,4 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# !/bin/sh
 
 export PATH="/c/Program Files/nodejs:$PATH"
 npx lint-staged
