@@ -9,6 +9,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest",
+    "test-headless": "vitest run", 
     "coverage": "vitest run --coverage"
   },
   "devDependencies": {
