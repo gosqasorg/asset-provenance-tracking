@@ -21,21 +21,19 @@ their items.
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
-const route = useRoute();
+const route = useRoute()
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
 
 const provenance = await getProvenance(recordKey);
 
 const recordHasParent = hasParent(provenance);
+
 </script>
 
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <div v-if="!isLoading" id="history-page">
     <div v-if="recordKeyFound">
       <div class="deviceKey-history">
@@ -45,14 +43,9 @@ const recordHasParent = hasParent(provenance);
             <!-- When the screen size is md (>= 768px) and up  -->
             <nav id="jump-to" class="sticky-top text-slate">
               <p class="menu-spacing jump-sec">Jump to section</p>
-              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2">
-                <li
-                  id="item"
-                  class="py-2 scroll"
-                  v-for="header in headers"
-                  :key="header"
-                  :class="{ active: header.id === currentSection }"
-                >
+              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
+                <li id="item" class="py-2 scroll" v-for="header in headers" :key="header"
+                  :class="{ active: header.id === currentSection }">
                   <a :href="'#' + header.id" class="py-2 h" id="item-link">{{ header.name }}</a>
                 </li>
               </ul>
@@ -61,35 +54,18 @@ const recordHasParent = hasParent(provenance);
 
           <!-- When the screen size is less than md (< 768px ) -->
           <div class="dropdown d-md-none nav-line">
-            <button
-              class="btn text-left rounded-0 jump-sec"
-              type="button"
-              id="jump-to-mobile"
-              data-bs-toggle="dropdown"
-              aria-controls="toggle"
-              aria-expanded="false"
-              style="
-                border: none;
-                font-size: 18px;
-                text-align: left;
-                border-bottom: 3px;
-                padding-left: 0px;
-              "
-            >
+            <button class="btn text-left rounded-0 jump-sec" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
+              aria-controls="toggle" aria-expanded="false"
+              style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
               <i id="toggle-right" class="fa fa-angle-right"></i>
               <i id="toggle-down" class="fa fa-angle-down"></i>
               Jump to section
             </button>
 
-            <ul
-              class="dropdown-menu rounded-0 border-0"
-              style="width: 95%; padding: 7px 34px"
-              aria-labelledby="dropdownMenuButton"
-            >
+            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;"
+              aria-labelledby="dropdownMenuButton">
               <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
-                <a :href="'#' + header.id" class="py-2 h-mobile" id="item-link">{{
-                  header.name
-                }}</a>
+                <a :href="'#' + header.id" class="py-2 h-mobile" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
           </div>
@@ -98,13 +74,9 @@ const recordHasParent = hasParent(provenance);
 
           <div class="col-md-10">
             <!-- Spied element -->
-            <div
-              data-mdb-scrollspy-init
-              data-spy="scroll"
-              data-mdb-target="#jump-to"
-              data-mdb-offset="0"
-              class="left-col"
-            >
+            <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
+              class="left-col">
+
               <section id="device-details" class="details-container">
                 <div class="record-description">
                   <div class="my-4 text-iris fs-1">
@@ -114,25 +86,14 @@ const recordHasParent = hasParent(provenance);
                     </h1>
                   </div>
 
-                  <div class="rec" v-if="deviceRecord?.children_key && recordHasParent">
-                    Group & Child Record Key: {{ _recordKey }}
-                  </div>
-                  <div class="rec" v-else-if="deviceRecord?.children_key">
-                    Group Record Key: {{ _recordKey }}
-                  </div>
-                  <div class="rec" v-else-if="deviceRecord.isReportingKey">
-                    Reporting Key: {{ _recordKey }}
-                  </div>
-                  <div class="rec" v-else-if="recordHasParent">
-                    Child Record Key: {{ _recordKey }}
-                  </div>
+                  <div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                  <div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
                   <div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
                   <div class="mb-3 rec">
-                    <span
-                      style="word-wrap: break-word"
-                      v-html="clickableLink(deviceRecord?.description)"
-                    ></span>
+                    <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
                   </div>
 
                   <section ref="section" id="priority-notices">
@@ -141,29 +102,23 @@ const recordHasParent = hasParent(provenance);
                 </div>
 
                 <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden" />
+                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
                 </div>
               </section>
 
               <div class="buttons-container">
                 <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-                <ProvenanceShareDropdown
-                  :deviceName="deviceRecord.deviceName"
+                <ProvenanceShareDropdown 
+                  :deviceName="deviceRecord.deviceName" 
                   :description="deviceRecord.description"
                   :fontSize="20"
                   :height="66"
-                  :width="48"
-                >
+                  :width="48">
                 </ProvenanceShareDropdown>
               </div>
               <section id="recalled">
-                <ProvenanceFeed
-                  border="2px solid #4e3681"
-                  :disabled="!valid"
-                  :recordKey="_recordKey"
-                  :provenance="recalledRecords"
-                />
+                <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
               </section>
               <section id="recent">
                 <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
@@ -176,17 +131,11 @@ const recordHasParent = hasParent(provenance);
               </section>
 
               <section id="child-keys">
-                <div v-if="hasReportingKey">
-                  Reporting Key:
-                  <div>
-                    <a :href="`/history/${deviceRecord?.reportingKey}`">{{
-                      deviceRecord?.reportingKey
-                    }}</a>
-                  </div>
+                <div v-if="hasReportingKey"> Reporting Key:
+                  <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
                 </div>
-                <div v-if="childKeys?.length > 0 || hasReportingKey">
-                  <div>
-                    Child Keys:
+                <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                  <div> Child Keys:
                     <div>
                       <KeyList v-bind:keys="childKeys" />
                     </div>
@@ -195,12 +144,14 @@ const recordHasParent = hasParent(provenance);
                 </div>
                 <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
               </section>
+
             </div>
           </div>
           <!-- TODO: Uncomment when  functionality is ready:
                <div>
                  <ProvenanceNotificationSignUpModal/>
                </div>   -->
+
         </div>
       </div>
     </div>
@@ -221,13 +172,13 @@ const recordHasParent = hasParent(provenance);
     </div>
   </div>
   <div v-else id="loading-screen">
-    <p class="text-center pb-5 pt-5">Creating record(s)...</p>
+      <p class="text-center pb-5 pt-5">Creating record(s)...</p>
   </div>
 </template>
 
 <script lang="ts">
 import { getProvenance } from '~/services/azureFuncs';
-import { ref } from 'vue';
+import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 
 let deviceRecord: any;
@@ -238,17 +189,21 @@ const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
 
+
 let headers = [
-  { id: 'device-details', name: 'Record details' },
-  { id: 'priority-notices', name: 'Priority notices' },
-  { id: 'recent', name: 'Most recent updates' },
-  { id: 'device-creation', name: 'Record creation' },
-  { id: 'create-record', name: 'Create new record entry' }
+  { id: "device-details", name: "Record details" },
+  { id: "priority-notices", name: "Priority notices" },
+  { id: "recent", name: "Most recent updates" },
+  { id: "device-creation", name: "Record creation" },
+  { id: "create-record", name: "Create new record entry" }
 ];
+
+
+
 
 export default {
   components: {
-    KeyList
+    KeyList,
   },
   data() {
     return {
@@ -256,9 +211,9 @@ export default {
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
-      _recordKey: '',
+      _recordKey: "",
       valid: false
-    };
+    }
   },
   async mounted() {
     try {
@@ -276,7 +231,7 @@ export default {
       this.isLoading = false;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
-      console.log(error);
+      console.log(error)
     }
   },
   beforeDestroy() {
@@ -285,7 +240,7 @@ export default {
   methods: {
     downloadQRCode() {
       const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.downloadQRCode();
+      qrCodeComponent?.downloadQRCode()
     },
     addScrollListener() {
       // When user scrolls, the nav bar is updated
@@ -305,7 +260,7 @@ export default {
       });
     },
     async refreshFeed() {
-      console.log('Refreshing feed...');
+      console.log("Refreshing feed...");
       this.isLoading = true;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
@@ -324,18 +279,14 @@ export default {
       this.recordKeyFound = true;
 
       // Decompose the provenance records into parts to be rendered.
-      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } =
-        decomposeProvenance(provenance));
+      ({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
 
       // Pin recalled records to the top of the feed
       recalledRecords = [];
       recordsInFeed = [];
 
-      provenanceNoRecord.forEach((record) => {
-        if (
-          !Object.is(record.record.tags, undefined) &&
-          Array.from(record.record.tags).includes('recall')
-        ) {
+      provenanceNoRecord.forEach(record => {
+        if (!Object.is(record.record.tags, undefined) && Array.from(record.record.tags).includes("recall")) {
           recalledRecords.push(record);
         } else {
           recordsInFeed.push(record);
@@ -345,32 +296,33 @@ export default {
       this.isLoading = false;
 
       // This functionality could be pushed into a component...
-      this.hasReportingKey = deviceRecord.reportingKey ? true : false;
+      this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
 
       // We will remove the reportingKey, because although it is a child,
       // we have already rendered it.
       if (this.hasReportingKey) {
-        const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-        if (index > -1) {
-          deviceRecord.children_key.splice(index, 1);
-        }
+          const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+          if (index > -1) {
+              deviceRecord.children_key.splice(index, 1);
+          }
       }
       this.childKeys = getChildKeys(provenance);
 
       // Add child key navigation if there are child keys
-      if (this.childKeys?.length > 0 || this.hasReportingKey) {
+      if ((this.childKeys?.length > 0) || this.hasReportingKey) {
         headers = [
-          { id: 'device-details', name: 'Record details' },
-          { id: 'priority-notices', name: 'Priority notices' },
-          { id: 'recent', name: 'Most recent updates' },
-          { id: 'device-creation', name: 'Record creation' },
-          { id: 'create-record', name: 'Create new record entry' }
+          { id: "device-details", name: "Record details" },
+          { id: "priority-notices", name: "Priority notices" },
+          { id: "recent", name: "Most recent updates" },
+          { id: "device-creation", name: "Record creation" },
+          { id: "create-record", name: "Create new record entry" }
         ];
-        headers.push({ id: 'child-keys', name: 'Child keys' });
+        headers.push({ id: "child-keys", name: "Child keys" });
       }
-    }
+    },
   }
 };
+
 </script>
 
 <style scoped>
@@ -476,22 +428,22 @@ a:visited {
   text-decoration: none;
 }
 
-#item > a {
+#item>a {
   padding-left: 20px;
   box-decoration-break: clone;
 }
 
-#item > a:hover {
+#item>a:hover {
   padding-left: 20px;
   font-weight: bold;
 }
 
-.active > a {
+.active>a {
   padding-left: 20px;
   font-weight: bold;
 }
 
-#jump-to-mobile[aria-expanded='true'] {
+#jump-to-mobile[aria-expanded="true"] {
   #toggle-down {
     display: inline-block;
   }
@@ -501,7 +453,7 @@ a:visited {
   }
 }
 
-#jump-to-mobile[aria-expanded='false'] {
+#jump-to-mobile[aria-expanded="false"] {
   #toggle-down {
     display: none;
   }
@@ -535,7 +487,7 @@ a:visited {
   font-size: 40px;
   line-height: 60px;
   margin-bottom: 20px;
-  color: #1e2019;
+  color: #1E2019;
   /* Dark text color */
   text-align: left;
 }
@@ -546,7 +498,7 @@ a:visited {
   font-size: 20px;
   line-height: 30px;
   margin-bottom: 30px;
-  color: #1e2019;
+  color: #1E2019;
   text-align: left;
 }
 
@@ -583,72 +535,72 @@ a:visited {
 }
 
 .btn-primary {
-  background-color: #4e3681;
-  color: #ffffff;
+  background-color: #4E3681;
+  color: #FFFFFF;
 }
 
 .btn-primary:hover {
-  background-color: #3b2a6a;
+  background-color: #3B2A6A;
   /* Darker purple */
 }
 
 .btn-secondary {
-  background-color: #ccecfd;
+  background-color: #CCECFD;
   /* Light blue */
-  color: #1e2019;
+  color: #1E2019;
   /* Dark text */
 }
 
 .btn-secondary:hover {
-  background-color: #b3dff5;
+  background-color: #B3DFF5;
   /* Slightly darker blue */
-  color: #1e2019;
+  color: #1E2019;
 }
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
   .deviceKey-history {
-    background-color: #1e2019;
+    background-color: #1E2019;
   }
 
   #loading-screen {
-    background-color: #1e2019;
+    background-color: #1E2019;
     color: white;
   }
 
   h1 {
-    color: #ccecfd;
+    color: #CCECFD;
   }
 
   .device-name {
-    color: #ccecfd;
+    color: #CCECFD;
   }
 
   .rec,
   #priority-notices,
   .jump-sec,
   .jump-sec:hover .jump-sec:active {
-    color: #ffffff;
+    color: #FFFFFF;
   }
 
   #desc {
-    color: #ffffff;
+    color: #FFFFFF;
   }
 
   .dropdown-menu {
-    background-color: #1e2019;
+    background-color: #1E2019;
   }
 
   .nav-line {
-    border-bottom: 2px solid #ccecfd;
+    border-bottom: 2px solid #CCECFD;
   }
 
   .scroll {
-    border-left: 2px solid #ccecfd;
+    border-left: 2px solid #CCECFD;
   }
 
-  .active > a {
-    border-left: 3px solid #ccecfd;
+  .active>a {
+    border-left: 3px solid #CCECFD;
   }
 
   .h,
@@ -657,14 +609,14 @@ a:visited {
   }
 
   .view-history {
-    background-color: #ccecfd;
-    border: #ccecfd;
+    background-color: #CCECFD;
+    border: #CCECFD;
     color: black;
   }
 
   .download-btn {
-    background-color: #1e2019;
-    border: 2px solid #ffffff;
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
     color: white;
   }
 
@@ -676,36 +628,36 @@ a:visited {
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
   .deviceKey-history {
-    background-color: #ffffff;
+    background-color: #FFFFFF;
   }
 
   h1 {
-    color: #4e3681;
+    color: #4E3681;
   }
 
   .device-name {
-    color: #4e3681;
+    color: #4E3681;
   }
 
   .rec,
   #priority-notices,
   .jump-sec {
-    color: #1e2019;
+    color: #1E2019;
   }
 
   .dropdown-menu {
-    background-color: #f1f5f9;
+    background-color: #F1F5F9;
   }
 
   .nav-line {
-    border-bottom: 2px solid #4e3681;
+    border-bottom: 2px solid #4E3681;
   }
 
   .scroll {
-    border-left: 2px solid #4e3681;
+    border-left: 2px solid #4E3681;
   }
 
-  .active > a {
+  .active>a {
     border-left: 3px solid #4e3681;
   }
 
@@ -715,7 +667,7 @@ a:visited {
   }
 
   #desc {
-    color: #1e2019;
+    color: #1E2019;
   }
 
   .view-history {
@@ -725,8 +677,8 @@ a:visited {
   }
 
   .download-btn {
-    background-color: #ccecfd;
-    border: #ccecfd;
+    background-color: #CCECFD;
+    border: #CCECFD;
     color: black;
   }
 
