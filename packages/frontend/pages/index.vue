@@ -49,9 +49,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <h3>Global Distributed Tracking</h3>
           <p style="font-weight: 400; padding-bottom: 15px">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-                       style="width: 100%; height: 480px;"
+                       style="width: 100%; height: 699px; border: none; display: block;"
                        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
                </iframe>
+               <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
         </div>
 
         <div class="row odd-stripe"  >
@@ -328,6 +329,12 @@ max-width: 70%;
     #second-row-cols-h3 {
         color: #CCECFD;
     }
+    #video-caption {
+      color: #FFFFFF; 
+    }
+    #video-caption a {
+      color: #CCECFD; 
+    }
 }
 /* Light mode version of second row */
 @media (prefers-color-scheme: light) {
@@ -353,6 +360,13 @@ max-width: 70%;
         color: #322253;
         background-color: #E6F6FF;
         border: 2px solid #4E3681;
+    }
+    #video-caption {
+    color: #1E2019; 
+    }  
+    #video-caption a {
+    text-decoration: underline;
+    color: #4E3681; 
     }
 }
 
