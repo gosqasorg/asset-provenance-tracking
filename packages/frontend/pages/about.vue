@@ -35,14 +35,17 @@ const route = useRoute();
         Global Distributed Tracking - an open source software enabling closed-loop tracking for
         products, information, and logistics.
       </p>
+      <div>
       <iframe
         src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-        style="width: 100%; height: 480px"
+        style="width: 100%; height: 600px; border: none; display: block;"
         frameborder="0"
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
         title="Global Distributed Tracking"
       >
       </iframe>
+      <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+</div>
     </div>
 
     <div class="row">
@@ -244,6 +247,12 @@ export default {
   .darkmode-dmdm {
     display: inline;
   }
+  #video-caption {
+      color: #FFFFFF; 
+    }
+    #video-caption a {
+      color: #CCECFD; 
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -278,5 +287,12 @@ export default {
   .lightmode-dmdm {
     display: inline;
   }
+  #video-caption {
+    color: #1E2019; 
+    }  
+    #video-caption a {
+    text-decoration: underline;
+    color: #4E3681; 
+    }
 }
 </style>
