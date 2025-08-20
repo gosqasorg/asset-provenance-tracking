@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">  
-            <textarea id="record-description" v-model="description" required placeholder=" Record Description" maxlength="5000" rows="3"></textarea>
+            <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
                 <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
@@ -184,8 +184,11 @@ export default {
         display: flex;
         margin-left: auto;
         margin-right:auto;
-        border-radius: 5px;
-        width: 100%
+        border-radius: 7px;
+        width: 100%;
+        outline: none;
+        border: none;
+        padding-left: 14px;
     }
 
     #record-description::placeholder{

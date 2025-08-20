@@ -19,8 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
-
-            <textarea id="container-description" v-model="description" placeholder=" Group Description" maxlength="5000" rows="3"></textarea>
+            <textarea id="container-description" v-model="description" placeholder="Group Description" maxlength="5000" rows="3"></textarea>
 
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
             <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
@@ -330,8 +329,11 @@ export default {
         display: flex;
         margin-left: auto;
         margin-right:auto;
-        border-radius: 5px;
-        width: 100%
+        border-radius: 7px;
+        width: 100%;
+        outline: none;
+        border: none;
+        padding-left: 14px;
     }
     #container-description::placeholder{
         color: black;

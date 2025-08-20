@@ -336,7 +336,12 @@ form {
     margin-left: auto;
     margin-right:auto;
     border-radius: 5px;
-    width: 100%
+    width: 100%;
+    border-radius: 7px;
+    width: 100%;
+    outline: none;
+    border: none;
+    padding-left: 14px;
 }
 
 #provenance-description::placeholder{
