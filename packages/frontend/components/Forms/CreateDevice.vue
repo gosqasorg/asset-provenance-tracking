@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
-                <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
+                <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
@@ -229,9 +229,15 @@ export default {
         background-color: #E6F6FF;
         border-color: #E6F6FF;
     }
-    input[type="file"]::file-selector-button {
+    #record-button:hover { 
+        background-color: #e6f6ff;
+    }
+    input::file-selector-button {
         background-color: #CCECFD;  
         color: black;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
     }
 }
 /* Light mode version*/
@@ -251,9 +257,8 @@ export default {
         background-color: #322253;
         border-color: #322253;
     }
-    input[type="file"]::file-selector-button {
-        background-color: #4E3681;  
-        color: white;
+    #record-button:hover { 
+        background-color: #322253;
     }
 }
 

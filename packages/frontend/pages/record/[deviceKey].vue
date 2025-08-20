@@ -27,61 +27,78 @@ const recordHasParent = hasParent(provenance);
 </script>
 
 <template>
-    <div v-if="!isLoading" class="record-container">
-        <div class="my-4 mb-2 parent-container" v-if="!isLoading" :key="loadingKey">
-            <div class="row justify-content-between main-container">
-                <section id="device-details" class="details-container">
-                    <div class="record-description">
-                        <div class="my-4 fs-1">
-                            <p class="h text-bold mb-0">Asset History Records</p>
-                            <h1 class="mt-1 mb-1">
-                                {{ deviceRecord?.deviceName }}
-                            </h1>
+    <div v-if="!isLoading">
+        <div v-if="recordKeyFound" class="record-container">
+            <div class="my-4 mb-2 parent-container" :key="loadingKey">
+                <div class="row justify-content-between main-container">
+                    <section id="device-details" class="details-container">
+                        <div class="record-description">
+                            <div class="my-4 fs-1">
+                                <p class="h text-bold mb-0">Asset History Records</p>
+                                <h1 class="mt-1 mb-1">
+                                    {{ deviceRecord?.deviceName }}
+                                </h1>
+                            </div>
+
+                <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                <div class="h5" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
+
+                <div class="mb-3">
+                <span style="word-wrap: break-word;" id="desc" v-html="clickableLink(deviceRecord?.description)"></span>
+                </div>
+            </div>
+
+                        <div class="qr-code-wrapper">
+                            <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
                         </div>
+                    </section>
 
-            <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
-            <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-            <div class="h5" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-            <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
-            <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
+                    <div class="buttons-container">
+                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
+                        <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
 
-            <div class="mb-3">
-              <span style="word-wrap: break-word;" id="desc" v-html="clickableLink(deviceRecord?.description)"></span>
-            </div>
-          </div>
-
-                    <div class="qr-code-wrapper">
-                        <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
+                        <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
                     </div>
-                </section>
 
-                <div class="buttons-container">
-                    <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
-                    <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
-
-                    <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
-                </div>
-
-                <!-- QR -->
-                <div class="col-sm-6 col-lg-3 mt-2">
-                    <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+                    <!-- QR -->
+                    <div class="col-sm-6 col-lg-3 mt-2">
+                        <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+                    </div>
                 </div>
             </div>
-        </div>
 
 
-        <div v-if="hasReportingKey"> Reporting Key:
-            <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-        </div>
-        <div v-if="(childKeys?.length > 0) || hasReportingKey">
-            <div> Child Keys:
-                <div>
-                    <KeyList v-bind:keys="childKeys" />
-                </div>
+            <div v-if="hasReportingKey"> Reporting Key:
+                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
             </div>
-            <CsvFile :recordKey="_recordKey"></CsvFile>
+            <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                <div> Child Keys:
+                    <div>
+                        <KeyList v-bind:keys="childKeys" />
+                    </div>
+                </div>
+                <CsvFile :recordKey="_recordKey"></CsvFile>
+            </div>
+            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
         </div>
-        <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+        <div v-else class="error-container">
+        <h1 class="error-title">Invalid history key</h1>
+        <h2 class="error-subtitle">No record attached to this key</h2>
+        <p class="error-description">
+            We’re sorry, the record you’re looking for could not be found.
+            Please double-check your key. If you keep receiving this error,
+            email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+        </p>
+        <div class="error-buttons">
+            <!-- Go home button -->
+            <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+            <!-- Email us button -->
+            <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+        </div>
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -109,6 +126,7 @@ export default {
     data() {
         return {
             isLoading: true,
+            recordKeyFound: true,
             hasReportingKey: false,
             childKeys: [] as string[],
             loadingKey: 0,
@@ -135,7 +153,6 @@ export default {
             this._recordKey = route.params.deviceKey as string;
             const response = await getProvenance(this._recordKey);
             deviceRecord = response[response.length - 1].record;
-            this.isLoading = false;
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
             // We will remove the reportingKey, because although it is a child,
             // we have already rendered it.
@@ -146,7 +163,9 @@ export default {
                 }
             }
             this.childKeys = deviceRecord.children_key;
+            this.isLoading = false;
         } catch (error) {
+            this.recordKeyFound = false;
             this.$snackbar.add({
                 type: 'error',
                 text: 'No record found'
@@ -218,6 +237,88 @@ export default {
     flex-wrap: wrap;
 }
 
+.error-container {
+  text-align: center;
+  margin: 70px auto;
+  max-width: 655px;
+  padding: 20px;
+}
+
+.error-title {
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 150%;
+  margin-bottom: 10px;
+  color: #322253;
+  text-align: left;
+}
+
+.error-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 60px;
+  margin-bottom: 20px;
+  color: #1E2019;
+  /* Dark text color */
+  text-align: left;
+}
+
+.error-description {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 30px;
+  margin-bottom: 30px;
+  color: #1E2019;
+  text-align: left;
+}
+
+.error-email {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  line-height: 30px;
+  color: #4e3681;
+  text-decoration: underline !important;
+}
+
+.error-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.error-button {
+  width: 48% !important;
+  border: none;
+  padding: 18px 22px !important;
+  max-height: 66px;
+  height: 66px;
+  font-size: 20px;
+  margin: 0px;
+}
+
+.btn-primary {
+  background-color: #4E3681;
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: #CCECFD;
+  color: #1E2019;
+}
+
+.btn-primary:hover {
+  background-color: #322253;
+}
+
+.btn-secondary:hover {
+  background-color: #e6f6ff;
+  color: #1E2019;
+}
 
 /* Switches to mobile sizing */
 @media (max-width: 991px) {
@@ -246,6 +347,16 @@ export default {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
+    .error-subtitle,
+    .error-description {
+        color: white;
+    }
+
+    .error-title,
+    .error-email {
+        color: #ccecfd;
+    }
+
     .record-container {
         background-color: #1E2019
     }
@@ -274,6 +385,14 @@ export default {
         border: 2px solid #FFFFFF;
         color: white;
     }
+
+    .view-history:hover {
+        background-color: #e6f6ff
+    }
+    .download-qr:hover {
+        background-color: white;
+        color: black;
+    }
 }
 
 /* Light mode version*/
@@ -299,6 +418,15 @@ export default {
         background-color: #4e3681;
         border: #4e3681;
         color: white;
+    }
+    .view-history:hover {
+        background-color: #322253
+    }
+    .download-qr:hover {
+        background-color: #e6f6ff
+    }
+    .share-btn:hover {
+        background-color: #e6f6ff
     }
 
     .download-qr {
