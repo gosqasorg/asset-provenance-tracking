@@ -102,6 +102,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         background-color: #1E2019;
         border: 2px solid #CCECFD;
     }
+    #learn-more-button:hover {
+        background-color: #CCECFD;
+        color: black;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -121,6 +125,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         color: #322253;
         background-color: #FFFFFF;
         border: 2px solid #4E3681;
+    }
+    #learn-more-button:hover {
+        background-color: #4E3681;
+        color: white;
     }
 }
 

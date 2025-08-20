@@ -1,5 +1,5 @@
 <template>
-    <button type="button" class="btn mt-1 bg-sky px-5 mb-5" v-on:click="downloadCSV">
+    <button type="button" class="btn mt-1 px-5 mb-5" v-on:click="downloadCSV">
         Download Children Keys as CSV
     </button>
 
@@ -79,6 +79,33 @@ export default {
         }
     }
 }
-
-
 </script>
+
+<style scoped>
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .btn {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF !important;
+        color: white;
+    }
+
+    .btn:hover {
+        background-color: #FFFFFF;
+        color: black !important;
+    }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+
+    .btn:hover {
+        background-color: #e6f6ff;
+    }
+}
+</style>

@@ -94,6 +94,14 @@ export default {
    border-style: solid;
 }
 
+.purple_btn:hover {
+    background-color: #322253 !important;
+    border-color: #322253 !important;
+}
+.blue_btn:hover {
+    background-color: #e6f6ff !important;
+    border-color: #e6f6ff !important;
+}
 
 @media (min-width: 768px) {
    .baseButton {

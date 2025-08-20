@@ -27,12 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style="display:inline-flex">
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
-                        <button-component class="button" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
+                        <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
                     </form>
 
                     <div id="createRecordButton" style="width: 60%; width: 230px; margin-top: 20px;">
-                        <RouterLink to="/gdt"><button-component class="button" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
+                        <RouterLink to="/gdt"><button-component class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
                             borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
 
@@ -57,7 +57,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row odd-stripe"  >
             <div class="row rowtest">
-                <!-- TODO: fix colors in dark mode, make sure dark mode matches FIGMA -->
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
                     <p style="font-weight: 400;">{{ item.descr }}</p>
@@ -329,11 +328,14 @@ max-width: 70%;
     #second-row-cols-h3 {
         color: #CCECFD;
     }
-    #video-caption {
-      color: #FFFFFF; 
+    #about-button:hover {
+        background-color: white;
+        color: black;
     }
-    #video-caption a {
-      color: #CCECFD; 
+    #dmdm-button:hover {
+        background-color: white;
+        color: #4E3681;
+
     }
 }
 /* Light mode version of second row */
@@ -361,12 +363,13 @@ max-width: 70%;
         background-color: #E6F6FF;
         border: 2px solid #4E3681;
     }
-    #video-caption {
-    color: #1E2019; 
-    }  
-    #video-caption a {
-    text-decoration: underline;
-    color: #4E3681; 
+    #about-button:hover {
+        background-color: #E6F6FF;
+        border: 2px solid #E6F6FF;
+    }
+    #dmdm-button:hover {
+        background-color: #4E3681;
+        color: white;
     }
 }
 

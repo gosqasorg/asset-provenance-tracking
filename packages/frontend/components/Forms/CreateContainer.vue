@@ -371,9 +371,15 @@ export default {
         background-color: #E6F6FF;
         border-color: #E6F6FF;
     }
+    #group-button:hover { 
+        background-color: #e6f6ff;
+    }
     input[type="file"]::file-selector-button {
         background-color: #CCECFD;  
         color: black;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
     }
 }
 /* Light mode version*/
@@ -392,6 +398,9 @@ export default {
     #group-button:active {
         background-color: #322253;
         border-color: #322253;
+    }
+    #group-button:hover { 
+        background-color: #322253;
     }
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  

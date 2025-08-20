@@ -120,11 +120,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         border: #CCECFD;
         color: black;
     }
-    #video-caption {
-      color: #FFFFFF; 
-    }
-    #video-caption a {
-      color: #CCECFD; 
+    .donate-btn:hover {
+        background-color: #e6f6ff;
     }
 }
 /* Light mode version*/
@@ -143,12 +140,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         border: #4e3681;
         color: white;
     }
-    #video-caption {
-    color: #1E2019; 
-    }  
-    #video-caption a {
-    text-decoration: underline;
-    color: #4E3681; 
+    .donate-btn:hover {
+        background-color: #322253;
     }
 }
 </style>
