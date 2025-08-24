@@ -165,6 +165,15 @@
 <script lang="ts">
 let showTrack = false;
 
+const route = useRoute()
+const currentUrl = route.fullPath
+console.log('Initial state is: ', currentUrl)
+watch(
+  () => route.fullPath, (newPath) => {
+    console.log('URL now is: ', newPath)
+  }
+)
+
 export default {
   methods: {
     // Function to have the 'View Record' input field appear
