@@ -131,8 +131,18 @@
             <div class="row">
               <RouterLink to="/" class="me-3 footer-link">Home</RouterLink>
 
-              <RouterLink to="/how-it-works" class="me-3 footer-link"
-                >How It Works</RouterLink>
+              <div 
+                v-if="currentUrl !== '/how-it-works'"
+                :key="currentUrl"
+              >
+                <RouterLink
+                      to="/how-it-works"
+                      class="me-3 footer-link"
+                >
+                  How It Works
+                </RouterLink>
+              </div>
+
               <a
                 href="https://github.com/gosqasorg/asset-provenance-tracking"
                 class="me-3 footer-link"
@@ -165,16 +175,19 @@
 <script lang="ts">
 let showTrack = false;
 
-const route = useRoute()
-const currentUrl = route.fullPath
-console.log('Initial state is: ', currentUrl)
-watch(
-  () => route.fullPath, (newPath) => {
-    console.log('URL now is: ', newPath)
-  }
-)
 
 export default {
+  data() {
+    return {
+      currentUrl: '/',
+    }
+  },
+  watch: {
+    $route(to) {
+        this.currentUrl = to.path
+        console.log('We are currently on /how-it-works: ', this.currentUrl == '/how-it-works')
+    }
+  },
   methods: {
     // Function to have the 'View Record' input field appear
     async trackingForm() {
