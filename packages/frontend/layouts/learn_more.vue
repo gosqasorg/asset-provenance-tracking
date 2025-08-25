@@ -26,7 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     or visiting the links below.</p>
         <div>
 
-            <RouterLink to="/how-it-works"
+            <RouterLink 
+                to="/how-it-works"
                 v-if="$route.path !== '/how-it-works'"
             >
                 <button class="baseButton button first learn-more" id="learn-more-button" style="
@@ -41,7 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </button>
             </RouterLink>
 
-            <RouterLink to="/data-privacy"
+            <RouterLink 
+                to="/data-privacy"
                 v-if="$route.path !== '/data-privacy'"
             >
                 <button class="baseButton button middle learn-more" id="learn-more-button" style="
