@@ -57,10 +57,15 @@ jobs:
 
 
     # TODO: Use terminal commands to run the file
-    # TODO: Need to convert .ts file into a .js file before running
+    # TODO: Need to convert .ts file into a .js file before running (compile w/ tsconfig.json)
     - name: Convert TypeScript to Javascript
       working-directory: packages/backend
       run: npx tsc
+
+    # TODO: Error: Can't find backend unit test file, see if it is compiling correctly
+    - name: Compiler Output (from previous test)
+      working-directory: packages/backend
+      run: ls -R dist
 
     - name: Backend Unit Tests (from command line)
       working-directory: packages/backend
