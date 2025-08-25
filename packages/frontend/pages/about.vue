@@ -31,6 +31,15 @@ const route = useRoute();
       </p>
 
       <p>
+        <span class="p-text-color" style="font-weight: 600">Our team</span> <br />
+        Our team is part of Public Invention, a volunteer-based organization that makes a difference
+        by inventing things for humanitarian purposes that help all people. <br />
+        <a class="team-desc" href="https://www.pubinv.org/gosqas-team/"
+          >Learn more about our team</a
+        >
+      </p>
+
+      <p>
         <span class="p-text-color" style="font-weight: 600">Our current products</span> <br />
         Global Distributed Tracking - an open source software enabling closed-loop tracking for
         products, information, and logistics.
@@ -244,6 +253,9 @@ export default {
   .darkmode-dmdm {
     display: inline;
   }
+  .team-desc {
+    color: #ccecfd;
+  }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -277,6 +289,9 @@ export default {
   }
   .lightmode-dmdm {
     display: inline;
+  }
+  .team-desc {
+    color: #4e3681;
   }
 }
 </style>
