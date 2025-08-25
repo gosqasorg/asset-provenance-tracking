@@ -60,7 +60,7 @@ jobs:
     # TODO: Need to convert .ts file into a .js file before running
     - name: Convert TypeScript to Javascript
       working-directory: packages/backend
-      run: npm tsc  # can also try npx instead
+      run: npx tsc
 
     - name: Backend Unit Tests (from command line)
       working-directory: packages/backend
