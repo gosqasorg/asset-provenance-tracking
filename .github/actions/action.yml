@@ -1,0 +1,6 @@
+name: Backend Unit Tests
+description: Run the backend unit tests in test/functions/httpTrigger.endpoints.spec.ts
+
+runs:
+  using: node18.x
+  main: ./packages/backend/test/functions/httpTrigger.endpoints.spec.ts

@@ -49,10 +49,15 @@ jobs:
     # TODO: Run the httpTrigger unit tests here? Find a way to test all those things when pushed
 
     # TODO: action in same repository (need to checkout first, but it's already done above)
-    - name: httpTrigger Unit Tests
-      uses: ./packages/backend/test/functions/httpTrigger.endpoints.spec.ts
+    # 1st 'uses' calls it, but is getting an error running (can't find action.yml in the specified path)
+    # 2nd 'uses' calls action.yml, which should then call the javascript file
+    
+    # Tests are stored in test/functions/httpTrigger.endpoints.spec.ts
+    - name: Backend Unit Tests
+      # uses: ./packages/backend/test/functions/httpTrigger.endpoints.spec.ts
+      uses: ./.github/actions
 
 
-    # TODO: maybe use terminal command that runs the file..? (run: [terminal command])
+    # ALT: maybe use terminal command that runs the file..? (run: [terminal command])
     # below doesn't work, didn't get around to finding correct syntax
     # script: node ../../packages/backend/test/functions/httpTrigger.endpoints.spec.js
