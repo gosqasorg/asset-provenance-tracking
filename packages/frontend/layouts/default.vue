@@ -4,7 +4,7 @@
     <nav class="navbar navbar-expand-lg" id="navbar">
       <div class="container-fluid" id="nav">
         <a href="/" class="navbar-brand">
-          <img src="../assets/styles/gosqas_logo.png" id="logo-light" class="logo" />
+          <img src="../assets/styles/gosqas_logo.png" id="logo-light" class="logo"/>
           <img src="../assets/styles/dark-mode-logo.png" id="logo-dark" class="logo" />
         </a>
         <button
@@ -27,8 +27,7 @@
             >
               <path
                 d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
-              /></svg
-          ></span>
+              /></svg></span>
         </button>
         <div class="collapse navbar-collapse flex-column" id="main-nav">
           <ul class="navbar-nav ms-auto">
@@ -39,17 +38,23 @@
               <RouterLink to="/about" class="nav-link">About</RouterLink>
             </li>
             <li class="nav-item">
-              <RouterLink to="/how-it-works" class="nav-link">How it Works</RouterLink>
+              <RouterLink to="/how-it-works" class="nav-link"
+                >How it Works</RouterLink
+              >
             </li>
             <li class="nav-item">
-              <RouterLink to="/data-privacy" class="nav-link">Data & Privacy</RouterLink>
+              <RouterLink to="/data-privacy" class="nav-link"
+                >Data & Privacy</RouterLink
+              >
             </li>
             <li class="nav-item">
               <RouterLink to="/donate" class="nav-link">Donate</RouterLink>
             </li>
             <div class="mobile-nav">
               <li style="margin: 10px 0px">
-                <a class="mobile-link" href="https://github.com/gosqasorg/asset-provenance-tracking"
+                <a
+                  class="mobile-link"
+                  href="https://github.com/gosqasorg/asset-provenance-tracking"
                   >GDT GitHub</a
                 >
               </li>
@@ -84,11 +89,11 @@
                     padding: 12px 16px;
                     margin: 20px 0px 0px 0px;
                     font-size: 18px;
-                  "
+                "
                 >
                   Create Record
-                </button></RouterLink
-              >
+                </button
+              ></RouterLink>
             </span>
           </ul>
           <div class="me-0 ms-auto" id="viewRecordDiv" style="display: none">
@@ -124,24 +129,34 @@
         <div class="row col-md-4 text-md-start">
           <div class="col-md-3">
             <div class="row">
-              <RouterLink to="/" class="me-3">Home</RouterLink>
-              <RouterLink to="/how-it-works" class="me-3">How It Works</RouterLink>
-              <a href="https://github.com/gosqasorg/asset-provenance-tracking" class="me-3"
+              <RouterLink to="/" class="me-3 footer-link">Home</RouterLink>
+
+              <RouterLink to="/how-it-works" class="me-3 footer-link"
+                >How It Works</RouterLink>
+              <a
+                href="https://github.com/gosqasorg/asset-provenance-tracking"
+                class="me-3 footer-link"
                 >GDT GitHub</a
               >
             </div>
           </div>
           <div class="col-md-2 text-md-start custom-row-about">
             <div class="row">
-              <RouterLink to="/about" class="me-3">About</RouterLink>
-              <RouterLink to="/data-privacy" class="me-3">Data & Privacy</RouterLink>
-              <RouterLink to="/terms_and_conditions" class="me-3">Terms and Conditions</RouterLink>
+              <RouterLink to="/about" class="me-3 footer-link">About</RouterLink>
+              <RouterLink to="/data-privacy" class="me-3 footer-link"
+                >Data & Privacy</RouterLink
+              >
+              <RouterLink to="/terms_and_conditions" class="me-3 footer-link"
+                >Terms and Conditions</RouterLink
+              >
             </div>
           </div>
         </div>
       </div>
       <div class="row custom-copy-right">
-        <p class="p-text">© 2024 Global Open Source Quality Assurance System</p>
+        <p class="p-text">
+          © 2024 Global Open Source Quality Assurance System
+        </p>
       </div>
     </footer>
   </div>
@@ -154,24 +169,28 @@ export default {
   methods: {
     // Function to have the 'View Record' input field appear
     async trackingForm() {
-      let viewRecordDiv = <HTMLDivElement>document.getElementById('viewRecordDiv');
-      let viewRecordButton = <HTMLDivElement>document.getElementById('viewRecordButton');
-      let nav = <HTMLDivElement>document.getElementById('nav');
+      let viewRecordDiv = <HTMLDivElement>(
+        document.getElementById("viewRecordDiv")
+      );
+      let viewRecordButton = <HTMLDivElement>(
+        document.getElementById("viewRecordButton")
+      );
+      let nav = <HTMLDivElement>document.getElementById("nav");
 
       if (!showTrack) {
         //if showTrack is false
         showTrack = true;
-        viewRecordDiv.style.display = 'inline'; //make text input available
-        viewRecordButton.classList.add('active');
-        nav.style.paddingBottom = '80px';
+        viewRecordDiv.style.display = "inline"; //make text input available
+        viewRecordButton.classList.add("active");
+        nav.style.paddingBottom = "80px";
       } else {
         showTrack = false;
-        viewRecordDiv.style.display = 'none';
-        viewRecordButton.classList.remove('active');
-        nav.style.paddingBottom = '24.5px';
+        viewRecordDiv.style.display = "none";
+        viewRecordButton.classList.remove("active");
+        nav.style.paddingBottom = "24.5px";
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -223,7 +242,7 @@ export default {
   height: auto;
 }
 
-#button-toggler[aria-expanded='true'] {
+#button-toggler[aria-expanded="true"] {
   #menu-icon {
     display: none;
   }
@@ -232,7 +251,7 @@ export default {
   }
 }
 
-#button-toggler[aria-expanded='false'] {
+#button-toggler[aria-expanded="false"] {
   #menu-icon {
     display: inline-block;
   }
@@ -429,6 +448,7 @@ export default {
 .custom-logo {
   flex: 2;
   box-sizing: border-box;
+  
 }
 
 .custom-row-home {
@@ -516,111 +536,130 @@ export default {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-  #navbar {
-    background-color: #1e2019;
-  }
-  #logo-dark,
-  .logo-dark {
-    display: inline;
-  }
-  .navbar-toggler-icon {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-  }
-  #close-icon {
-    fill: white;
-  }
-  #footer {
-    background-color: #1e2019;
-  }
-  .nav-link {
-    color: #ffffff;
-  }
-  .mobile-link {
-    color: #ffffff;
-  }
-  .p-text {
-    color: #f2f2f2;
-  }
-  .navbar-collapse .nav-link:hover,
-  .navbar-collapse .nav-link.active,
-  .mobile-link:hover,
-  .mobile-link.active {
-    color: #ccecfd;
-    font-weight: 600;
-  }
-  #viewRecordButton {
-    background-color: #ccecfd;
-    color: #000000;
-    border-color: #ccecfd;
-    border-radius: 10px;
-  }
-  #viewRecordButton.active {
-    background-color: #b0e3ff;
-    border-color: #b0e3ff;
-    color: #000000;
-  }
-  #createRecordButton {
-    background-color: #4e3681;
-    color: #ffffff;
-    border-color: #4e3681;
-    border-radius: 10px;
-  }
-  #footer a,
-  #footer RouterLink {
-    color: #ffffff;
-  }
+    #navbar {
+      background-color: #1E2019;
+    }
+    #logo-dark,
+    .logo-dark {
+      display: inline;
+    }
+    .navbar-toggler-icon {
+      background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='white' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+    }
+    #close-icon {
+      fill: white;
+    }
+    #footer {
+      background-color: #1E2019;
+    }
+    .nav-link {
+      color: #FFFFFF;
+    }
+    .mobile-link {
+      color: #FFFFFF;
+    }
+    .p-text {
+      color: #f2f2f2;
+    }
+    .navbar-collapse .nav-link:hover,
+    .navbar-collapse .nav-link.active,
+    .mobile-link:hover,
+    .mobile-link.active,
+    .footer-link:hover {
+      color: #CCECFD !important;
+      font-weight: 600;
+    }
+    #viewRecordButton {
+      background-color: #CCECFD; 
+      color: #000000; 
+      border-color: #CCECFD;
+      border-radius: 10px;
+    }
+    #viewRecordButton.active {
+      background-color: #B0E3FF; 
+      border-color: #B0E3FF;
+      color: #000000;
+    }
+    #createRecordButton {
+      background-color: #4E3681; 
+      color: #FFFFFF; 
+      border-color: #4E3681;
+      border-radius: 10px;
+    }
+    #footer a, 
+    #footer RouterLink {
+      color: #FFFFFF;
+    }
+    #viewRecordButton:hover {
+      background-color: #e6f6ff;
+      border-color: #e6f6ff;
+    }
+    #createRecordButton:hover {
+      background-color: #322253;
+      border-color: #322253;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-  #navbar {
-    background-color: #e6f6ff;
-  }
-  #logo-light,
-  .logo-light {
-    display: inline;
-  }
-  #footer {
-    background-color: #e6f6ff;
-  }
-  #close-icon {
-    fill: currentColor;
-  }
-  .nav-link {
-    color: #1e2019;
-  }
-  .mobile-link {
-    color: #1e2019;
-  }
-  .p-text {
-    color: #666;
-  }
-  .navbar-collapse .nav-link:hover,
-  .navbar-collapse .nav-link.active,
-  .mobile-link:hover,
-  .mobile-link.active {
-    color: #4e3681;
-    font-weight: 600;
-  }
-  #createRecordButton {
-    background-color: #e6f6ff;
-    color: #4e3681;
-    border-color: #4e3681;
-    border-radius: 10px;
-  }
-  #viewRecordButton {
-    background-color: #4e3681;
-    color: #ffffff;
-    border-color: #4e3681;
-    border-radius: 10px;
-  }
-  #viewRecordButton.active {
-    background-color: #322253;
-    border-color: #322253;
-    color: #ffffff;
-  }
-  #footer a,
-  #footer RouterLink {
-    color: black;
-  }
+    #navbar {
+        background-color: #E6F6FF;
+    }
+    #logo-light,
+    .logo-light {
+      display: inline;
+    }
+    #footer {
+        background-color: #E6F6FF;
+    }
+    #close-icon {
+      fill: currentColor;
+    }
+    .nav-link {
+        color: #1e2019;
+    }
+    .mobile-link {
+      color: #1e2019;
+    }
+    .p-text {
+      color: #666;
+    }
+    .navbar-collapse .nav-link:hover,
+    .navbar-collapse .nav-link.active,
+    .mobile-link:hover,
+    .mobile-link.active,
+    .footer-link:hover {
+      color: #4e3681 !important;
+      font-weight: 600;
+    }
+    #createRecordButton {
+      background-color: #e6f6ff; 
+      color: #4e3681; 
+      border-color: #4e3681;
+      border-radius: 10px;
+    }
+    #viewRecordButton {
+      background-color: #4E3681;
+      color: #FFFFFF;  
+      border-color: #4E3681;
+      border-radius: 10px;
+    } 
+    #viewRecordButton.active {
+      background-color: #322253; 
+      border-color: #322253;
+      color: #FFFFFF;
+    }
+    #footer a, 
+    #footer RouterLink {
+      color: black;
+    }
+    #viewRecordButton:hover {
+      background-color: #322253;
+      border-color: #322253;
+    }
+    #createRecordButton:hover {
+      background-color: #4e3681;
+      color: white;
+    }
 }
+
 </style>
