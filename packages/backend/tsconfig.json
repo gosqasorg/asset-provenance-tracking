@@ -13,7 +13,6 @@
   ],
   "exclude": [
     "vitest.config.ts",
-    "vitest.setup.ts",
-    "**/*.spec.ts"
+    "vitest.setup.ts"
   ]
 }
