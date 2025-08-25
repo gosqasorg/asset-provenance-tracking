@@ -47,12 +47,12 @@ jobs:
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
     # TODO: Run the httpTrigger unit tests here? Find a way to test all those things when pushed
+
+    # TODO: action in same repository (need to checkout first, but it's already done above)
     - name: httpTrigger Unit Tests
+      uses: ./packages/backend/test/functions/httpTrigger.endpoints.spec.ts
+
+
     # TODO: maybe use terminal command that runs the file..? (run: [terminal command])
     # below doesn't work, didn't get around to finding correct syntax
     # script: node ../../packages/backend/test/functions/httpTrigger.endpoints.spec.js
-
-
-    # Some references:
-    # Github workflows documentation: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
-    # Calling TS from YAML? https://github.com/artilleryio/artillery/discussions/2566
