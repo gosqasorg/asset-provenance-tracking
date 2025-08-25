@@ -3,4 +3,7 @@ description: Run the backend unit tests in test/functions/httpTrigger.endpoints.
 
 runs:
   using: node20
-  main: ./packages/backend/test/functions/httpTrigger.endpoints.spec.ts
+
+  # TODO: can't find the below file, is trying to find the filename inside this folder
+  # '/home/runner/work/asset-provenance-tracking/asset-provenance-tracking/./.github/actions/./packages/backend/test/functions/httpTrigger.endpoints.spec.ts'
+  main: ../../packages/backend/test/functions/httpTrigger.endpoints.spec.ts

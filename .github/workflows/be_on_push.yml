@@ -54,7 +54,6 @@ jobs:
     
     # Tests are stored in test/functions/httpTrigger.endpoints.spec.ts
     - name: Backend Unit Tests
-      # uses: ./packages/backend/test/functions/httpTrigger.endpoints.spec.ts
       uses: ./.github/actions
 
 
