@@ -74,21 +74,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-    console.log('foobar')
-    export default {
-        name: "learn_more",
-        data() {
-          return {
-            currentUrl: '/',
-          }
-        },
-        watch: {
-          $route(to) {
-            this.currentUrl = to.path
-            console.log('LM Layout sees us as on: ', this.currentUrl)
-          }
-        },        
+
+export default {
+  name: "learn_more",
+  data() {
+    return {
+      currentUrl: '/',
     }
+  },
+  watch: {
+    $route(to) {
+      this.currentUrl = to.path
+      console.info('Learn More Layout sees us as on: ', this.currentUrl)
+    }
+  },
+}
 
 </script>
 
