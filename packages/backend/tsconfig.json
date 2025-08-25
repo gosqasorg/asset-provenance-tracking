@@ -8,8 +8,10 @@
     "sourceMap": true,
     "strict": false
   },
+  "include": [
+    "test/**/*"
+  ],
   "exclude": [
-    "test/**",
     "vitest.config.ts",
     "vitest.setup.ts",
     "**/*.spec.ts"
