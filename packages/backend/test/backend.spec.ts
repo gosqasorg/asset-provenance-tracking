@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toHex, decodeKey } from "../src/functions/httpTrigger";
+import { toHex, decodeKey } from "../src/functions/httpTrigger.js";
 
 describe("Test algorithms", () => {
     it("should decode the key", () => {
