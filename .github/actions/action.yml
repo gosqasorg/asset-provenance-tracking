@@ -4,6 +4,7 @@ description: Run the backend unit tests in test/functions/httpTrigger.endpoints.
 runs:
   using: node20
 
-  # TODO: .ts file extension is unknown, might need to convert file to javascript before reading here
-  # '/home/runner/work/asset-provenance-tracking/asset-provenance-tracking/packages/backend/test/functions/httpTrigger.endpoints.spec.ts'
+  # TODO: .ts file extension is unknown, need to convert file to javascript before reading here
+  # Also can't read files outside this folder, so I'd have to move the test file in here
+  # so it might be better to just run it from command line in be_on_push.yml
   main: ../../packages/backend/test/functions/httpTrigger.endpoints.spec.js
