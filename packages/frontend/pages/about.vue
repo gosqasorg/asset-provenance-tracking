@@ -176,6 +176,9 @@ export default {
         font-size: 18px;
         margin-left:40px;
     }
+    .team-desc {
+        font-size: 20px;
+    } 
 }
 
 .dmdm {
