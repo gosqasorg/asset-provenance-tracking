@@ -30,6 +30,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 communities. We employ open-source tools and principles to centralize
                 user solutions, despite location or resource environment. </p>
 
+      <p>
+        <span class="p-text-color" style="font-weight: 600">Our team</span> <br />
+        Our team is part of Public Invention, a volunteer-based organization that makes a difference
+        by inventing things for humanitarian purposes that help all people. <br />
+        <a class="team-desc" href="https://www.pubinv.org/gosqas-team/"
+          >Learn more about our team</a
+        >
+      </p>
+
             <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
                 Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
                 <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
@@ -167,6 +176,9 @@ export default {
         font-size: 18px;
         margin-left:40px;
     }
+    .team-desc {
+        font-size: 20px;
+    } 
 }
 
 .dmdm {
@@ -215,7 +227,9 @@ export default {
     #video-caption a {
       color: #CCECFD; 
     }
-
+  .team-desc {
+    color: #CCECFD; 
+  }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -250,6 +264,9 @@ export default {
     .lightmode-dmdm {
         display: inline;
     }
+  .team-desc {
+    color: #4E3681; 
+  }
     #video-caption {
     color: #1E2019; 
     }  
