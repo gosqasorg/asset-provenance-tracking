@@ -89,7 +89,8 @@ export default {
     }
 }
 </script>
-<style>
+
+<style scoped>
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     .btn {
@@ -99,8 +100,8 @@ export default {
     }
 
     .btn:hover {
-        border: 0px !important;
-        color: white;
+        background-color: #FFFFFF;
+        color: black !important;
     }
 }
 
@@ -113,7 +114,7 @@ export default {
     }
 
     .btn:hover {
-        color: black;
+        background-color: #e6f6ff;
     }
 }
 </style>

@@ -185,6 +185,9 @@ export default {
 .mb-3 {
     margin-bottom: 1rem;
 }
+#how-it-works {
+    margin-right: 20px !important;
+}
 
 #gdt-container,
 #loading-screen {
@@ -218,6 +221,10 @@ export default {
         background-clip: padding-box;
         background-color: #1E2019;
     }
+    #learn-more-button:hover {
+        background-color: #CCECFD;
+        color: black;
+    }
     #learn-more-button {
         color: #CCECFD;
         background-color: #1E2019;
@@ -239,6 +246,10 @@ export default {
     .form-control {
         background-clip: padding-box;
         background-color: #FFFFFF;
+    }
+    #learn-more-button:hover {
+        background-color: #4e3681;
+        color: white;
     }
     #learn-more-button {
         color: #322253;

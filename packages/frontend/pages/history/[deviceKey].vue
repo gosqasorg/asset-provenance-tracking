@@ -159,8 +159,8 @@ const recordHasParent = hasParent(provenance);
       <h1 class="error-title">Invalid history key</h1>
       <h2 class="error-subtitle">No record attached to this key</h2>
       <p class="error-description">
-        We’re sorry, the record you’re looking for could not be found. <br />
-        Please double-check your key. If you keep receiving this error, <br />
+        We’re sorry, the record you’re looking for could not be found.
+        Please double-check your key. If you keep receiving this error,
         email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
       </p>
       <div class="error-buttons">
@@ -368,6 +368,25 @@ export default {
   width: 48% !important;
 }
 
+.btn-primary {
+  background-color: #4E3681;
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: #CCECFD;
+  color: #1E2019;
+}
+
+.btn-primary:hover {
+  background-color: #322253;
+}
+
+.btn-secondary:hover {
+  background-color: #e6f6ff;
+  color: #1E2019;
+}
+
 .descr-container {
   word-wrap: break-word !important;
 }
@@ -408,11 +427,6 @@ export default {
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.download-button:hover {
-  background-color: #4e3681;
-  /* Slightly darker blue on hover */
 }
 
 .menu-spacing {
@@ -534,31 +548,22 @@ a:visited {
   border: none;
 }
 
-.btn-primary {
-  background-color: #4E3681;
-  color: #FFFFFF;
-}
-
-.btn-primary:hover {
-  background-color: #3B2A6A;
-  /* Darker purple */
-}
-
-.btn-secondary {
-  background-color: #CCECFD;
-  /* Light blue */
-  color: #1E2019;
-  /* Dark text */
-}
-
-.btn-secondary:hover {
-  background-color: #B3DFF5;
-  /* Slightly darker blue */
-  color: #1E2019;
-}
-
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1E2019 !important;
+  }
+  
+  .error-subtitle,
+  .error-description {
+    color: white;
+  }
+
+  .error-title,
+  .error-email {
+    color: #ccecfd;
+  }
+
   .deviceKey-history {
     background-color: #1E2019;
   }
@@ -620,8 +625,15 @@ a:visited {
     color: white;
   }
 
-  .download-btn:hover {
+  .share-btn {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
     color: white;
+  }
+
+  .download-btn:hover {
+    background-color: white;
+    color: black;
   }
 }
 
@@ -683,7 +695,7 @@ a:visited {
   }
 
   .download-btn:hover {
-    color: black;
+    background-color: #e6f6ff !important;
   }
 }
 </style>

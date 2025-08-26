@@ -25,8 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="trackingForm">
         <h5>Create New Record Entry</h5>
         <div>
-            <input type="text" class="form-control" name="description" id="provenance-description" v-model="description"
-                placeholder="Description" maxlength="5000" required />
+            <textarea id="provenance-description" v-model="description"
+                placeholder="Description" maxlength="5000" rows="3"></textarea>
             <div v-if="isGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Group Record Keys (optional, separated with a comma)" />
@@ -329,6 +329,25 @@ form {
     margin-top: 24px;
 }
 
+#provenance-description {
+    padding: 5px;
+    margin: 5px;
+    display: flex;
+    margin-left: auto;
+    margin-right:auto;
+    border-radius: 5px;
+    width: 100%;
+    border-radius: 7px;
+    width: 100%;
+    outline: none;
+    border: none;
+    padding-left: 14px;
+}
+
+#provenance-description::placeholder{
+        color: black;
+}
+
 input {
     border: 0;
 }
@@ -447,6 +466,12 @@ input[type=checkbox] {
     input[type="file"]::-webkit-file-upload-button:hover {
         background-color: #0056b3;
     }
+    .record-button:hover { 
+        background-color: #e6f6ff;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
+    }
 }
 
 /* Light mode version*/
@@ -468,6 +493,9 @@ input[type=checkbox] {
     input[type="file"]::file-selector-button {
         background-color: #4E3681;
         color: white;
+    }
+    .record-button:hover { 
+        background-color: #322253;
     }
 }
 </style>
