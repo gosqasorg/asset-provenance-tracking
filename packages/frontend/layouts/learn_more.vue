@@ -25,17 +25,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <a class="learn-more-desc" href="mailto:info@gosqas.org">info@gosqas.org</a> 
                     or visiting the links below.</p>
         <div>
-            <RouterLink to="/how-it-works"><button class="baseButton button first learn-more" id="learn-more-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 10px 20px;
-                  margin: 20px 20px 0px 0px;
-                  font-size: 18px;
-                  border-radius: 10px;
+
+            <RouterLink 
+                to="/how-it-works"
+                v-if="$route.path !== '/how-it-works'"
+            >
+                <button class="baseButton button first learn-more" id="learn-more-button" style="
+                    border-width: 2px;
+                    border-style: solid;
+                    padding: 10px 20px;
+                    margin: 20px 20px 0px 0px;
+                    font-size: 18px;
+                    border-radius: 10px;
                 ">
                     How It Works
-                </button></RouterLink>
-            <RouterLink to="/data-privacy"><button class="baseButton button middle learn-more" id="learn-more-button" style="
+                </button>
+            </RouterLink>
+
+            <RouterLink 
+                to="/data-privacy"
+                v-if="$route.path !== '/data-privacy'"
+            >
+                <button class="baseButton button middle learn-more" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
@@ -44,7 +55,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                   border-radius: 10px;
                 ">
                     Data & Privacy
-                </button></RouterLink>
+                </button>
+            </RouterLink>
+
             <button class="baseButton button learn-more" id="learn-more-button" onclick="window.location.href='https://github.com/gosqasorg/asset-provenance-tracking'" style="
                   border-width: 2px;
                   border-style: solid;
@@ -52,9 +65,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                   margin: 20px 20px 0px 0px;
                   font-size: 18px;
                   border-radius: 10px;
-                ">
-                    GDT GitHub
-                </button>
+            ">
+                GDT GitHub
+            </button>
         </div>
         
     </div>
@@ -63,9 +76,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-    export default {
-        name: "learn_more"
+
+export default {
+  name: "learn_more",
+  data() {
+    return {
+      currentUrl: '/',
     }
+  },
+  watch: {
+    $route(to) {
+      this.currentUrl = to.path
+      console.info('Learn More Layout sees us as on: ', this.currentUrl)
+    }
+  },
+}
 
 </script>
 
