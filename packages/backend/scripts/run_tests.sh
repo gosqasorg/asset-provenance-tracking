@@ -5,7 +5,7 @@ eval $(cat local.settings.json | grep -i azure | egrep -vi 'comment|index' | sed
 
 
 # Run integration tests: tests/functions/httptrigger.endpoints.spec.ts
-npx vitest run
+npx vitest run test/functions/httpTrigger.endpoints.spec.ts
 
 
 # NOTE: Below currently fails (TypeError: fetch failed)

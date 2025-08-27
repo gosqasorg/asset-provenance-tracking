@@ -46,24 +46,16 @@ jobs:
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
-    # TODO: Run the httpTrigger unit tests here? Find a way to test all those things when pushed
-
-    # ALT: action in same repository (need to checkout first, but it's already done above)
-    # 'uses' calls action.yml, which should then call the typescript file
-    
-    # Tests are stored in test/functions/httpTrigger.endpoints.spec.ts
-    # - name: Backend Unit Tests
-    #   uses: ./.github/actions
-
-
     # TODO: Use terminal commands to run the file
-    # TODO: Need to convert .ts file into a .js file before running (compile w/ tsconfig.json)
-    - name: Convert TypeScript to Javascript
-      working-directory: packages/backend
-      run: npx tsc
+    # - name: Convert TypeScript to Javascript
+    #   working-directory: packages/backend
+    #   run: npx tsc
 
-    - name: Backend Unit Tests (from command line)
+    # TODO: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported.
+    # Getting the warning when running below in TERMINAL as well, so it can be tested locally
+
+    # TODO: functions that are not working all come from httpTrigger.ts
+    # TODO: seems like compiling typescript is not affecting the run, so I'm going to try without it
+    - name: Run Backend Unit Tests
       working-directory: packages/backend
-      # TODO: maybe there is a different terminal command I should be using to run this?
-      # See package.json
       run: ./scripts/run_tests.sh
