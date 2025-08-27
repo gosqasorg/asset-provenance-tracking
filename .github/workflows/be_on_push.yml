@@ -46,11 +46,6 @@ jobs:
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
-    # TODO: Use terminal commands to run the file
-    # - name: Convert TypeScript to Javascript
-    #   working-directory: packages/backend
-    #   run: npx tsc
-
     # TODO: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported.
     # Getting the warning when running below in TERMINAL as well, so it can be tested locally
 

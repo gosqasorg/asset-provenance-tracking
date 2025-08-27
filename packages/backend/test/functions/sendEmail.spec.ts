@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { sendEmail } from '../../src/functions/sendEmail.js';
+import { sendEmail } from '../../src/functions/sendEmail';
 
 vi.mock('@azure/communication-email', () => {
     const mockBeginSend = vi.fn().mockResolvedValue({

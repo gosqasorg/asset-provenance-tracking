@@ -51,7 +51,7 @@ vi.mock('node:crypto', () => ({
   }
 }));
 
-import * as httpTrigger from '../../src/functions/httpTrigger.js';
+import * as httpTrigger from '../../src/functions/httpTrigger';
 
 beforeEach(() => {
   // Patch TextDecoder to just decode to a string
