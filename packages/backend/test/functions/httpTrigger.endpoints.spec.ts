@@ -54,7 +54,7 @@ vi.mock('node:crypto', () => ({
 // TODO: Getting "WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported."
 // (uncomment code below, then run "./scripts/run_tests.sh;" in the backend folder to see warning)
 
-// import * as httpTrigger from '../../src/functions/httpTrigger';
+import * as httpTrigger from '../../src/functions/httpTrigger';
 
 beforeEach(() => {
   // Patch TextDecoder to just decode to a string
@@ -101,8 +101,8 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   it('getProvenance returns records', async () => {
     const req = makeHttpRequest({ params: { deviceKey } });
-    // const res = await httpTrigger.getProvenance(req, context);
-    // expect(res).toHaveProperty('jsonBody');
+    const res = await httpTrigger.getProvenance(req, context);
+    expect(res).toHaveProperty('jsonBody');
   });
 
   it('postProvenance returns a body', async () => {
@@ -111,8 +111,8 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
       values: vi.fn(() => [].values()),
     };
     const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
-    // const res = await httpTrigger.postProvenance(req, context);
-    // expect(res).toHaveProperty('jsonBody');
+    const res = await httpTrigger.postProvenance(req, context);
+    expect(res).toHaveProperty('jsonBody');
   });
 
   it('getAttachment returns a body and headers', async () => {
