@@ -47,10 +47,7 @@ jobs:
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
     # TODO: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported.
-    # Getting the warning when running below in TERMINAL as well, so it can be tested locally
-
-    # TODO: functions that are not working all come from httpTrigger.ts
-    # TODO: seems like compiling typescript is not affecting the run, so I'm going to try without it
+    # The functions that are causing the warning all come from httpTrigger.ts calls in httpTrigger.endpoints.specs.ts
     - name: Run Backend Unit Tests
       working-directory: packages/backend
       run: ./scripts/run_tests.sh
