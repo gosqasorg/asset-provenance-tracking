@@ -19,6 +19,30 @@ env:
   NODE_VERSION: '18.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
+            
+    - name: Setup Node ${{ env.NODE_VERSION }} Environment
+      uses: actions/setup-node@v4.0.4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: 'Resolve Project Dependencies Using Npm'
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        npm install
+        npm run build --if-present
+        popd
+
+    # TODO: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported.
+    # The functions that are causing the warning all come from httpTrigger.ts calls in httpTrigger.endpoints.specs.ts
+    - name: Run Backend Unit Tests
+      working-directory: packages/backend
+      run: ./scripts/run_unit_tests.sh
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
