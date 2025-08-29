@@ -19,7 +19,7 @@ env:
   NODE_VERSION: '18.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
 
 jobs:
-  run-unit-tests:
+  backend-run-unit-tests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -33,7 +33,7 @@ jobs:
       working-directory: packages/backend
       run: ./scripts/run_unit_tests.sh
 
-  build-and-deploy:
+  backend-build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
