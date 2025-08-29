@@ -50,4 +50,4 @@ jobs:
     # The functions that are causing the warning all come from httpTrigger.ts calls in httpTrigger.endpoints.specs.ts
     - name: Run Backend Unit Tests
       working-directory: packages/backend
-      run: ./scripts/run_tests.sh
+      run: ./scripts/run_unit_tests.sh
