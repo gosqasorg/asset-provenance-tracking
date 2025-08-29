@@ -150,4 +150,8 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res['body']).toBe('test');
   });
 
+  // Dev: Need a test to fail
+  it('Need something to fail', async () => {
+    expect(1).toBe(0);
+  });
 });
