@@ -117,36 +117,37 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   it('getAttachment returns a body and headers', async () => {
     const req = makeHttpRequest({ params: { deviceKey, attachmentID } });
-    // const res = await httpTrigger.getAttachment(req, context);
-    // expect(res).toHaveProperty('body');
-    // expect(res).toHaveProperty('headers');
+    const res = await httpTrigger.getAttachment(req, context);
+    expect(res).toHaveProperty('body');
+    expect(res).toHaveProperty('headers');
   });
 
   it('getAttachmentName returns a body', async () => {
     const req = makeHttpRequest({ params: { deviceKey, attachmentID } });
-    // const res = await httpTrigger.getAttachmentName(req, context);
-    // expect(res).toHaveProperty('body');
+    const res = await httpTrigger.getAttachmentName(req, context);
+    expect(res).toHaveProperty('body');
   });
 
   it('getStatistics returns a jsonBody', async () => {
     const req = makeHttpRequest();
-    // const res = await httpTrigger.getStatistics(req, context);
-    // expect(res).toHaveProperty('jsonBody');
+    const res = await httpTrigger.getStatistics(req, context);
+    expect(res).toHaveProperty('jsonBody');
   });
 
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
-    // const res = await httpTrigger.getVersion(req, context);
-    // expect(res).toHaveProperty('jsonBody');
-    // expect(res).toHaveProperty('headers');
+    const res = await httpTrigger.getVersion(req, context);
+    expect(res).toHaveProperty('jsonBody');
+    expect(res).toHaveProperty('headers');
   });
 
-  //new test
+  // new test
+  // WIP - part of a gosqas engineer's learning track
   it('hello world test', async () => {
     const req= makeHttpRequest();
-    // const res= await httpTrigger.myfunction(req,context);
-    // expect(res).toHaveProperty('body');
-    // expect(res['body']).toBe('test');
+    const res= await httpTrigger.myfunction(req,context);
+    expect(res).toHaveProperty('body');
+    expect(res['body']).toBe('test');
   });
 
 });
