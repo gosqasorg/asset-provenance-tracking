@@ -1,6 +1,6 @@
 {
   "name": "gosqas-az-func",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
@@ -20,7 +20,7 @@
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
     "@azure/data-tables": "^13.3.1",
-    "@azure/functions": "^4.5.1",
+    "@azure/functions": "^4.0.1",
     "@azure/storage-blob": "^12.24.0",
     "bs58": "^5.0.0",
     "dotenv": "^16.4.5",
