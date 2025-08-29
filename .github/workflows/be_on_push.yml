@@ -22,6 +22,9 @@ jobs:
   run-unit-tests-experimental:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
+
     - uses: ./.github/actions/setup-backend
     # TODO: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported.
     # The functions that are causing the warning all come from httpTrigger.ts calls in httpTrigger.endpoints.specs.ts
