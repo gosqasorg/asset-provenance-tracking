@@ -137,8 +137,4 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
   */
 
-
-  it('Fail deliberately', async () => {
-    expect(1).toBe(0);
-  });
 });
