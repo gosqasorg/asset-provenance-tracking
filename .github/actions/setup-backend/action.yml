@@ -1,0 +1,18 @@
+name: "Setup Backend"
+description: "Common setup for backend workflow jobs"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node ${{ env.NODE_VERSION }} Environment
+      uses: actions/setup-node@v4.0.4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: 'Resolve Project Dependencies Using Npm'
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        npm install
+        npm run build --if-present
+        popd
+
