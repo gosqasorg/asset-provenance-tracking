@@ -32,8 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       <p>
         <span class="p-text-color" style="font-weight: 600">Our team</span> <br />
-        Our team is part of Public Invention, a volunteer-based organization that makes a difference
-        by inventing things for humanitarian purposes that help all people. <br />
+        Our team is part of Public Invention, a volunteer-based organization making a difference
+        by inventing in the public, for the public. <br />
         <a class="team-desc" href="https://www.pubinv.org/gosqas-team/"
           >Learn more about our team</a
         >
