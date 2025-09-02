@@ -431,35 +431,32 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 // function that sets the version of server
 export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try {
-        const versionTableUrl = accountName === 'devstoreaccount1'
-            ? `http://127.0.0.1:10002/devstoreaccount1`
-            : `https://${accountName}.table.core.windows.net`;
+    const versionTableUrl = accountName === 'devstoreaccount1'
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;
 
-        let versionTable = 'ServerVersions'
-        const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
-        const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
-        await versionTableClient.createTable(); // create table if not exist, no error if it does
+    let versionTable = 'ServerVersions'
+    const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
+    const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
+    await versionTableClient.createTable(); // create table if not exist, no error if it does
 
-        const versionData = await request.formData();
-        let version; // extract version of server here through formData? or some other information package
+    const versionData = await request.formData();
+    let version; // extract version of server here through formData? or some other information package
 
-        const serverEntity = {
-            partitionKey: 'ServerVersion',
-            rowKey: version,
+    const serverEntity = {
+        partitionKey: 'server',
+        rowKey: 'version',
+        versionNumber: version
         }
 
+    try {
         const versionResponse = await versionTableClient.createEntity(serverEntity);
         console.log(versionResponse)
 
-        console.log('setVersion: current server version is set')
-        return {
-            status: 200,
-            body: "Set",
-            headers: { "Content-Type": "text/plain" }
-        }
     } catch(error){
-        console.log('getVersion: Failed to set version', error.message)
+        if (error.code == "EntityAlreadyExists"){
+            await versionTableClient.updateEntity(serverEntity)
+        }
     }
 }
 //new function that handles Api getting hit
