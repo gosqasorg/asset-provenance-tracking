@@ -456,7 +456,13 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
     } catch(error){
         if (error.code == "EntityAlreadyExists"){
             await versionTableClient.updateEntity(serverEntity)
-        }
+
+            console.log('setVersion: server version updated')
+            return {
+                status: 200,
+                body: "Updated",
+                headers: { "Content-Type": "text/plain" }
+            }
     }
 }
 //new function that handles Api getting hit
