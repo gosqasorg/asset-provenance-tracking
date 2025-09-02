@@ -6,6 +6,7 @@ import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
+import { DefaultAzureCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -386,8 +387,18 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
+    const account = "devstoreaccount1";
+    const accountKey = "";  // account key?
+    const tableName = "versionTable";
+
+    const credential = new DefaultAzureCredential();
+    const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
+
+    const entity = await client.getEntity("server", "version");
+
+
     return { 
-        jsonBody: VERSION_INFO,
+        jsonBody: entity.versionNumber, // extraction okay?
         headers: { "Content-Type": "application/json" }
     };
 }
