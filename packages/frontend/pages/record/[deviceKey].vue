@@ -31,6 +31,7 @@ const recordHasParent = hasParent(provenance);
         <div v-if="recordKeyFound" class="record-container">
             <div class="my-4 mb-2 parent-container" :key="loadingKey">
                 <div class="row justify-content-between main-container">
+
                     <section id="device-details" class="details-container">
                         <div class="record-description">
                             <div class="my-4 fs-1">
@@ -40,16 +41,16 @@ const recordHasParent = hasParent(provenance);
                                 </h1>
                             </div>
 
-                <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
-                <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-                <div class="h5" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-                <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
-                <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
-                <div class="mb-3">
-                <span style="word-wrap: break-word;" id="desc" v-html="clickableLink(deviceRecord?.description)"></span>
-                </div>
-            </div>
+                            <div class="mb-3">
+                                <span style="word-wrap: break-word;" id="desc" v-html="clickableLink(deviceRecord?.description)"></span>
+                            </div>
+                        </div>
 
                         <div class="qr-code-wrapper">
                             <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
@@ -59,48 +60,57 @@ const recordHasParent = hasParent(provenance);
                     <div class="buttons-container">
                         <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
                         <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
-
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
                     </div>
 
                     <!-- QR -->
-                    <div class="col-sm-6 col-lg-3 mt-2">
+                    <div class="col-sm-6 col-lg-3">
                         <QRCode :url="qrCodeUrl" ref="qrcode_component" />
                     </div>
-                </div>
-            </div>
 
+                    <div class="buttons-container"></div>
 
-            <div v-if="hasReportingKey"> Reporting Key:
-                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-            </div>
-            <div v-if="(childKeys?.length > 0) || hasReportingKey">
-                <div> Child Keys:
-                    <div>
-                        <KeyList v-bind:keys="childKeys" />
+                    <div v-if="hasReportingKey"> Reporting Key:
+                        <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
                     </div>
+
+                    <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                        <div> Child Keys:
+                            <div>
+                                <KeyList v-bind:keys="childKeys" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                        <CsvFile :recordKey="_recordKey"></CsvFile>
+                    </div>
+
+                    <div>
+                        <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+                    </div>                    
                 </div>
-                <CsvFile :recordKey="_recordKey"></CsvFile>
-            </div>
-            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+            </div>        
         </div>
+
         <div v-else class="error-container">
-        <h1 class="error-title">Invalid history key</h1>
-        <h2 class="error-subtitle">No record attached to this key</h2>
-        <p class="error-description">
-            We’re sorry, the record you’re looking for could not be found.
-            Please double-check your key. If you keep receiving this error,
-            email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-        </p>
-        <div class="error-buttons">
-            <!-- Go home button -->
-            <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-            <!-- Email us button -->
-            <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
-        </div>
+            <h1 class="error-title">Invalid history key</h1>
+            <h2 class="error-subtitle">No record attached to this key</h2>
+            <p class="error-description">
+                We’re sorry, the record you’re looking for could not be found.
+                Please double-check your key. If you keep receiving this error,
+                email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+            </p>
+            <div class="error-buttons">
+                <!-- Go home button -->
+                <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+                <!-- Email us button -->
+                <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+            </div>
         </div>
     </div>
 </template>
+
 <script lang="ts">
 import GenerateQRCode from '~/components/GenerateQRCode.vue';
 import KeyList from '~/components/KeyList.vue';
