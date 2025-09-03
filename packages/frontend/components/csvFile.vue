@@ -1,8 +1,7 @@
 <template>
-    <button type="button" class="btn mt-1 px-5 mb-5" v-on:click="downloadCSV">
+    <button type="button" class="btn mt-2 px-5 mb-2" v-on:click="downloadCSV">
         Download Children Keys as CSV
     </button>
-
 </template>
 
 <script>
