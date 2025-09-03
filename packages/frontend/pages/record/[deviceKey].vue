@@ -52,7 +52,7 @@ const recordHasParent = hasParent(provenance);
                             </div>
                         </div>
 
-                        <div class="qr-code-wrapper">
+                        <div>
                             <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
                         </div>
                     </section>
