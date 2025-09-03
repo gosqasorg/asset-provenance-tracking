@@ -68,21 +68,18 @@ const recordHasParent = hasParent(provenance);
                         <QRCode :url="qrCodeUrl" ref="qrcode_component" />
                     </div>
 
-                    <div class="buttons-container"></div>
-
                     <div v-if="hasReportingKey"> Reporting Key:
                         <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
                     </div>
 
                     <div v-if="(childKeys?.length > 0) || hasReportingKey">
-                        <div> Child Keys:
+                        <div class="mb-3"> 
+                            <h4>Child Keys</h4>
                             <div>
                                 <KeyList v-bind:keys="childKeys" />
                             </div>
                         </div>
-                    </div>
 
-                    <div v-if="(childKeys?.length > 0) || hasReportingKey">
                         <CsvFile :recordKey="_recordKey"></CsvFile>
                     </div>
 
@@ -242,7 +239,7 @@ export default {
 }
 
 .buttons-container {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     display: flex;
     flex-wrap: wrap;
 }
