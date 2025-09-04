@@ -42,29 +42,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div id="create_group" style="display:none"><FormsCreateContainer/></div>
 
 
-            <div class="col mt-4" style="text-align: left;">
+            <div class="col" style="text-align: left;">
               <RouterLink to="/how-it-works"><button class="baseButton button" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
-                  margin: 0px;
+                  margin: 25px 15px 0px 0px;
                   font-size: 20px;
                   border-radius: 10px;
                 "
               >
               How It Works
               </button></RouterLink>
-              <RouterLink to="/dmdm"><button class="baseButton button mx-3" id="learn-more-button" style="
+
+              <RouterLink to="/dmdm"><button class="baseButton button" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
-                  margin: 0px;
+                  margin: 15px 15px 0px 0px;
                   font-size: 20px;
                   border-radius: 10px;
                 "
               >
               Our Pilot Program
               </button></RouterLink>
+
+              <a class="baseButton button" id="learn-more-button" href="user_manual.pdf"
+                style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 15px 0px 0px 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                  text-decoration: none;
+                  white-space: nowrap;
+                  display: inline-block;
+                "
+              >
+              User Manual
+              </a>
           </div>
 
 
@@ -184,9 +201,6 @@ export default {
 
 .mb-3 {
     margin-bottom: 1rem;
-}
-#how-it-works {
-    margin-right: 20px !important;
 }
 
 #gdt-container,
