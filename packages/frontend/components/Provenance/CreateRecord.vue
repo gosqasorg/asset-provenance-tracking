@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="trackingForm">
+    <form enctype="multipart/form-data" class='record-form mb-4' @submit.prevent="trackingForm">
         <h5>Create New Record Entry</h5>
         <div>
             <textarea id="provenance-description" v-model="description"

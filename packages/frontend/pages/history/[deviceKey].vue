@@ -131,6 +131,19 @@ const recordHasParent = hasParent(provenance);
               </section>
 
               <section id="child-keys">
+                <a class="btn mb-4 user-manual btn-secondary" id="user-manual-btn" href="../user_manual.pdf"
+                style="
+                    width: 100%;
+                    font-size: 20px;
+                    border-radius: 10px;
+                    text-decoration: none;
+                    white-space: nowrap;
+                    display: inline-block;
+                "
+                >
+                User Manual
+                </a>
+
                 <div v-if="hasReportingKey"> Reporting Key:
                   <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
                 </div>
@@ -142,6 +155,7 @@ const recordHasParent = hasParent(provenance);
                   </div>
                   <CsvFile :recordKey="_recordKey"></CsvFile>
                 </div>
+                
                 <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
               </section>
 
@@ -632,6 +646,17 @@ a:visited {
   }
 
   .download-btn:hover {
+    background-color: white;
+    color: black;
+  }
+
+  .btn-secondary {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
+    color: white;
+  }
+
+  .btn-secondary:hover {
     background-color: white;
     color: black;
   }

@@ -68,6 +68,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             ">
                 GDT GitHub
             </button>
+
+            <a class="baseButton button learn-more" id="learn-more-button" href="user_manual.pdf"
+            style="
+                border-width: 2px;
+                border-style: solid;
+                padding: 10px 20px;
+                margin: 20px 20px 0px 0px;
+                font-size: 18px;
+                border-radius: 10px;
+                text-decoration: none;
+                white-space: nowrap;
+                display: inline-block;
+            "
+            >User Manual
+            </a>
         </div>
         
     </div>
