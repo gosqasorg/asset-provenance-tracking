@@ -38,7 +38,7 @@ export default {
 
                 const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
-                for (let i=0; i < provenance?.[0]?.record.children_key.length; i++) {
+                for (const childKey of filteredChildrenKeys) {
                 
                     const provenanceList = await getProvenance(childKey);
                     const record = provenanceList?.[0]?.record || {};
