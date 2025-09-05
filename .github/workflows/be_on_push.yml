@@ -10,7 +10,7 @@ on:
   pull_request:
     branches:
       - main
-    
+
 # Docs: https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=linux%2Cjavascript&pivots=method-manual
 
 env:
@@ -27,8 +27,10 @@ jobs:
 
     - uses: ./.github/actions/setup-backend
 
-    # Note: warnings like the below are ok for now; the library doing the complaining is mocked in the tests.
-    # WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions" package to test mode - not all features are supported.
+    # Note: warnings like the below are ok for now; the library doing the complaining
+    # is mocked in the tests.
+    # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
+    # Example: package to test mode - not all features are supported.
     - name: Run Backend Unit Tests
       working-directory: packages/backend
       run: ./scripts/run_unit_tests.sh
@@ -41,7 +43,7 @@ jobs:
       uses: actions/checkout@v4.2.0
 
     - uses: ./.github/actions/setup-backend
-            
+
     - name: Azure Functions Action
       uses: Azure/functions-action@v1.5.2
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -49,4 +51,17 @@ jobs:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+  backend-postdeployment-integration-tests:
+    runs-on: ubuntu-latest
+    needs: backend-run-unit-tests
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
+
+    - uses: ./.github/actions/setup-backend
+
+    - name: Run Backend Integration Tests
+      working-directory: packages/backend
+      run: ./scripts/run_api_integration_tests.sh
 
