@@ -3,5 +3,5 @@
 # Placeholder for tests
 echo $(( $RANDOM % 2 ))
 
-# Testing: force failure
-exit 1
+# For dev: force failure
+#exit 1
