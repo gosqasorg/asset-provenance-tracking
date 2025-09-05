@@ -137,4 +137,16 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
   */
 
+  //partI
+  // test that always passes
+
+  it('basic test',async()=>{
+    const req=makeHttpRequest();
+    const res=await httpTrigger.myPostEmail(req,context); // what does context do?
+    expect(res).toHaveProperty('Body');
+    expect(res['Body']).toBe('Test');
+
+  });
+//why is this not running? 
+// edited it to now test my new postEmail function 
 });
