@@ -32,8 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       <p>
         <span class="p-text-color" style="font-weight: 600">Our team</span> <br />
-        Our team is part of Public Invention, a volunteer-based organization that makes a difference
-        by inventing things for humanitarian purposes that help all people. <br />
+        Our team is part of Public Invention, a volunteer-based organization making a difference
+        by inventing in the public, for the public. <br />
         <a class="team-desc" href="https://www.pubinv.org/gosqas-team/"
           >Learn more about our team</a
         >
@@ -42,13 +42,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
                 Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
                 <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-                       style="width: 100%; height: 600px; border: none; display: block;"
-                       frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+                    style="width: 100%; border: none; display: block; aspect-ratio: 7 / 4;"
+                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
                </iframe>
                <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
         </div>
 
-        <div class="row" >
+        <div>
         <RouterLink to="/how-it-works"><button class="baseButton button first about-button" id="about-button" style="
                   border-width: 2px;
                   border-style: solid;
@@ -61,7 +61,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     How It Works
                 </button></RouterLink>
         
-        <div class="dmdm" >
+        <div class="dmdm test" >
                   <img src="../assets/images/dmdm-lightmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image lightmode-dmdm">
                  <img src="../assets/images/dmdm-darkmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image darkmode-dmdm">
                 <div class="dmdm-description" style="max-width: 100%;">
@@ -184,6 +184,7 @@ export default {
 .dmdm {
     display: flex;
     align-items: center; 
+    margin-top: 25px;
   }
 
 .lightmode-dmdm,
@@ -208,9 +209,13 @@ export default {
         color: #FFFFFF;
     }
     #about-button {
-        color: white;
+        color: #CCECFD;
         background-color: #1E2019;
         border: 2px solid #CCECFD;
+    }
+    #about-button:hover {
+        background-color: #CCECFD;
+        color: black;
     }
     .dmdm-header {
         margin-bottom:12px;
@@ -249,7 +254,11 @@ export default {
     #about-button {
         color: #322253;
         background-color: #FFFFFF;
-        border: 2px solid #322253;
+        border: 2px solid #4E3681;
+    }
+    #about-button:hover {
+        background-color: #4E3681;
+        color: white;
     }
     .dmdm-header {
         margin-bottom:15px;
