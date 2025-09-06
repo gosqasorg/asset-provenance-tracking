@@ -126,7 +126,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  it('getNewDeviceKey returns key',async()=>{
+  it('getNewDeviceKey returns key',async () =>{
     const req = makeHttpRequest();
     const res = await httpTrigger.getNewDeviceKey(req, context);
     expect(res).toHaveProperty('body');
