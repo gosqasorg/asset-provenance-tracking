@@ -428,7 +428,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         // Deliberate lack of error message to client
     }
 }
-//new function that handles Api getting hit
+
 export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     
         console.log("my testendpoint was hit");
@@ -438,11 +438,9 @@ export async function myfunction(request: HttpRequest, context: InvocationContex
             headers: { "Content-Type": "text/plain" }
         }
 } 
-//new endpoint similar to postEmail
-// i just copied and pasted and changed the body value to Test 
+
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     
-
         console.log('getNewDeviceKey: Got new device key')
         return {
             status: 200,
@@ -499,19 +497,15 @@ app.get("getVersion", {
     route: 'version',
     handler: getVersion
 })
-//new test api endpoint
+
 app.get("myfunction", {
     authLevel: 'anonymous',
     route: 'test-k',
     handler: myfunction,
 })
 
-// mock test postEmail api endpoint
 app.post('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'feedbackVolunteer',
     handler: getNewDeviceKey,
 })
-
-// used to get a new device key 
-//getNewDeviceKey

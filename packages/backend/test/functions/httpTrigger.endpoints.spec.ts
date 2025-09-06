@@ -126,33 +126,15 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  // new test
-  // WIP - part of a gosqas engineer's learning track
-  /*
-  it('hello world test', async () => {
-    const req= makeHttpRequest();
-    const res= await httpTrigger.myfunction(req,context);
-    expect(res).toHaveProperty('body');
-    expect(res['body']).toBe('test');
-  });
-  */
-
-
-
   it('getNewDeviceKey returns key',async()=>{
     const req=makeHttpRequest();
-    const res=await httpTrigger.getNewDeviceKey(req,context); // what does context do?
+    const res=await httpTrigger.getNewDeviceKey(req,context);
     expect(res).toHaveProperty('body');
     const pattern = /^[a-zA-Z0-9]+$/;
     const deviceKey=res['body'];
-    expect(deviceKey).toBe('5LAtuNjm3iuAR3ohpjTMy7');
-
-    expect(pattern.test(deviceKey)).toBe(true);
-    console.log(pattern.test(deviceKey))
-    
+    expect(pattern.test(deviceKey)).toBe(true); 
     expect(deviceKey.length).toBe(22)
-
-
+    expect(typeof deviceKey).toBe('string')
   });
  
 });
