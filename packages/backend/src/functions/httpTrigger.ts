@@ -491,3 +491,4 @@ app.post('getNewDeviceKey', {
     route: 'device/Key',
     handler: getNewDeviceKey,
 })
+
