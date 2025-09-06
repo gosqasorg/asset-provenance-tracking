@@ -6,6 +6,7 @@ import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
+import { DefaultAzureCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -228,10 +229,11 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
-
+process.env["AZURE_STORAGE_ACCOUNT_NAME"] = 'devstoreaccount1'
 let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
     throw new Error('Env vars not set')
 }
+process.env["AZURE_STORAGE_ACCOUNT_KEY"] = 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq'
 let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"])) {
     throw new Error('Env vars not set')
 } 
@@ -386,8 +388,18 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
+    const account = "devstoreaccount1";
+    const accountKey = "";  // account key?
+    const tableName = "versionTable";
+
+    const credential = new DefaultAzureCredential();
+    const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
+
+    const entity = await client.getEntity("server", "version");
+
+
     return { 
-        jsonBody: VERSION_INFO,
+        jsonBody: entity.versionNumber, // extraction okay?
         headers: { "Content-Type": "application/json" }
     };
 }
@@ -426,6 +438,44 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     } catch(error) {
         console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
         // Deliberate lack of error message to client
+    }
+}
+
+// function that sets the version of server
+export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const versionTableUrl = accountName === 'devstoreaccount1'
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;
+
+    let versionTable = 'ServerVersions'
+    const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
+    const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
+    await versionTableClient.createTable(); // create table if not exist, no error if it does
+
+    const versionData = await request.formData();
+    let version; // extract version of server here through formData? or some other information package
+
+    const serverEntity = {
+        partitionKey: 'server',
+        rowKey: 'version',
+        versionNumber: version
+        }
+
+    try {
+        const versionResponse = await versionTableClient.createEntity(serverEntity);
+        console.log(versionResponse)
+
+    } catch(error){
+        if (error.code == "EntityAlreadyExists"){
+            await versionTableClient.updateEntity(serverEntity)
+
+            console.log('setVersion: server version updated')
+            return {
+                status: 200,
+                body: "Updated",
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
     }
 }
 //new function that handles Api getting hit
