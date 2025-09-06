@@ -1,8 +1,7 @@
 <template>
-    <button type="button" class="btn mt-1 px-5 mb-5" v-on:click="downloadCSV">
+    <button type="button" class="btn mt-2 px-5 mb-2" v-on:click="downloadCSV">
         Download Children Keys as CSV
     </button>
-
 </template>
 
 <script>
@@ -39,7 +38,7 @@ export default {
 
                 const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
-                for (let i=0; i < provenance?.[0]?.record.children_key.length; i++) {
+                for (const childKey of filteredChildrenKeys) {
                 
                     const provenanceList = await getProvenance(childKey);
                     const record = provenanceList?.[0]?.record || {};

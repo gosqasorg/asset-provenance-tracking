@@ -10,7 +10,7 @@ on:
   pull_request:
     branches:
       - main
-    
+
 # Docs: https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=linux%2Cjavascript&pivots=method-manual
 
 env:
@@ -19,24 +19,30 @@ env:
   NODE_VERSION: '18.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
 
 jobs:
-  build-and-deploy:
+  backend-run-unit-tests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4.2.0
-            
-    - name: Setup Node ${{ env.NODE_VERSION }} Environment
-      uses: actions/setup-node@v4.0.4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
 
-    - name: 'Resolve Project Dependencies Using Npm'
-      shell: bash
-      run: |
-        pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-        npm install
-        npm run build --if-present
-        popd
+    - uses: ./.github/actions/setup-backend
+
+    # Note: warnings like the below are ok for now; the library doing the complaining
+    # is mocked in the tests.
+    # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
+    # Example: package to test mode - not all features are supported.
+    - name: Run Backend Unit Tests
+      working-directory: packages/backend
+      run: ./scripts/run_unit_tests.sh
+
+  backend-build-and-deploy:
+    runs-on: ubuntu-latest
+    needs: backend-run-unit-tests
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
+
+    - uses: ./.github/actions/setup-backend
 
     - name: Azure Functions Action
       uses: Azure/functions-action@v1.5.2
@@ -45,3 +51,17 @@ jobs:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+  backend-postdeployment-integration-tests:
+    runs-on: ubuntu-latest
+    needs: backend-build-and-deploy
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.0
+
+    - uses: ./.github/actions/setup-backend
+
+    - name: Run Backend Integration Tests
+      working-directory: packages/backend
+      run: ./scripts/run_api_integration_tests.sh
+
