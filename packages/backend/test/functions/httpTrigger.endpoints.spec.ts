@@ -140,11 +140,11 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   //partI
   // test that always passes
 
-  it('basic test',async()=>{
+  it('getNewDeviceKey returns key',async()=>{
     const req=makeHttpRequest();
-    const res=await httpTrigger.myPostEmail(req,context); // what does context do?
-    expect(res).toHaveProperty('Body');
-    expect(res['Body']).toBe('Test');
+    const res=await httpTrigger.getNewDeviceKey(req,context); // what does context do?
+    expect(res).toHaveProperty('body');
+    expect(res['body']).toBe('5LAtuNjm3iuAR3ohpjTMy7');
 
   });
 //why is this not running? 
