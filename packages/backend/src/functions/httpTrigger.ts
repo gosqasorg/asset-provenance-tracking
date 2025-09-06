@@ -429,25 +429,13 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
-export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    
-        console.log("my testendpoint was hit");
-        return {
-            status: 200,
-            body: "test",
-            headers: { "Content-Type": "text/plain" }
-        }
-} 
-
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    
         console.log('getNewDeviceKey: Got new device key')
         return {
             status: 200,
             body: "5LAtuNjm3iuAR3ohpjTMy7",
             headers: { "Content-Type": "text/plain" }
-        };
-    
+        };  
 }
 
 app.post('postEmail', {
@@ -496,12 +484,6 @@ app.get("getVersion", {
     authLevel: 'anonymous',
     route: 'version',
     handler: getVersion
-})
-
-app.get("myfunction", {
-    authLevel: 'anonymous',
-    route: 'test-k',
-    handler: myfunction,
 })
 
 app.post('getNewDeviceKey', {
