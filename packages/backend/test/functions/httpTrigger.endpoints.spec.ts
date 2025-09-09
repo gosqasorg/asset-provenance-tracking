@@ -80,19 +80,6 @@ vi.mock('node:crypto', () => ({
 
 import * as httpTrigger from '../../src/functions/httpTrigger';
 
-beforeEach(() => {
-  // Patch TextDecoder to just decode to a string
-  globalThis.TextDecoder = class {
-    decode(buf: ArrayBuffer | Uint8Array) {
-      if (buf instanceof Uint8Array) {
-        return Buffer.from(buf).toString('utf-8');
-      } else {
-        return Buffer.from(new Uint8Array(buf)).toString('utf-8');
-      }
-    }
-  } as any;
-});
-
 function makeHttpRequest(overrides: any = {}) {
   return {
     method: 'GET',
@@ -175,11 +162,14 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  //new test
-  it('hello world test', async () => {
+  it('getNewDeviceKey returns key', async () => {
     const req = makeHttpRequest();
-    const res = await httpTrigger.myfunction(req, context);
+    const res = await httpTrigger.getNewDeviceKey(req, context);
     expect(res).toHaveProperty('body');
-    expect(res['body']).toBe('test');
+    const pattern = /^[a-zA-Z0-9]+$/;
+    const deviceKey = res['body'];
+    expect(pattern.test(deviceKey)).toBe(true);
+    expect(deviceKey.length).toBe(22);
+    expect(typeof deviceKey).toBe('string');
   });
 });

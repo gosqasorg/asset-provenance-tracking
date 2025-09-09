@@ -521,15 +521,15 @@ export async function postEmail(
     // Deliberate lack of error message to client
   }
 }
-//new function that handles Api getting hit
-export async function myfunction(
+
+export async function getNewDeviceKey(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
-  console.log('my testendpoint was hit');
+  console.log('getNewDeviceKey: Got new device key');
   return {
     status: 200,
-    body: 'test',
+    body: '5LAtuNjm3iuAR3ohpjTMy7',
     headers: { 'Content-Type': 'text/plain' }
   };
 }
@@ -581,9 +581,9 @@ app.get('getVersion', {
   route: 'version',
   handler: getVersion
 });
-//new test api endpoint
-app.get('myfunction', {
+
+app.post('getNewDeviceKey', {
   authLevel: 'anonymous',
-  route: 'test-k',
-  handler: myfunction
+  route: 'device/Key',
+  handler: getNewDeviceKey
 });

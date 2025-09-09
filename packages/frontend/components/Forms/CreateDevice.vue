@@ -34,14 +34,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         placeholder="Record Title"
         maxlength="500"
       />
-      <input
-        type="text"
-        class="form-control mt-3"
+      <textarea
+        id="record-description"
         v-model="description"
         required
         placeholder="Record Description"
         maxlength="5000"
-      />
+        rows="3"
+      ></textarea>
       <div style="display: block">
         <h4 class="mt-3 mb-3">Record Image (optional)</h4>
         <input
@@ -204,6 +204,23 @@ form {
   margin-right: auto;
 }
 
+#record-description {
+  padding: 5px;
+  margin: 5px;
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 7px;
+  width: 100%;
+  outline: none;
+  border: none;
+  padding-left: 14px;
+}
+
+#record-description::placeholder {
+  color: black;
+}
+
 #device-form > * {
   padding: 5px;
   margin: 5px;
@@ -237,9 +254,15 @@ form {
     background-color: #e6f6ff;
     border-color: #e6f6ff;
   }
-  input[type='file']::file-selector-button {
+  #record-button:hover {
+    background-color: #e6f6ff;
+  }
+  input::file-selector-button {
     background-color: #ccecfd;
     color: black;
+  }
+  input[type='file']:hover::file-selector-button {
+    background-color: #e6f6ff !important;
   }
 }
 /* Light mode version*/
@@ -259,9 +282,8 @@ form {
     background-color: #322253;
     border-color: #322253;
   }
-  input[type='file']::file-selector-button {
-    background-color: #4e3681;
-    color: white;
+  #record-button:hover {
+    background-color: #322253;
   }
 }
 </style>

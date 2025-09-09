@@ -176,6 +176,22 @@ const recordHasParent = hasParent(provenance);
               </section>
 
               <section id="child-keys">
+                <a
+                  class="btn mb-4 user-manual btn-secondary"
+                  id="user-manual-btn"
+                  href="../user_manual.pdf"
+                  style="
+                    width: 100%;
+                    font-size: 20px;
+                    border-radius: 10px;
+                    text-decoration: none;
+                    white-space: nowrap;
+                    display: inline-block;
+                  "
+                >
+                  User Manual
+                </a>
+
                 <div v-if="hasReportingKey">
                   Reporting Key:
                   <div>
@@ -193,6 +209,7 @@ const recordHasParent = hasParent(provenance);
                   </div>
                   <CsvFile :recordKey="_recordKey"></CsvFile>
                 </div>
+
                 <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
               </section>
             </div>
@@ -208,9 +225,9 @@ const recordHasParent = hasParent(provenance);
       <h1 class="error-title">Invalid history key</h1>
       <h2 class="error-subtitle">No record attached to this key</h2>
       <p class="error-description">
-        We’re sorry, the record you’re looking for could not be found. <br />
-        Please double-check your key. If you keep receiving this error, <br />
-        email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+        We’re sorry, the record you’re looking for could not be found. Please double-check your key.
+        If you keep receiving this error, email us at
+        <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
       </p>
       <div class="error-buttons">
         <!-- Go home button -->
@@ -416,6 +433,25 @@ export default {
   width: 48% !important;
 }
 
+.btn-primary {
+  background-color: #4e3681;
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background-color: #ccecfd;
+  color: #1e2019;
+}
+
+.btn-primary:hover {
+  background-color: #322253;
+}
+
+.btn-secondary:hover {
+  background-color: #e6f6ff;
+  color: #1e2019;
+}
+
 .descr-container {
   word-wrap: break-word !important;
 }
@@ -456,11 +492,6 @@ export default {
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.download-button:hover {
-  background-color: #4e3681;
-  /* Slightly darker blue on hover */
 }
 
 .menu-spacing {
@@ -582,31 +613,22 @@ a:visited {
   border: none;
 }
 
-.btn-primary {
-  background-color: #4e3681;
-  color: #ffffff;
-}
-
-.btn-primary:hover {
-  background-color: #3b2a6a;
-  /* Darker purple */
-}
-
-.btn-secondary {
-  background-color: #ccecfd;
-  /* Light blue */
-  color: #1e2019;
-  /* Dark text */
-}
-
-.btn-secondary:hover {
-  background-color: #b3dff5;
-  /* Slightly darker blue */
-  color: #1e2019;
-}
-
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1e2019 !important;
+  }
+
+  .error-subtitle,
+  .error-description {
+    color: white;
+  }
+
+  .error-title,
+  .error-email {
+    color: #ccecfd;
+  }
+
   .deviceKey-history {
     background-color: #1e2019;
   }
@@ -668,8 +690,32 @@ a:visited {
     color: white;
   }
 
-  .download-btn:hover {
+  .share-btn {
+    background-color: #1e2019;
+    border: 2px solid #ffffff;
     color: white;
+  }
+
+  .share-btn {
+    background-color: #1e2019;
+    border: 2px solid #ffffff;
+    color: white;
+  }
+
+  .download-btn:hover {
+    background-color: white;
+    color: black;
+  }
+
+  .btn-secondary {
+    background-color: #1e2019;
+    border: 2px solid #ffffff;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: white;
+    color: black;
   }
 }
 
@@ -731,7 +777,7 @@ a:visited {
   }
 
   .download-btn:hover {
-    color: black;
+    background-color: #e6f6ff !important;
   }
 }
 </style>

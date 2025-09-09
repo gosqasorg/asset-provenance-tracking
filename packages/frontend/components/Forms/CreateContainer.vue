@@ -25,15 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         placeholder="Group Title"
         maxlength="500"
       />
-      <input
-        type="text"
-        class="form-control mt-3"
+      <textarea
+        id="container-description"
         v-model="description"
-        id="device-description"
-        required
         placeholder="Group Description"
         maxlength="5000"
-      />
+        rows="3"
+      ></textarea>
+
       <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
       <input
         type="file"
@@ -85,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       </h4>
 
       <h4 class="p-1 my-0">
-        <input type="checkbox" class="form-check-input" id="notify-all" /> Notify all Children?
+        <input type="checkbox" class="form-check-input" id="annotate-all" /> Annotate all Children?
       </h4>
 
       <!-- Volunteer Feedback Email -->
@@ -210,7 +209,7 @@ export default {
       let reportingKey;
 
       // Get all elements from the DOM
-      if ((<HTMLInputElement>document.getElementById('notify-all')).checked) {
+      if ((<HTMLInputElement>document.getElementById('annotate-all')).checked) {
         this.tags = this.tags.concat(['notify_all']);
       }
       const customize_yes = (<HTMLInputElement>document.getElementById('customize-yes')).checked;
@@ -374,6 +373,21 @@ form {
   flex-direction: column;
   width: 70%;
 }
+#container-description {
+  padding: 5px;
+  margin: 5px;
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 7px;
+  width: 100%;
+  outline: none;
+  border: none;
+  padding-left: 14px;
+}
+#container-description::placeholder {
+  color: black;
+}
 #submit-button {
   display: block;
   margin-left: auto;
@@ -407,9 +421,15 @@ input[type='text'] {
     background-color: #e6f6ff;
     border-color: #e6f6ff;
   }
+  #group-button:hover {
+    background-color: #e6f6ff;
+  }
   input[type='file']::file-selector-button {
     background-color: #ccecfd;
     color: black;
+  }
+  input[type='file']:hover::file-selector-button {
+    background-color: #e6f6ff !important;
   }
 }
 /* Light mode version*/
@@ -428,6 +448,9 @@ input[type='text'] {
   #group-button:active {
     background-color: #322253;
     border-color: #322253;
+  }
+  #group-button:hover {
+    background-color: #322253;
   }
   input[type='file']::file-selector-button {
     background-color: #4e3681;

@@ -1,5 +1,5 @@
 <template>
-  <button type="button" class="btn mt-1 bg-sky px-5 mb-5" v-on:click="downloadCSV">
+  <button type="button" class="btn mt-2 px-5 mb-2" v-on:click="downloadCSV">
     Download Children Keys as CSV
   </button>
 </template>
@@ -47,7 +47,7 @@ export default {
           ]
         ];
 
-        for (let i = 0; i < provenance?.[0]?.record.children_key.length; i++) {
+        for (const childKey of filteredChildrenKeys) {
           const provenanceList = await getProvenance(childKey);
           const record = provenanceList?.[0]?.record || {};
 
@@ -86,3 +86,32 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+  .btn {
+    background-color: #1e2019;
+    border: 2px solid #ffffff !important;
+    color: white;
+  }
+
+  .btn:hover {
+    background-color: #ffffff;
+    color: black !important;
+  }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+  .btn {
+    background-color: #ccecfd;
+    border: #ccecfd;
+    color: black;
+  }
+
+  .btn:hover {
+    background-color: #e6f6ff;
+  }
+}
+</style>

@@ -40,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       <div id="create_group" style="display: none"><FormsCreateContainer /></div>
 
-      <div class="col mt-4" style="text-align: left">
+      <div class="col" style="text-align: left">
         <RouterLink to="/how-it-works"
           ><button
             class="baseButton button"
@@ -49,7 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               border-width: 2px;
               border-style: solid;
               padding: 10px 20px;
-              margin: 0px;
+              margin: 25px 15px 0px 0px;
               font-size: 20px;
               border-radius: 10px;
             "
@@ -57,15 +57,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             How It Works
           </button></RouterLink
         >
+
         <RouterLink to="/dmdm"
           ><button
-            class="baseButton button mx-3"
+            class="baseButton button"
             id="learn-more-button"
             style="
               border-width: 2px;
               border-style: solid;
               padding: 10px 20px;
-              margin: 0px;
+              margin: 15px 15px 0px 0px;
               font-size: 20px;
               border-radius: 10px;
             "
@@ -73,6 +74,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             Our Pilot Program
           </button></RouterLink
         >
+
+        <a
+          class="baseButton button"
+          id="learn-more-button"
+          href="user_manual.pdf"
+          style="
+            border-width: 2px;
+            border-style: solid;
+            padding: 10px 20px;
+            margin: 15px 0px 0px 0px;
+            font-size: 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            white-space: nowrap;
+            display: inline-block;
+          "
+        >
+          User Manual
+        </a>
       </div>
 
       <p class="my-4 mb-5 form-control">
@@ -220,6 +240,10 @@ export default {
     background-clip: padding-box;
     background-color: #1e2019;
   }
+  #learn-more-button:hover {
+    background-color: #ccecfd;
+    color: black;
+  }
   #learn-more-button {
     color: #ccecfd;
     background-color: #1e2019;
@@ -241,6 +265,10 @@ export default {
   .form-control {
     background-clip: padding-box;
     background-color: #ffffff;
+  }
+  #learn-more-button:hover {
+    background-color: #4e3681;
+    color: white;
   }
   #learn-more-button {
     color: #322253;

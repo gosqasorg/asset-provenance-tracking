@@ -12,7 +12,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  frontend-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Use Node.js 18
@@ -26,6 +26,7 @@ jobs:
         run: |
           npm ci
           npx nuxi build --preset=azure
+          npm run coverage
         env:
           FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
       - name: deploy frontend
@@ -38,4 +39,3 @@ jobs:
         with:
           name: packages
           path: packages/frontend/.output/**
-

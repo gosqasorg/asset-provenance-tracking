@@ -120,7 +120,7 @@ const route = useRoute();
         <iframe
           src="https://player.vimeo.com/video/1083699274?h=ff0b41174c&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
           class="my-2"
-          style="width: 100%; height: 480px"
+          style="width: 100%; display: block; aspect-ratio: 7 / 4"
           frameborder="0"
           allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
           title="Tutorial: Creating A Record"
@@ -129,7 +129,7 @@ const route = useRoute();
         <iframe
           src="https://player.vimeo.com/video/1083699286?h=e63a8e8c21&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
           class="my-2"
-          style="width: 100%; height: 480px"
+          style="width: 100%; display: block; aspect-ratio: 7 / 4"
           frameborder="0"
           allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
           title="Tutorial: Using A Record"
@@ -137,12 +137,18 @@ const route = useRoute();
         <div class="divider"></div>
         <iframe
           src="https://player.vimeo.com/video/1086646484?h=f0cbc7fd6d&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-          style="width: 100%; height: 480px"
+          style="width: 100%; display: block; aspect-ratio: 7 / 4"
           frameborder="0"
           class="my-2"
           allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
           title="Tutorial: How to Create a Group Record with Decentralized Medical Device Manufacturing (DMDM)"
         ></iframe>
+        <p id="video-caption" style="font-size: 14px">
+          Video production by
+          <a href="https://www.prodigium-pictures.com/" style="font-size: 14px"
+            >Prodigium Pictures</a
+          >
+        </p>
         <div class="divider"></div>
       </div>
     </div>
@@ -244,6 +250,12 @@ li {
   .col {
     color: #ffffff;
   }
+  #video-caption {
+    color: #ffffff;
+  }
+  #video-caption a {
+    color: #ccecfd;
+  }
 }
 
 /* Light mode version*/
@@ -295,6 +307,13 @@ li {
   .col mx-2,
   .col {
     color: #1e2019;
+  }
+  #video-caption {
+    color: #1e2019;
+  }
+  #video-caption a {
+    text-decoration: underline;
+    color: #4e3681;
   }
 }
 </style>

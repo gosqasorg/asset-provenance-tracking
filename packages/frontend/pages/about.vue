@@ -31,21 +31,34 @@ const route = useRoute();
       </p>
 
       <p>
+        <span class="p-text-color" style="font-weight: 600">Our team</span> <br />
+        Our team is part of Public Invention, a volunteer-based organization making a difference by
+        inventing in the public, for the public. <br />
+        <a class="team-desc" href="https://www.pubinv.org/gosqas-team/"
+          >Learn more about our team</a
+        >
+      </p>
+
+      <p>
         <span class="p-text-color" style="font-weight: 600">Our current products</span> <br />
         Global Distributed Tracking - an open source software enabling closed-loop tracking for
         products, information, and logistics.
       </p>
       <iframe
         src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-        style="width: 100%; height: 480px"
+        style="width: 100%; border: none; display: block; aspect-ratio: 7 / 4"
         frameborder="0"
         allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
         title="Global Distributed Tracking"
       >
       </iframe>
+      <p id="video-caption" style="font-size: 14px">
+        Video production by
+        <a href="https://www.prodigium-pictures.com/" style="font-size: 14px">Prodigium Pictures</a>
+      </p>
     </div>
 
-    <div class="row">
+    <div>
       <RouterLink to="/how-it-works"
         ><button
           class="baseButton button first about-button"
@@ -64,7 +77,7 @@ const route = useRoute();
         </button></RouterLink
       >
 
-      <div class="dmdm">
+      <div class="dmdm test">
         <img
           src="../assets/images/dmdm-lightmode.svg"
           style="width: 100%; margin-bottom: 20px; margin-top: 20px"
@@ -203,11 +216,15 @@ export default {
     font-size: 18px;
     margin-left: 40px;
   }
+  .team-desc {
+    font-size: 20px;
+  }
 }
 
 .dmdm {
   display: flex;
   align-items: center;
+  margin-top: 25px;
 }
 
 .lightmode-dmdm,
@@ -231,9 +248,13 @@ export default {
     color: #ffffff;
   }
   #about-button {
-    color: white;
+    color: #ccecfd;
     background-color: #1e2019;
     border: 2px solid #ccecfd;
+  }
+  #about-button:hover {
+    background-color: #ccecfd;
+    color: black;
   }
   .dmdm-header {
     margin-bottom: 12px;
@@ -243,6 +264,15 @@ export default {
   }
   .darkmode-dmdm {
     display: inline;
+  }
+  #video-caption {
+    color: #ffffff;
+  }
+  #video-caption a {
+    color: #ccecfd;
+  }
+  .team-desc {
+    color: #ccecfd;
   }
 }
 /* Light mode version*/
@@ -263,7 +293,11 @@ export default {
   #about-button {
     color: #322253;
     background-color: #ffffff;
-    border: 2px solid #322253;
+    border: 2px solid #4e3681;
+  }
+  #about-button:hover {
+    background-color: #4e3681;
+    color: white;
   }
   .dmdm-header {
     margin-bottom: 15px;
@@ -277,6 +311,16 @@ export default {
   }
   .lightmode-dmdm {
     display: inline;
+  }
+  .team-desc {
+    color: #4e3681;
+  }
+  #video-caption {
+    color: #1e2019;
+  }
+  #video-caption a {
+    text-decoration: underline;
+    color: #4e3681;
   }
 }
 </style>

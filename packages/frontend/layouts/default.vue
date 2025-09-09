@@ -124,18 +124,23 @@
         <div class="row col-md-4 text-md-start">
           <div class="col-md-3">
             <div class="row">
-              <RouterLink to="/" class="me-3">Home</RouterLink>
-              <RouterLink to="/how-it-works" class="me-3">How It Works</RouterLink>
-              <a href="https://github.com/gosqasorg/asset-provenance-tracking" class="me-3"
+              <RouterLink to="/" class="me-3 footer-link">Home</RouterLink>
+
+              <RouterLink to="/how-it-works" class="me-3 footer-link">How It Works</RouterLink>
+              <a
+                href="https://github.com/gosqasorg/asset-provenance-tracking"
+                class="me-3 footer-link"
                 >GDT GitHub</a
               >
             </div>
           </div>
           <div class="col-md-2 text-md-start custom-row-about">
             <div class="row">
-              <RouterLink to="/about" class="me-3">About</RouterLink>
-              <RouterLink to="/data-privacy" class="me-3">Data & Privacy</RouterLink>
-              <RouterLink to="/terms_and_conditions" class="me-3">Terms and Conditions</RouterLink>
+              <RouterLink to="/about" class="me-3 footer-link">About</RouterLink>
+              <RouterLink to="/data-privacy" class="me-3 footer-link">Data & Privacy</RouterLink>
+              <RouterLink to="/terms_and_conditions" class="me-3 footer-link"
+                >Terms and Conditions</RouterLink
+              >
             </div>
           </div>
         </div>
@@ -544,8 +549,9 @@ export default {
   .navbar-collapse .nav-link:hover,
   .navbar-collapse .nav-link.active,
   .mobile-link:hover,
-  .mobile-link.active {
-    color: #ccecfd;
+  .mobile-link.active,
+  .footer-link:hover {
+    color: #ccecfd !important;
     font-weight: 600;
   }
   #viewRecordButton {
@@ -568,6 +574,14 @@ export default {
   #footer a,
   #footer RouterLink {
     color: #ffffff;
+  }
+  #viewRecordButton:hover {
+    background-color: #e6f6ff;
+    border-color: #e6f6ff;
+  }
+  #createRecordButton:hover {
+    background-color: #322253;
+    border-color: #322253;
   }
 }
 /* Light mode version*/
@@ -597,8 +611,9 @@ export default {
   .navbar-collapse .nav-link:hover,
   .navbar-collapse .nav-link.active,
   .mobile-link:hover,
-  .mobile-link.active {
-    color: #4e3681;
+  .mobile-link.active,
+  .footer-link:hover {
+    color: #4e3681 !important;
     font-weight: 600;
   }
   #createRecordButton {
@@ -621,6 +636,14 @@ export default {
   #footer a,
   #footer RouterLink {
     color: black;
+  }
+  #viewRecordButton:hover {
+    background-color: #322253;
+    border-color: #322253;
+  }
+  #createRecordButton:hover {
+    background-color: #4e3681;
+    color: white;
   }
 }
 </style>
