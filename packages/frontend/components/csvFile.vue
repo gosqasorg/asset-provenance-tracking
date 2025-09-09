@@ -1,110 +1,117 @@
 <template>
-    <button type="button" class="btn mt-2 px-5 mb-2" v-on:click="downloadCSV">
-        Download Children Keys as CSV
-    </button>
+  <button type="button" class="btn mt-2 px-5 mb-2" v-on:click="downloadCSV">
+    Download Children Keys as CSV
+  </button>
 </template>
 
 <script>
-
 import { getChildrenKeys } from '~/utils/descendantList';
 import { getProvenance } from '~/services/azureFuncs';
 
 export default {
-    props: {
-        recordKey: {
-            type: String,
-            required: true,
-        },
-    },
-
-    methods: {
-        async downloadCSV() {
-            try {
-                const provenance = await getProvenance(this.recordKey);
-                const childrenKeys = await getChildrenKeys(this.recordKey);
-
-                const reportingRecord = provenance?.[0]?.record;
-                const reportingKey = reportingRecord?.children_key?.[0] || reportingRecord?.reportingKey || '';
-
-                const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
-                const parentName = reportingRecord.deviceName?.replace(/"/g, '""') || '';
-
-                // Skip the parent
-                const filteredChildrenKeys = childrenKeys.filter(key =>
-                    key !== this.recordKey
-                );
-
-                let isReportingKey = ''; //Flag to check if row is the record key row or not
-
-                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
-
-                for (const childKey of filteredChildrenKeys) {
-                
-                    const provenanceList = await getProvenance(childKey);
-                    const record = provenanceList?.[0]?.record || {};
-
-                    const childName = record.deviceName || '';
-                    const childUrl = `${window.location.origin}/history/${childKey}`;
-
-                    if (childKey == reportingKey){
-                        isReportingKey = 'T';
-                    }
-                    else{
-                        isReportingKey = 'F';
-                    }
-
-                    csvRows.push([
-                        `"${this.recordKey}"`,
-                        `"${parentUrl}"`,
-                        `"${parentName}"`,
-                        `"${reportingKey}"`,
-                        `"${childName.replace(/"/g, '""')}"`,
-                        `"${childKey}"`,
-                        `"${childUrl}"`,
-                        `"${isReportingKey}"`
-                    ]);
-                }
-
-                const csvContent = csvRows.map(r => r.join(',')).join('\n');
-
-                const anchor = document.createElement('a');
-                anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
-                anchor.target = '_blank';
-                anchor.download = `children_${this.recordKey}.csv`;
-                anchor.click();
-            } catch (error) {
-                console.error('Error generating children CSV:', error);
-            }
-        }
+  props: {
+    recordKey: {
+      type: String,
+      required: true
     }
-}
+  },
+
+  methods: {
+    async downloadCSV() {
+      try {
+        const provenance = await getProvenance(this.recordKey);
+        const childrenKeys = await getChildrenKeys(this.recordKey);
+
+        const reportingRecord = provenance?.[0]?.record;
+        const reportingKey =
+          reportingRecord?.children_key?.[0] || reportingRecord?.reportingKey || '';
+
+        const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
+        const parentName = reportingRecord.deviceName?.replace(/"/g, '""') || '';
+
+        // Skip the parent
+        const filteredChildrenKeys = childrenKeys.filter((key) => key !== this.recordKey);
+
+        let isReportingKey = ''; //Flag to check if row is the record key row or not
+
+        const csvRows = [
+          [
+            'Parent Record Key',
+            'Parent URL',
+            'Parent Device Name',
+            'Reporting Key',
+            'Child Name',
+            'Child Key',
+            'Child Key URL',
+            'isReportingKey'
+          ]
+        ];
+
+        for (const childKey of filteredChildrenKeys) {
+          const provenanceList = await getProvenance(childKey);
+          const record = provenanceList?.[0]?.record || {};
+
+          const childName = record.deviceName || '';
+          const childUrl = `${window.location.origin}/history/${childKey}`;
+
+          if (childKey == reportingKey) {
+            isReportingKey = 'T';
+          } else {
+            isReportingKey = 'F';
+          }
+
+          csvRows.push([
+            `"${this.recordKey}"`,
+            `"${parentUrl}"`,
+            `"${parentName}"`,
+            `"${reportingKey}"`,
+            `"${childName.replace(/"/g, '""')}"`,
+            `"${childKey}"`,
+            `"${childUrl}"`,
+            `"${isReportingKey}"`
+          ]);
+        }
+
+        const csvContent = csvRows.map((r) => r.join(',')).join('\n');
+
+        const anchor = document.createElement('a');
+        anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        anchor.target = '_blank';
+        anchor.download = `children_${this.recordKey}.csv`;
+        anchor.click();
+      } catch (error) {
+        console.error('Error generating children CSV:', error);
+      }
+    }
+  }
+};
 </script>
 
 <style scoped>
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    .btn {
-        background-color: #1E2019;
-        border: 2px solid #FFFFFF !important;
-        color: white;
-    }
+  .btn {
+    background-color: #1e2019;
+    border: 2px solid #ffffff !important;
+    color: white;
+  }
 
-    .btn:hover {
-        background-color: #FFFFFF;
-        color: black !important;
-    }
+  .btn:hover {
+    background-color: #ffffff;
+    color: black !important;
+  }
 }
 
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-    .btn {
-        background-color: #CCECFD;
-        border: #CCECFD;
-        color: black;
-    }
+  .btn {
+    background-color: #ccecfd;
+    border: #ccecfd;
+    color: black;
+  }
 
-    .btn:hover {
-        background-color: #e6f6ff;
-    }
+  .btn:hover {
+    background-color: #e6f6ff;
+  }
 }
 </style>

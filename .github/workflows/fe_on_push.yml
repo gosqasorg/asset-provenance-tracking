@@ -39,4 +39,3 @@ jobs:
         with:
           name: packages
           path: packages/frontend/.output/**
-
