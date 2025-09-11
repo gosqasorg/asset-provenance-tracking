@@ -63,17 +63,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
 
     <!-- Image Preview Modal -->
-    <div class="modal-backdrop fade show" v-if="showModal"></div>
-    <div class="modal fade show" style="display: block;" id="imageModal" tabindex="-1" aria-hidden="true" v-if="showModal">
+<div class="modal-backdrop fade show" v-if="showModal"></div>
+<div class="modal fade show" style="display:block;" v-if="showModal">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
+                <button type="button" class="btn-close" @click="showModal = false"></button>
             </div>
             <div class="modal-body">
-                <img v-bind:src="modalImage" alt="Image" class="modal-image">
+                <img :src="modalImage" alt="Image" class="modal-image">
             </div>
         </div>
+    </div>
 </div>
+
 
 </template>
 
@@ -216,45 +219,87 @@ export default {
 }
 
 /* Modal Styles */
-
-.modal-header {
-    border: none;
-    padding: 1rem;
-    position: absolute;
-    right: 0;
-    z-index: 1;
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(2px);
 }
 
-.btn-close {
-    background-color: white;
-    opacity: 0.8;
-    border-radius: 50%;
-    padding: 0.5rem;
-}
-
-.btn-close:hover {
-    opacity: 1;
+.modal-dialog {
+    position: fixed;
+    top: 20vh;
+    left: 20vh;
+    right: 20vh;
+    bottom: 20vh;
+    margin: 0;
+    width: auto;       
+    max-width: 95vw;   
+    max-height: 90vh;
+    z-index: 1055;
 }
 
 .modal-content {
-    background-color: rgba(0, 0, 0, 0.9);
+    background: transparent;
     border: none;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-header {
+    border: none;
+    padding: 0;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1056;
+    background: none;
+}
+
+.btn-close {
+    background-color: rgba(255, 255, 255, 0.9);
+    opacity: 1;
+    border-radius: 100%;
+    padding: 8px;
+    width: 10px;
+    height: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-close:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+}
+
+.btn-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
 }
 
 .modal-body {
     padding: 0;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 300px;
+    align-items: center;  
+    min-height: 200px;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
 }
 
 .modal-image {
-    display: block;
+    max-width: 90vw;
+    max-height: 90vh;
     height: auto;
-    margin: auto;
-    max-width: 100%;
+    width: auto;
+    object-fit: contain;
+    border-radius: 4px;
 }
+
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
