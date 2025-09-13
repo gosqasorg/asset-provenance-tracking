@@ -6,6 +6,7 @@ import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
+import { DefaultAzureCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -386,10 +387,27 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
-    return { 
-        jsonBody: VERSION_INFO,
-        headers: { "Content-Type": "application/json" }
-    };
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;  
+
+        // table name to look up, table made in setVersion
+        const tableName = "versionTable1";
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const client = new TableClient(tableUrl, tableName, credential, { allowInsecureConnection: true });
+        const entity = await client.getEntity("server", "version");
+        console.log("Server version : ", entity.versionNumber)
+        return { 
+            status: 200
+        };
+    } catch(error) {
+        console.log(error)
+        return { 
+            status: 500
+        };
+    }
+
 }
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -429,8 +447,50 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
+
+// function that sets the version of server
+export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const versionTableUrl = accountName === 'devstoreaccount1'
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let versionTable = 'versionTable1'
+        const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
+        var versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true })
+        await versionTableClient.createTable(); // create table if not exist, no error if it does
+
+        let version = 12345 // set the version here from passed arguments
+        var serverEntity = {
+            partitionKey: 'server',
+            rowKey: 'version',
+            versionNumber: version
+        }
+
+        // if there's already an entity created, will throw error and caught below
+        const versionResponse = await versionTableClient.createEntity(serverEntity);
+        return {status: 200,
+            body: "Server version entity created"
+        }
+        
+    } catch(error){
+        // because an entity with above information exists, just update the property of the entity -> versionNumber
+        await versionTableClient.updateEntity(serverEntity, "Replace")
+        console.log('Server version updated')
+        return {
+            status: 200,
+            body: "Server version Updated",
+        }
+    }
+}
+//new function that handles Api getting hit
+export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    
+        console.log("my testendpoint was hit");
+
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
         console.log('getNewDeviceKey: Got new device key')
+
         return {
             status: 200,
             body: "5LAtuNjm3iuAR3ohpjTMy7",
@@ -483,7 +543,7 @@ app.get("getStatistics", {
 app.get("getVersion", {
     authLevel: 'anonymous',
     route: 'version',
-    handler: getVersion
+    handler: setVersion
 })
 
 app.post('getNewDeviceKey', {
