@@ -543,7 +543,7 @@ app.get("getStatistics", {
 app.get("getVersion", {
     authLevel: 'anonymous',
     route: 'version',
-    handler: setVersion
+    handler: getVersion
 })
 
 app.post('getNewDeviceKey', {
