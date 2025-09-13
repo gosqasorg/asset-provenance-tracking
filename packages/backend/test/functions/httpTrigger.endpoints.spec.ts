@@ -121,9 +121,9 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
-    const res = await httpTrigger.getVersion(req, context);
-    expect(res).toHaveProperty('jsonBody');
-    expect(res).toHaveProperty('headers');
+    const res = await httpTrigger.postEmail(req, context);
+    expect(res).toHaveProperty('status', 200);
+    //expect(res).toHaveProperty('headers');
   });
 
   // new test

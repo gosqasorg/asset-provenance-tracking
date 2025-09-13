@@ -388,16 +388,18 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
     const account = "devstoreaccount1";
-    const accountKey = "";  // account key?
+    //const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
     const tableName = "versionTable";
-
-    const credential = new DefaultAzureCredential();
+    console.log('test1')
+    const credential = new AzureNamedKeyCredential(accountName, accountKey);
+    console.log('test2')
     const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
-
+    console.log('test3')
     const entity = await client.getEntity("server", "version");
-
+    console.log('test4')
 
     return { 
+        status: 200,
         jsonBody: entity.versionNumber, // extraction okay?
         headers: { "Content-Type": "application/json" }
     };
@@ -446,31 +448,37 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
         ? `http://127.0.0.1:10002/devstoreaccount1`
         : `https://${accountName}.table.core.windows.net`;
 
-    let versionTable = 'ServerVersions'
+    let versionTable = 'versionTable1'
+    console.log('HELLLLLO1')
     const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
+    console.log('HELLLLLO2')
     const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
+    console.log('HELLLLLO3')
     await versionTableClient.createTable(); // create table if not exist, no error if it does
-
-    const versionData = await request.formData();
-    let version; // extract version of server here through formData? or some other information package
-
+    console.log('HELLLLLO4')
+    //const versionData = await request.formData();
+    let version = 10 // extract version of server here through formData? or some other information package
+    let status = 404;
     const serverEntity = {
         partitionKey: 'server',
         rowKey: 'version',
         versionNumber: version
         }
-
+        console.log('HELLLLLO5')
     try {
         const versionResponse = await versionTableClient.createEntity(serverEntity);
         console.log(versionResponse)
+        console.log('HELLLLLO6')
+        return {status: 200}
 
     } catch(error){
         if (error.code == "EntityAlreadyExists"){
             await versionTableClient.updateEntity(serverEntity)
 
             console.log('setVersion: server version updated')
+            status = 200;
             return {
-                status: 200,
+                status,
                 body: "Updated",
                 headers: { "Content-Type": "text/plain" }
             }
@@ -533,7 +541,7 @@ app.get("getStatistics", {
 app.get("getVersion", {
     authLevel: 'anonymous',
     route: 'version',
-    handler: getVersion
+    handler: setVersion
 })
 //new test api endpoint
 app.get("myfunction", {
