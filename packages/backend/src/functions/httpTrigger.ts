@@ -415,6 +415,11 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
         };
     } catch(error) {
         console.error('getVersion: Failed to grab server version', error.message) 
+        return { 
+            status: 500,
+            //jsonBody: entity.versionNumber, // extraction okay?
+            headers: { "Content-Type": "application/json" }
+        };
     }
 
 }
@@ -458,45 +463,47 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 // function that sets the version of server
 export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const versionTableUrl = accountName === 'devstoreaccount1'
-        ? `http://127.0.0.1:10002/devstoreaccount1`
-        : `https://${accountName}.table.core.windows.net`;
-
-    let versionTable = 'versionTable1'
-    console.log('HELLLLLO1')
-    const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
-    console.log('HELLLLLO2')
-    const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
-    console.log('HELLLLLO3')
-    await versionTableClient.createTable(); // create table if not exist, no error if it does
-    console.log('HELLLLLO4')
-    //const versionData = await request.formData();
-    let version = 10 // extract version of server here through formData? or some other information package
-    let status = 404;
-    const serverEntity = {
-        partitionKey: 'server',
-        rowKey: 'version',
-        versionNumber: version
-        }
-        console.log('HELLLLLO5')
     try {
+        const versionTableUrl = accountName === 'devstoreaccount1'
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let versionTable = 'versionTable1'
+        console.log('HELLLLLO1')
+        const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
+        console.log('HELLLLLO2')
+        const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
+        console.log('HELLLLLO3')
+        console.log(versionTableUrl, accountName, accountKey)
+        await versionTableClient.createTable(); // create table if not exist, no error if it does
+        console.log('HELLLLLO4')
+
+        //const versionData = await request.formData();
+        let version = 10 // extract version of server here through formData? or some other information package
+        let status = 404;
+        const serverEntity = {
+            partitionKey: 'server',
+            rowKey: 'version',
+            versionNumber: version
+        }
+
+        console.log('HELLLLLO5')
+
         const versionResponse = await versionTableClient.createEntity(serverEntity);
         console.log(versionResponse)
         console.log('HELLLLLO6')
         return {"status": 200}
-
+        
     } catch(error){
-        if (error.code == "EntityAlreadyExists"){
-            await versionTableClient.updateEntity(serverEntity)
+        //await versionTableClient.updateEntity(serverEntity)
 
-            console.log('setVersion: server version updated')
-            status = 200;
-            return {
-                status,
-                body: "Updated",
-                headers: { "Content-Type": "text/plain" }
-            }
+        //console.log('setVersion: server version updated')
+        return {
+            status: 500,
+            body: "Error",
+            headers: { "Content-Type": "text/plain" }
         }
+        
     }
 }
 //new function that handles Api getting hit
