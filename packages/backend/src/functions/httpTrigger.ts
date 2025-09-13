@@ -386,23 +386,37 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 };
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // This is a simple function that returns the version of the server.
-    const account = "devstoreaccount1";
-    //const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-    const tableName = "versionTable";
-    console.log('test1')
-    const credential = new AzureNamedKeyCredential(accountName, accountKey);
-    console.log('test2')
-    const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
-    console.log('test3')
-    const entity = await client.getEntity("server", "version");
-    console.log('test4')
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;  
 
-    return { 
-        status: 200,
-        jsonBody: entity.versionNumber, // extraction okay?
-        headers: { "Content-Type": "application/json" }
-    };
+        //return { 
+        //    status: 200,
+            //jsonBody: entity.versionNumber, // extraction okay?
+        //    headers: { "Content-Type": "application/json" }
+        //}
+        // This is a simple function that returns the version of the server.
+        const account = "devstoreaccount1";
+        //const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
+        const tableName = "versionTable";
+        console.log('test1')
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        console.log('test2')
+        const client = new TableClient(tableUrl, tableName, credential);
+        console.log('test3')
+        const entity = await client.getEntity("server", "version");
+        console.log('test4')
+
+        return { 
+            status: 200,
+            //jsonBody: entity.versionNumber, // extraction okay?
+            headers: { "Content-Type": "application/json" }
+        };
+    } catch(error) {
+        console.error('getVersion: Failed to grab server version', error.message) 
+    }
+
 }
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
