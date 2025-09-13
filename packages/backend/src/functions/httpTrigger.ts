@@ -469,7 +469,7 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
         const versionResponse = await versionTableClient.createEntity(serverEntity);
         console.log(versionResponse)
         console.log('HELLLLLO6')
-        return {status: 200}
+        return {"status": 200}
 
     } catch(error){
         if (error.code == "EntityAlreadyExists"){
