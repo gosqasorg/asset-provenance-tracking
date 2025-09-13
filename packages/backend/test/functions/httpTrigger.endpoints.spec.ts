@@ -119,21 +119,19 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
   });
 
-  it('settVersion returns version info', async () => {
+  it('settVersion sets server version', async () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.setVersion(req, context);
     expect(res).toHaveProperty('status');
     expect(res.status).toBe(200);
-    //expect(res).toHaveProperty('headers');
   });
 
-/*  it('getVersion returns version info', async () => {
+  it('getVersion returns return server version', async () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getVersion(req, context);
-    expect(res).toHaveProperty('status');
-    //expect(res).toHaveProperty('headers');
+    expect(res.status).toBe(200);
   });
-*/
+
   // new test
   // WIP - part of a gosqas engineer's learning track
   /*

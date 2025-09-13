@@ -386,39 +386,25 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 };
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that returns the version of the server.
     try {
         const tableUrl = accountName === "devstoreaccount1"
         ? `http://127.0.0.1:10002/devstoreaccount1`
         : `https://${accountName}.table.core.windows.net`;  
 
-        //return { 
-        //    status: 200,
-            //jsonBody: entity.versionNumber, // extraction okay?
-        //    headers: { "Content-Type": "application/json" }
-        //}
-        // This is a simple function that returns the version of the server.
-        const account = "devstoreaccount1";
-        //const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-        const tableName = "versionTable";
-        console.log('test1')
+        // table name to look up, table made in setVersion
+        const tableName = "versionTable1";
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        console.log('test2')
-        const client = new TableClient(tableUrl, tableName, credential);
-        console.log('test3')
+        const client = new TableClient(tableUrl, tableName, credential, { allowInsecureConnection: true });
         const entity = await client.getEntity("server", "version");
-        console.log('test4')
-
+        console.log("Server version : ", entity.versionNumber)
         return { 
-            status: 200,
-            //jsonBody: entity.versionNumber, // extraction okay?
-            headers: { "Content-Type": "application/json" }
+            status: 200
         };
     } catch(error) {
-        console.error('getVersion: Failed to grab server version', error.message) 
+        console.log(error)
         return { 
-            status: 500,
-            //jsonBody: entity.versionNumber, // extraction okay?
-            headers: { "Content-Type": "application/json" }
+            status: 500
         };
     }
 
@@ -469,41 +455,31 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
             : `https://${accountName}.table.core.windows.net`;
 
         let versionTable = 'versionTable1'
-        console.log('HELLLLLO1')
         const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
-        console.log('HELLLLLO2')
-        const versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true})
-        console.log('HELLLLLO3')
-        console.log(versionTableUrl, accountName, accountKey)
+        var versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true })
         await versionTableClient.createTable(); // create table if not exist, no error if it does
-        console.log('HELLLLLO4')
 
-        //const versionData = await request.formData();
-        let version = 10 // extract version of server here through formData? or some other information package
-        let status = 404;
-        const serverEntity = {
+        let version = 12345 // set the version here from passed arguments
+        var serverEntity = {
             partitionKey: 'server',
             rowKey: 'version',
             versionNumber: version
         }
 
-        console.log('HELLLLLO5')
-
+        // if there's already an entity created, will throw error and caught below
         const versionResponse = await versionTableClient.createEntity(serverEntity);
-        console.log(versionResponse)
-        console.log('HELLLLLO6')
-        return {"status": 200}
-        
-    } catch(error){
-        //await versionTableClient.updateEntity(serverEntity)
-
-        //console.log('setVersion: server version updated')
-        return {
-            status: 500,
-            body: "Error",
-            headers: { "Content-Type": "text/plain" }
+        return {status: 200,
+            body: "Server version entity created"
         }
         
+    } catch(error){
+        // because an entity with above information exists, just update the property of the entity -> versionNumber
+        await versionTableClient.updateEntity(serverEntity, "Replace")
+        console.log('Server version updated')
+        return {
+            status: 200,
+            body: "Server version Updated",
+        }
     }
 }
 //new function that handles Api getting hit
