@@ -447,6 +447,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
+
 // function that sets the version of server
 export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -486,12 +487,16 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
 export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     
         console.log("my testendpoint was hit");
+
+export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+        console.log('getNewDeviceKey: Got new device key')
+
         return {
             status: 200,
-            body: "test",
+            body: "5LAtuNjm3iuAR3ohpjTMy7",
             headers: { "Content-Type": "text/plain" }
-        }
-} 
+        };  
+}
 
 app.post('postEmail', {
     authLevel: 'anonymous',
@@ -540,9 +545,10 @@ app.get("getVersion", {
     route: 'version',
     handler: setVersion
 })
-//new test api endpoint
-app.get("myfunction", {
+
+app.post('getNewDeviceKey', {
     authLevel: 'anonymous',
-    route: 'test-k',
-    handler: myfunction,
+    route: 'device/Key',
+    handler: getNewDeviceKey,
 })
+
