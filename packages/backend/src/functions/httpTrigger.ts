@@ -485,8 +485,12 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
 }
 //new function that handles Api getting hit
 export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    
+        
         console.log("my testendpoint was hit");
+        return {
+            body: "my testendpoint was hit"
+        }
+}
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
         console.log('getNewDeviceKey: Got new device key')
