@@ -84,4 +84,4 @@ Note: Be mindful that running tests on GitHub servers uses up credits. Use them 
 
 # PS
 
-![API test screenshot](./readme_fig_1.png)
+![API test screenshot](./Readme_fig_1.png)
