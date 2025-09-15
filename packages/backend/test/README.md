@@ -1,6 +1,10 @@
 # Live API Integration Tests
 
+<<<<<<< HEAD
 ###### tl;dr: read IntegrationTests/Live/read.test.ts
+=======
+###### tl;dr: read test/api/read.test.ts
+>>>>>>> main
 
 ### Contents
 
