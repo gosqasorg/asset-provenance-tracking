@@ -24,6 +24,7 @@ describe(baseName = "Group of tests", () => {
 })
 
 */
+let timeout = 30000;  // Milliseconds; integration testing can be laggy
 let baseTestName;
 describe(baseTestName = "API Integration Tests: Read", () => {
 
@@ -65,7 +66,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	// Placeholder
 	it("smoketest", () => {
 		expect(0).toBe(0);  
-	});
+	}, timeout);
 
 	// Single-Feature Test: Multiple History Records
 	it(testName = 'Record with > 1 History Items: ', async () => {
@@ -107,7 +108,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		})
 		expect(keysToCheckOff.size).toBe(0)
 
-	});
+	}, timeout);
 
 	// Placeholder
 	// Everything all at once
