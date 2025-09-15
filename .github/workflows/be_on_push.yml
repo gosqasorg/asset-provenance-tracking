@@ -52,6 +52,7 @@ jobs:
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
         publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
+  # These will grow into post-(deployment to redstone) integration tests pre-(merge to main)
   backend-postdeployment-integration-tests:
     runs-on: ubuntu-latest
     needs: backend-build-and-deploy
