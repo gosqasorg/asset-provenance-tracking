@@ -9,12 +9,11 @@
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
-    "start": "func start",
-    "test": "./scripts/run_tests.sh",
-    "unittest": "npx vitest run",
-    "dev": "npm run update-version && func start",
+    "dev": "func start",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
-    "vitest": "vitest",
+    "test": "vitest",
+    "unittest": "npx vitest run test/UnitTests",
+    "api_integration_tests": "npx vitest run test/IntegrationTests",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
