@@ -1,6 +1,6 @@
 # Live API Integration Tests
 
-###### tl;dr: read test/api/read.test.ts
+###### tl;dr: read IntegrationTests/Live/read.test.ts
 
 ### Contents
 
@@ -47,12 +47,16 @@ And then press tab.
 
 This file is intended to be a living, breathing, walkthrough example. In it, you'll find extensive commentary that will help get you started. 
 ```
-backend/test/api/read.test.ts
+backend/test/IntegrationTests/Live/read.test.ts
 ```
 For a more comprehensive, less formal thought process walkthrough, take a look at the comments and scaffolding approach in this particular commit:
 * https://github.com/gosqasorg/asset-provenance-tracking/blob/b6e9cfcc5d8818b53ef247991e8a80fb0bddc30c/packages/backend/test/api/read.test.ts
 
 Note also that structural placeholders have been set up: we have the core test files we need, and each file has a template with placeholders for the tests we'll create as well as a brief guide on structure. 
+
+### Framework: Orientation
+
+Our test framework is Vitest. A beginner's guide is [here](https://betterstack.com/community/guides/testing/vitest-explained/#step-2-writing-your-first-test). Sections 2, 3, 6, and 8 are useful. The official docs beginner's guide is [here](https://vitest.dev/guide/#writing-tests). The main docs are [here](https://vitest.dev/api/).
 
 ## Notes
 
@@ -60,7 +64,7 @@ Note also that structural placeholders have been set up: we have the core test f
 
 Some progress has already been made. This suite may eventually in some way cooperate with or draw from
 ```
-packages/backend/test/integrationTests.ts
+packages/backend/test/IntegrationTests/Local/integrationTests.ts
 ```
 
 ### Wiki
@@ -71,3 +75,13 @@ We have a wiki. On the API. It may be of some use.
 
 ## DevOps: CI / CD
 
+These tests are integrated into our CI/CD pipeline, configured here:
+```
+asset-provenance-tracking/.github/workflows/be_on_push.yml
+```
+
+Note: Be mindful that running tests on GitHub servers uses up credits. Use them as needed: that's why we have the credits. And keep in mind the same tests can be run locally by cd packages/backend && npm run test
+
+# PS
+
+![API test screenshot](./readme_fig_1.png)
