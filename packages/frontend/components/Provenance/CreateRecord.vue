@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 
 <template>
-    <form enctype="multipart/form-data" class='record-form mb-5' @submit.prevent="submitRecord">
+    <form enctype="multipart/form-data" class='record-form mb-4' @submit.prevent="trackingForm">
         <h5>Create New Record Entry</h5>
         <div>
-            <input type="text" class="form-control" name="description" id="provenance-description" v-model="description"
-                placeholder="Description" maxlength="5000" required />
+            <textarea id="provenance-description" v-model="description"
+                placeholder="Description" maxlength="5000" rows="3"></textarea>
             <div v-if="isGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Group Record Keys (optional, separated with a comma)" />
@@ -53,9 +53,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
                 </span>
             </div>
-            <!-- <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-            <input type="checkbox" class="form-check-input" id="notify-all" v-model="notifyAll"/> Notify all Children?
-        </h5> -->
+            
+            <h5 class="text-iris p-1 mt-3" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
+            </h5>
+            <h5 class="text-iris p-1 mt-0" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
+            </h5>
         </div>
         <div class="d-grid mt-3" id="submit-button">
             <button class="mb-0 record-button" type="submit" style="
@@ -210,7 +214,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (this.groupKey != '') {
                 if (validateKey(this.groupKey)) {
                     try {
-                        await addToGroup(this.groupKey, records);
+                        console.log("Adding to group...", this.groupKey);
+                        const groupRecords = await getProvenance(this.groupKey);
+                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.$snackbar.add({
@@ -242,8 +248,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     }
 
                     if (this.newChildKeys.length > 0) {
-                        console.log("Adding child keys...", this.newChildKeys);
-                        await addChildKeys(records, this.newChildKeys, []);
+                        await addChildKeys(this.recordKey, records, this.newChildKeys, []);
                     } else {
                         this.$snackbar.add({
                             type: 'warning',
@@ -251,21 +256,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         });
                     }
                 }
-            } catch (error) {
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error adding child keys: ${error}`
-                });
+            } catch (error: any) {
+                const badKeys = error.message.split(",");
+                
+                if (error.message.split(" ").length > badKeys.length) {
+                    this.newChildKeys = [];
+                    
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `${error.message}`
+                    });
+                } else {
+                    this.newChildKeys = this.newChildKeys.filter(key => !badKeys.includes(key));
+
+                    for (const key of badKeys) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Child record ${key} already belongs to a group.`
+                        });
+                    }
+                }
             }
 
             if (this.recallAll) {
-                // Recall children (update their records w/ tags AND description), move to top of record
                 this.tags.push("recall");
-                recallChildren(records, this.tags, this.description);
             } else if (this.annotateAll) {
-                // Annotate children (update their records w/ tags)
                 this.tags.push("annotate");
-                notifyChildren(records, this.tags);
             }
 
             // Append the record to the records.
@@ -278,6 +294,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 };
 
                 await postProvenance(this.recordKey, record, this.pictures || []);
+
+                if (this.recallAll) {
+                    recallChildren(this.recordKey, this.tags, this.description);
+                } else if (this.annotateAll) {
+                    notifyChildren(this.recordKey, this.tags);
+                }
 
                 // Refresh CreateRecord component
                 this.refresh();
@@ -307,6 +329,25 @@ form {
     margin-top: 24px;
 }
 
+#provenance-description {
+    padding: 5px;
+    margin: 5px;
+    display: flex;
+    margin-left: auto;
+    margin-right:auto;
+    border-radius: 5px;
+    width: 100%;
+    border-radius: 7px;
+    width: 100%;
+    outline: none;
+    border: none;
+    padding-left: 14px;
+}
+
+#provenance-description::placeholder{
+        color: black;
+}
+
 input {
     border: 0;
 }
@@ -325,8 +366,35 @@ input[type=checkbox] {
     border-radius: 6px;
     width: 100%;
     font-size: 18px;
-
 }
+
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99;
+    background-color: rgba(0, 0, 0, 0.2);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .popup-inner {
+    background: white;
+    padding: 32px 32px 32px 32px;
+    width: 665px;
+    height: auto;
+    border-radius: 20px;
+  }
+
+  .confirmBtn {
+    display: inline-block;
+    width: 48%;
+  }
+
 
 /*  For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -340,6 +408,17 @@ input[type=checkbox] {
 
     form {
         padding: 2px 17px 17px 17px;
+    }
+
+    .popup-inner {
+        width: auto;
+        margin: 0px 20px 0px 20px;
+    }
+    .confirmBtn {
+        width: 100%;
+    }
+    #continueBtn {
+        margin-top: 10px !important;
     }
 }
 
@@ -387,6 +466,12 @@ input[type=checkbox] {
     input[type="file"]::-webkit-file-upload-button:hover {
         background-color: #0056b3;
     }
+    .record-button:hover { 
+        background-color: #e6f6ff;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
+    }
 }
 
 /* Light mode version*/
@@ -408,6 +493,9 @@ input[type=checkbox] {
     input[type="file"]::file-selector-button {
         background-color: #4E3681;
         color: white;
+    }
+    .record-button:hover { 
+        background-color: #322253;
     }
 }
 </style>

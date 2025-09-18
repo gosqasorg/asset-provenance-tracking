@@ -27,12 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
                 <div class="row" style="display:inline-flex">
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
-                        <button-component class="button" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
+                        <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
                     </form>
 
                     <div id="createRecordButton" style="width: 60%; width: 230px; margin-top: 20px;">
-                        <RouterLink to="/gdt"><button-component class="button" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
+                        <RouterLink to="/gdt"><button-component class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
                             borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
 
@@ -49,14 +49,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <h3>Global Distributed Tracking</h3>
           <p style="font-weight: 400; padding-bottom: 15px">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-                       style="width: 100%; height: 480px;"
-                       frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+                    style="width: 100%; display: block; aspect-ratio: 7 / 4;"
+                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
                </iframe>
+               <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
         </div>
 
         <div class="row odd-stripe"  >
             <div class="row rowtest">
-                <!-- TODO: fix colors in dark mode, make sure dark mode matches FIGMA -->
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
                     <p style="font-weight: 400;">{{ item.descr }}</p>
@@ -328,6 +328,15 @@ max-width: 70%;
     #second-row-cols-h3 {
         color: #CCECFD;
     }
+    #about-button:hover {
+        background-color: white;
+        color: black;
+    }
+    #dmdm-button:hover {
+        background-color: white;
+        color: #4E3681;
+
+    }
 }
 /* Light mode version of second row */
 @media (prefers-color-scheme: light) {
@@ -353,6 +362,14 @@ max-width: 70%;
         color: #322253;
         background-color: #E6F6FF;
         border: 2px solid #4E3681;
+    }
+    #about-button:hover {
+        background-color: #E6F6FF;
+        border: 2px solid #E6F6FF;
+    }
+    #dmdm-button:hover {
+        background-color: #4E3681;
+        color: white;
     }
 }
 

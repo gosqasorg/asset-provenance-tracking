@@ -1,6 +1,6 @@
 {
   "name": "gosqas-az-func",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
@@ -9,17 +9,19 @@
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
-    "start": "func start",
-    "test": "ts-node ./test/test.ts",
-    "dev": "npm run update-version && func start",
+    "dev": "func start",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
-    "vitest": "vitest",
+    "test": "vitest",
+    "unittest": "npx vitest run test/UnitTests",
+    "api_integration_tests": "npx vitest run test/IntegrationTests",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
-    "@azure/functions": "^4.5.1",
+    "@azure/data-tables": "^13.3.1",
+    "@azure/functions": "^4.0.1",
     "@azure/storage-blob": "^12.24.0",
+    "@urlpack/base58": "^2.0.1",
     "bs58": "^5.0.0",
     "dotenv": "^16.4.5",
     "json5": "^2.2.3"

@@ -24,25 +24,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
- 
+
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">
-            <input type="text" class="form-control mt-3" v-model="description" required placeholder="Record Description" maxlength="5000">
+            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">  
+            <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
-                <input type="file"  class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
+                <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
- 
+
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
 
-            <div>
-                <span v-for="(tag, index) in tags" :key="tag"> {{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}</span>
+            <!-- Volunteer Feedback Email -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                </h4>
+                <div v-if="isChecked">
+                    <!-- TODO: API call function -->
+                    <input
+                        type="text"
+                        class="form-control"
+                        v-model="textInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+                </div>
             </div>
+
         </div>
  
         <div class="d-grid">
-            <button class="record-button my-3 mb-0" id="record-button" type="submit" :disabled="isButtonDisabled" :loading="isSubmitting" style="
+            <button class="record-button my-3 mb-0" id="record-button" type="submit" :loading="isSubmitting" style="
                   border-width: 2px;
                   border-style: solid;
                   border-radius: 10px;
@@ -59,8 +73,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </form>
 </template>
 
+
 <script lang="ts">
-import { postProvenance } from '~/services/azureFuncs';
+import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
@@ -75,7 +90,9 @@ export default {
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
-            isSubmitting: false  // bool to check that form is submitted
+            isSubmitting: false,  // bool to check that form is submitted
+            isChecked: false,
+            textInput: '',
         }
     },
     computed: {
@@ -99,6 +116,9 @@ export default {
             }
         },
         async submitForm() {
+            // Emit an event to notify the gdt.vue page to display loading screen
+            EventBus.emit('isLoading');
+
             if (this.isSubmitting) return;
             
             this.isSubmitting = true;
@@ -113,7 +133,11 @@ export default {
                     hasParent: false,
                     isReportingKey: false,
                 }, this.pictures || []);
-                
+
+                if (response && this.isChecked && this.textInput) {
+                    await postEmail(this.textInput);
+                }
+
                 this.$snackbar.add({
                     type: 'success',
                     text: 'Successfully created the record'
@@ -154,6 +178,23 @@ export default {
 
     }
     
+    #record-description {
+        padding: 5px;
+        margin: 5px;
+        display: flex;
+        margin-left: auto;
+        margin-right:auto;
+        border-radius: 7px;
+        width: 100%;
+        outline: none;
+        border: none;
+        padding-left: 14px;
+    }
+
+    #record-description::placeholder{
+        color: black;
+    }
+
     #device-form > * {
         padding: 5px;
         margin: 5px;
@@ -184,9 +225,19 @@ export default {
         color: black;
         border-color: #CCECFD;
     }
-    input[type="file"]::file-selector-button {
+    #record-button:active {
+        background-color: #E6F6FF;
+        border-color: #E6F6FF;
+    }
+    #record-button:hover { 
+        background-color: #e6f6ff;
+    }
+    input::file-selector-button {
         background-color: #CCECFD;  
         color: black;
+    }
+    input[type="file"]:hover::file-selector-button {
+        background-color: #e6f6ff !important;
     }
 }
 /* Light mode version*/
@@ -202,10 +253,14 @@ export default {
         color: white;
         border-color: #4E3681;
     }
-    input[type="file"]::file-selector-button {
-        background-color: #4E3681;  
-        color: white;
+    #record-button:active {
+        background-color: #322253;
+        border-color: #322253;
+    }
+    #record-button:hover { 
+        background-color: #322253;
     }
 }
 
 </style>
+

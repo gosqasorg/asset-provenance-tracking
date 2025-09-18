@@ -1,8 +1,7 @@
 <template>
-    <button type="button" class="btn mt-1 bg-sky px-5 mb-5" v-on:click="downloadCSV">
+    <button type="button" class="btn mt-2 px-5 mb-2" v-on:click="downloadCSV">
         Download Children Keys as CSV
     </button>
-
 </template>
 
 <script>
@@ -21,32 +20,48 @@ export default {
     methods: {
         async downloadCSV() {
             try {
+                const provenance = await getProvenance(this.recordKey);
                 const childrenKeys = await getChildrenKeys(this.recordKey);
-                const reportingProvenance = await getProvenance(this.recordKey);
 
-                const reportingRecord = reportingProvenance?.[0]?.record;
+                const reportingRecord = provenance?.[0]?.record;
                 const reportingKey = reportingRecord?.children_key?.[0] || reportingRecord?.reportingKey || '';
+
+                const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
+                const parentName = reportingRecord.deviceName?.replace(/"/g, '""') || '';
 
                 // Skip the parent
                 const filteredChildrenKeys = childrenKeys.filter(key =>
-                    key !== this.recordKey && key !== reportingKey
+                    key !== this.recordKey
                 );
 
-                const csvRows = [['Child Name', 'Parent Record Key', 'Reporting Key', 'Child Key URL']];
+                let isReportingKey = ''; //Flag to check if row is the record key row or not
+
+                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Reporting Key', 'Child Name', 'Child Key', 'Child Key URL', 'isReportingKey']];
 
                 for (const childKey of filteredChildrenKeys) {
-
+                
                     const provenanceList = await getProvenance(childKey);
                     const record = provenanceList?.[0]?.record || {};
 
                     const childName = record.deviceName || '';
-                    const childUrl = `${useRuntimeConfig().public.frontendUrl}/history/{childKey}`
+                    const childUrl = `${window.location.origin}/history/${childKey}`;
+
+                    if (childKey == reportingKey){
+                        isReportingKey = 'T';
+                    }
+                    else{
+                        isReportingKey = 'F';
+                    }
 
                     csvRows.push([
-                        `"${childName.replace(/"/g, '""')}"`,
                         `"${this.recordKey}"`,
+                        `"${parentUrl}"`,
+                        `"${parentName}"`,
                         `"${reportingKey}"`,
-                        `"${childUrl}"`
+                        `"${childName.replace(/"/g, '""')}"`,
+                        `"${childKey}"`,
+                        `"${childUrl}"`,
+                        `"${isReportingKey}"`
                     ]);
                 }
 
@@ -63,6 +78,33 @@ export default {
         }
     }
 }
-
-
 </script>
+
+<style scoped>
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    .btn {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF !important;
+        color: white;
+    }
+
+    .btn:hover {
+        background-color: #FFFFFF;
+        color: black !important;
+    }
+}
+
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    .btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+
+    .btn:hover {
+        background-color: #e6f6ff;
+    }
+}
+</style>

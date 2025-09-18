@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "nuxt dev --host",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -12,6 +12,8 @@
     "coverage": "vitest run --coverage",
     "update-version": "tsx ./scripts/updateVersion.ts",
     "build-with-version": "npm run update-version && npm run build"
+    "test-headless": "vitest run", 
+    "coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "^1.1.8",

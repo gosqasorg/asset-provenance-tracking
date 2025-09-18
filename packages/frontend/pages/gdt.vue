@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the landing page where you can create a new record to track
 -->
 <template>
-    <div class="gdt" id="gdt-container">
+    <div v-if="!isLoading" class="gdt" id="gdt-container">
         <div class="container-md">
             <h1 class="my-4 fs-1">Global Distributed Tracking</h1>
 
@@ -42,45 +42,77 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div id="create_group" style="display:none"><FormsCreateContainer/></div>
 
 
-            <div class="col" style="text-align: center; margin-top: 50px;">
-              <RouterLink to="/how-it-works"><button class="baseButton button" id="about-button" style="
+            <div class="col" style="text-align: left;">
+              <RouterLink to="/how-it-works"><button class="baseButton button" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
-                  margin: 0px;
+                  margin: 25px 15px 0px 0px;
                   font-size: 20px;
                   border-radius: 10px;
                 "
               >
               How It Works
               </button></RouterLink>
-              <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
+
+              <RouterLink to="/dmdm"><button class="baseButton button" id="learn-more-button" style="
                   border-width: 2px;
                   border-style: solid;
                   padding: 10px 20px;
-                  margin: 0px;
+                  margin: 15px 15px 0px 0px;
                   font-size: 20px;
                   border-radius: 10px;
                 "
               >
               Our Pilot Program
               </button></RouterLink>
+
+              <a class="baseButton button" id="learn-more-button" href="user_manual.pdf"
+                style="
+                  border-width: 2px;
+                  border-style: solid;
+                  padding: 10px 20px;
+                  margin: 15px 0px 0px 0px;
+                  font-size: 20px;
+                  border-radius: 10px;
+                  text-decoration: none;
+                  white-space: nowrap;
+                  display: inline-block;
+                "
+              >
+              User Manual
+              </a>
           </div>
 
 
             <p class="my-4 mb-5 form-control">
-                The Global Open Source Quality Assurance System (GOSQAS) enables transparent documentation through our Global Distributed Tracking (GDT) system, allowing secure data logging for low-resource settings and promoting global communication in humanitarian response, open source hardware, and scientific research.
+                Global Distributed Tracking is a free, open source, and fully encrypted software solution enabling closed-loop tracking for products, information, and logistics.
             </p>
 
 
         </div>
     </div>
+    <div v-else id="loading-screen">
+        <p class="text-center pb-5 pt-5">Creating record(s)...</p>
+    </div>
  </template>
 
 <script lang="ts">
+import { EventBus } from '~/utils/event-bus';
+
 
 export default {
-
+    data() {
+        return {
+            isLoading: false,
+        }
+    },
+    mounted() {
+        // switch to loading screen when a form is submitted
+        EventBus.on('isLoading', () => {
+            this.isLoading = true;
+        })
+    },
     methods: {
         toggleView() {
             const toggle = document.getElementById("toggle") as HTMLInputElement;
@@ -171,6 +203,11 @@ export default {
     margin-bottom: 1rem;
 }
 
+#gdt-container,
+#loading-screen {
+    width: 100%;
+}
+
 @media (min-width:768px) {
     .fs-1 {
         font-size: 32px;
@@ -183,8 +220,9 @@ export default {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #gdt-container {
-        background-color: #1E2019
+    #gdt-container,
+    #loading-screen {
+        background-color: #1E2019;
     }
     h1 {
         color: #CCECFD;
@@ -196,6 +234,15 @@ export default {
     .form-control {
         background-clip: padding-box;
         background-color: #1E2019;
+    }
+    #learn-more-button:hover {
+        background-color: #CCECFD;
+        color: black;
+    }
+    #learn-more-button {
+        color: #CCECFD;
+        background-color: #1E2019;
+        border: 2px solid #CCECFD;
     }
 }
 /* Light mode version*/
@@ -213,6 +260,15 @@ export default {
     .form-control {
         background-clip: padding-box;
         background-color: #FFFFFF;
+    }
+    #learn-more-button:hover {
+        background-color: #4e3681;
+        color: white;
+    }
+    #learn-more-button {
+        color: #322253;
+        background-color: #FFFFFF;
+        border: 2px solid #4E3681;
     }
 }
 
