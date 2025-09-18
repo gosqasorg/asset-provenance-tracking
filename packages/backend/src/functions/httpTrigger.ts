@@ -465,22 +465,31 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
         var serverEntity = {
             partitionKey: 'server',
             rowKey: 'version',
-            versionNumber: version
+            versionNumber: version,
         }
-
-        // if there's already an entity created, will throw error and caught below
-        const versionResponse = await versionTableClient.createEntity(serverEntity);
-        return {status: 200,
-            body: "Server version entity created"
+        try{
+            // if there's already an entity created, will throw error and caught below
+            const versionResponse = await versionTableClient.createEntity(serverEntity)
+            console.log('Server version created')
+            return {
+                status: 200,
+                body: "Server version created"
+            }
+        }catch(error){
+            // because an entity with above information exists, just update the property of the entity -> versionNumber
+            await versionTableClient.updateEntity(serverEntity, "Replace")
+            console.log('Server version updated')
+            return {
+                status: 200,
+                body: "Server version updated"
+            }
         }
-        
-    } catch(error){
-        // because an entity with above information exists, just update the property of the entity -> versionNumber
-        await versionTableClient.updateEntity(serverEntity, "Replace")
-        console.log('Server version updated')
+    }catch(error){
+        console.log(error)
         return {
-            status: 200,
-            body: "Server version Updated",
+            status: 500,
+            body: "Internal server error.",
+            headers: { "Content-Type": "text/plain" }
         }
     }
 }
