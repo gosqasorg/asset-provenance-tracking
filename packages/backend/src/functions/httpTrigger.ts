@@ -1,11 +1,11 @@
-import { webcrypto as crypto } from 'node:crypto';
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import { execSync } from 'child_process';
-import { VERSION_INFO } from '../version.js';
+import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
+import { VERSION_INFO } from '../version.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -15,11 +15,50 @@ import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
 
+/*=================  Setup  =================*/
 
+let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
+    throw new Error('Env vars not set')
+}
+let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"])) {
+    throw new Error('Env vars not set')
+} 
+
+const baseUrl = accountName === "devstoreaccount1"
+    ? `http://127.0.0.1:10000/devstoreaccount1`
+    : `https://${accountName}.blob.core.windows.net`;
+
+const cred = new StorageSharedKeyCredential(accountName, accountKey);
+const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
+
+
+/*==============  Utils Section  ============*/
 
 interface ProvenanceRecord {
     record: any,
     attachments?: readonly string[],
+}
+
+interface DecryptedBlob {
+    data: Uint8Array;
+    contentType: string;
+    timestamp: number;
+    filename?: string;
+}
+
+interface NamedBlob {
+    name?: string,
+    blob: Blob,
+}
+
+function findDeviceIdFromName(blobName: string): string {
+    // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
+    // where the id is that last part (before the last slash)
+    return blobName.split("/", 4)[1];
+}
+
+function isEmpty(str) {
+    return (!str || str.length === 0 );
 }
 
 async function sha256(data: BufferSource) {
@@ -54,10 +93,9 @@ export async function calculateDeviceID(key: string | Uint8Array): Promise<strin
     return toHex(hash);
 }
 
-const fnvPrime = 1099511628211n
-const fnvOffset = 14695981039346656037n
-
 function fnv1(input: Uint8Array): bigint {
+    const fnvOffset = 14695981039346656037n
+    const fnvPrime = 1099511628211n
     let hash = fnvOffset;
     for (let i = 0; i < input.length; i++) {
         hash = BigInt.asUintN(64, hash * fnvPrime)
@@ -119,11 +157,6 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     return blobID;
 }
 
-interface NamedBlob {
-    name?: string,
-    blob: Blob,
-}
-
 async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
 
     const attachmentIDs = new Array<string>();
@@ -138,13 +171,6 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
     return { record: recordID, attachments };
-}
-
-interface DecryptedBlob {
-    data: Uint8Array;
-    contentType: string;
-    timestamp: number;
-    filename?: string;
 }
 
 async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
@@ -223,25 +249,26 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
     return records;
 }
 
+export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    const attachmentID = request.params.attachmentID;
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
 
-function isEmpty(str) {
-    return (!str || str.length === 0 );
+    const containerExists = await containerClient.exists();
+    if (!containerExists) { return undefined; }
+
+    const blobClient = containerClient.getBlockBlobClient(`attach/${attachmentID}`);
+    const exists = await blobClient.exists();
+    if (!exists) { return undefined; }
+
+    return await decryptBlob(blobClient, deviceKey);
 }
 
 
-let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
-    throw new Error('Env vars not set')
-}
-let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"])) {
-    throw new Error('Env vars not set')
-} 
+/*=================  Endpoints  =====================*/
 
-const baseUrl = accountName === "devstoreaccount1"
-    ? `http://127.0.0.1:10000/devstoreaccount1`
-    : `https://${accountName}.blob.core.windows.net`;
-
-const cred = new StorageSharedKeyCredential(accountName, accountKey);
-const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
+/* ----- API Endpoints Section 1/2: Functions ----- */
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
@@ -267,46 +294,6 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
 }
-
-export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    const attachmentID = request.params.attachmentID;
-    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
-
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return undefined; }
-
-    const blobClient = containerClient.getBlockBlobClient(`attach/${attachmentID}`);
-    const exists = await blobClient.exists();
-    if (!exists) { return undefined; }
-
-    return await decryptBlob(blobClient, deviceKey);
-}
-
-export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
-
-    const { data, contentType, filename } = decryptedBlob;
-    const headers = new Headers();
-    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
-    if (contentType) { headers.append("Content-Type", contentType); }
-    if (filename) {
-        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-        headers.append("Attachment-Name", filename);
-    }
-
-    return { body: data, headers };
-};
-
-export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
-
-    const { filename } = decryptedBlob;
-    return { body: filename };
-};
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
@@ -338,14 +325,31 @@ async function upgradeProvenance(request: HttpRequest, context: InvocationContex
     return { jsonBody: body ?? { "already-converted": true} };
 }
 
-// blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
-// where the id is that last part (before the last slash)
-function findDeviceIdFromName(blobName: string): string {
-    return blobName.split("/", 4)[1];
-}
+export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { data, contentType, filename } = decryptedBlob;
+    const headers = new Headers();
+    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
+    if (contentType) { headers.append("Content-Type", contentType); }
+    if (filename) {
+        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+        headers.append("Attachment-Name", filename);
+    }
+
+    return { body: data, headers };
+};
+
+export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { filename } = decryptedBlob;
+    return { body: filename };
+};
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
 
@@ -384,31 +388,6 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     };
 };
 
-export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // This is a simple function that returns the version of the server.
-    try {
-        const tableUrl = accountName === "devstoreaccount1"
-        ? `http://127.0.0.1:10002/devstoreaccount1`
-        : `https://${accountName}.table.core.windows.net`;  
-
-        // table name to look up, table made in setVersion
-        const tableName = "versionTable1";
-        const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const client = new TableClient(tableUrl, tableName, credential, { allowInsecureConnection: true });
-        const entity = await client.getEntity("server", "version");
-        console.log("Server version : ", entity.versionNumber)
-        return { 
-            status: 200
-        };
-    } catch(error) {
-        console.log(error)
-        return { 
-            status: 500
-        };
-    }
-
-}
-
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const tableUrl = accountName === "devstoreaccount1"
@@ -446,9 +425,32 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
+export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that returns the version of the server.
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;  
 
-// function that sets the version of server
+        // table name to look up, table made in setVersion
+        const tableName = "versionTable1";
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const client = new TableClient(tableUrl, tableName, credential, { allowInsecureConnection: true });
+        const entity = await client.getEntity("server", "version");
+        console.log("Server version : ", entity.versionNumber)
+        return { 
+            status: 200
+        };
+    } catch(error) {
+        console.log(error)
+        return { 
+            status: 500
+        };
+    }
+}
+
 export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // function that sets the version of server
     try {
         const versionTableUrl = accountName === 'devstoreaccount1'
             ? `http://127.0.0.1:10002/devstoreaccount1`
@@ -482,30 +484,21 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
         }
     }
 }
-//new function that handles Api getting hit
-export async function myfunction(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-        
-        console.log("my testendpoint was hit");
-        return {
-            body: "my testendpoint was hit"
-        }
-}
 
+// Note: Work in progress. This template was for setting up endpoint. 
+// Adding new key generation, ie, filling out this function, is an upcoming ticket. 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-        console.log('getNewDeviceKey: Got new device key')
+    console.log('getNewDeviceKey: Got new device key')
 
-        return {
-            status: 200,
-            body: "5LAtuNjm3iuAR3ohpjTMy7",
-            headers: { "Content-Type": "text/plain" }
-        };  
+    return {
+        status: 200,
+        body: "5LAtuNjm3iuAR3ohpjTMy7",
+        headers: { "Content-Type": "text/plain" }
+    };  
 }
 
-app.post('postEmail', {
-    authLevel: 'anonymous',
-    route: 'feedbackVolunteer',
-    handler: postEmail,
-})
+
+/* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
@@ -543,16 +536,20 @@ app.get("getStatistics", {
     handler: getStatistics
 })
 
+app.post('postEmail', {
+    authLevel: 'anonymous',
+    route: 'feedbackVolunteer',
+    handler: postEmail,
+})
+
 app.get("getVersion", {
     authLevel: 'anonymous',
     route: 'version',
     handler: getVersion
 })
 
-<<<<<<< HEAD
 app.post('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'device/Key',
     handler: getNewDeviceKey,
 })
-
