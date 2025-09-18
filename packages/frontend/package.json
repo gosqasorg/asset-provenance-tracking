@@ -11,7 +11,7 @@
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "update-version": "tsx ./scripts/updateVersion.ts",
-    "build-with-version": "npm run update-version && npm run build"
+    "build-with-version": "npm run update-version && npm run build",
     "test-headless": "vitest run", 
     "coverage": "vitest run --coverage"
   },
