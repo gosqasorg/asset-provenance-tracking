@@ -549,6 +549,7 @@ app.get("getVersion", {
     handler: getVersion
 })
 
+<<<<<<< HEAD
 app.post('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'device/Key',
