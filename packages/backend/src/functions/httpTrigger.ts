@@ -6,7 +6,6 @@ import JSON5 from 'json5';
 import { execSync } from 'child_process';
 import { VERSION_INFO } from '../version.js';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { DefaultAzureCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
