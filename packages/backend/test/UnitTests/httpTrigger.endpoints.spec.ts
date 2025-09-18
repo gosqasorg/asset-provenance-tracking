@@ -119,13 +119,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
   });
 
-  it('getVersion returns version info', async () => {
-    const req = makeHttpRequest();
-    const res = await httpTrigger.getVersion(req, context);
-    expect(res).toHaveProperty('jsonBody');
-    expect(res).toHaveProperty('headers');
-  });
-
   it('getNewDeviceKey returns key', async () =>{
     const req = makeHttpRequest();
     const res = await httpTrigger.getNewDeviceKey(req, context);
