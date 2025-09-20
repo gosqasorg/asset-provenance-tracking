@@ -436,9 +436,13 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
         console.log('getNewDeviceKey: Got new device key')
+        const key = makeEncodedDeviceKey(); 
+        console.log('!!!')
+        console.log(key)
+        console.log('!!!')
         return {
-            status: 200,
-            body: makeEncodedDeviceKey(),
+            status: 200, 
+            body: key,  //makeEncodedDeviceKey(),
             headers: { "Content-Type": "text/plain" }
         };  
 }

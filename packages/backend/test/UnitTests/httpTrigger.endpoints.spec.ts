@@ -46,12 +46,13 @@ vi.mock('node:crypto', () => ({
       importKey: vi.fn(async () => ({})),
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
-      randomBytes: vi.fn(async ( ) => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
+      randomBytes: vi.fn(async () => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
 
     },
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
-    // randomBytes: vi.fn(async ( ) => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
-  }
+    
+  },
+  randomBytes: vi.fn(async () => new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68]).buffer )
 }));
 
 import * as httpTrigger from '../../src/functions/httpTrigger';
@@ -134,8 +135,19 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getNewDeviceKey(req, context);
     expect(res).toHaveProperty('body');
+    const deviceKey = await res['body'];
+    console.log('vv spec vv')
+    console.log(deviceKey)
+    console.log('^^ spec ^^')
+
     const pattern = /^[a-zA-Z0-9]+$/;
-    const deviceKey = res['body'];
+    // regex check
+    var result = pattern.test(deviceKey)
+    console.log(result)
+    console.log(result)
+    console.log(result)
+    console.log(result)
+    console.log(result)
     expect(pattern.test(deviceKey)).toBe(true); 
     expect(deviceKey.length).toBe(22)
     expect(typeof deviceKey).toBe('string')

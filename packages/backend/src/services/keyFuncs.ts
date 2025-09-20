@@ -16,29 +16,31 @@
 import {encode as base58encode } from '@urlpack/base58'
 import {randomBytes} from 'crypto';
 
-export function makeDeviceKey(): Uint8Array{
-  // Generates 16 bytes ( i.e., 128 bits) of random data.
-  // This is the same as AES-128 key length from the frontend
-  var key = randomBytes(16);
-  var intArray = new Uint8Array(key);
-  console.log(key)
-  console.log(intArray);
-  return intArray;
+
+async function makeDeviceKey() {
+  const key = await crypto.subtle.generateKey({
+    name: "AES-CBC",
+    length: 128
+  }, true, ['encrypt', 'decrypt']);
+  const buffer = await crypto.subtle.exportKey("raw", key);
+  return new Uint8Array(buffer)//.slice();
 }
 
 function encodeDeviceKey(key: Uint8Array): string {
   return base58encode(key);
 }
 
-export function makeEncodedDeviceKey(): string {
-  let newEncodedKey = encodeDeviceKey(makeDeviceKey());
+export async function makeEncodedDeviceKey(): string {
+  let newEncodedKey = encodeDeviceKey(await makeDeviceKey());
+
   // Try a few times to make sure the key is valid (length == 22)
   for (let count = 0; count < 10; count++) {
-    newEncodedKey = encodeDeviceKey(makeDeviceKey());
     if (newEncodedKey.length == 22) {
       break;
     }
+    newEncodedKey = encodeDeviceKey(makeDeviceKey());
   }
+
   return newEncodedKey;
 }
 
