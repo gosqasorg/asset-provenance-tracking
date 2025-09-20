@@ -30,6 +30,9 @@ function encodeDeviceKey(key: Uint8Array): string {
   return base58encode(key);
 }
 
+
+console.log("here")
+
 export async function makeEncodedDeviceKey(): string {
   let newEncodedKey = encodeDeviceKey(await makeDeviceKey());
 
