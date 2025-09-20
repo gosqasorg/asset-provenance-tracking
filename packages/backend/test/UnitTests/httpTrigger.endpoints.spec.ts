@@ -46,12 +46,16 @@ vi.mock('node:crypto', () => ({
       importKey: vi.fn(async () => ({})),
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
+      randomBytes: vi.fn(async ( ) => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
+
     },
-    getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; }
+    getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
+    // randomBytes: vi.fn(async ( ) => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
   }
 }));
 
 import * as httpTrigger from '../../src/functions/httpTrigger';
+// import { randomBytes } from 'node:crypto';
 
 
 function makeHttpRequest(overrides: any = {}) {

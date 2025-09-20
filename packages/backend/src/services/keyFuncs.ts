@@ -19,8 +19,11 @@ import {randomBytes} from 'crypto';
 export function makeDeviceKey(): Uint8Array{
   // Generates 16 bytes ( i.e., 128 bits) of random data.
   // This is the same as AES-128 key length from the frontend
-  const key = randomBytes(16);
-  return new Uint8Array(key);
+  var key = randomBytes(16);
+  var intArray = new Uint8Array(key);
+  console.log(key)
+  console.log(intArray);
+  return intArray;
 }
 
 function encodeDeviceKey(key: Uint8Array): string {

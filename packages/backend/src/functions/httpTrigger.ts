@@ -6,6 +6,7 @@ import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
+import { makeEncodedDeviceKey } from '../services/keyFuncs.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -437,7 +438,7 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
         console.log('getNewDeviceKey: Got new device key')
         return {
             status: 200,
-            body: "5LAtuNjm3iuAR3ohpjTMy7",
+            body: makeEncodedDeviceKey(),
             headers: { "Content-Type": "text/plain" }
         };  
 }
