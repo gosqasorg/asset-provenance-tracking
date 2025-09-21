@@ -436,7 +436,7 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
         console.log('getNewDeviceKey: Got new device key')
-        const key = makeEncodedDeviceKey(); 
+        const key = await makeEncodedDeviceKey(); 
         console.log('!!!')
         console.log(key)
         console.log('!!!')
@@ -498,8 +498,8 @@ app.get("getVersion", {
     handler: getVersion
 })
 
-app.post('getNewDeviceKey', {
+app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
-    route: 'device/Key',
+    route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
 })

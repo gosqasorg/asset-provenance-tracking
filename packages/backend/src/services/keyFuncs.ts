@@ -33,15 +33,14 @@ function encodeDeviceKey(key: Uint8Array): string {
 
 console.log("here")
 
-export async function makeEncodedDeviceKey(): string {
-  let newEncodedKey = encodeDeviceKey(await makeDeviceKey());
-
+export async function makeEncodedDeviceKey(): Promise<string> {
   // Try a few times to make sure the key is valid (length == 22)
+  let newEncodedKey;
   for (let count = 0; count < 10; count++) {
+    newEncodedKey = encodeDeviceKey(await makeDeviceKey());
     if (newEncodedKey.length == 22) {
       break;
     }
-    newEncodedKey = encodeDeviceKey(makeDeviceKey());
   }
 
   return newEncodedKey;
