@@ -73,16 +73,6 @@ interface NamedBlob {
   blob: Blob,
 }
 
-function findDeviceIdFromName(blobName: string): string {
-  // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
-  // where the id is that last part (before the last slash)
-  return blobName.split("/", 4)[1];
-}
-
-function isEmpty(str) {
-  return (!str || str.length === 0);
-}
-
 async function sha256(data: BufferSource) {
   const buffer = await crypto.subtle.digest('SHA-256', data);
   return new Uint8Array(buffer);
@@ -508,14 +498,6 @@ export async function postEmail(
     console.error('postEmail: Failed to add feedback volunteer contact info', error.message);
     // Deliberate lack of error message to client
   }
-}
-
-export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  // This is a simple function that returns the version of the server.
-  return {
-    jsonBody: VERSION_INFO,
-    headers: { "Content-Type": "application/json" }
-  };
 }
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
