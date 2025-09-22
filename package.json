@@ -27,8 +27,6 @@
   "lint-staged": {
     "**/*.{js,ts,vue,json,css,yml}": [
       "prettier --write"
-    ],
-    "!packages/backend/**/*": "echo Skipped backend",
-    "!**/.github/workflows/*.yml": "echo 'Skipped workflows'"
+    ]
   }
 }
