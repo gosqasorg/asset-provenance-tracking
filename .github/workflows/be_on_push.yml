@@ -27,13 +27,13 @@ jobs:
 
       - uses: ./.github/actions/setup-backend
 
-    # Note: warnings like the below are ok for now; the library doing the complaining
-    # is mocked in the tests.
-    # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
-    # Example: package to test mode - not all features are supported.
-    - name: Run Backend Unit Tests
-      working-directory: packages/backend
-      run: npm run unittest
+      # Note: warnings like the below are ok for now; the library doing the complaining
+      # is mocked in the tests.
+      # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
+      # Example: package to test mode - not all features are supported.
+      - name: Run Backend Unit Tests
+        working-directory: packages/backend
+        run: npm run unittest
 
   backend-build-and-deploy:
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
 
       - uses: ./.github/actions/setup-backend
 
-    - name: Run Backend Integration Tests
-      working-directory: packages/backend
-      run: npm run api_integration_tests
+      - name: Run Backend Integration Tests
+        working-directory: packages/backend
+        run: npm run api_integration_tests
 
