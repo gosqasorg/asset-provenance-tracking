@@ -111,8 +111,15 @@ export default {
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
-            if (files) {
+
+            if (files && files[0].size <= 2097152) {
                 this.pictures = Array.from(files);
+            } else {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'File is too large, please choose a file less than 2MB in size.'
+                })
+                target.value = '';
             }
         },
         async submitForm() {
