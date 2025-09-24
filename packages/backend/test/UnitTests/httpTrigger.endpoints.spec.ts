@@ -136,18 +136,9 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const res = await httpTrigger.getNewDeviceKey(req, context);
     expect(res).toHaveProperty('body');
     const deviceKey = await res['body'];
-    // console.log('vv spec vv')
-    // console.log(deviceKey)
-    // console.log('^^ spec ^^')
-
     const pattern = /^[a-zA-Z0-9]+$/;
     // regex check
     var result = pattern.test(deviceKey)
-    // console.log(result)
-    // console.log(result)
-    // console.log(result)
-    // console.log(result)
-    // console.log(result)
     expect(pattern.test(deviceKey)).toBe(true); 
     expect(deviceKey.length).toBe(22)
     expect(typeof deviceKey).toBe('string')
