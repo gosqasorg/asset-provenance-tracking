@@ -183,13 +183,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
+            // TODO: change file size as needed
+            const maxFileSize = 2097152;
 
-            if (files && files[0].size <= 2097152) {
+            if (files && files[0].size <= maxFileSize) {
                 this.pictures = Array.from(files);
             } else {
                 this.$snackbar.add({
                     type: 'error',
-                    text: 'File is too large, please choose a file less than 2MB in size.'
+                    text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
                 })
                 target.value = '';
             }
