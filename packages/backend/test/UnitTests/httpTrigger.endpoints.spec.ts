@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as httpTrigger from '../../src/functions/httpTrigger';
+
 
 // Minimal Azure SDK mocks
 vi.mock('@azure/storage-blob', () => {
+
   class MockBlockBlobClient {
     async getProperties() {
       return { metadata: { gdtsalt: '0102030405060708090a0b0c0d0e0f10', gdttimestamp: '123', gdtcontenttype: 'application/octet-stream', gdtname: '' } };
@@ -9,6 +12,7 @@ vi.mock('@azure/storage-blob', () => {
     async downloadToBuffer() { return new Uint8Array(16); }
     async exists() { return true; }
   }
+
   class MockContainerClient {
     async exists() { return true; }
     async createIfNotExists() { return true; }
@@ -31,11 +35,13 @@ vi.mock('@azure/storage-blob', () => {
     }
     getBlockBlobClient() { return new MockBlockBlobClient(); }
   }
+
   return {
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
     StorageSharedKeyCredential: class {},
   };
+  
 });
 
 // Minimal crypto mock
@@ -46,17 +52,10 @@ vi.mock('node:crypto', () => ({
       importKey: vi.fn(async () => ({})),
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
-      randomBytes: vi.fn(async () => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
-
     },
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
-    
   },
-  randomBytes: vi.fn(async () => new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68]).buffer )
 }));
-
-import * as httpTrigger from '../../src/functions/httpTrigger';
-// import { randomBytes } from 'node:crypto';
 
 
 function makeHttpRequest(overrides: any = {}) {
@@ -130,24 +129,5 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
     expect(res).toHaveProperty('headers');
   });
-
-//   it('getNewDeviceKey returns key', async () =>{
-//     const req = makeHttpRequest();
-//     const res = await httpTrigger.getNewDeviceKey(req, context);
-//     console.info(res)
-//     console.log(res)
-//     expect(res).toHaveProperty('body');
-//     const deviceKey = await res['body'];
-//     const pattern = /^[a-zA-Z0-9]+$/;
-//     // regex check
-
-//     console.log("!!!")
-//     console.log(deviceKey)
-//     console.log("!!!")
-//     var result = pattern.test(deviceKey)
-//     expect(pattern.test(deviceKey)).toBe(true); 
-//     expect(deviceKey.length).toBe(22)
-//     expect(typeof deviceKey).toBe('string')
-//   });
  
 });
