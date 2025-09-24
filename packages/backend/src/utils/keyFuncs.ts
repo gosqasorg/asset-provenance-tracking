@@ -14,19 +14,24 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import {encode as base58encode } from '@urlpack/base58'
-import {randomBytes} from 'crypto';
-
 import { webcrypto } from 'crypto';
+
 const { subtle } = webcrypto;
 
 
 async function makeDeviceKey() {
-  const key = await subtle.generateKey({
-    name: "AES-CBC",
-    length: 128
-  }, true, ['encrypt', 'decrypt']);
+  const key = await subtle.generateKey(
+    {
+      name: "AES-CBC",
+      length: 128
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+
   const buffer = await subtle.exportKey("raw", key);
-  return new Uint8Array(buffer)//.slice();
+
+  return new Uint8Array(buffer)
 }
 
 function encodeDeviceKey(key: Uint8Array): string {

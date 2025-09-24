@@ -1,12 +1,11 @@
 import bs58 from 'bs58';
 import JSON5 from 'json5';
-import { execSync } from 'child_process';
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
-import { makeEncodedDeviceKey } from '../services/keyFuncs.js';
+import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/

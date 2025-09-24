@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateKey, makeEncodedDeviceKey } from '../../src/services/keyFuncs';
+import { validateKey, makeEncodedDeviceKey } from '../../src/utils/keyFuncs';
 
 describe('test keyFuncs: validateKey, makeEncodedDeviceKey', () => {
     it('test makeEncodedDeviceKey', async () => {
