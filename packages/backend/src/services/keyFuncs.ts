@@ -16,13 +16,16 @@
 import {encode as base58encode } from '@urlpack/base58'
 import {randomBytes} from 'crypto';
 
+import { webcrypto } from 'crypto';
+const { subtle } = webcrypto;
+
 
 async function makeDeviceKey() {
-  const key = await crypto.subtle.generateKey({
+  const key = await subtle.generateKey({
     name: "AES-CBC",
     length: 128
   }, true, ['encrypt', 'decrypt']);
-  const buffer = await crypto.subtle.exportKey("raw", key);
+  const buffer = await subtle.exportKey("raw", key);
   return new Uint8Array(buffer)//.slice();
 }
 
