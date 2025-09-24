@@ -1,11 +1,11 @@
 import bs58 from 'bs58';
 import JSON5 from 'json5';
-import { execSync } from 'child_process';
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
+import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -434,12 +434,21 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 }
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-        console.log('getNewDeviceKey: Got new device key')
+    try{
+        const key = await makeEncodedDeviceKey();
         return {
-            status: 200,
-            body: "5LAtuNjm3iuAR3ohpjTMy7",
+            status: 200, 
+            body: key,  //makeEncodedDeviceKey(),
             headers: { "Content-Type": "text/plain" }
-        };  
+        }
+    } catch(error) {
+        console.error('getNewDeviceKey: Failed to create a new key', error.message)
+        return {
+            status: 500,
+            body: "",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
 }
 
 
@@ -493,8 +502,8 @@ app.get("getVersion", {
     handler: getVersion
 })
 
-app.post('getNewDeviceKey', {
+app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
-    route: 'device/Key',
+    route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
 })
