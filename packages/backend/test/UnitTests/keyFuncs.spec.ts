@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { validateKey, makeEncodedDeviceKey } from '../../src/services/keyFuncs';
+import { validateKey, makeEncodedDeviceKey } from '../../src/utils/keyFuncs';
 
-describe('validateDeviceKey', () => {
-    it('should return true when given a valid device key', () => {
+describe('test keyFuncs: validateKey, makeEncodedDeviceKey', () => {
+    it('test makeEncodedDeviceKey', async () => {
+        // Smoketest: Test hardcoded key
         expect(validateKey("SsxFac4pPz4Rs7jFwSt2mp")).toEqual(true);
 
-        const key = makeEncodedDeviceKey();
+        const key = await makeEncodedDeviceKey();
         expect(validateKey(key)).toEqual(true);
     });
 

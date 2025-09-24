@@ -14,28 +14,40 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import {encode as base58encode } from '@urlpack/base58'
-import {randomBytes} from 'crypto';
+import { webcrypto } from 'crypto';
 
-export function makeDeviceKey(): Uint8Array{
-  // Generates 16 bytes ( i.e., 128 bits) of random data.
-  // This is the same as AES-128 key length from the frontend
-  const key = randomBytes(16);
-  return new Uint8Array(key);
+const { subtle } = webcrypto;
+
+
+async function makeDeviceKey() {
+  const key = await subtle.generateKey(
+    {
+      name: "AES-CBC",
+      length: 128
+    },
+    true,
+    ['encrypt', 'decrypt']
+  );
+
+  const buffer = await subtle.exportKey("raw", key);
+
+  return new Uint8Array(buffer)
 }
 
 function encodeDeviceKey(key: Uint8Array): string {
   return base58encode(key);
 }
 
-export function makeEncodedDeviceKey(): string {
-  let newEncodedKey = encodeDeviceKey(makeDeviceKey());
+export async function makeEncodedDeviceKey(): Promise<string> {
   // Try a few times to make sure the key is valid (length == 22)
+  let newEncodedKey;
   for (let count = 0; count < 10; count++) {
-    newEncodedKey = encodeDeviceKey(makeDeviceKey());
+    newEncodedKey = encodeDeviceKey(await makeDeviceKey());
     if (newEncodedKey.length == 22) {
       break;
     }
   }
+
   return newEncodedKey;
 }
 
