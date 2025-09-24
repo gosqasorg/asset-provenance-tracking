@@ -1,0 +1,111 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Minimal Azure SDK mocks
+vi.mock('@azure/storage-blob', () => {
+  class MockBlockBlobClient {
+    async getProperties() {
+      return { metadata: { gdtsalt: '0102030405060708090a0b0c0d0e0f10', gdttimestamp: '123', gdtcontenttype: 'application/octet-stream', gdtname: '' } };
+    }
+    async downloadToBuffer() { return new Uint8Array(16); }
+    async exists() { return true; }
+  }
+  class MockContainerClient {
+    async exists() { return true; }
+    async createIfNotExists() { return true; }
+    async uploadBlockBlob() { return true; }
+    listBlobsFlat(opts?: any) {
+      let called = false;
+      return {
+        async next() {
+          if (!called) {
+            called = true;
+            return { value: { name: (opts && opts.prefix) ? opts.prefix + '/blobid' : 'prov/deviceid/blobid' }, done: false };
+          } else {
+            return { value: undefined, done: true };
+          }
+        },
+        async *[Symbol.asyncIterator]() {
+          yield { name: (opts && opts.prefix) ? opts.prefix + '/blobid' : 'prov/deviceid/blobid' };
+        }
+      };
+    }
+    getBlockBlobClient() { return new MockBlockBlobClient(); }
+  }
+  return {
+    BlockBlobClient: MockBlockBlobClient,
+    ContainerClient: MockContainerClient,
+    StorageSharedKeyCredential: class {},
+  };
+});
+
+// Minimal crypto mock
+// vi.mock('node:crypto', () => ({
+//   webcrypto: {
+//     subtle: {
+//       digest: vi.fn(async () => new Uint8Array(4).buffer),
+//       importKey: vi.fn(async () => ({})),
+//       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
+//       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
+//       randomBytes: vi.fn(async () => (new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68])))
+
+//     },
+//     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
+    
+//   },
+//   randomBytes: vi.fn(async () => new Uint8Array([9, 250, 68, 130, 157, 193, 184, 11, 101, 41, 164, 145, 33, 243, 137, 68]).buffer )
+// }));
+
+import * as httpTrigger from '../../src/functions/httpTrigger';
+// import { randomBytes } from 'node:crypto';
+
+
+function makeHttpRequest(overrides: any = {}) {
+  return {
+    method: 'GET',
+    url: '/',
+    headers: new Headers(),
+    query: {},
+    params: {},
+    user: undefined,
+    body: undefined,
+    bodyUsed: false,
+    arrayBuffer: async () => new ArrayBuffer(0),
+    text: async () => '',
+    json: async () => ({}),
+    formData: async () => ({}),
+    ...overrides,
+  };
+}
+
+describe('httpTrigger endpoints (shallow mocks)', () => {
+  const context = {
+    invocationId: 'test-invocation-id',
+    functionName: 'test-function',
+    extraInputs: { get: vi.fn(), set: vi.fn() },
+    extraOutputs: { get: vi.fn(), set: vi.fn() },
+    log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(),
+    options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
+  };
+  const deviceKey = '5LAtuNjm3iuAR3ohpjTMy7';
+  const attachmentID = 'testattachid';
+
+  it('getNewDeviceKey returns key', async () =>{
+    const req = makeHttpRequest();
+    const res = await httpTrigger.getNewDeviceKey(req, context);
+    console.info(res)
+    console.log(res)
+    expect(res).toHaveProperty('body');
+    const deviceKey = await res['body'];
+    const pattern = /^[a-zA-Z0-9]+$/;
+    // regex check
+
+    console.log("!!!")
+    console.log(deviceKey)
+    console.log("!!!")
+    var result = pattern.test(deviceKey)
+    expect(pattern.test(deviceKey)).toBe(true); 
+    expect(deviceKey.length).toBe(22)
+    expect(typeof deviceKey).toBe('string')
+  });
+ 
+});
