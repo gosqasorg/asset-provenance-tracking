@@ -435,16 +435,21 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 }
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-        console.log('getNewDeviceKey: Got new device key')
-        const key = await makeEncodedDeviceKey(); 
-        console.log('!!!')
-        console.log(key)
-        console.log('!!!')
+    try{
+        const key = await makeEncodedDeviceKey();
         return {
             status: 200, 
             body: key,  //makeEncodedDeviceKey(),
             headers: { "Content-Type": "text/plain" }
-        };  
+        }
+    } catch(error) {
+        console.error('getNewDeviceKey: Failed to create a new key', error.message)
+        return {
+            status: 500,
+            body: "",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
 }
 
 
