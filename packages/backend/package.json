@@ -13,7 +13,7 @@
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
     "test": "vitest",
     "unittest": "npx vitest run test/UnitTests",
-    "api_integration_tests": "npx vitest run test/IntegrationTests",
+    "live_integration_tests": "npx vitest run test/IntegrationTests/Live",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
