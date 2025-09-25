@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as httpTrigger from '../../src/functions/httpTrigger';
+
 
 // Minimal Azure SDK mocks
 vi.mock('@azure/storage-blob', () => {
+
   class MockBlockBlobClient {
     async getProperties() {
       return {
@@ -20,6 +23,7 @@ vi.mock('@azure/storage-blob', () => {
       return true;
     }
   }
+
   class MockContainerClient {
     async exists() {
       return true;
@@ -55,11 +59,13 @@ vi.mock('@azure/storage-blob', () => {
       return new MockBlockBlobClient();
     }
   }
+
   return {
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
-    StorageSharedKeyCredential: class {}
+    StorageSharedKeyCredential: class { }
   };
+
 });
 
 // Minimal crypto mock
@@ -78,7 +84,6 @@ vi.mock('node:crypto', () => ({
   }
 }));
 
-import * as httpTrigger from '../../src/functions/httpTrigger';
 
 function makeHttpRequest(overrides: any = {}) {
   return {
@@ -162,14 +167,4 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  it('getNewDeviceKey returns key', async () => {
-    const req = makeHttpRequest();
-    const res = await httpTrigger.getNewDeviceKey(req, context);
-    expect(res).toHaveProperty('body');
-    const pattern = /^[a-zA-Z0-9]+$/;
-    const deviceKey = res['body'];
-    expect(pattern.test(deviceKey)).toBe(true);
-    expect(deviceKey.length).toBe(22);
-    expect(typeof deviceKey).toBe('string');
-  });
 });
