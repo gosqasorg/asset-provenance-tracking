@@ -439,12 +439,14 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
         const entity = await client.getEntity("server", "version");
         console.log("Server version : ", entity.versionNumber)
         return { 
-            status: 200
+            status: 200,
+            body: "Server version:${entity.versionNumber}"
         };
     } catch(error) {
         console.log(error)
         return { 
-            status: 500
+            status: 500,
+            body: ""
         };
     }
 }
