@@ -7,41 +7,65 @@ vi.mock('@azure/storage-blob', () => {
 
   class MockBlockBlobClient {
     async getProperties() {
-      return { metadata: { gdtsalt: '0102030405060708090a0b0c0d0e0f10', gdttimestamp: '123', gdtcontenttype: 'application/octet-stream', gdtname: '' } };
+      return {
+        metadata: {
+          gdtsalt: '0102030405060708090a0b0c0d0e0f10',
+          gdttimestamp: '123',
+          gdtcontenttype: 'application/octet-stream',
+          gdtname: ''
+        }
+      };
     }
-    async downloadToBuffer() { return new Uint8Array(16); }
-    async exists() { return true; }
+    async downloadToBuffer() {
+      return new Uint8Array(16);
+    }
+    async exists() {
+      return true;
+    }
   }
 
   class MockContainerClient {
-    async exists() { return true; }
-    async createIfNotExists() { return true; }
-    async uploadBlockBlob() { return true; }
+    async exists() {
+      return true;
+    }
+    async createIfNotExists() {
+      return true;
+    }
+    async uploadBlockBlob() {
+      return true;
+    }
     listBlobsFlat(opts?: any) {
       let called = false;
       return {
         async next() {
           if (!called) {
             called = true;
-            return { value: { name: (opts && opts.prefix) ? opts.prefix + '/blobid' : 'prov/deviceid/blobid' }, done: false };
+            return {
+              value: {
+                name: opts && opts.prefix ? opts.prefix + '/blobid' : 'prov/deviceid/blobid'
+              },
+              done: false
+            };
           } else {
             return { value: undefined, done: true };
           }
         },
         async *[Symbol.asyncIterator]() {
-          yield { name: (opts && opts.prefix) ? opts.prefix + '/blobid' : 'prov/deviceid/blobid' };
+          yield { name: opts && opts.prefix ? opts.prefix + '/blobid' : 'prov/deviceid/blobid' };
         }
       };
     }
-    getBlockBlobClient() { return new MockBlockBlobClient(); }
+    getBlockBlobClient() {
+      return new MockBlockBlobClient();
+    }
   }
 
   return {
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
-    StorageSharedKeyCredential: class {},
+    StorageSharedKeyCredential: class { }
   };
-  
+
 });
 
 // Minimal crypto mock
@@ -51,10 +75,13 @@ vi.mock('node:crypto', () => ({
       digest: vi.fn(async () => new Uint8Array(4).buffer),
       importKey: vi.fn(async () => ({})),
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
-      decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
+      decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer)
     },
-    getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
-  },
+    getRandomValues: (arr: Uint8Array) => {
+      arr.fill(1);
+      return arr;
+    }
+  }
 }));
 
 
@@ -72,7 +99,7 @@ function makeHttpRequest(overrides: any = {}) {
     text: async () => '',
     json: async () => ({}),
     formData: async () => ({}),
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -82,8 +109,14 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     functionName: 'test-function',
     extraInputs: { get: vi.fn(), set: vi.fn() },
     extraOutputs: { get: vi.fn(), set: vi.fn() },
-    log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(),
-    options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
+    log: vi.fn(),
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] }
   };
   const deviceKey = '5LAtuNjm3iuAR3ohpjTMy7';
   const attachmentID = 'testattachid';
@@ -96,10 +129,14 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   it('postProvenance returns a body', async () => {
     const formData = {
-      get: vi.fn((key) => key === 'provenanceRecord' ? '{"foo":1}' : undefined),
-      values: vi.fn(() => [].values()),
+      get: vi.fn((key) => (key === 'provenanceRecord' ? '{"foo":1}' : undefined)),
+      values: vi.fn(() => [].values())
     };
-    const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
+    const req = makeHttpRequest({
+      method: 'POST',
+      params: { deviceKey },
+      formData: async () => formData
+    });
     const res = await httpTrigger.postProvenance(req, context);
     expect(res).toHaveProperty('jsonBody');
   });
@@ -129,5 +166,5 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
     expect(res).toHaveProperty('headers');
   });
- 
+
 });
