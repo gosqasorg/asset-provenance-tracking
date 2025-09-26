@@ -1,5 +1,6 @@
-import { app } from "@azure/functions";
-import { getAttachment, getAttachmentName} from '../../../src/functions/httpTrigger';
+import { exec } from 'node:child_process';
+import { createWriteStream } from 'fs';
+import fs from 'fs';
 import { describe, it, expect } from "vitest";
 
 /* README: To add a test, add inside the global describe an additional it. For example:
@@ -62,9 +63,13 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	// Setup
 	let testName; 
 
+	// Placeholder
+	it("smoketest", () => {
+		expect(0).toBe(0);  
+	}, timeout);
 
 	// -- Tests Begin -- // 
-it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
+	it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 
 		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded - this record has 3 attachments: LwaSzacaPz26aDd1RVaaxP
 		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
@@ -85,20 +90,11 @@ it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 
 		// Check overall type 
 		expect(Array.isArray(response)).toBe(true);
-		console.log(response)
-		console.log("END OF TAG RECORD")
 
 		// Elements: Check number of keys
 		const blob_element = response[0]; 
 
 		const recordKey = blob_element["record"]
-		console.log("!!!")
-		console.log(recordKey)
-		console.log("!!!")
-		console.log(recordKey["tags"])
-		console.log(recordKey["tags"].length)
-		console.log(recordKey["tags"][0])
-
 		expect(Array.isArray(recordKey["tags"])).toBe(true);
 		expect(recordKey["tags"].length >= 1).toBe(true);
 		expect(recordKey["tags"][0] === "deployed").toBe(true);
@@ -107,40 +103,43 @@ it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 		expect(Array.isArray(attachmentsKey)).toBe(true);
 		expect(attachmentsKey.length >= 1).toBe(true);
 
-		console.log(attachmentsKey)
-
 		// Testing attachment name retrieval
 		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
 		let resp = await fetch(url)
 		let attachmentName = resp['headers'].get('attachment-name')
 
-		console.log(attachmentName)
 		const alphanumericRegex = /\.(jpg|JPG|gif|GIF|doc|DOC|pdf|PDF|png|PNG)$/;
 		expect(typeof attachmentName === 'string' && alphanumericRegex.test(attachmentName)).toBe(true);
 		
-		// const res1 = app.get("getAttachment", {
-		// 	authLevel: 'anonymous',
-		// 	route: 'attachment/{deviceKey}/{attachmentID}',
-		// 	handler: getAttachment,
-		// })
+		// Notes
+		// https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
+		// https://developer.mozilla.org/en-US/docs/Web/API/WritableStream
+		let filename = './test/IntegrationTests/Live/received_' + resp['headers'].get('attachment-name')
 
-		// // const res = await httpTrigger.getAttachment
-		// // const res = await httpTrigger.getAttachmentName(req, context)
+		// Try to write the file
+		let readableStream = resp['body']
+		const fileWriter = createWriteStream(filename);
 
-		// const res2 = app.get("getAttachmentName", {
-		// 	authLevel: 'anonymous',
-		// 	route: 'attachment/{deviceKey}/{attachmentID}/name',
-		// 	handler: getAttachmentName,
-		// })
-		// these are just fetches
-		
-		// console.log(res1, res2)
+		await readableStream.pipeTo(new WritableStream({
+			write(chunk) {
+				fileWriter.write(chunk);
+			}
+		}));
 
-	}, timeout);
+		function isValidImage(filepath: string): Promise<boolean> {
+			return new Promise((resolve) => {
+				exec(`file "${filepath}"`, (error, stdout) => {
+				if (error) {
+					resolve(false);
+					return;
+				}
+				resolve(stdout.includes('image data'));
+				});
+			});
+		}
 
-	// Placeholder
-	it("smoketest", () => {
-		expect(0).toBe(0);  
+		expect(await isValidImage(filename)).toBe(true);
+		fs.unlinkSync(filename);
 	}, timeout);
 
 	// Single-Feature Test: Multiple History Records
@@ -168,11 +167,6 @@ it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 		// Check overall type 
 		expect(Array.isArray(response)).toBe(true);
 
-		// console.log("!!!")
-		// console.log(response[0])
-		// console.log("!!!")
-		// console.log(response)
-
 		// Elements: Check number of keys
 		const blob_element = response[0]; 
 		expect(Object.keys(blob_element).length).toBe(4)  // Known to be 4
@@ -187,12 +181,6 @@ it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 			keysToCheckOff.delete(key)
 		})
 		expect(keysToCheckOff.size).toBe(0)
-
-		// tags
-
-		// const tagsKey = blob_element["record"]
-		// console.log("!!!")
-		// console.log(tagsKey)
 
 	}, timeout);
 
