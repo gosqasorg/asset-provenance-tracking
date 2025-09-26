@@ -1,3 +1,5 @@
+import { app } from "@azure/functions";
+import { getAttachment, getAttachmentName} from '../../../src/functions/httpTrigger';
 import { describe, it, expect } from "vitest";
 
 /* README: To add a test, add inside the global describe an additional it. For example:
@@ -62,6 +64,70 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 
 
 	// -- Tests Begin -- // 
+it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
+
+		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded
+		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+		const fullUrl = `${baseUrl}${theRecord}`
+
+		let response; 
+		try {
+			response = await fetch(fullUrl);
+			response = await response.json(); 
+		} catch(error) {  
+			const testName = baseTestName + thisTestName;
+			const errorMessage = 'Failed to fetch (get) url: '
+			console.error(testName + errorMessage + fullUrl) 
+			throw error;
+		}
+ 		
+		// ---- Section 2/2: Tests ---- // 
+
+		// Check overall type 
+		expect(Array.isArray(response)).toBe(true);
+		console.log(response)
+		console.log("END OF TAG RECORD")
+
+		// Elements: Check number of keys
+		const blob_element = response[0]; 
+
+		const recordKey = blob_element["record"]
+		console.log("!!!")
+		console.log(recordKey)
+		console.log("!!!")
+		console.log(recordKey["tags"])
+		console.log(recordKey["tags"].length)
+		console.log(recordKey["tags"][0])
+
+		expect(Array.isArray(recordKey["tags"])).toBe(true);
+		expect(recordKey["tags"].length >= 1).toBe(true);
+		expect(recordKey["tags"][0] === "deployed").toBe(true);
+
+		const attachmentsKey = blob_element["attachments"]
+		expect(Array.isArray(attachmentsKey)).toBe(true);
+		expect(attachmentsKey.length >= 1).toBe(true);
+
+		console.log(attachmentsKey)
+		
+		// const res1 = app.get("getAttachment", {
+		// 	authLevel: 'anonymous',
+		// 	route: 'attachment/{deviceKey}/{attachmentID}',
+		// 	handler: getAttachment,
+		// })
+
+		// // const res = await httpTrigger.getAttachment
+		// // const res = await httpTrigger.getAttachmentName(req, context)
+
+		// const res2 = app.get("getAttachmentName", {
+		// 	authLevel: 'anonymous',
+		// 	route: 'attachment/{deviceKey}/{attachmentID}/name',
+		// 	handler: getAttachmentName,
+		// })
+		// these are just fetches
+		
+		// console.log(res1, res2)
+
+	}, timeout);
 
 	// Placeholder
 	it("smoketest", () => {
@@ -93,6 +159,11 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		// Check overall type 
 		expect(Array.isArray(response)).toBe(true);
 
+		// console.log("!!!")
+		// console.log(response[0])
+		// console.log("!!!")
+		// console.log(response)
+
 		// Elements: Check number of keys
 		const blob_element = response[0]; 
 		expect(Object.keys(blob_element).length).toBe(4)  // Known to be 4
@@ -107,6 +178,12 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			keysToCheckOff.delete(key)
 		})
 		expect(keysToCheckOff.size).toBe(0)
+
+		// tags
+
+		// const tagsKey = blob_element["record"]
+		// console.log("!!!")
+		// console.log(tagsKey)
 
 	}, timeout);
 
