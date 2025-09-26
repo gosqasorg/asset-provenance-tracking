@@ -1,3 +1,6 @@
+import { exec } from 'node:child_process';
+import { createWriteStream } from 'fs';
+import fs from 'fs';
 import { describe, it, expect } from "vitest";
 
 /* README: To add a test, add inside the global describe an additional it. For example:
@@ -60,12 +63,83 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	// Setup
 	let testName; 
 
-
-	// -- Tests Begin -- // 
-
 	// Placeholder
 	it("smoketest", () => {
 		expect(0).toBe(0);  
+	}, timeout);
+
+	// -- Tests Begin -- // 
+	it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
+
+		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded - this record has 3 attachments: LwaSzacaPz26aDd1RVaaxP
+		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+		const fullUrl = `${baseUrl}${theRecord}`
+
+		let response; 
+		try {
+			response = await fetch(fullUrl);
+			response = await response.json(); 
+		} catch(error) {  
+			const testName = baseTestName + thisTestName;
+			const errorMessage = 'Failed to fetch (get) url: '
+			console.error(testName + errorMessage + fullUrl) 
+			throw error;
+		}
+ 		
+		// ---- Section 2/2: Tests ---- // 
+
+		// Check overall type 
+		expect(Array.isArray(response)).toBe(true);
+
+		// Elements: Check number of keys
+		const blob_element = response[0]; 
+
+		const recordKey = blob_element["record"]
+		expect(Array.isArray(recordKey["tags"])).toBe(true);
+		expect(recordKey["tags"].length >= 1).toBe(true);
+		expect(recordKey["tags"][0] === "deployed").toBe(true);
+
+		const attachmentsKey = blob_element["attachments"]
+		expect(Array.isArray(attachmentsKey)).toBe(true);
+		expect(attachmentsKey.length >= 1).toBe(true);
+
+		// Testing attachment name retrieval
+		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
+		let resp = await fetch(url)
+		let attachmentName = resp['headers'].get('attachment-name')
+
+		const alphanumericRegex = /\.(jpg|JPG|gif|GIF|doc|DOC|pdf|PDF|png|PNG)$/;
+		expect(typeof attachmentName === 'string' && alphanumericRegex.test(attachmentName)).toBe(true);
+		
+		// Notes
+		// https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
+		// https://developer.mozilla.org/en-US/docs/Web/API/WritableStream
+		let filename = './test/IntegrationTests/Live/received_' + resp['headers'].get('attachment-name')
+
+		// Try to write the file
+		let readableStream = resp['body']
+		const fileWriter = createWriteStream(filename);
+
+		await readableStream.pipeTo(new WritableStream({
+			write(chunk) {
+				fileWriter.write(chunk);
+			}
+		}));
+
+		function isValidImage(filepath: string): Promise<boolean> {
+			return new Promise((resolve) => {
+				exec(`file "${filepath}"`, (error, stdout) => {
+				if (error) {
+					resolve(false);
+					return;
+				}
+				resolve(stdout.includes('image data'));
+				});
+			});
+		}
+
+		expect(await isValidImage(filename)).toBe(true);
+		fs.unlinkSync(filename);
 	}, timeout);
 
 	// Single-Feature Test: Multiple History Records
