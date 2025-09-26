@@ -66,7 +66,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	// -- Tests Begin -- // 
 it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 
-		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded
+		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded - this record has 3 attachments: LwaSzacaPz26aDd1RVaaxP
 		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 		const fullUrl = `${baseUrl}${theRecord}`
 
@@ -108,6 +108,15 @@ it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 		expect(attachmentsKey.length >= 1).toBe(true);
 
 		console.log(attachmentsKey)
+
+		// Testing attachment name retrieval
+		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
+		let resp = await fetch(url)
+		let attachmentName = resp['headers'].get('attachment-name')
+
+		console.log(attachmentName)
+		const alphanumericRegex = /\.(jpg|JPG|gif|GIF|doc|DOC|pdf|PDF|png|PNG)$/;
+		expect(typeof attachmentName === 'string' && alphanumericRegex.test(attachmentName)).toBe(true);
 		
 		// const res1 = app.get("getAttachment", {
 		// 	authLevel: 'anonymous',
