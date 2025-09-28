@@ -137,6 +137,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     } else {
         throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
     }
+    console.log("(upload func) blob " + blobName)
 
     const { encryptedData: encryptedName } = fileName
         ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
@@ -163,6 +164,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     for (const attach of attachments) {
         if (typeof attach === 'string') continue;
         const data = await attach.blob.arrayBuffer()
+        console.log("attach to key... " + deviceKey)
         const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
         attachmentIDs.push(attachmentID);
     }
@@ -170,6 +172,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     const provRecord = { record, attachments: attachmentIDs };
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+    console.log("recordID: ", recordID)
     return { record: recordID, attachments };
 }
 
@@ -274,6 +277,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    console.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
@@ -296,14 +300,19 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    console.log("post request: " + request.params.deviceKey);
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    console.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
+    // NOTE: fails UNLESS you are running azurite on your device
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
     const provenanceRecord = formData.get("provenanceRecord");
+    console.log("formData: " + formData + " provenanceRecord " + provenanceRecord);
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
 
@@ -316,6 +325,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     }
 
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    console.log("POST function complete!")
     return { jsonBody: body ?? { converted: true}};
 }
 
