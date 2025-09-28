@@ -2,6 +2,7 @@ import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 const emailClient = new EmailClient(connectionString);
+const greeting = "hello";
 
 // Send an email using the Azure Communication Services Email SDK
 export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
