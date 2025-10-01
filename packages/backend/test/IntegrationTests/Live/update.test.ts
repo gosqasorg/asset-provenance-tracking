@@ -35,8 +35,8 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 	
 	// -- Test Begin --//
 	it(testName = 'Record with > 1 update: ', async () => {
-		const theRecord = 'UfyEtFDMYQPfGH7yQsebJv'  // Hardcoded - record has 2 updates
-		const baseUrl = 'https://gosqasbe.azurewebsites.net/api/provenance/'
+		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded - record has 2 updates
+		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 		const fullUrl = `${baseUrl}${theRecord}`
 
 		let response;
