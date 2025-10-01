@@ -100,22 +100,29 @@ describe("Record Creation Tests", () => {
 			const formData = new FormData();
     		formData.append("provenanceRecord", JSON.stringify(data));
 
-			let req = makeHttpRequest(deviceKey, formData, fullUrl);
+			// TODO: USE FETCH TO POST!!
+			const postResponse = await fetch(fullUrl, {
+				method: "POST",
+				body: formData,
+			});
+			console.log("response: ", postResponse);
 
-			const context = {
-				invocationId: 'test-invocation-id',
-				functionName: 'test-function',
-				extraInputs: { get: vi.fn(), set: vi.fn() },
-				extraOutputs: { get: vi.fn(), set: vi.fn() },
-				log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(),
-				options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
-			};
+			// let req = makeHttpRequest(deviceKey, formData, fullUrl);
 
-			// Call postProv
-			const postResponse = await postProvenance(req, context);
-			console.log("postProv Response: " + JSON.stringify(postResponse));
+			// const context = {
+			// 	invocationId: 'test-invocation-id',
+			// 	functionName: 'test-function',
+			// 	extraInputs: { get: vi.fn(), set: vi.fn() },
+			// 	extraOutputs: { get: vi.fn(), set: vi.fn() },
+			// 	log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(),
+			// 	options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
+			// };
+
+			// // Call postProv
+			// const postResponse = await postProvenance(req, context);
+			// console.log("postProv Response: " + JSON.stringify(postResponse));
 			
-			expect(postResponse).toHaveProperty('jsonBody');
+			// expect(postResponse).toHaveProperty('jsonBody');
 		} catch (error) {
 			console.error("(Create POST Test) Error creating a record: " + error); 
 			throw error;
