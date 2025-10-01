@@ -111,6 +111,7 @@ describe("Record Creation Tests", () => {
 				options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
 			};
 
+			// Call postProv
 			const postResponse = await postProvenance(req, context);
 			console.log("postProv Response: " + JSON.stringify(postResponse));
 			
@@ -119,10 +120,6 @@ describe("Record Creation Tests", () => {
 			console.error("(Create POST Test) Error creating a record: " + error); 
 			throw error;
 		}
-
-		// TODO: remove this line
-		// baseUrl = 'http://localhost:7071/api/provenance/'
-		// fullUrl = `${baseUrl}${deviceKey}`
 
 		// GET the record to make sure it exists
 		let getResponse; 
