@@ -24,8 +24,9 @@ let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"
     throw new Error('Env vars not set')
 } 
 
+// TODO: CHANGE THIS TO NEEDED URL? IS THAT ALLOWED???
 const baseUrl = accountName === "devstoreaccount1"
-    ? `http://127.0.0.1:10000/devstoreaccount1`
+    ? `http://127.0.0.1:10000/devstoreaccount1`  // TODO: this is localhost, so it will always post there
     : `https://${accountName}.blob.core.windows.net`;
 
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
@@ -143,7 +144,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
         ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
         : { encryptedData: undefined };
 
-    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
+    const response2 = await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
@@ -155,6 +156,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
             blobContentType: "application/octet-stream"
         }
     });
+    console.log("clientContainer upload blob block response: ", response2);
     return blobID;
 }
 
@@ -300,7 +302,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    console.log("post request: " + request.params.deviceKey);
+    console.log("http request url in post prov: " + request.url);
 
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -309,10 +311,11 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
     // NOTE: fails UNLESS you are running azurite on your device
     await containerClient.createIfNotExists();
+    // console.log("Container client: ", containerClient);
 
     const formData = await request.formData();
     const provenanceRecord = formData.get("provenanceRecord");
-    console.log("formData: " + formData + " provenanceRecord " + provenanceRecord);
+    console.log("provenanceRecord " + provenanceRecord);
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
 

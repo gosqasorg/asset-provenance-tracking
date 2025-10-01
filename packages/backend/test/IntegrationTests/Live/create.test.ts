@@ -46,10 +46,10 @@ describe("Group Creation Tests", () => {
 });
 
 // TODO: Add record creation tests here
-function makeHttpRequest(deviceKey: any, formData: any, overrides: any = {}) {
+function makeHttpRequest(deviceKey: any, formData: any, url: any, overrides: any = {}) {
 	return {
 	  method: 'POST',
-	  url: '/',
+	  url: url,
 	  headers: new Headers(),
 	  query: {},
 	  params: { deviceKey: deviceKey },  // for makeEncodedDeviceKey
@@ -67,23 +67,26 @@ function makeHttpRequest(deviceKey: any, formData: any, overrides: any = {}) {
 
 describe("Record Creation Tests", () => {
 	// TODO: works on localhost (need to run azurite and set BACKEND_URL to localhost 7071), but still fails to GET on gdtprod
-	const baseUrl = 'http://localhost:7071/api/provenance/'  // localhost (works)
-	// const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'  // url from read tests (fails)
+	// let baseUrl = 'http://localhost:7071/api/provenance/'  // localhost (works)
+
+	// NOTE: I created a record on the site, and this is what the url of the POST request was:
+	// https://gdtprodbackend.azurewebsites.net/api/provenance/TH1p2kEuayaS2M8Rox6VFg
+	let baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'  // TODO: url from read tests (fails)
 
 
 	// Create the most basic record
-	it("record creation test", async () => {
+	it("most basic smoketest", async () => {
+		// Create record key
+		const deviceKey = await makeEncodedDeviceKey();
+		console.log("Created Device Key: " + deviceKey);
+
+		let fullUrl = `${baseUrl}${deviceKey}`
+
+		expect(deviceKey.length).toBe(22);
+		expect(validateKey(deviceKey)).toBe(true);
+
+		// POST a new record
 		try {
-			// Create record key
-			const deviceKey = await makeEncodedDeviceKey();
-			console.log("Created Device Key: " + deviceKey);
-
-			const fullUrl = `${baseUrl}${deviceKey}`
-
-			expect(deviceKey.length).toBe(22);
-			expect(validateKey(deviceKey)).toBe(true);
-
-
 			// POST record to backend
 			const data = {
 				blobType: 'deviceInitializer',
@@ -97,7 +100,7 @@ describe("Record Creation Tests", () => {
 			const formData = new FormData();
     		formData.append("provenanceRecord", JSON.stringify(data));
 
-			let req = makeHttpRequest(deviceKey, formData);
+			let req = makeHttpRequest(deviceKey, formData, fullUrl);
 
 			const context = {
 				invocationId: 'test-invocation-id',
@@ -112,24 +115,29 @@ describe("Record Creation Tests", () => {
 			console.log("postProv Response: " + JSON.stringify(postResponse));
 			
 			expect(postResponse).toHaveProperty('jsonBody');
+		} catch (error) {
+			console.error("(Create POST Test) Error creating a record: " + error); 
+			throw error;
+		}
 
+		// TODO: remove this line
+		// baseUrl = 'http://localhost:7071/api/provenance/'
+		// fullUrl = `${baseUrl}${deviceKey}`
 
-			// GET record to make sure it exists
-			let getResponse; 
-			try {
-				getResponse = await fetch(fullUrl);
-				getResponse = await getResponse.json();
-				console.log("getProv Response: " + JSON.stringify(getResponse) + " type: " + typeof(getResponse));
-			} catch(error) {
-				console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
-				throw error;
-			}
+		// GET the record to make sure it exists
+		let getResponse; 
+		try {
+			// TODO ERROR: failed to fetch https://gdtprodbackend.azurewebsites.net/api/provenance/{deviceKey}
+			// Because it is never getting POSTed to that url
+			getResponse = await fetch(fullUrl);
+			getResponse = await getResponse.json();
+			console.log("getProv Response: " + JSON.stringify(getResponse) + " type: " + typeof(getResponse));
 
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
 			expect(typeof(getResponse)).toBe('object');
-
-		} catch (error) {
-			console.error("(Create POST Test) Error creating a record: " + error); 
+			// TODO: add more detailed tests! (check if title, descr, etc. match what we inputed them as)
+		} catch(error) {
+			console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
 			throw error;
 		}
 	}, 100000);  // TODO: last value is timeout value (remove/shorten if it is not needed anymore)
@@ -144,7 +152,7 @@ describe("Record Creation Tests", () => {
 
 	// Placeholder
 	// Most basic + one feature -- create a record with tags
-	it("smoketest", () => {
+	it("second smoketest", () => {
 		expect(0).toBe(0);
 	});
 
