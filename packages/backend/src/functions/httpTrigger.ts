@@ -26,7 +26,7 @@ let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"
 
 const baseUrl = accountName === "devstoreaccount1"
     ? `http://127.0.0.1:10000/devstoreaccount1`
-    : `https://${accountName}.blob.core.windows.net`;
+    : `https://${accountName}.blob.core.windows.net`;                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
@@ -440,7 +440,7 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
         console.log("Server version : ", entity.versionNumber)
         return { 
             status: 200,
-            body: "Server version:${entity.versionNumber}"
+            body: `${entity.versionNumber}`
         };
     } catch(error) {
         console.log(error)
@@ -451,7 +451,7 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     }
 }
 
-export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function setVersion(arg, request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // function that sets the version of server
     try {
         const versionTableUrl = accountName === 'devstoreaccount1'
@@ -463,7 +463,7 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
         var versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true })
         await versionTableClient.createTable(); // create table if not exist, no error if it does
 
-        let version = 12345 // set the version here from passed arguments
+        let version = arg // set the version here from passed arguments
         var serverEntity = {
             partitionKey: 'server',
             rowKey: 'version',
@@ -555,7 +555,7 @@ app.post('postEmail', {
 
 app.get("getVersion", {
     authLevel: 'anonymous',
-    route: 'version',
+    route: 'getVersion',
     handler: getVersion
 })
 
