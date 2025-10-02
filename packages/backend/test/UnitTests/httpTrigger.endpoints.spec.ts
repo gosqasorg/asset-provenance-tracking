@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as httpTrigger from '../../src/functions/httpTrigger';
+
 
 // Minimal Azure SDK mocks
 vi.mock('@azure/storage-blob', () => {
+
   class MockBlockBlobClient {
     async getProperties() {
       return { metadata: { gdtsalt: '0102030405060708090a0b0c0d0e0f10', gdttimestamp: '123', gdtcontenttype: 'application/octet-stream', gdtname: '' } };
@@ -9,6 +12,7 @@ vi.mock('@azure/storage-blob', () => {
     async downloadToBuffer() { return new Uint8Array(16); }
     async exists() { return true; }
   }
+
   class MockContainerClient {
     async exists() { return true; }
     async createIfNotExists() { return true; }
@@ -31,11 +35,13 @@ vi.mock('@azure/storage-blob', () => {
     }
     getBlockBlobClient() { return new MockBlockBlobClient(); }
   }
+
   return {
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
     StorageSharedKeyCredential: class {},
   };
+  
 });
 
 // Minimal crypto mock
@@ -47,11 +53,9 @@ vi.mock('node:crypto', () => ({
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
     },
-    getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; }
-  }
+    getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
+  },
 }));
-
-import * as httpTrigger from '../../src/functions/httpTrigger';
 
 
 function makeHttpRequest(overrides: any = {}) {
@@ -128,6 +132,11 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(pattern.test(deviceKey)).toBe(true); 
     expect(deviceKey.length).toBe(22)
     expect(typeof deviceKey).toBe('string')
+  it('getVersion returns version info', async () => {
+    const req = makeHttpRequest();
+    const res = await httpTrigger.getVersion(req, context);
+    expect(res).toHaveProperty('jsonBody');
+    expect(res).toHaveProperty('headers');
   });
  
 });
