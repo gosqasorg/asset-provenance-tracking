@@ -76,6 +76,8 @@ describe("Record Creation Tests", () => {
 				body: formData,
 			});
 
+			expect(postResponse.ok).toBe(true);
+
 		} catch (error) {
 			console.error("(Create POST Test) Error creating a record: " + error); 
 			throw error;
@@ -128,6 +130,8 @@ describe("Record Creation Tests", () => {
 				method: "POST",
 				body: formData,
 			});
+
+			expect(postResponse.ok).toBe(true);
 
 		} catch (error) {
 			console.error("(Create POST Test) Error creating a record: " + error); 
@@ -184,6 +188,8 @@ describe("Record Creation Tests", () => {
 				method: "POST",
 				body: formData,
 			});
+
+			expect(postResponse.ok).toBe(true);
 
 		} catch (error) {
 			console.error("(Create POST Test) Error creating a record: " + error); 
