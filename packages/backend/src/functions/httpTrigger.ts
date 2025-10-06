@@ -451,7 +451,7 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     }
 }
 
-export async function setVersion(arg, request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // function that sets the version of server
     try {
         const versionTableUrl = accountName === 'devstoreaccount1'
@@ -463,11 +463,11 @@ export async function setVersion(arg, request: HttpRequest, context: InvocationC
         var versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true })
         await versionTableClient.createTable(); // create table if not exist, no error if it does
 
-        let version = arg // set the version here from passed arguments
+        let versionNumber = request.query.get('version') // set the version here from passed argument
         var serverEntity = {
             partitionKey: 'server',
             rowKey: 'version',
-            versionNumber: version,
+            versionNumber: versionNumber,
         }
         try{
             // if there's already an entity created, will throw error and caught below
@@ -567,6 +567,12 @@ app.post('postEmail', {
     authLevel: 'anonymous',
     route: 'feedbackVolunteer',
     handler: postEmail,
+})
+
+app.get("setVersion", {
+    authLevel: 'anonymous',
+    route: 'setVersion',
+    handler: setVersion
 })
 
 app.get("getVersion", {

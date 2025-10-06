@@ -1,10 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
 
-let accountName:string = process.env["AZURE_STORAGE_ACCOUNT_NAME"]!
-    
-let accountKey:string = process.env["AZURE_STORAGE_ACCOUNT_KEY"]!
-
 let timeout = 30000;  // Milliseconds; integration testing can be laggycd
 
 let baseTestName: string;
@@ -15,20 +11,19 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
 	it(thisTestName = "API test for getVersion", async () => {
 
         // ---- Section 0/2: Setup --------------- // 
-        const fullUrl = "http://192.168.1.9:7071/api/getVersion" 
+        const fullUrl = "http://localhost:7071/api/getVersion" 
 
         // ---- Section 1/2: Invoking the API ---- //
 
         let response
-        let response_code;
-        let data_body; 
+        let responseCode;
+        let dataBody; 
         try {
             response = await fetch(fullUrl).then(function(response){
-                response_code = response.status
+                responseCode = response.status
                 return response.text();
             }).then(function(data){
-                data_body = data,
-                console.log(data);
+                dataBody = data;
             })
             //console.log(response.body)
         } catch(error) {   
@@ -41,8 +36,8 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
 
         // ---- Section 2/2: Tests -------------- // 
 
-        expect(data_body).toBe("12345")
-        expect(response_code).toBe(200)
+        expect(dataBody).toBe("44444")
+        expect(responseCode).toBe(200)
 
     // ----------------------------------------------------------------------
     
@@ -50,28 +45,69 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
     }, timeout);
 
 	it(baseTestName = "API test for setVersion", async () => {
+
 		// ---- Section 0/2: Setup --------------- //
 
-        // grab the current server version
-        const fullUrl = "http://192.168.1.9:7071/api/getVersion"
+        const fullUrl = "http://localhost:7071/api/getVersion" 
 
         let response
-        let version 
+        let responseCode;
+
+        // originalVersion = getVersion()
+        let originalVersion; 
         try {
             response = await fetch(fullUrl).then(function(response){
+                responseCode = response.status
                 return response.text();
             }).then(function(data){
-                version = data
+                originalVersion = data;
+            })
+        } catch(error) {   
+            const testName = baseTestName + thisTestName;
+            const errorMessage = 'Failed to fetch (get) url: '
+            console.error(testName + errorMessage + fullUrl) 
+            throw error;
+        }
+        
+        // testVersion
+        let testVersion = "44444"
+
+        // ---- Section 1/2: Invoking the API ---- //
+
+        // setVersion(bogusVersion) 
+        const bogusVersion = 44444
+        const testUrl = "http://localhost:7071/api/setVersion?version=" + `${bogusVersion}`
+        let checkTestVersion 
+        try {
+            response = await fetch(testUrl).then(function(response){
+                return response.text();
+            }).then(function(data){
             })
         } catch(error){
             const testName = baseTestName + thisTestName;
-            const errorMessage = "Failed to fetch (get) url: "
+            const errorMessage = 'Failed to fetch (get) testUrl: '
             console.error(testName + errorMessage + fullUrl)
             throw error;
         }
-        console.log(version)
-        // ---- Section 1/2: Invoking the API ---- //
 
+        // ---- Section 2/2: Tests ---- //
+
+        // const checkTestVersion = getVersion()
+        try {
+            response = await fetch(fullUrl).then(function(response){  
+                return response.text();
+            }).then(function(data){
+                checkTestVersion = data,
+                console.log(data);
+            })
+        } catch(error){
+            const testName = baseTestName + thisTestName;
+            const errorMessage = 'Failed to fetch (get) testUrl: '
+            console.error(testName + errorMessage + fullUrl)
+            throw error;
+        }
+
+        expect(checkTestVersion).toBe(testVersion)
 
 	}, timeout);
 
