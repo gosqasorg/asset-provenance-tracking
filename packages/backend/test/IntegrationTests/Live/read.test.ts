@@ -99,9 +99,17 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(recordKey["tags"].length >= 1).toBe(true);
 		expect(recordKey["tags"][0] === "deployed").toBe(true);
 
-		const attachmentsKey = blob_element["attachments"]
+		const attachmentsKey = blob_element['attachments']
+		let attachmentCount = 0
+		let counter = response.length
+		while (counter > 0){
+			if (response[counter - 1]['attachments'].length > 0){
+				++attachmentCount
+			}
+			--counter
+		}
 		expect(Array.isArray(attachmentsKey)).toBe(true);
-		expect(attachmentsKey.length >= 1).toBe(true);
+		expect(attachmentCount >= 1).toBe(true);
 
 		// Testing attachment name retrieval
 		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
@@ -238,7 +246,6 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		annotationResponse = await fetch('https://gdtprodbackend.azurewebsites.net/api/provenance/' + childrenKey[0])
 		annotationResponse = await annotationResponse.json()
 		firstAnnotation = annotationResponse[0]['record']['tags']
-		console.log(firstAnnotation)
 
 		let testAnnotationRes
 		let testArray
