@@ -123,6 +123,15 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
   });
 
+  it('getNewDeviceKey returns key', async () =>{
+    const req = makeHttpRequest();
+    const res = await httpTrigger.getNewDeviceKey(req, context);
+    expect(res).toHaveProperty('body');
+    const pattern = /^[a-zA-Z0-9]+$/;
+    const deviceKey = res['body'];
+    expect(pattern.test(deviceKey)).toBe(true); 
+    expect(deviceKey.length).toBe(22)
+    expect(typeof deviceKey).toBe('string')
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getVersion(req, context);
