@@ -51,20 +51,13 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     static: true
   },
   scalar: {
-    // documentDownloadType: 'yaml',
-    url: '/openAPI-docs.json', // Path in `public/` or remote URL
-    // url: 'http://localhost:7071/api/docs/openAPI-docs.yaml',
-    darkMode: true, // Optional
+    url: '/openAPI-docs.json',
+    darkMode: true,
     metaData: {
       title: 'GOSQAS API Documentation'
     },
-    showSidebar: true // Optional
+    showSidebar: true
   },
-  // nitro: {
-  //   experimental: {
-  //     openAPI: true, // allows Nuxt server routes to automatically generate OpenAPI
-  //   },
-  // },
   compatibilityDate: '2024-11-12'
 });
 
