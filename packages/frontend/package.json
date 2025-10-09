@@ -12,8 +12,7 @@
     "coverage": "vitest run --coverage",
     "update-version": "tsx ./scripts/updateVersion.ts",
     "build-with-version": "npm run update-version && npm run build",
-    "test-headless": "vitest run", 
-    "coverage": "vitest run --coverage"
+    "test-headless": "vitest run"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "^1.1.8",
@@ -32,6 +31,7 @@
   },
   "dependencies": {
     "@coreui/coreui": "^5.0.2",
+    "@scalar/nuxt": "^0.5.20",
     "@urlpack/base58": "^2.0.0",
     "bootstrap": "^5.3.3",
     "bootstrap4-toggle": "^3.6.1",

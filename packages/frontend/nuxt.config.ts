@@ -23,16 +23,17 @@ export default defineNuxtConfig({
       // This also allows us to test frontend development with a real backend.
       // There is also a bug with Azure Functions where the env vars are not set correctly.
       // For local development, set baseUrl to http://localhost:7071/api
-      baseUrl: process.env.BACKEND_URL ?? 'https://gosqasbe.azurewebsites.net/api', 
+      // baseUrl: process.env.BACKEND_URL ?? 'https://gosqasbe.azurewebsites.net/api',
+      baseUrl: process.env.BACKEND_URL ?? 'http://localhost:7071/api',
       frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
       handIconBackground: '/assets/images/hand-icon.png',
       environment: detectEnvironment(),
       buildDate: process.env.BUILD_DATE,
       buildVersion: process.env.BUILD_VERSION,
-      gitCommit: process.env.GIT_COMMIT,
+      gitCommit: process.env.GIT_COMMIT
     }
   },
-  modules: ['@nuxt/test-utils/module', 'nuxt-snackbar'],
+  modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@scalar/nuxt'],
   snackbar: {
     bottom: true,
     duration: 5000
@@ -49,6 +50,21 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
   nitro: {
     static: true
   },
+  scalar: {
+    // documentDownloadType: 'yaml',
+    url: '/openAPI-docs.json', // Path in `public/` or remote URL
+    // url: 'http://localhost:7071/api/docs/openAPI-docs.yaml',
+    darkMode: true, // Optional
+    metaData: {
+      title: 'GOSQAS API Documentation'
+    },
+    showSidebar: true // Optional
+  },
+  // nitro: {
+  //   experimental: {
+  //     openAPI: true, // allows Nuxt server routes to automatically generate OpenAPI
+  //   },
+  // },
   compatibilityDate: '2024-11-12'
 });
 
@@ -57,22 +73,20 @@ function detectEnvironment(): string {
   const frontendUrl = process.env.FRONTEND_URL;
   const nodeEnv = process.env.NODE_ENV;
 
-  const PRODUCTION_FRONTEND = 'https://blue-stone-05ede120f.5.azurestaticapps.net/';    // Production URL
-  const STAGING_FRONTEND = 'https://red-stone-00f5d251e.5.azurestaticapps.net/';          // Staging URL
+  const PRODUCTION_FRONTEND = 'https://blue-stone-05ede120f.5.azurestaticapps.net/'; // Production URL
+  const STAGING_FRONTEND = 'https://red-stone-00f5d251e.5.azurestaticapps.net/'; // Staging URL
 
   if (frontendUrl === PRODUCTION_FRONTEND) {
     return 'production';
-  }
-
-  else if (frontendUrl === STAGING_FRONTEND) {
+  } else if (frontendUrl === STAGING_FRONTEND) {
     return 'staging';
   }
-  
+
   // Check for localhost/development patterns
   else if (frontendUrl?.includes('localhost')) {
     return 'development';
   }
-  
+
   // Fall back to NODE_ENV
   return nodeEnv || 'unknown';
 }
