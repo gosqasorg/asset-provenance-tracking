@@ -9,6 +9,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "update-version": "tsx ./scripts/updateVersion.ts",
+    "build-with-version": "npm run update-version && npm run build",
     "test-headless": "vitest run", 
     "coverage": "vitest run --coverage"
   },
@@ -23,6 +26,8 @@
     "playwright-core": "^1.47.1",
     "sass": "^1.77.2",
     "sass-loader": "^14.2.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "vitest": "^2.1.1"
   },
   "dependencies": {
