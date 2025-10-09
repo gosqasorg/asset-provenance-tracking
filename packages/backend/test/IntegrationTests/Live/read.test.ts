@@ -99,9 +99,17 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(recordKey["tags"].length >= 1).toBe(true);
 		expect(recordKey["tags"][0] === "deployed").toBe(true);
 
-		const attachmentsKey = blob_element["attachments"]
+		const attachmentsKey = blob_element['attachments']
+		let attachmentCount = 0
+		let counter = response.length
+		while (counter > 0){
+			if (response[counter - 1]['attachments'].length > 0){
+				++attachmentCount
+			}
+			--counter
+		}
 		expect(Array.isArray(attachmentsKey)).toBe(true);
-		expect(attachmentsKey.length >= 1).toBe(true);
+		expect(attachmentCount >= 1).toBe(true);
 
 		// Testing attachment name retrieval
 		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
@@ -183,6 +191,76 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(keysToCheckOff.size).toBe(0)
 
 	}, timeout);
+
+	// Feature Test: Read Group with Annotated Children
+	it(testName = 'Read Group with Annotated Children', async () => {
+
+		// ---- Section 1/2 : Invoking the API ---- //
+
+		const theRecord = '7Lj7CPGcmbXr7izpahPG7P' // manually created because record creation by api is in progress
+		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+		const fullUrl = `${baseUrl}${theRecord}`
+
+		let response;
+		let statusCode;
+		try{
+			response = await fetch(fullUrl);
+			statusCode = response.status
+			response = await response.json();
+		} catch(error) {
+			const testName = baseTestName + thisTestName;
+			const errorMessage = 'Failed to fetch (get) url: '
+			console.error(testName + errorMessage + fullUrl)
+			throw error;
+		}
+
+		//  ------  Section 2/2: Tests  ------  //
+
+		// Test to see if record got created
+		expect(statusCode).toBe(200);
+
+		// Test to see if parent record has accessible child URLs
+		const secondIndex = response[1]
+		const childrenKey = secondIndex['record']['children_key']
+		let childrenKeysCounter = childrenKey.length
+		expect(childrenKey.length > 0).toBe(true)
+
+		// Test to see if children got created
+		let childResponse
+		let tagDifferences = 0
+		let annotationCompare 
+		while (childrenKeysCounter > 0) {
+			childResponse = await fetch('https://gdtprodbackend.azurewebsites.net/api/provenance/' + childrenKey[childrenKeysCounter - 1])
+			 if (childResponse.status == 200){
+				--childrenKeysCounter
+			} 
+		}
+		expect(childrenKeysCounter).toBe(0)
+
+		// Test to see if children are annotated
+		// Grab the tags from the first child
+		let tagsDiscrepency = 0
+		let firstAnnotation 
+		let annotationResponse
+		let newCounter = childrenKey.length
+		annotationResponse = await fetch('https://gdtprodbackend.azurewebsites.net/api/provenance/' + childrenKey[0])
+		annotationResponse = await annotationResponse.json()
+		firstAnnotation = annotationResponse[0]['record']['tags']
+
+		let testAnnotationRes
+		let testArray
+		while (newCounter > 0){
+			testAnnotationRes = await fetch('https://gdtprodbackend.azurewebsites.net/api/provenance/' + childrenKey[newCounter -1])
+			testAnnotationRes = await testAnnotationRes.json()
+			testArray = testAnnotationRes[0]['record']['tags']
+			if(JSON.stringify(firstAnnotation) != JSON.stringify(testArray)){
+				++tagDifferences
+			}
+			--newCounter
+		}
+		expect(tagsDiscrepency).toBe(0)
+
+	}, timeout)
 
 	// Placeholder
 	// Everything all at once
