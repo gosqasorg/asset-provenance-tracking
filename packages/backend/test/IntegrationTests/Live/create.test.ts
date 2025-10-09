@@ -48,7 +48,8 @@ describe("Group Creation Tests", () => {
 describe("Record Creation Tests", () => {
 	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 
-	it("Smoketest", async () => {
+	// The most basic possible test -- create a record
+	it("(Smoketest) Create the most basic record", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(1st Test) Created Device Key: " + deviceKey);
@@ -168,8 +169,8 @@ describe("Record Creation Tests", () => {
 		try {
 			const data = {
 				blobType: 'deviceInitializer',
-				deviceName: "Create Record Test + 1 Feature",
-				description: "An API smoketest for creating a record with tags",
+				deviceName: "Feature-Complete Test",
+				description: "An API test for creating a record with tags",
 				tags: ['smoketest', 'api'],
 				children_key: '',
 				hasParent: false,
