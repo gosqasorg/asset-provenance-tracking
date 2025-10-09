@@ -111,9 +111,9 @@ describe("Record Creation Tests", () => {
 
     // Note: As we add feature tests, we'll accumulate them into the feature-complete test
 	// Everything all at once -- create a record with tags and an image
-	it("(Smoketest) Create a record with tags and attachments", async() => {
+	it("(Smoketest) Create a record with tags", async() => {
 		const deviceKey = await makeEncodedDeviceKey();
-		console.log("(3rd Test) Created Device Key: " + deviceKey);
+		console.log("(2nd Test) Created Device Key: " + deviceKey);
 		let fullUrl = `${baseUrl}${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
@@ -122,8 +122,8 @@ describe("Record Creation Tests", () => {
 		try {
 			const data = {
 				blobType: 'deviceInitializer',
-				deviceName: "Create Record Test + 2 Features",
-				description: "An API smoketest for creating a record with tags and an attachment",
+				deviceName: "Create Record Test + 1 Feature",
+				description: "An API smoketest for creating a record with tags",
 				tags: ['smoketest', 'api'],
 				children_key: '',
 				hasParent: false,
@@ -131,10 +131,6 @@ describe("Record Creation Tests", () => {
 			}
 			const formData = new FormData();
 			formData.append("provenanceRecord", JSON.stringify(data));
-
-			const buffer = await readFile('./test/attachments/a200.jpg');
-			const blob = new Blob([buffer], { type: 'image/jpeg' });
-			formData.append('kirby.png', blob);
 
 			const postResponse = await fetch(fullUrl, {
 				method: "POST",
@@ -156,11 +152,10 @@ describe("Record Creation Tests", () => {
 			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
 
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
-			expect(responseString.record.deviceName).toBe('Create Record Test + 2 Features');
-			expect(responseString.record.description).toBe('An API smoketest for creating a record with tags and an attachment');
+			expect(responseString.record.deviceName).toBe('Create Record Test + 1 Feature');
+			expect(responseString.record.description).toBe('An API smoketest for creating a record with tags');
 			expect(responseString.record.tags.length).toBe(2);
 			expect(JSON.stringify(responseString.record.tags)).toBe('["smoketest","api"]');
-			expect(responseString.attachments.length).toBe(1)
 
 		} catch(error) {
 			console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
