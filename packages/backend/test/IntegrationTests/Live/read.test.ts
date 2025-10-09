@@ -92,7 +92,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(Array.isArray(response)).toBe(true);
 
 		// Elements: Check number of keys
-		const blob_element = response[0]; 
+		const blob_element = response[response.length - 1]; 
 
 		const recordKey = blob_element["record"]
 		expect(Array.isArray(recordKey["tags"])).toBe(true);
