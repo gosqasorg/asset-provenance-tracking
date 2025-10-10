@@ -23,7 +23,6 @@ export default defineNuxtConfig({
       // This also allows us to test frontend development with a real backend.
       // There is also a bug with Azure Functions where the env vars are not set correctly.
       // For local development, set baseUrl to http://localhost:7071/api
-      // baseUrl: process.env.BACKEND_URL ?? 'https://gosqasbe.azurewebsites.net/api',
       baseUrl: process.env.BACKEND_URL ?? 'http://localhost:7071/api',
       frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
       handIconBackground: '/assets/images/hand-icon.png',
