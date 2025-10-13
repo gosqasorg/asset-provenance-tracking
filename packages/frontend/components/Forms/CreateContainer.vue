@@ -112,7 +112,7 @@ export default {
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
-            // TODO: change file size as needed
+
             const maxFileSize = 2097152;  // aka 2MB
 
             if (files && files[0].size <= maxFileSize) {

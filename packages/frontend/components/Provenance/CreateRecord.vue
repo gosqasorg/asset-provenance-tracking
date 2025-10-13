@@ -183,7 +183,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
-            // TODO: change file size as needed
+
             const maxFileSize = 2097152;
 
             if (files && files[0].size <= maxFileSize) {
