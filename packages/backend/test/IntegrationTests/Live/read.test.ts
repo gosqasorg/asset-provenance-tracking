@@ -263,7 +263,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	}, timeout)
 
 	// Read: Attachment Tests
-	it(testName = "Attachments: ", async () => {
+	it(testName = "Attachments: JPEG and PDF ", async () => {
 
 		// ---- Section 1/2: Invoking the API ---- //
 
