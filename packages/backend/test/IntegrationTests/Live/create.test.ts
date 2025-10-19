@@ -24,24 +24,224 @@ describe("Group of tests", () => {
 */
 
 describe("Group Creation Tests", () => {
-
-	// Placeholder
 	// The most basic possible test
-	it("smoketest", () => {
-		expect(0).toBe(0);
-	});
+	it("should create a group record with one child", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		
+		// Generate device keys in parallel
+		const [groupKeyRes, childKeyRes] = await Promise.all([
+			fetch(`${baseUrl}/getNewDeviceKey`),
+			fetch(`${baseUrl}/getNewDeviceKey`)
+		]);
+		const groupKey = await groupKeyRes.text();
+		const childKey = await childKeyRes.text();
+		
+		// Create child and group records in parallel
+		const childFormData = new FormData();
+		childFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "child_smoketest",
+			description: "child for most basic smoketest group record creation",
+			tags: [],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_smoketest",
+			description: "group for most basic smoketest group record creation",
+			tags: [],
+			children_key: [childKey],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const [childResponse, groupResponse] = await Promise.all([
+			fetch(`${baseUrl}/provenance/${childKey}`, {
+				method: "POST",
+				body: childFormData,
+			}),
+			fetch(`${baseUrl}/provenance/${groupKey}`, {
+				method: "POST",
+				body: groupFormData,
+			})
+		]);
+		
+		expect(childResponse.ok).toBe(true);
+		expect(groupResponse.ok).toBe(true);
+	}, 60000);
 
-	// Placeholder
+
 	// Most basic + one feature
-	it("smoketest", () => {
-		expect(0).toBe(0);
-	});
+	it("should create a group record with multiple children", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		
+		// Generate all device keys in parallel
+		const keyPromises = [
+			fetch(`${baseUrl}/getNewDeviceKey`),
+			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+		];
+		const keyResponses = await Promise.all(keyPromises);
+		const keys = await Promise.all(keyResponses.map(res => res.text()));
+		const groupKey = keys[0];
+		const childKeys = keys.slice(1);
+		
+		// Create all child records in parallel
+		const childCreationPromises = childKeys.map((key, i) => {
+			const childFormData = new FormData();
+			childFormData.append("provenanceRecord", JSON.stringify({
+				blobType: "deviceInitializer",
+				deviceName: `child_${i + 1}_smoketest`,
+				description: `child ${i + 1} for multiple children smoketest`,
+				tags: [],
+				children_key: "",
+				hasParent: false,
+				isReportingKey: false
+			}));
+			
+			return fetch(`${baseUrl}/provenance/${key}`, {
+				method: "POST",
+				body: childFormData,
+			});
+		});
+		
+		const childResponses = await Promise.all(childCreationPromises);
+		childResponses.forEach(response => {
+			expect(response.ok).toBe(true);
+		});
+		
+		// Create group record with all children
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_multiple_children_smoketest",
+			description: "group with multiple children for smoketest",
+			tags: [],
+			children_key: childKeys,
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		
+		expect(groupResponse.ok).toBe(true);
 
-	// Placeholder
+		// Verify records in parallel
+		const verificationPromises = [
+			fetch(`${baseUrl}/provenance/${groupKey}`),
+			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+		];
+		const verificationResponses = await Promise.all(verificationPromises);
+		const verificationData = await Promise.all(
+			verificationResponses.map(res => res.json())
+		);
+		const [retrievedGroup, ...retrievedChildren] = verificationData;
+		
+		expect(retrievedGroup[0].record.children_key).toEqual(childKeys);
+		retrievedChildren.forEach((child, i) => {
+			expect(child).toBeDefined();
+			expect(child.length).toBeGreaterThan(0);
+			expect(child[0].record.deviceName).toBe(`child_${i + 1}_smoketest`);
+		});
+	}, 60000);
+
+
 	// Everything all at once
-	it("feature-complete test", () => {
-		expect(0).toBe(0);
-	});
+	it("should create a group record with all features", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		
+		// Generate all device keys in parallel
+		const keyPromises = [
+			fetch(`${baseUrl}/getNewDeviceKey`),
+			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+		];
+		const keyResponses = await Promise.all(keyPromises);
+		const keys = await Promise.all(keyResponses.map(res => res.text()));
+		const groupKey = keys[0];
+		const childKeys = keys.slice(1);
+		
+		// Create all child records in parallel
+		const childCreationPromises = childKeys.map((key, i) => {
+			const childFormData = new FormData();
+			childFormData.append("provenanceRecord", JSON.stringify({
+				blobType: "deviceInitializer",
+				deviceName: `child_${i + 1}_feature_complete_creation`,
+				description: `Child ${i + 1} with full features`,
+				tags: ["feature-complete", "child", `child-${i + 1}`],
+				children_key: "",
+				hasParent: false,
+				isReportingKey: false
+			}));
+			
+			return fetch(`${baseUrl}/provenance/${key}`, {
+				method: "POST",
+				body: childFormData,
+			});
+		});
+		
+		const childResponses = await Promise.all(childCreationPromises);
+		childResponses.forEach(response => {
+			expect(response.ok).toBe(true);
+		});
+		
+		// Create group record with all features
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_all_features_creation",
+			description: "Comprehensive group record creation with all features for smoketest",
+			tags: ["feature-complete", "group", "comprehensive", "all-features"],
+			children_key: childKeys,
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		
+		expect(groupResponse.ok).toBe(true);
+		
+		// Verify all records in parallel
+		const verificationPromises = [
+			fetch(`${baseUrl}/provenance/${groupKey}`),
+			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+		];
+		const verificationResponses = await Promise.all(verificationPromises);
+		const verificationData = await Promise.all(
+			verificationResponses.map(res => res.json())
+		);
+		const [retrievedGroup, ...retrievedChildren] = verificationData;
+		
+		// Verify group record was created with all features
+		expect(retrievedGroup).toBeDefined();
+		expect(retrievedGroup.length).toBeGreaterThan(0);
+		expect(retrievedGroup[0].record.blobType).toBe("deviceInitializer");
+		expect(retrievedGroup[0].record.deviceName).toBe("group_all_features_creation");
+		expect(retrievedGroup[0].record.children_key).toEqual(childKeys);
+		expect(retrievedGroup[0].record.tags).toContain("feature-complete");
+		expect(retrievedGroup[0].record.tags).toContain("group");
+		expect(retrievedGroup[0].record.tags.length).toBe(4);
+		expect(retrievedGroup[0].timestamp).toBeDefined();
+		expect(retrievedGroup[0].timestamp).toBeGreaterThan(0);
+		
+		// Verify all child records were created
+		retrievedChildren.forEach((child, i) => {
+			expect(child).toBeDefined();
+			expect(child.length).toBeGreaterThan(0);
+			expect(child[0].record.deviceName).toBe(`child_${i + 1}_feature_complete_creation`);
+			expect(child[0].record.tags).toContain("feature-complete");
+			expect(child[0].record.tags).toContain(`child-${i + 1}`);
+			expect(child[0].record.tags.length).toBe(3);
+		});
+	}, 60000);
 	
 });
 
