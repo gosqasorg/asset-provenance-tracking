@@ -262,6 +262,151 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 
 	}, timeout)
 
+	// Feature-complete test
+	// TODO - rename test to placeholder test "feature-complete test" at the bottom of file
+	it(testName = 'feature complete', async () => {
+		const theRecord = 'R37xk8yAX8sPfMFLoG4U2c'
+		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+		const fullUrl = `${baseUrl}${theRecord}`
+
+		let response;
+		try{
+			response = await fetch(fullUrl);
+			// console.log("fullUrl\n!!!\n", response,"\n", "fullUrl\n!!!")
+			response = await response.json();
+			// console.log("response.json\n!!!\n", response,"\n", "response.json\n!!!")
+		} catch(error) {
+			const testName = baseTestName + thisTestName;
+			const errorMessage = 'Failed to fetch (get) url: '
+			console.error(testName + errorMessage + fullUrl)
+			throw error;
+		}
+
+		// Tests 
+
+
+		// Test to check if URL fetch response is an array
+		expect(Array.isArray(response)).toBe(true);
+
+		// Tests the parent blob for 1 or more tags
+		const parentBlob = response[response.length - 1];
+		// console.log(parentBlob);
+		const pRecordKey = parentBlob["record"]
+		expect(Array.isArray(pRecordKey["tags"])).toBe(true);
+		expect(pRecordKey["tags"].length >= 1).toBe(true);
+
+		// Tests the parent blob for attachment array
+		const attachmentsKey = parentBlob['attachments']
+		expect(Array.isArray(attachmentsKey)).toBe(true);
+
+		// Iterates through all records in the parent record and tests for any attachments or recall tags
+		let attachmentCount = 0
+		let counter = response.length - 1
+		// console.log("counter:", counter)
+		let recallSet = new Set()
+		// let testSet = new Set([...[1, 2, 3], ...[2, 4]])
+		// let newSet = new Set(testSet)
+		// console.log(newSet)
+		while (counter >= 0){
+			
+
+			if (response[counter]['attachments'].length > 0){
+				++attachmentCount
+				// console.log(response[counter]['attachments'])
+			}
+			
+			// console.log([response[6]['record']['tags']])
+			// if (response[counter]['record']['tags'].length > 0){
+			let tagSet = new Set(response[counter]['record']['tags'])
+			// console.log("summands:", tagSet, recallSet)
+			recallSet = new Set([...recallSet, ...tagSet])
+			// console.log("sum:", recallSet)
+			// }
+			
+
+			--counter
+		}
+		// console.log("attachmentCount:", attachmentCount)
+		// console.log("recallSet:", recallSet)
+		expect(attachmentCount >= 1).toBe(true);
+		expect(recallSet.has('recall')).toBe(true);
+
+		// Tests for valid file extension name
+		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
+		let resp = await fetch(url)
+		let attachmentName = resp['headers'].get('attachment-name')
+		
+		const fileExtensionRegex = /^.+\.(pdf|jpg|png|docx)$/i;
+		expect(typeof attachmentName === 'string' && fileExtensionRegex.test(attachmentName)).toBe(true);
+
+		// Tests if parent record has children keys, i.e. this is a group record
+		expect(pRecordKey["children_key"].length > 0).toBe(true);
+
+		// ---- Section 1/2: Invoking the API ---- //
+
+		const firstRecord = 'XXGWwmjS5A8EUVQyCzDLXN'										// record with one jpeg attachment
+		const firstUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+		const firstFullUrl = `${firstUrl}${firstRecord}`
+
+		const secondRecord = 'QHnRKH9tJiTEvVQnLHM6pG'
+		const secondUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'		// record with two attachments (1 jpeg, 1 pdf)
+		const secondFullUrl = `${secondUrl}${secondRecord}`
+
+		let firstData
+		let secondData
+		try{
+			let response = await fetch(firstFullUrl)
+			firstData = await response.json()
+			try{
+				let secondResponse = await fetch(secondFullUrl)
+				secondData = await secondResponse.json()
+			}catch(error){
+				const testName = baseTestName + thisTestName;
+				const errorMessage = 'Failed to fetch (get) url: '
+				console.error(testName + errorMessage + secondFullUrl)
+				throw error;
+			}
+		}catch(error) {
+			const testName = baseTestName + thisTestName;
+			const errorMessage = 'Failed to fetch (get) url: '
+			console.error(testName + errorMessage + firstFullUrl)
+			throw error;
+		}
+
+		// Hieu's  attachment tests//
+
+		// Test record with two attachments
+		let numberOfAttachments2 = 0
+		let attachmentsArray = []
+		counter = secondData.length
+		while (counter > 0){
+			if (secondData[counter - 1]['attachments'].length > 0){
+				attachmentsArray.push(secondData[counter - 1]['attachments'][0])
+				++numberOfAttachments2
+			}
+			--counter
+		}
+		expect(numberOfAttachments2).toBe(2);
+
+		// Test record attachments to see if jpeg and pdf are included
+		let jpegCounter = 0
+		let pdfCounter = 0
+		let arrayCounter = attachmentsArray.length
+		while (arrayCounter > 0){
+			let imageResponse = await fetch('https://gdtprodbackend.azurewebsites.net/api/attachment/QHnRKH9tJiTEvVQnLHM6pG/' + attachmentsArray[arrayCounter - 1])
+			const imageData = await imageResponse.blob()
+			if (imageData.type == 'application/pdf'){
+				++pdfCounter
+			}else if (imageData.type == 'image/jpeg'){
+				++jpegCounter
+			}
+			--arrayCounter
+		}
+		expect(jpegCounter > 0).toBe(true)
+		expect(pdfCounter > 0 ).toBe(true)
+		
+	}, timeout)
+
 	// Placeholder
 	// Everything all at once
 	it("feature-complete test", () => {
