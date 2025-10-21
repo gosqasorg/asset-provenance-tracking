@@ -272,9 +272,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		let response;
 		try{
 			response = await fetch(fullUrl);
-			// console.log("fullUrl\n!!!\n", response,"\n", "fullUrl\n!!!")
 			response = await response.json();
-			// console.log("response.json\n!!!\n", response,"\n", "response.json\n!!!")
 		} catch(error) {
 			const testName = baseTestName + thisTestName;
 			const errorMessage = 'Failed to fetch (get) url: '
@@ -290,7 +288,6 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 
 		// Tests the parent blob for 1 or more tags
 		const parentBlob = response[response.length - 1];
-		// console.log(parentBlob);
 		const pRecordKey = parentBlob["record"]
 		expect(Array.isArray(pRecordKey["tags"])).toBe(true);
 		expect(pRecordKey["tags"].length >= 1).toBe(true);
@@ -302,32 +299,18 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		// Iterates through all records in the parent record and tests for any attachments or recall tags
 		let attachmentCount = 0
 		let counter = response.length - 1
-		// console.log("counter:", counter)
 		let recallSet = new Set()
-		// let testSet = new Set([...[1, 2, 3], ...[2, 4]])
-		// let newSet = new Set(testSet)
-		// console.log(newSet)
 		while (counter >= 0){
 			
 
 			if (response[counter]['attachments'].length > 0){
 				++attachmentCount
-				// console.log(response[counter]['attachments'])
 			}
 			
-			// console.log([response[6]['record']['tags']])
-			// if (response[counter]['record']['tags'].length > 0){
 			let tagSet = new Set(response[counter]['record']['tags'])
-			// console.log("summands:", tagSet, recallSet)
 			recallSet = new Set([...recallSet, ...tagSet])
-			// console.log("sum:", recallSet)
-			// }
-			
-
 			--counter
 		}
-		// console.log("attachmentCount:", attachmentCount)
-		// console.log("recallSet:", recallSet)
 		expect(attachmentCount >= 1).toBe(true);
 		expect(recallSet.has('recall')).toBe(true);
 
@@ -342,7 +325,9 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		// Tests if parent record has children keys, i.e. this is a group record
 		expect(pRecordKey["children_key"].length > 0).toBe(true);
 
-		// ---- Section 1/2: Invoking the API ---- //
+
+		
+		// Hieu's  attachment tests//
 
 		const firstRecord = 'XXGWwmjS5A8EUVQyCzDLXN'										// record with one jpeg attachment
 		const firstUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
@@ -373,18 +358,27 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			throw error;
 		}
 
-		// Hieu's  attachment tests//
+		// Test record with one attachment
+		let numberOfAttachments = 0
+		let oneAttachCounter = firstData.length
+		while (oneAttachCounter > 0){
+			if (firstData[oneAttachCounter - 1]['attachments'].length > 0){
+				++numberOfAttachments
+			}
+			--oneAttachCounter
+		}
+		expect(numberOfAttachments).toBe(1);
 
 		// Test record with two attachments
 		let numberOfAttachments2 = 0
 		let attachmentsArray = []
-		counter = secondData.length
-		while (counter > 0){
-			if (secondData[counter - 1]['attachments'].length > 0){
-				attachmentsArray.push(secondData[counter - 1]['attachments'][0])
+		let twoAttachCounter = secondData.length
+		while (twoAttachCounter > 0){
+			if (secondData[twoAttachCounter - 1]['attachments'].length > 0){
+				attachmentsArray.push(secondData[twoAttachCounter - 1]['attachments'][0])
 				++numberOfAttachments2
 			}
-			--counter
+			--twoAttachCounter
 		}
 		expect(numberOfAttachments2).toBe(2);
 
