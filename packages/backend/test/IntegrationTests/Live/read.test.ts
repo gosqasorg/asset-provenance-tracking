@@ -263,7 +263,6 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	}, timeout)
 
 	// Feature-complete test
-	// TODO - rename test to placeholder test "feature-complete test" at the bottom of file
 	it(testName = 'feature complete', async () => {
 		const theRecord = 'R37xk8yAX8sPfMFLoG4U2c'
 		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
@@ -326,7 +325,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(pRecordKey["children_key"].length > 0).toBe(true);
 
 
-		
+
 		// Hieu's  attachment tests//
 
 		const firstRecord = 'XXGWwmjS5A8EUVQyCzDLXN'										// record with one jpeg attachment
