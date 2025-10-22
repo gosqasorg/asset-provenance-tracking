@@ -1,5 +1,6 @@
 import bs58 from 'bs58';
 import JSON5 from 'json5';
+import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
@@ -168,6 +169,8 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     }
 
     const provRecord = { record, attachments: attachmentIDs };
+    // TODO: validateJSON..? -- every instance of uploadProv checks on it's own, so shouldn't be needed?
+
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
     return { record: recordID, attachments };
@@ -225,6 +228,8 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
+        // TODO: validateJSON
+        if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
@@ -287,6 +292,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
+        // TODO: validateJSON? -- maybe not, since this already exists so it should already be valid..?
         const json = new TextDecoder().decode(data);
         const provRecord = JSON.parse(json) as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
@@ -306,6 +312,8 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
+    // TODO: validateJSON
+    if (!validateJSON(record)) { return { status: 404 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
@@ -448,6 +456,41 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
             body: "",
             headers: { "Content-Type": "text/plain" }
         }
+    }
+}
+
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags! [So other sections CAN'T be required]
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isReportingKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    // TODO: Which sections should be optional?
+        // Children_key: needed, it determines if a record is a group or not
+        // Descr: not strictly needed but good to have
+        // -----
+        // Name: Doesn't show name but the rest of the page shows fine --
+        // Tags: Same as not adding a tag, can be optional
+        // BlobType: Missing blobType doesn't effect anything
+        // isReportingKey: Can still annotate/recall w/o this property
+        // HasParent: Can still add a record to a group w/o this property --
+        // children_name: Only on groups so optional, also still works when missing in groups
+
+
+    // TODO: Make console warning more specific, have error pop up..?
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
     }
 }
 

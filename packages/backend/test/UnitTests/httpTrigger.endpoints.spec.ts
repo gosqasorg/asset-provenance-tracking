@@ -129,5 +129,51 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
     expect(res).toHaveProperty('headers');
   });
+
+  // TODO: TO RUN: npm run unittest? Is this the right file for these tests?
+  it('validateJSON correctly validates record', async () => {
+    // TODO: getProv for a record and test that??
+    const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
+      "hasParent": false,"isReportingKey": false};
+    let valid = httpTrigger.validateJSON(validRecord);
+    expect(valid).toBe(true);
+
+    const recordWithTags = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
+      "tags": ["peaches", "pears"],"hasParent": false,"isReportingKey": false};
+    valid = httpTrigger.validateJSON(recordWithTags);
+    expect(valid).toBe(true);
+
+    const recordWithoutOptional = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
+      "tags": ["apples", "plums"]};
+    valid = httpTrigger.validateJSON(recordWithoutOptional);
+    expect(valid).toBe(true);
+  });
+
+  it('validateJSON correctly validates group', async () => {
+    const validGroup = {"blobType": "deviceInitializer","deviceName": "Group w/ no children","description": "Description",
+      "children_key":[],"children_name":[],"tags": [],"hasParent": false,"isReportingKey": false};
+    let valid = httpTrigger.validateJSON(validGroup);
+    expect(valid).toBe(true);
+
+    const groupWithChildren = {"blobType": "deviceInitializer","deviceName": "Group w/ children","description": "Description",
+      "children_key":["4YAfNMTra2VMvXhFQvpQZw"],"children_name":["Child 1"],"tags": ["hasChild"],"hasParent": false,"isReportingKey": false,};
+    valid = httpTrigger.validateJSON(groupWithChildren);
+    expect(valid).toBe(true);
+  });
+
+  it('validateJSON correctly catches invalid record/group', async () => {
+    // TODO: use try/catch and expect.fail..?
+    // Missing children_key, which should cause validateJSON to flag this record as invalid
+    const invalidRecord = {"blobType":"deviceInitializer","deviceName":"JSON without children_key","description":"invalid JSON","tags":[],
+      "hasParent":false,"isReportingKey":false};
+    let valid = httpTrigger.validateJSON(invalidRecord);
+    expect(valid).toBe(false);
+
+    // Missing description, which should cause validateJSON to flag this group as invalid
+    const invalidGroup = {"blobType":"deviceInitializer","deviceName":"JSON without description","tags":["group"],"children_key":[],
+      "children_name":[],"hasParent":false,"isReportingKey":false};
+    valid = httpTrigger.validateJSON(invalidGroup);
+    expect(valid).toBe(false);
+  });
  
 });
