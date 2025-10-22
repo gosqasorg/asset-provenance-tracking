@@ -262,7 +262,85 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 
 	}, timeout)
 
-	// Feature-complete test
+	// Read: Attachment Tests
+	it(testName = "Attachments: JPEG and PDF ", async () => {
+
+		// ---- Section 1/2: Invoking the API ---- //
+
+		const firstRecord = 'XXGWwmjS5A8EUVQyCzDLXN'										// record with one jpeg attachment
+		const firstUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+		const firstFullUrl = `${firstUrl}${firstRecord}`
+
+		const secondRecord = 'QHnRKH9tJiTEvVQnLHM6pG'
+		const secondUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'		// record with two attachments (1 jpeg, 1 pdf)
+		const secondFullUrl = `${secondUrl}${secondRecord}`
+
+		let firstData
+		let secondData
+		try{
+			let response = await fetch(firstFullUrl)
+			firstData = await response.json()
+			try{
+				let secondResponse = await fetch(secondFullUrl)
+				secondData = await secondResponse.json()
+			}catch(error){
+				const testName = baseTestName + thisTestName;
+				const errorMessage = 'Failed to fetch (get) url: '
+				console.error(testName + errorMessage + secondFullUrl)
+				throw error;
+			}
+		}catch(error) {
+			const testName = baseTestName + thisTestName;
+			const errorMessage = 'Failed to fetch (get) url: '
+			console.error(testName + errorMessage + firstFullUrl)
+			throw error;
+		}
+
+		// ------ Section 2/2: Tests ------ //
+
+		// Test record with one attachment
+		let numberOfAttachments = 0
+		let counter = firstData.length
+		while (counter > 0){
+			if (firstData[counter - 1]['attachments'].length > 0){
+				++numberOfAttachments
+			}
+			--counter
+		}
+		expect(numberOfAttachments).toBe(1);
+
+		// Test record with two attachments
+		let numberOfAttachments2 = 0
+		let attachmentsArray = []
+		counter = secondData.length
+		while (counter > 0){
+			if (secondData[counter - 1]['attachments'].length > 0){
+				attachmentsArray.push(secondData[counter - 1]['attachments'][0])
+				++numberOfAttachments2
+			}
+			--counter
+		}
+		expect(numberOfAttachments2).toBe(2);
+
+		// Test record attachments to see if jpeg and pdf are included
+		let jpegCounter = 0
+		let pdfCounter = 0
+		let arrayCounter = attachmentsArray.length
+		while (arrayCounter > 0){
+			let imageResponse = await fetch('https://gdtprodbackend.azurewebsites.net/api/attachment/QHnRKH9tJiTEvVQnLHM6pG/' + attachmentsArray[arrayCounter - 1])
+			const imageData = await imageResponse.blob()
+			if (imageData.type == 'application/pdf'){
+				++pdfCounter
+			}else if (imageData.type == 'image/jpeg'){
+				++jpegCounter
+			}
+			--arrayCounter
+		}
+		expect(jpegCounter > 0).toBe(true)
+		expect(pdfCounter > 0 ).toBe(true)
+	}, timeout);
+
+    // Feature-complete test
 	it(testName = 'feature complete', async () => {
 		const theRecord = 'R37xk8yAX8sPfMFLoG4U2c'
 		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
@@ -399,11 +477,5 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(pdfCounter > 0 ).toBe(true)
 		
 	}, timeout)
-
-	// Placeholder
-	// Everything all at once
-	it("feature-complete test", () => {
-		expect(0).toBe(0);
-	});
 
 });
