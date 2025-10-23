@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
+import { writeFile } from 'fs/promises';
 /* README: To add a test, add inside the global describe an additional it. For example:
 
 describe("Group of tests", () => {
@@ -216,7 +217,7 @@ describe("Creating records with attachments", () => {
 	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 
 	// create a record with an attachement 
-	it("(Smoketest) Create the most basic record", async () => {
+	it("Create record with one attachment ", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("Created Device Key(attachements): " + deviceKey);
@@ -257,7 +258,7 @@ describe("Creating records with attachments", () => {
 		// GET record key to make sure it exists
 		let getResponse; 
 		try {
-			getResponse = await fetch(fullUrl);
+      getResponse = await fetch(fullUrl);
 			getResponse = await getResponse.json();
 			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
 
@@ -267,7 +268,20 @@ describe("Creating records with attachments", () => {
 			expect(responseString.record.children_key).toBe("");
 			expect(responseString.record.hasParent).toBe(false);
 			expect(responseString.record.isReportingKey).toBe(false);
-            expect(responseString.attachments.length).toBe(1)
+      expect(responseString.attachments.length).toBe(1)
+
+      // Download and compare original attached file and downlaod
+      const attachmentHash = responseString.attachments[0];
+      const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+      console.log('Downloading from:', downloadUrl);
+      const downloadResponse = await fetch(downloadUrl);
+      expect(downloadResponse.ok).toBe(true);
+      const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer());
+      //reading original file 
+      const originalBuffer = await readFile('./test/attachments/a200.jpg');
+      expect(Buffer.compare(originalBuffer, retrievedBuffer)).toBe(0);
+  
+
 
 		} catch(error) {
 			console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
@@ -278,5 +292,6 @@ describe("Creating records with attachments", () => {
 // questions for vincent Regarding issue
   // In the instructions do you mean adding two images 
     //  also it is not possible to add PDF's can you clarify?
+    ///i did not write to the disk is it still alright 
 	
 });
