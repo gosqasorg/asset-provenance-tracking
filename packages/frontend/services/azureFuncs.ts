@@ -79,14 +79,34 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         formData.append(blob.name, blob);
     }
     
-    const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-        method: "POST",
-        body: formData,
-    });
-    if (response.status !== 200) {
-        throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    // TODO: create wrapper function that takes url/arguments
+    // for (let i = 1; i <= 3; i++) {
+    //     try {
+    //         const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+    //             method: "POST",
+    //             body: formData,
+    //         });
+    //         if (response.status !== 200) {
+    //             throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    //         }
+    //         console.log("success!")
+    //         return await response.json() as { record: string, attachments?: string[] };
+    //     } catch (e) {
+    //         // DEV NOTE: Not running backend will create this error
+    //         console.log("Fetch attempt failed: " + e);
+    //     }
+    // }
+
+    // TODO: return multiple values but only sometimes?
+    let response, responseText = await fetchUrl(baseUrl, deviceKey, formData);
+    console.log("response: " + typeof(response));
+    if (response != 404) {
+        return response;
     }
-    return await response.json() as { record: string, attachments?: string[] };
+    if (typeof(response) != "object") {
+        throw new Error(`Failed to post provenance: ${response} ${responseText}`);
+    }
+    throw new Error(`Could not connect to the server, check your internet connection and try again`);
 }
 
 export async function postEmail(email: string) {
@@ -110,4 +130,30 @@ export async function getStatistics() {
         method: "GET",
     });
     return await response.json() as { record: string, timestamp: number }[];
+}
+
+async function fetchUrl(baseUrl: string, deviceKey: string, formData: FormData) {
+    console.log("fetching...")
+    for (let i = 1; i <= 3; i++) {
+        try {
+            console.log("loop " + i)
+            const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+                method: "POST",
+                body: formData,
+            });
+
+            // TODO: THIS WON'T END THE LOOP, NEED TO BE ABLE TO SEND ERROR TO OTHER FUNC!!
+            if (response.status !== 200) {
+                // throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
+                console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
+                return { response: response.status, responseText: response.statusText };
+            }
+            console.log("success!")
+            return await response.json() as { record: string, attachments?: string[] };
+        } catch (e) {
+            // DEV NOTE: Not running backend will create this error
+            console.log("Fetch attempt failed: " + e);
+        }
+    }
+    return { response: 404, responseText: "Failed to reach server" };
 }
