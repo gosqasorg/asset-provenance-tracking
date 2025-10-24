@@ -26,7 +26,9 @@
     "@urlpack/base58": "^2.0.1",
     "bs58": "^5.0.0",
     "dotenv": "^16.4.5",
-    "json5": "^2.2.3"
+    "json5": "^2.2.3",
+    "tsc": "^2.0.4",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "20.16.5",
@@ -36,7 +38,7 @@
     "mime-types": "^2.1.35",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.6.2",
+    "typescript": "^5.9.3",
     "vitest": "^2.1.1"
   }
 }
