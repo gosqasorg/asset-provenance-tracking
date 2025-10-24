@@ -169,7 +169,6 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     }
 
     const provRecord = { record, attachments: attachmentIDs };
-    // TODO: validateJSON..? -- every instance of uploadProv checks on it's own, so shouldn't be needed?
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
@@ -228,7 +227,6 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
-        // TODO: validateJSON
         if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
@@ -292,8 +290,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
-        // TODO: validateJSON? -- maybe not, since this already exists so it should already be valid..?
         const json = new TextDecoder().decode(data);
+        if (!validateJSON(json)) { return { status: 404 }; }
         const provRecord = JSON.parse(json) as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
@@ -312,7 +310,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
-    // TODO: validateJSON
     if (!validateJSON(record)) { return { status: 404 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
@@ -472,19 +469,6 @@ export async function validateJSON(json: any) {
         tags: z.array(z.string()).optional(),
     });
 
-    // TODO: Which sections should be optional?
-        // Children_key: needed, it determines if a record is a group or not
-        // Descr: not strictly needed but good to have
-        // -----
-        // Name: Doesn't show name but the rest of the page shows fine --
-        // Tags: Same as not adding a tag, can be optional
-        // BlobType: Missing blobType doesn't effect anything
-        // isReportingKey: Can still annotate/recall w/o this property
-        // HasParent: Can still add a record to a group w/o this property --
-        // children_name: Only on groups so optional, also still works when missing in groups
-
-
-    // TODO: Make console warning more specific, have error pop up..?
     try {
         Valid.parse(json);
         return true;

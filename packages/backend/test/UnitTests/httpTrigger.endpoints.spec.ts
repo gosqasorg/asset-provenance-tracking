@@ -130,7 +130,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  // TODO: TO RUN: npm run unittest? Is this the right file for these tests?
   it('validateJSON correctly validates record', async () => {
     // TODO: getProv for a record and test that??
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
@@ -162,7 +161,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
 
   it('validateJSON correctly catches invalid record/group', async () => {
-    // TODO: use try/catch and expect.fail..?
     // Missing children_key, which should cause validateJSON to flag this record as invalid
     const invalidRecord = {"blobType":"deviceInitializer","deviceName":"JSON without children_key","description":"invalid JSON","tags":[],
       "hasParent":false,"isReportingKey":false};
