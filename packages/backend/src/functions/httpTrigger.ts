@@ -317,6 +317,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const attachments = new Array<NamedBlob>();
     for (const attach of formData.values()) {
         if (typeof attach === 'string') continue;
+        console.log("attach type: " + typeof(attach))
         attachments.push({ blob: attach, name: attach.name });
     }
 
