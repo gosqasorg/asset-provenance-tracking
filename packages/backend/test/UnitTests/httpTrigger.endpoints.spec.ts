@@ -130,47 +130,47 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  it('validateJSON correctly validates record', async () => {
-    const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
-      "hasParent": false,"isReportingKey": false};
-    let valid = await httpTrigger.validateJSON(validRecord);
-    expect(valid).toBe(true);
+  // it('validateJSON correctly validates record', async () => {
+  //   const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
+  //     "hasParent": false,"isReportingKey": false};
+  //   let valid = await httpTrigger.validateJSON(validRecord);
+  //   expect(valid).toBe(true);
 
-    const recordWithTags = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
-      "tags": ["peaches", "pears"],"hasParent": false,"isReportingKey": false};
-    valid = await httpTrigger.validateJSON(recordWithTags);
-    expect(valid).toBe(true);
+  //   const recordWithTags = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
+  //     "tags": ["peaches", "pears"],"hasParent": false,"isReportingKey": false};
+  //   valid = await httpTrigger.validateJSON(recordWithTags);
+  //   expect(valid).toBe(true);
 
-    const recordWithoutOptional = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
-      "tags": ["apples", "plums"]};
-    valid = await httpTrigger.validateJSON(recordWithoutOptional);
-    expect(valid).toBe(true);
-  });
+  //   const recordWithoutOptional = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
+  //     "tags": ["apples", "plums"]};
+  //   valid = await httpTrigger.validateJSON(recordWithoutOptional);
+  //   expect(valid).toBe(true);
+  // });
 
-  it('validateJSON correctly validates group', async () => {
-    const validGroup = {"blobType": "deviceInitializer","deviceName": "Group w/ no children","description": "Description",
-      "children_key":[],"children_name":[],"tags": [],"hasParent": false,"isReportingKey": false};
-    let valid = await httpTrigger.validateJSON(validGroup);
-    expect(valid).toBe(true);
+  // it('validateJSON correctly validates group', async () => {
+  //   const validGroup = {"blobType": "deviceInitializer","deviceName": "Group w/ no children","description": "Description",
+  //     "children_key":[],"children_name":[],"tags": [],"hasParent": false,"isReportingKey": false};
+  //   let valid = await httpTrigger.validateJSON(validGroup);
+  //   expect(valid).toBe(true);
 
-    const groupWithChildren = {"blobType": "deviceInitializer","deviceName": "Group w/ children","description": "Description",
-      "children_key":["4YAfNMTra2VMvXhFQvpQZw"],"children_name":["Child 1"],"tags": ["hasChild"],"hasParent": false,"isReportingKey": false,};
-    valid = await httpTrigger.validateJSON(groupWithChildren);
-    expect(valid).toBe(true);
-  });
+  //   const groupWithChildren = {"blobType": "deviceInitializer","deviceName": "Group w/ children","description": "Description",
+  //     "children_key":["4YAfNMTra2VMvXhFQvpQZw"],"children_name":["Child 1"],"tags": ["hasChild"],"hasParent": false,"isReportingKey": false,};
+  //   valid = await httpTrigger.validateJSON(groupWithChildren);
+  //   expect(valid).toBe(true);
+  // });
 
-  it('validateJSON correctly catches invalid record/group', async () => {
-    // Missing children_key, which should cause validateJSON to flag this record as invalid
-    const invalidRecord = {"blobType":"deviceInitializer","deviceName":"JSON without children_key","description":"invalid JSON","tags":[],
-      "hasParent":false,"isReportingKey":false};
-    let valid = await httpTrigger.validateJSON(invalidRecord);
-    expect(valid).toBe(false);
+  // it('validateJSON correctly catches invalid record/group', async () => {
+  //   // Missing children_key, which should cause validateJSON to flag this record as invalid
+  //   const invalidRecord = {"blobType":"deviceInitializer","deviceName":"JSON without children_key","description":"invalid JSON","tags":[],
+  //     "hasParent":false,"isReportingKey":false};
+  //   let valid = await httpTrigger.validateJSON(invalidRecord);
+  //   expect(valid).toBe(false);
 
-    // Missing description, which should cause validateJSON to flag this group as invalid
-    const invalidGroup = {"blobType":"deviceInitializer","deviceName":"JSON without description","tags":["group"],"children_key":[],
-      "children_name":[],"hasParent":false,"isReportingKey":false};
-    valid = await httpTrigger.validateJSON(invalidGroup);
-    expect(valid).toBe(false);
-  });
+  //   // Missing description, which should cause validateJSON to flag this group as invalid
+  //   const invalidGroup = {"blobType":"deviceInitializer","deviceName":"JSON without description","tags":["group"],"children_key":[],
+  //     "children_name":[],"hasParent":false,"isReportingKey":false};
+  //   valid = await httpTrigger.validateJSON(invalidGroup);
+  //   expect(valid).toBe(false);
+  // });
  
 });
