@@ -131,7 +131,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
 
   it('validateJSON correctly validates record', async () => {
-    // TODO: getProv for a record and test that??
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
       "hasParent": false,"isReportingKey": false};
     let valid = await httpTrigger.validateJSON(validRecord);

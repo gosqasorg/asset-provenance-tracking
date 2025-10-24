@@ -457,7 +457,7 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
 }
 
 export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags! [So other sections CAN'T be required]
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
         children_key: z.union([z.string(), z.array(z.string())]),
