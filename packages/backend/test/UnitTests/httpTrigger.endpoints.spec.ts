@@ -94,15 +94,15 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
   });
 
-  // it('postProvenance returns a body', async () => {
-  //   const formData = {
-  //     get: vi.fn((key) => key === 'provenanceRecord' ? '{"foo":1}' : undefined),
-  //     values: vi.fn(() => [].values()),
-  //   };
-  //   const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
-  //   const res = await httpTrigger.postProvenance(req, context);
-  //   expect(res).toHaveProperty('jsonBody');
-  // });
+  it('postProvenance returns a body', async () => {
+    const formData = {
+      get: vi.fn((key) => key === 'provenanceRecord' ? '{"foo":1}' : undefined),
+      values: vi.fn(() => [].values()),
+    };
+    const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
+    const res = await httpTrigger.postProvenance(req, context);
+    expect(res).toHaveProperty('jsonBody');
+  });
 
   it('getAttachment returns a body and headers', async () => {
     const req = makeHttpRequest({ params: { deviceKey, attachmentID } });
