@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+ import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 
