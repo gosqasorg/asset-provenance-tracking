@@ -23,10 +23,12 @@
     "@azure/functions": "^4.0.1",
     "@azure/storage-blob": "^12.24.0",
     "@types/js-yaml": "^4.0.9",
+    "@types/unzipper": "^0.10.11",
     "@urlpack/base58": "^2.0.1",
     "bs58": "^5.0.0",
     "dotenv": "^16.4.5",
-    "json5": "^2.2.3"
+    "json5": "^2.2.3",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@types/node": "20.16.5",
