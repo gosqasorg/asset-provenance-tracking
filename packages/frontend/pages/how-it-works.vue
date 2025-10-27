@@ -135,7 +135,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 
 li {
     font-weight: 400;
-    text-indent: -20px;
+    text-indent: 10px;
     margin-left: 20px;
 }
 
