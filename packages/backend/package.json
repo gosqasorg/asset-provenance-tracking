@@ -28,10 +28,12 @@
     "bs58": "^5.0.0",
     "dotenv": "^16.4.5",
     "json5": "^2.2.3",
+    "tar-stream": "^3.1.7",
     "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@types/node": "20.16.5",
+    "@types/tar-stream": "^3.1.4",
     "@vitest/coverage-v8": "^2.1.1",
     "azure-functions-core-tools": "^4.0.5530",
     "commander": "^12.1.0",
