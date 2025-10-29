@@ -23,14 +23,14 @@ export async function getProvenance(deviceKey: string) {
         }
         
         const baseUrl = useRuntimeConfig().public.baseUrl;
-        const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-            method: "GET",
-        });
+        const fullUrl = baseUrl + "/provenance/" + deviceKey;
 
-        if (response.status !== 200) {
-            throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        try {
+            let response = await fetchUrl(fullUrl);
+            return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+        } catch (error) {
+            throw error;
         }
-        return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
     } catch (error) {
         console.log(`Key not found: ${deviceKey}.`);
         console.log(error);
@@ -79,14 +79,13 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         formData.append(blob.name, blob);
     }
     
-    const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-        method: "POST",
-        body: formData,
-    });
-    if (response.status !== 200) {
-        throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    const fullUrl = baseUrl + "/provenance/" + deviceKey;
+    try {
+        let response = await fetchUrl(fullUrl, formData);
+        return await response.json() as { record: string, attachments?: string[] };
+    } catch (error) {
+        throw error;
     }
-    return await response.json() as { record: string, attachments?: string[] };
 }
 
 export async function postEmail(email: string) {
@@ -110,4 +109,36 @@ export async function getStatistics() {
         method: "GET",
     });
     return await response.json() as { record: string, timestamp: number }[];
+}
+
+async function fetchUrl(url: string, formData?: FormData) {
+    let response = undefined;
+
+    for (let i = 1; i <= 3; i++) {
+        try {
+            if (typeof formData !== 'undefined') {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                response = await fetch(`${url}`, {
+                    method: "GET"
+                });
+            }
+
+            if (response !== undefined && response.status == 200) {
+                return response;
+            }
+        } catch (e) {
+            console.log("Fetch attempt failed: " + e);
+        }
+    }
+
+    if (response !== undefined && response.status !== 200) {
+        console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
+        throw new Error(response.status + " " + response.statusText)
+    } else {
+        throw new Error(`Could not connect to the server, check your internet connection and try again`);
+    }
 }
