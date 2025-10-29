@@ -23,14 +23,27 @@ export async function getProvenance(deviceKey: string) {
         }
         
         const baseUrl = useRuntimeConfig().public.baseUrl;
-        const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-            method: "GET",
-        });
+        const fullUrl = baseUrl + "/provenance/" + deviceKey;
+        // TODO: can we get rid of underline (does work tho)
+        let response = await fetchUrl(fullUrl);
 
-        if (response.status !== 200) {
-            throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        if (response == undefined) {
+            throw new Error(`Could not connect to the server, check your internet connection and try again`);
+        } else if (response.status !== 200) {
+            console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
+            throw new Error(response.status + " " + response.statusText)
         }
+
         return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+
+        // const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
+        //     method: "GET",
+        // });
+
+        // if (response.status !== 200) {
+        //     throw new Error(`Failed to get provenance: ${response.status} ${response.statusText}`);
+        // }
+        // return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
     } catch (error) {
         console.log(`Key not found: ${deviceKey}.`);
         console.log(error);
@@ -79,14 +92,24 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         formData.append(blob.name, blob);
     }
     
-    // TODO: APPLY fetchURL ON ALL OTHER FETCH CALLS IN THIS FILE?? (getProv/getAttachment???)
-    let response = await fetchUrl(baseUrl, deviceKey, formData);
+    // TODO: MASTER LIST
+    // TODO: Add try/catch around fetchUrl calls (so fetchUrl can throw an error, 
+        // and then implementations can throw the same error and use less code!!)
+    const fullUrl = baseUrl + "/provenance/" + deviceKey;
+    let response = await fetchUrl(fullUrl, formData);
 
-    if (Object.hasOwn(response, "errorMessage")) {
-        // TODO: get property of object without the warning..? (does work though)
-        throw new Error(`${response.errorMessage}`);
+    if (response == undefined) {
+        throw new Error(`Could not connect to the server, check your internet connection and try again`);
+    } else if (response.status !== 200) {
+        console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
+        throw new Error(response.status + " " + response.statusText)
     }
-    return response;
+
+    // if (Object.hasOwn(response, "errorMessage")) {
+    //     // TODO: get property of object without the warning..? (does work though)
+    //     throw new Error(`${response.errorMessage}`);
+    // }
+    return await response.json() as { record: string, attachments?: string[] };
 }
 
 export async function postEmail(email: string) {
@@ -112,26 +135,36 @@ export async function getStatistics() {
     return await response.json() as { record: string, timestamp: number }[];
 }
 
+// TODO: APPLY fetchURL ON ALL OTHER FETCH CALLS IN THIS FILE?? (getProv/getAttachment???)
 // TODO: modify to work with all fetch calls..? (or at least getprov??)
-async function fetchUrl(baseUrl: string, deviceKey: string, formData: FormData) {
+async function fetchUrl(url: string, formData: FormData) {
     for (let i = 1; i <= 3; i++) {
         try {
-            const response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-                method: "POST",
-                // GET, send method as an argument? new func for get instead?
-                body: formData,
-            });
-
-            if (response.status !== 200) {
-                console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
-                return { errorMessage: response.status + " " + response.statusText }
+            if (typeof formData !== 'undefined') {
+                const response = await fetch(`${url}`, {
+                    method: "POST",
+                    // TODO: GET, send method as an argument? new func for get instead?
+                    body: formData,
+                });
+                return response;
+            } else {
+                const response = await fetch(`${url}`, {
+                    method: "GET"
+                });
+                return response;
             }
 
-            return await response.json() as { record: string, attachments?: string[] };
+            // if (response.status !== 200) {
+            //     console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
+            //     return { errorMessage: response.status + " " + response.statusText }
+            // }
+
+            // return await response.json() as { record: string, attachments?: string[] };
             // return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+            // return response;
         } catch (e) {
             console.log("Fetch attempt failed: " + e);
         }
     }
-    return { errorMessage: "Could not connect to the server, check your internet connection and try again" };
+    // return { errorMessage: "Could not connect to the server, check your internet connection and try again" };
 }
