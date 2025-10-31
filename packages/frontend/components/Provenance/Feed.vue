@@ -83,8 +83,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 
     <!-- TODO: MASTER LIST -->
-     <!-- Test w/ different image sizes/orientations -->
-     <!-- Remove as much styling as possible -->
+     <!-- Make sure preview can't be larger than screen/cut off (max-height..?) -- DONE -->
+     <!-- Make large images smaller so they don't take up too much of the screen? -- DONE -->
+     <!-- Remove any unnecessary styling -->
+     <!-- Test again w/ different image sizes!! -->
 
     <div class="modal-backdrop fade show" v-if="showModal"></div>
     <!-- NOTE: do NOT remove tabindex (it's for accessibility and shouldn't mess with design) -->
@@ -94,7 +96,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img v-bind:src="modalImage" alt="Image" class="">
+                <img v-bind:src="modalImage" alt="Image" class="modal-image">
             </div>
         </div>
     </div>
@@ -270,10 +272,11 @@ export default {
     min-height: 300px;
 }
 
-/* TODO: remove? */
+/* TODO: remove unneeded styles (KEEP MAX HEIGHT! test on larger images when modifying) */
 .modal-image {
     display: block;
     height: auto;
+    max-height: 600px;
     margin: auto;
     max-width: 100%;
 }
