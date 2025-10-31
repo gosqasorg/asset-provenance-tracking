@@ -46,9 +46,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <!-- TODO: Implement old branch's code, see what works (might just need to adjust styling)-->
-                <!-- <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
-                    data-bs-target="#imageModal" @click="modalImage = attachment.url"> -->
                 <img :src="attachment.url" 
                 :alt="attachment.fileName" 
                 class="thumbnail"
@@ -64,33 +61,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     </div>
 
-    <!-- Image Preview Modal -->
-    <!-- - dialog: creates a pop-up that prevents the user from interacting with stuff behind
-    - centered: vertically centers the box
-    - modal-xl: size -->
-
-
-        <!-- <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <img v-bind:src="modalImage" alt="Image" class="modal-image">
-                </div>
-            </div>
-        </div> -->
-
-                
-    <!-- TODO: MASTER LIST -->
-     <!-- Make sure preview can't be larger than screen/cut off (max-height..?) -- DONE -->
-     <!-- Make large images smaller so they don't take up too much of the screen? -- DONE -->
-     <!-- Remove any unnecessary styling -->
-     <!-- Test again w/ different image sizes!! -->
-
-    <div class="modal-backdrop fade show" v-if="showModal"></div>
-    <!-- NOTE: do NOT remove tabindex (it's for accessibility and shouldn't mess with design) -->
-    <div class="modal modal-dialog-centered" style="width: 60%; left: 20%" tabindex="-1" v-if="showModal">
+    <div class="modal-backdrop fade show" v-if="showModal" aria-hidden="true"></div>
+    <div class="modal modal-dialog-centered" style="width: 60%; left: 20%" aria-hidden="true" tabindex="-1" v-if="showModal">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
@@ -261,7 +233,6 @@ export default {
 
 .modal-content {
     background-color: rgba(0, 0, 0, 0.9);
-    border: none;
 }
 
 .modal-body {
@@ -272,12 +243,8 @@ export default {
     min-height: 300px;
 }
 
-/* TODO: remove unneeded styles (KEEP MAX HEIGHT! test on larger images when modifying) */
 .modal-image {
-    display: block;
-    height: auto;
     max-height: 600px;
-    margin: auto;
     max-width: 100%;
 }
 
