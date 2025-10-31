@@ -65,36 +65,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
 
     <!-- Image Preview Modal -->
-    <!-- <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <!-- - dialog: creates a pop-up that prevents the user from interacting with stuff behind
+    - centered: vertically centers the box
+    - modal-xl: size -->
 
 
-        - dialog: creates a pop-up that prevents the user from interacting with stuff behind
-        - centered: vertically centers the box
-        - modal-xl: size
-
-
-        <div class="modal-dialog modal-dialog-centered modal-xl">
+        <!-- <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <img v-bind:src="modalImage" alt="Image" class="modal-image">
-                </div> -->
+                </div>
+            </div>
+        </div> -->
 
                 
     <!-- TODO: MASTER LIST -->
+     <!-- Test w/ different image sizes/orientations -->
      <!-- Remove as much styling as possible -->
-     <!-- Try to recreate the exact styling from before -->
-     <!-- Add styling to replicate old layout (kdibba did some, but try and narrow it down) -->
+
     <div class="modal-backdrop fade show" v-if="showModal"></div>
-    <div class="modal-dialog modal show modal-dialog-centered" style="position: fixed; width: 100%;" id="imageModal" tabindex="-1" aria-hidden="true" v-if="showModal">
+    <!-- NOTE: do NOT remove tabindex (it's for accessibility and shouldn't mess with design) -->
+    <div class="modal modal-dialog-centered" style="width: 60%; left: 20%" tabindex="-1" v-if="showModal">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <img v-bind:src="modalImage" alt="Image" class="modal-image">
+                <img v-bind:src="modalImage" alt="Image" class="">
             </div>
         </div>
     </div>
@@ -248,7 +248,7 @@ export default {
 
 .btn-close {
     background-color: white;
-    opacity: 0.8;
+    opacity: 0.5;
     border-radius: 50%;
     padding: 0.5rem;
 }
@@ -270,6 +270,7 @@ export default {
     min-height: 300px;
 }
 
+/* TODO: remove? */
 .modal-image {
     display: block;
     height: auto;
