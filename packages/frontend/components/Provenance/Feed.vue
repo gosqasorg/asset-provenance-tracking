@@ -46,8 +46,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
-                    data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                <!-- TODO: Implement old branch's code, see what works (might just need to adjust styling)-->
+                <!-- <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
+                    data-bs-target="#imageModal" @click="modalImage = attachment.url"> -->
+                <img :src="attachment.url" 
+                :alt="attachment.fileName" 
+                class="thumbnail"
+                @click="onThumbClick(attachment)">
+
+
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">
                     Download File
                 </a>
@@ -58,7 +65,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
 
     <!-- Image Preview Modal -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <!-- <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+
+
+        - dialog: creates a pop-up that prevents the user from interacting with stuff behind
+        - centered: vertically centers the box
+        - modal-xl: size
+
+
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
@@ -66,7 +80,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
                 <div class="modal-body">
                     <img v-bind:src="modalImage" alt="Image" class="modal-image">
-                </div>
+                </div> -->
+
+                
+    <!-- TODO: MASTER LIST -->
+     <!-- Remove as much styling as possible -->
+     <!-- Try to recreate the exact styling from before -->
+     <!-- Add styling to replicate old layout (kdibba did some, but try and narrow it down) -->
+    <div class="modal-backdrop fade show" v-if="showModal"></div>
+    <div class="modal-dialog modal show modal-dialog-centered" style="position: fixed; width: 100%;" id="imageModal" tabindex="-1" aria-hidden="true" v-if="showModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img v-bind:src="modalImage" alt="Image" class="modal-image">
             </div>
         </div>
     </div>
@@ -99,7 +127,8 @@ export default {
         return {
             attachmentURLs: {},
             modalImage: "",
-            recalledRecord: false
+            recalledRecord: false,
+            showModal: false
         };
     },
     mounted() {
@@ -135,6 +164,10 @@ export default {
             
             this.recalledRecord = false;
             this.recalledRecord = (this.disabled ? true : false);
+        },
+        onThumbClick(attachment) {
+            this.modalImage = attachment.url;
+            this.showModal = true;
         }
     },
 };
