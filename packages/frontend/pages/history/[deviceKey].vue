@@ -34,176 +34,179 @@ const recordHasParent = hasParent(provenance);
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <div v-if="!isLoading" id="history-page">
-    <div v-if="recordKeyFound">
-      <div class="deviceKey-history">
-        <div class="row pt-3 pb-6 mx-4">
-          <div class="col-md-2 d-none d-md-block">
-            <!-- Scrollspy -->
-            <!-- When the screen size is md (>= 768px) and up  -->
-            <nav id="jump-to" class="sticky-top text-slate">
-              <p class="menu-spacing jump-sec">Jump to section</p>
-              <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
-                <li id="item" class="py-2 scroll" v-for="header in headers" :key="header"
-                  :class="{ active: header.id === currentSection }">
-                  <a :href="'#' + header.id" class="py-2 h" id="item-link">{{ header.name }}</a>
-                </li>
-              </ul>
-            </nav>
-          </div>
-
-          <!-- When the screen size is less than md (< 768px ) -->
-          <div class="dropdown d-md-none nav-line">
-            <button class="btn text-left rounded-0 jump-sec" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
-              aria-controls="toggle" aria-expanded="false"
-              style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
-              <i id="toggle-right" class="fa fa-angle-right"></i>
-              <i id="toggle-down" class="fa fa-angle-down"></i>
-              Jump to section
-            </button>
-
-            <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;"
-              aria-labelledby="dropdownMenuButton">
-              <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
-                <a :href="'#' + header.id" class="py-2 h-mobile" id="item-link">{{ header.name }}</a>
+  <div v-if="pageRefresh">
+    <p class="text-center pb-5 pt-5">Loading record(s)...</p>
+  </div>
+  <div v-else-if="isLoading">
+    <p class="text-center pb-5 pt-5">Creating record(s)...</p>
+  </div>
+  <div v-else-if="recordKeyFound">
+    <div class="deviceKey-history">
+      <div class="row pt-3 pb-6 mx-4">
+        <div class="col-md-2 d-none d-md-block">
+          <!-- Scrollspy -->
+          <!-- When the screen size is md (>= 768px) and up  -->
+          <nav id="jump-to" class="sticky-top text-slate">
+            <p class="menu-spacing jump-sec">Jump to section</p>
+            <ul id="nav" class="nav flex-column nav-pills menu-sidebar ps-2 ">
+              <li id="item" class="py-2 scroll" v-for="header in headers" :key="header"
+                :class="{ active: header.id === currentSection }">
+                <a :href="'#' + header.id" class="py-2 h" id="item-link">{{ header.name }}</a>
               </li>
             </ul>
-          </div>
-
-          <!-- Scrollspy -->
-
-          <div class="col-md-10">
-            <!-- Spied element -->
-            <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
-              class="left-col">
-
-              <section id="device-details" class="details-container">
-                <div class="record-description">
-                  <div class="my-4 text-iris fs-1">
-                    <p class="text-bold mb-0 device-name">Asset History Records</p>
-                    <h1 class="mt-1 mb-1">
-                      {{ deviceRecord?.deviceName }}
-                    </h1>
-                  </div>
-
-                  <div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
-                  <div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-                  <div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-                  <div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
-                  <div class="rec" v-else>Record Key: {{ _recordKey }}</div>
-
-                  <div class="mb-3 rec">
-                    <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
-                  </div>
-
-                  <section ref="section" id="priority-notices">
-                    <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
-                  </section>
-                </div>
-
-                <div class="qr-code-wrapper">
-                  <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
-                </div>
-              </section>
-
-              <div class="buttons-container">
-                <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
-
-                <ProvenanceShareDropdown 
-                  :deviceName="deviceRecord.deviceName" 
-                  :description="deviceRecord.description"
-                  :fontSize="20"
-                  :height="66"
-                  :width="48">
-                </ProvenanceShareDropdown>
-              </div>
-              <section id="recalled">
-                <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
-              </section>
-              <section id="recent">
-                <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
-              </section>
-              <section id="device-creation">
-                <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-              </section>
-              <!-- NOTE: CreateRecord tries to create a record and refreshes the feed (bad, because normal refreshes also give create load) -->
-               <!-- TODO: gdt.vue will ONLY trigger loading when Create does, NOT ON REFRESHES! TRY THIS!! -->
-              <section id="create-record">
-                <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-              </section>
-
-              <section id="child-keys">
-                <a class="btn mb-4 user-manual btn-secondary" id="user-manual-btn" href="../user_manual.pdf"
-                style="
-                    width: 100%;
-                    font-size: 20px;
-                    border-radius: 10px;
-                    text-decoration: none;
-                    white-space: nowrap;
-                    display: inline-block;
-                "
-                >
-                User Manual
-                </a>
-
-                <div v-if="hasReportingKey"> Reporting Key:
-                  <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
-                </div>
-                <div v-if="(childKeys?.length > 0) || hasReportingKey">
-                  <div> Child Keys:
-                    <div>
-                      <KeyList v-bind:keys="childKeys" />
-                    </div>
-                  </div>
-                  <CsvFile :recordKey="_recordKey"></CsvFile>
-                </div>
-                
-                <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-              </section>
-
-            </div>
-          </div>
-          <!-- TODO: Uncomment when  functionality is ready:
-               <div>
-                 <ProvenanceNotificationSignUpModal/>
-               </div>   -->
-
+          </nav>
         </div>
-      </div>
-    </div>
-    <div v-else-if="!pageRefresh">
-      <p class="text-center pb-5 pt-5">Loading record(s)...</p>
-    </div>
-    <div v-else class="error-container">
-      <h1 class="error-title">Invalid history key</h1>
-      <h2 class="error-subtitle">No record attached to this key</h2>
-      <p class="error-description">
-        We’re sorry, the record you’re looking for could not be found.
-        Please double-check your key. If you keep receiving this error,
-        email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-      </p>
-      <div class="error-buttons">
-        <!-- Go home button -->
-        <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-        <!-- Email us button -->
-        <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+
+        <!-- When the screen size is less than md (< 768px ) -->
+        <div class="dropdown d-md-none nav-line">
+          <button class="btn text-left rounded-0 jump-sec" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
+            aria-controls="toggle" aria-expanded="false"
+            style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
+            <i id="toggle-right" class="fa fa-angle-right"></i>
+            <i id="toggle-down" class="fa fa-angle-down"></i>
+            Jump to section
+          </button>
+
+          <ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;"
+            aria-labelledby="dropdownMenuButton">
+            <li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
+              <a :href="'#' + header.id" class="py-2 h-mobile" id="item-link">{{ header.name }}</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Scrollspy -->
+
+        <div class="col-md-10">
+          <!-- Spied element -->
+          <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
+            class="left-col">
+
+            <section id="device-details" class="details-container">
+              <div class="record-description">
+                <div class="my-4 text-iris fs-1">
+                  <p class="text-bold mb-0 device-name">Asset History Records</p>
+                  <h1 class="mt-1 mb-1">
+                    {{ deviceRecord?.deviceName }}
+                  </h1>
+                </div>
+
+                <div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                <div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                <div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                <div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                <div class="rec" v-else>Record Key: {{ _recordKey }}</div>
+
+                <div class="mb-3 rec">
+                  <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
+                </div>
+
+                <section ref="section" id="priority-notices">
+                  <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
+                </section>
+              </div>
+
+              <div class="qr-code-wrapper">
+                <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
+              </div>
+            </section>
+
+            <div class="buttons-container">
+              <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
+
+              <ProvenanceShareDropdown 
+                :deviceName="deviceRecord.deviceName" 
+                :description="deviceRecord.description"
+                :fontSize="20"
+                :height="66"
+                :width="48">
+              </ProvenanceShareDropdown>
+            </div>
+            <section id="recalled">
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+            </section>
+            <section id="recent">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
+            </section>
+            <section id="device-creation">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+            </section>
+            <!-- NOTE: CreateRecord tries to create a record and refreshes the feed (bad, because normal refreshes also give create load) -->
+              <!-- TODO: gdt.vue will ONLY trigger loading when Create does, NOT ON REFRESHES! TRY THIS!! -->
+            <section id="create-record">
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+            </section>
+
+            <section id="child-keys">
+              <a class="btn mb-4 user-manual btn-secondary" id="user-manual-btn" href="../user_manual.pdf"
+              style="
+                  width: 100%;
+                  font-size: 20px;
+                  border-radius: 10px;
+                  text-decoration: none;
+                  white-space: nowrap;
+                  display: inline-block;
+              "
+              >
+              User Manual
+              </a>
+
+              <div v-if="hasReportingKey"> Reporting Key:
+                <div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+              </div>
+              <div v-if="(childKeys?.length > 0) || hasReportingKey">
+                <div> Child Keys:
+                  <div>
+                    <KeyList v-bind:keys="childKeys" />
+                  </div>
+                </div>
+                <CsvFile :recordKey="_recordKey"></CsvFile>
+              </div>
+              
+              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+            </section>
+
+          </div>
+        </div>
+        <!-- TODO: Uncomment when  functionality is ready:
+              <div>
+                <ProvenanceNotificationSignUpModal/>
+              </div>   -->
+
       </div>
     </div>
   </div>
+  <div v-else>
+    <h1 class="error-title">Invalid history key</h1>
+    <h2 class="error-subtitle">No record attached to this key</h2>
+    <p class="error-description">
+      We’re sorry, the record you’re looking for could not be found.
+      Please double-check your key. If you keep receiving this error,
+      email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+    </p>
+    <div class="error-buttons">
+      <!-- Go home button -->
+      <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+      <!-- Email us button -->
+      <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+    </div>
+  </div>
+
+  
 
   <!-- TODO: Master List -->
     <!-- TODO: Loading page only flickers AFTER the record has successfully posted, fix this! -- DONE -->
     <!-- TODO: Test all loading screens for flickering/whether or not they're up while the record is being created -- DONE -->
     <!-- TODO: When refreshing the page the Error page shows up, prevent this! -- DONE -->
+      <!-- Rearrange so that all v-statements are in one block, test w/ regular refresh + errors -->
     <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -->
+     
     <!-- TODO: Clean up v-if/v-else layout for this page -->
     <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? -->
     <!-- TODO: Mention problem with people missing error pop up for create record/group that Jara mentioned in the original -->
 
   <!-- TODO: can we modify the text based on what is loading? Maybe make a "create record" else-if statement? -->
-  <div v-else id="loading-screen">
-      <p class="text-center pb-5 pt-5">Creating record(s)...</p>
-  </div>
+
 </template>
 
 <script lang="ts">
@@ -238,7 +241,7 @@ export default {
   data() {
     return {
       isLoading: false,
-      pageRefresh: false,
+      pageRefresh: true,
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
@@ -256,8 +259,11 @@ export default {
       this.addScrollListener();
 
       EventBus.on('feedRefresh', this.refreshFeed);
-      EventBus.on('isLoading', () => {
-          this.isLoading = true;
+      // TODO: Modify so that eventbus can accept true/false statements!
+      // Works anyways... but it goes to record page instead of invalid page (which I THINK is the correct choice here)
+      EventBus.on('isLoading', (loading: boolean) => {
+        this.isLoading = loading;
+        // this.isLoading = true;
       })
 
       await this.refreshFeed();
@@ -297,16 +303,7 @@ export default {
     async refreshFeed() {
       console.log("Refreshing feed...");
       this.pageRefresh = true;
-      // TODO: remove loading on page refresh..? (says creating records which is confusing since it is loading them)
-      // TODO: TRY/CATCH, if caught show invalid (removing above causes Invalid to pop up)
-      // this.isLoading = true;
-
-      // TODO: OR, try leaving these as TRUE to start and setting them to false if otherwise proven!!!
-      // recordKeyFound is the one that determines if the error window pops up!
-      // NEED to have reportingKey BEFORE rendering anything!!
-      // this.recordKeyFound = true;
-      // this.hasReportingKey = true;
-
+      
       const provenance = await getProvenance(this._recordKey);
 
       if (!provenance || provenance.length === 0) {
