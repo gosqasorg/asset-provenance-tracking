@@ -171,6 +171,9 @@ const recordHasParent = hasParent(provenance);
         </div>
       </div>
     </div>
+    <div v-else-if="!pageRefresh">
+      <p class="text-center pb-5 pt-5">Loading record(s)...</p>
+    </div>
     <div v-else class="error-container">
       <h1 class="error-title">Invalid history key</h1>
       <h2 class="error-subtitle">No record attached to this key</h2>
@@ -189,11 +192,15 @@ const recordHasParent = hasParent(provenance);
   </div>
 
   <!-- TODO: Master List -->
-    <!-- TODO: Loading page only flickers AFTER the record has successfully posted, fix this! -->
-    <!-- TODO: Test all loading screens for flickering/whether or not they're up while the record is being created -->
+    <!-- TODO: Loading page only flickers AFTER the record has successfully posted, fix this! -- DONE -->
+    <!-- TODO: Test all loading screens for flickering/whether or not they're up while the record is being created -- DONE -->
+    <!-- TODO: When refreshing the page the Error page shows up, prevent this! -- DONE -->
     <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -->
+    <!-- TODO: Clean up v-if/v-else layout for this page -->
     <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? -->
     <!-- TODO: Mention problem with people missing error pop up for create record/group that Jara mentioned in the original -->
+
+  <!-- TODO: can we modify the text based on what is loading? Maybe make a "create record" else-if statement? -->
   <div v-else id="loading-screen">
       <p class="text-center pb-5 pt-5">Creating record(s)...</p>
   </div>
@@ -231,6 +238,7 @@ export default {
   data() {
     return {
       isLoading: false,
+      pageRefresh: false,
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
@@ -254,7 +262,7 @@ export default {
 
       await this.refreshFeed();
     } catch (error) {
-      // this.isLoading = false;
+      this.isLoading = false;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
       console.log(error)
@@ -288,11 +296,16 @@ export default {
     },
     async refreshFeed() {
       console.log("Refreshing feed...");
+      this.pageRefresh = true;
       // TODO: remove loading on page refresh..? (says creating records which is confusing since it is loading them)
       // TODO: TRY/CATCH, if caught show invalid (removing above causes Invalid to pop up)
       // this.isLoading = true;
-      this.recordKeyFound = false;
-      this.hasReportingKey = false;
+
+      // TODO: OR, try leaving these as TRUE to start and setting them to false if otherwise proven!!!
+      // recordKeyFound is the one that determines if the error window pops up!
+      // NEED to have reportingKey BEFORE rendering anything!!
+      // this.recordKeyFound = true;
+      // this.hasReportingKey = true;
 
       const provenance = await getProvenance(this._recordKey);
 
@@ -301,6 +314,7 @@ export default {
           type: 'error',
           text: 'No provenance record found'
         });
+        // this.recordKeyFound = false;
         // this.isLoading = false;
         return;
       }
@@ -348,6 +362,7 @@ export default {
       }
 
       this.isLoading = false;
+      this.pageRefresh = false;
     },
   }
 };
