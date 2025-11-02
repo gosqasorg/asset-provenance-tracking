@@ -126,6 +126,8 @@ const recordHasParent = hasParent(provenance);
               <section id="device-creation">
                 <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
               </section>
+              <!-- NOTE: CreateRecord tries to create a record and refreshes the feed (bad, because normal refreshes also give create load) -->
+               <!-- TODO: gdt.vue will ONLY trigger loading when Create does, NOT ON REFRESHES! TRY THIS!! -->
               <section id="create-record">
                 <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
               </section>
@@ -185,6 +187,13 @@ const recordHasParent = hasParent(provenance);
       </div>
     </div>
   </div>
+
+  <!-- TODO: Master List -->
+    <!-- TODO: Loading page only flickers AFTER the record has successfully posted, fix this! -->
+    <!-- TODO: Test all loading screens for flickering/whether or not they're up while the record is being created -->
+    <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -->
+    <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? -->
+    <!-- TODO: Mention problem with people missing error pop up for create record/group that Jara mentioned in the original -->
   <div v-else id="loading-screen">
       <p class="text-center pb-5 pt-5">Creating record(s)...</p>
   </div>
@@ -221,7 +230,7 @@ export default {
   },
   data() {
     return {
-      isLoading: true,
+      isLoading: false,
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
@@ -239,16 +248,20 @@ export default {
       this.addScrollListener();
 
       EventBus.on('feedRefresh', this.refreshFeed);
+      EventBus.on('isLoading', () => {
+          this.isLoading = true;
+      })
 
       await this.refreshFeed();
     } catch (error) {
-      this.isLoading = false;
+      // this.isLoading = false;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
       console.log(error)
     }
   },
   beforeDestroy() {
+    // TODO: also turn off loading eventBus?
     EventBus.off('feedRefresh', this.refreshFeed);
   },
   methods: {
@@ -275,7 +288,9 @@ export default {
     },
     async refreshFeed() {
       console.log("Refreshing feed...");
-      this.isLoading = true;
+      // TODO: remove loading on page refresh..? (says creating records which is confusing since it is loading them)
+      // TODO: TRY/CATCH, if caught show invalid (removing above causes Invalid to pop up)
+      // this.isLoading = true;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
 
@@ -286,7 +301,7 @@ export default {
           type: 'error',
           text: 'No provenance record found'
         });
-        this.isLoading = false;
+        // this.isLoading = false;
         return;
       }
 
@@ -306,8 +321,6 @@ export default {
           recordsInFeed.push(record);
         }
       });
-
-      this.isLoading = false;
 
       // This functionality could be pushed into a component...
       this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
@@ -333,6 +346,8 @@ export default {
         ];
         headers.push({ id: "child-keys", name: "Child keys" });
       }
+
+      this.isLoading = false;
     },
   }
 };

@@ -208,6 +208,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            // Emit an event to notify the history/[deviceKey].vue page to display loading screen
+            EventBus.emit('isLoading');
+
             // Get a refreshed copy of the records
             const records = await getProvenance(this.recordKey);
 
@@ -313,7 +316,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 // Refresh CreateRecord component
                 this.refresh();
 
-                // Emit an event to notify the Feed.vue component
+                // Emit an event to notify history/[deviceKey].vue to refresh
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
