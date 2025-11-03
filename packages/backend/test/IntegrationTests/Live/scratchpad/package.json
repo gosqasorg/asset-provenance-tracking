@@ -1,0 +1,17 @@
+{
+  "name": "scratchpad",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bluestone-read-record.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@urlpack/base58": "^2.0.1",
+    "tsx": "^4.20.6"
+  }
+}
