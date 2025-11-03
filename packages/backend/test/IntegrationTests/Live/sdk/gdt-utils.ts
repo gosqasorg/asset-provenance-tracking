@@ -16,10 +16,11 @@ export async function createSimpleRecord(theName: string, theDescription: string
     const deviceKey = await getNewDeviceKey()
     let fullUrl = `${baseUrl}${deviceKey}`
 
-    // POST record key
+    // Attepmt to post a new record
     try {
 
         // Can we leave these out and still read it in the frontend?
+        // Yes!
         const data = {
             //blobType: 'deviceInitializer',
             deviceName: theName,
@@ -43,15 +44,12 @@ export async function createSimpleRecord(theName: string, theDescription: string
             console.error(postResponse)
             throw new Error(`Error: Record creation attempt failed with status ${postResponse.status}`)
         }
-
-
     } catch (error) {
         console.error("(Create POST Test) Error creating a record: " + error); 
         throw error;
     }
 
-
-        /*
+    // read record should be its own function. 
     // GET record key to make sure it exists
     let getResponse; 
     try {
