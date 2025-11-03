@@ -86,7 +86,7 @@ export async function updateRecordTags(theRecordKey: string, theTags: string[], 
         }
 
         response = await response.json();
-        console.log('\n\noriginal response' + response)
+        //console.log('\n\noriginal response' + response)
 
     } catch(error) {
         console.error(error.message);
@@ -94,14 +94,12 @@ export async function updateRecordTags(theRecordKey: string, theTags: string[], 
 
     // Double check
     const theRecord = await readRecord(theRecordKey)
-    console.log('\n\nstringified doublecheck: ' + JSON.stringify(theRecord) )
-    console.dir(theRecord, {depth: null})
 
-    /*
-    if(! theRecord.deviceName == theName) {
-        throw new Error(`Error: Record creation attempt failed verification step with args ${theName}, ${theDescription}`)
+    if(! theRecord[theRecord.length - 1].tags == theTags) {
+        throw new Error(`Error: Record update attempt failed verification step with key ${theRecordKey} and data ${theName}, ${theDescription}`)
     }
-    */
+
+    return theRecord;
 }
 
 /*
