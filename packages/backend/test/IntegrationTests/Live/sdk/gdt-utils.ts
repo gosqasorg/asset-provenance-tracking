@@ -3,7 +3,7 @@
 const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 
 export async function getNewDeviceKey() {
-    //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+    const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
     const deviceKeyResponse = await fetch(`${baseUrl}/getNewDeviceKey`);
     const deviceKey = await deviceKeyResponse.text();
