@@ -12,24 +12,26 @@ export async function getNewDeviceKey() {
     return deviceKey;
 }
 
+async function readRecord(recordId) {
+    try { 
+        var response = await fetch(`https://gdtprodbackend.azurewebsites.net/api/provenance/${recordId}`)
+        return await response.json();
+    } catch(error) {
+        console.error(`Error: Record read attempt failed with status: {response.status}`)
+    }
+}
+
 export async function createSimpleRecord(theName: string, theDescription: string): string {
     const deviceKey = await getNewDeviceKey()
     let fullUrl = `${baseUrl}${deviceKey}`
 
     // Attepmt to post a new record
     try {
-
-        // Can we leave these out and still read it in the frontend?
-        // Yes!
         const data = {
-            //blobType: 'deviceInitializer',
             deviceName: theName,
             description: theDescription,
-            //tags: {},
-            //children_key: '',
-            //hasParent: false,
-            //isReportingKey: false,
         }
+
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(data));
 
@@ -49,26 +51,12 @@ export async function createSimpleRecord(theName: string, theDescription: string
         throw error;
     }
 
-    // read record should be its own function. 
-    // GET record key to make sure it exists
-    let getResponse; 
-    try {
-        getResponse = await fetch(fullUrl);
-        getResponse = await getResponse.json();
-        let responseString = JSON.parse(JSON.stringify(getResponse[0]));
-        console.log(responseString)
-
-        expect(JSON.stringify(getResponse)).not.toBe('[]');
-        expect(responseString.record.deviceName).toBe('Create Record Test');
-        expect(responseString.record.description).toBe('An API smoketest for creating the most basic record');
-        expect(responseString.record.children_key).toBe("");
-        expect(responseString.record.hasParent).toBe(false);
-        expect(responseString.record.isReportingKey).toBe(false);
-    } catch(error) {
-        console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
-        throw error;
+    // Double check: attributes seem ok?
+    const theRecord = await readRecord(deviceKey)
+    if(! theRecord.deviceName == theName) {
+        throw new Error(`Error: Record creation attempt failed verification step with args ${theName}, ${theDescription}`)
     }
-        */
 
     return deviceKey;
 }
+
