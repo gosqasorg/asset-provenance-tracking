@@ -15,7 +15,13 @@ export async function getNewDeviceKey() {
 async function readRecord(recordId) {
     try { 
         var response = await fetch(`https://gdtprodbackend.azurewebsites.net/api/provenance/${recordId}`)
+
+        if(! response.ok) {
+            throw new Error(`Error: Record read attempt failed with status ${response.status}`)
+        }
+
         return await response.json();
+
     } catch(error) {
         console.error(`Error: Record read attempt failed with status: {response.status}`)
     }
@@ -35,16 +41,16 @@ export async function createSimpleRecord(theName: string, theDescription: string
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(data));
 
-        const postResponse = await fetch(fullUrl, {
+        const response = await fetch(fullUrl, {
             method: "POST",
             body: formData,
         });
 
-        if(! postResponse.ok) {
+        if(! response.ok) {
             console.error('URL: ' + fullUrl)
             console.error('Key: ' + deviceKey)
-            console.error(postResponse)
-            throw new Error(`Error: Record creation attempt failed with status ${postResponse.status}`)
+            console.error(response)
+            throw new Error(`Error: Record creation attempt failed with status ${response.status}`)
         }
     } catch (error) {
         console.error("(Create POST Test) Error creating a record: " + error); 
@@ -59,4 +65,68 @@ export async function createSimpleRecord(theName: string, theDescription: string
 
     return deviceKey;
 }
+
+export async function updateRecordTags(theRecordKey: string, theTags: string[], theDescription: string): string {
+    const updateFormData = new FormData();
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: theDescription,
+      tags: theTags,
+    };
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+
+    try { 
+        var response = await fetch(`${baseUrl}${theRecordKey}`, {
+            method: "POST",
+            body: updateFormData
+        })
+
+        if(! response.ok) {
+            throw new Error(`Error: Record update attempt failed with status ${response.status}`)
+        }
+
+        response = await response.json();
+        console.log('\n\noriginal response' + response)
+
+    } catch(error) {
+        console.error(error.message);
+    }
+
+    // Double check
+    const theRecord = await readRecord(theRecordKey)
+    console.log('\n\nstringified doublecheck: ' + JSON.stringify(theRecord) )
+    console.dir(theRecord, {depth: null})
+
+    /*
+    if(! theRecord.deviceName == theName) {
+        throw new Error(`Error: Record creation attempt failed verification step with args ${theName}, ${theDescription}`)
+    }
+    */
+}
+
+/*
+
+    
+    const buffer = await readFile('./test/attachments/c200.jpg');
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
+    updateFormData.append('updated-image.jpg', blob);
+    
+    const updateResponse = await fetch(fullUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+    
+    expect(updateResponse.ok).toBe(true);
+
+    // check if it works
+    const getResponse = await fetch(fullUrl);
+    const data = await getResponse.json();
+    const record = JSON.parse(JSON.stringify(data[0]));
+    
+    expect(record.record.description).toBe("Updated with attachment");
+    expect(record.record.tags.length).toBe(1);
+    expect(record.attachments.length).toBeGreaterThan(0); 
+
+*/
+
 
