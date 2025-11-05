@@ -12,7 +12,7 @@ on:
       - main
 
 jobs:
-  frontend-ui-deploy:
+  frontend-ui-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
