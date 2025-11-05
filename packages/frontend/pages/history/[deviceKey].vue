@@ -198,11 +198,10 @@ const recordHasParent = hasParent(provenance);
     <!-- TODO: Loading page only flickers AFTER the record has successfully posted, fix this! -- DONE -->
     <!-- TODO: Test all loading screens for flickering/whether or not they're up while the record is being created -- DONE -->
     <!-- TODO: When refreshing the page the Error page shows up, prevent this! -- DONE -->
-      <!-- Rearrange so that all v-statements are in one block, test w/ regular refresh + errors -->
-    <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -->
+      <!-- Rearrange so that all v-statements are in one block, test w/ regular refresh + errors -- DONE -->
+    <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -- DONE -->
      
-    <!-- TODO: Clean up v-if/v-else layout for this page -->
-    <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? -->
+    <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? (see regular create page!) -->
     <!-- TODO: Mention problem with people missing error pop up for create record/group that Jara mentioned in the original -->
 
   <!-- TODO: can we modify the text based on what is loading? Maybe make a "create record" else-if statement? -->
@@ -259,11 +258,12 @@ export default {
       this.addScrollListener();
 
       EventBus.on('feedRefresh', this.refreshFeed);
-      // TODO: Modify so that eventbus can accept true/false statements!
-      // Works anyways... but it goes to record page instead of invalid page (which I THINK is the correct choice here)
-      EventBus.on('isLoading', (loading: boolean) => {
-        this.isLoading = loading;
-        // this.isLoading = true;
+      EventBus.on('isLoading', () => {
+          if (!this.isLoading) {
+            this.isLoading = true;
+            return;
+          }
+          this.isLoading = false;
       })
 
       await this.refreshFeed();
