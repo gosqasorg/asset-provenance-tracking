@@ -201,7 +201,8 @@ const recordHasParent = hasParent(provenance);
       <!-- Rearrange so that all v-statements are in one block, test w/ regular refresh + errors -- DONE -->
     <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -- DONE -->
      
-    <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? (see regular create page!) -->
+    <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? (see regular create page!) -- DONE -->
+    <!-- TODO: Modify variables names to be clearer (isLoading and pageRefresh) -->
     <!-- TODO: Mention problem with people missing error pop up for create record/group that Jara mentioned in the original -->
 
   <!-- TODO: can we modify the text based on what is loading? Maybe make a "create record" else-if statement? -->
@@ -356,6 +357,13 @@ export default {
           { id: "create-record", name: "Create new record entry" }
         ];
         headers.push({ id: "child-keys", name: "Child keys" });
+      }
+
+      if (this.isLoading) {
+        this.$snackbar.add({
+          type: 'success',
+          text: 'Successfully created the record'
+        })
       }
 
       this.isLoading = false;
