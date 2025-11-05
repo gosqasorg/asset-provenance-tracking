@@ -209,14 +209,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
-            EventBus.emit('isLoading');
+            EventBus.emit('isCreating');
 
             // Get a refreshed copy of the records
             let records;
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
-                EventBus.emit('isLoading');
+                EventBus.emit('isCreating');
             }
 
             if (!records || records.length === 0) {

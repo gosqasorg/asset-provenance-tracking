@@ -34,10 +34,10 @@ const recordHasParent = hasParent(provenance);
 <template>
   <!-- This link is for the icon in mobile dropdown menu -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <div v-if="pageRefresh">
+  <div v-if="isLoading">
     <p class="text-center pb-5 pt-5">Loading record(s)...</p>
   </div>
-  <div v-else-if="isLoading">
+  <div v-else-if="isCreating">
     <p class="text-center pb-5 pt-5">Creating record(s)...</p>
   </div>
   <div v-else-if="recordKeyFound">
@@ -131,8 +131,6 @@ const recordHasParent = hasParent(provenance);
             <section id="device-creation">
               <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
             </section>
-            <!-- NOTE: CreateRecord tries to create a record and refreshes the feed (bad, because normal refreshes also give create load) -->
-              <!-- TODO: gdt.vue will ONLY trigger loading when Create does, NOT ON REFRESHES! TRY THIS!! -->
             <section id="create-record">
               <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
             </section>
@@ -191,22 +189,6 @@ const recordHasParent = hasParent(provenance);
       <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
     </div>
   </div>
-
-  
-
-  <!-- TODO: Master List -->
-    <!-- TODO: Loading page only flickers AFTER the record has successfully posted, fix this! -- DONE -->
-    <!-- TODO: Test all loading screens for flickering/whether or not they're up while the record is being created -- DONE -->
-    <!-- TODO: When refreshing the page the Error page shows up, prevent this! -- DONE -->
-      <!-- Rearrange so that all v-statements are in one block, test w/ regular refresh + errors -- DONE -->
-    <!-- TODO: Re-route history page back to feed page (w/ error pop up) if the record fails to create! -- DONE -->
-     
-    <!-- TODO: Pop-up saying that a record has succeeded/failed to be created..? (see regular create page!) -- DONE -->
-    <!-- TODO: Modify variables names to be clearer (isLoading and pageRefresh) -->
-    <!-- TODO: Mention problem with people missing error pop up for create record/group that Jara mentioned in the original -->
-
-  <!-- TODO: can we modify the text based on what is loading? Maybe make a "create record" else-if statement? -->
-
 </template>
 
 <script lang="ts">
@@ -240,8 +222,8 @@ export default {
   },
   data() {
     return {
-      isLoading: false,
-      pageRefresh: true,
+      isCreating: false,
+      isLoading: true,
       recordKeyFound: false,
       hasReportingKey: false,
       childKeys: [] as string[],
@@ -259,25 +241,31 @@ export default {
       this.addScrollListener();
 
       EventBus.on('feedRefresh', this.refreshFeed);
-      EventBus.on('isLoading', () => {
-          if (!this.isLoading) {
-            this.isLoading = true;
-            return;
-          }
-          this.isLoading = false;
-      })
+      EventBus.on('isCreating', () => {
+        if (!this.isCreating) {
+          this.isCreating = true;
+          return;
+        }
+        this.isCreating = false;
+      });
 
       await this.refreshFeed();
     } catch (error) {
-      this.isLoading = false;
+      this.isCreating = false;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
       console.log(error)
     }
   },
   beforeDestroy() {
-    // TODO: also turn off loading eventBus?
     EventBus.off('feedRefresh', this.refreshFeed);
+    EventBus.off('isCreating', () => {
+      if (!this.isCreating) {
+        this.isCreating = true;
+        return;
+      }
+      this.isCreating = false;
+    });
   },
   methods: {
     downloadQRCode() {
@@ -303,7 +291,6 @@ export default {
     },
     async refreshFeed() {
       console.log("Refreshing feed...");
-      this.pageRefresh = true;
       
       const provenance = await getProvenance(this._recordKey);
 
@@ -312,8 +299,6 @@ export default {
           type: 'error',
           text: 'No provenance record found'
         });
-        // this.recordKeyFound = false;
-        // this.isLoading = false;
         return;
       }
 
@@ -359,15 +344,15 @@ export default {
         headers.push({ id: "child-keys", name: "Child keys" });
       }
 
-      if (this.isLoading) {
+      if (this.isCreating) {
         this.$snackbar.add({
           type: 'success',
           text: 'Successfully created the record'
         })
       }
 
+      this.isCreating = false;
       this.isLoading = false;
-      this.pageRefresh = false;
     },
   }
 };
