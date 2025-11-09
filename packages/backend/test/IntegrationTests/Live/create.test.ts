@@ -184,12 +184,36 @@ describe("Group Creation Tests", () => {
 				body: childFormData,
 			});
 		});
+
+		// TODO: modify this code to be more similar to existing code format, make neater/shorter where possible
+		const reportingKey = await makeEncodedDeviceKey();
+
+		const reportingData = new FormData();
+		reportingData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: `reporting_key`,
+			description: `Reporting key for group with full features`,
+			tags: ["feature-complete", "child"],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: true
+		}));
+
+		let response = await fetch(`${baseUrl}/provenance/${reportingKey}`, {
+			method: "POST",
+			body: reportingData,
+		});
+		expect(response.ok).toBe(true);
 		
 		const childResponses = await Promise.all(childCreationPromises);
 		childResponses.forEach(response => {
 			expect(response.ok).toBe(true);
 		});
-		
+
+		// Make a list of all children keys (including the reporting key)
+		let allKeys = childKeys.slice()
+		allKeys.push(reportingKey)
+
 		// Create group record with all features
 		const groupFormData = new FormData();
 		groupFormData.append("provenanceRecord", JSON.stringify({
@@ -197,7 +221,7 @@ describe("Group Creation Tests", () => {
 			deviceName: "group_all_features_creation",
 			description: "Comprehensive group record creation with all features for smoketest",
 			tags: ["feature-complete", "group", "comprehensive", "all-features"],
-			children_key: childKeys,
+			children_key: allKeys,
 			hasParent: false,
 			isReportingKey: false
 		}));
@@ -225,7 +249,7 @@ describe("Group Creation Tests", () => {
 		expect(retrievedGroup.length).toBeGreaterThan(0);
 		expect(retrievedGroup[0].record.blobType).toBe("deviceInitializer");
 		expect(retrievedGroup[0].record.deviceName).toBe("group_all_features_creation");
-		expect(retrievedGroup[0].record.children_key).toEqual(childKeys);
+		expect(retrievedGroup[0].record.children_key).toEqual(allKeys);
 		expect(retrievedGroup[0].record.tags).toContain("feature-complete");
 		expect(retrievedGroup[0].record.tags).toContain("group");
 		expect(retrievedGroup[0].record.tags.length).toBe(4);
@@ -241,6 +265,18 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain(`child-${i + 1}`);
 			expect(child[0].record.tags.length).toBe(3);
 		});
+
+		// TODO: shorten this/merge with above?
+		// Verify the reporting key was created
+		let getResponse = await fetch(`${baseUrl}/provenance/${reportingKey}`);
+		getResponse = await getResponse.json();
+		let reportingResponse = JSON.parse(JSON.stringify(getResponse[0]));
+
+		expect(reportingResponse).toBeDefined();
+		expect(reportingResponse.record.deviceName).toBe(`reporting_key`);
+		expect(reportingResponse.record.description).toBe(`Reporting key for group with full features`);
+		expect(reportingResponse.record.tags.length).toBe(2);
+		expect(reportingResponse.record.isReportingKey).toBe(true);
 	}, 60000);
 	
 });
