@@ -43,17 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <div class="col" style="text-align: left;">
-              <RouterLink to="/how-it-works"><button class="baseButton button" id="learn-more-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 10px 20px;
-                  margin: 25px 15px 0px 0px;
-                  font-size: 20px;
-                  border-radius: 10px;
-                "
-              >
-              How It Works
-              </button></RouterLink>
+              <HowItWorks margin="25px 15px 0 0"/>
 
               <RouterLink to="/dmdm"><button class="baseButton button" id="learn-more-button" style="
                   border-width: 2px;
@@ -99,9 +89,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { EventBus } from '~/utils/event-bus';
-
+import HowItWorks from '~/components/Buttons/HowItWorks.vue';
 
 export default {
+    components: { HowItWorks },
     data() {
         return {
             isLoading: false,

@@ -25,22 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <a class="learn-more-desc" href="mailto:info@gosqas.org">info@gosqas.org</a> 
                     or visiting the links below.</p>
         <div>
-
-            <RouterLink 
-                to="/how-it-works"
-                v-if="$route.path !== '/how-it-works'"
-            >
-                <button class="baseButton button first learn-more" id="learn-more-button" style="
-                    border-width: 2px;
-                    border-style: solid;
-                    padding: 10px 20px;
-                    margin: 20px 20px 0px 0px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                ">
-                    How It Works
-                </button>
-            </RouterLink>
+            <HowItWorks margin="20px 20px 0 0" fontSize="18px"/>
 
             <RouterLink 
                 to="/data-privacy"
@@ -91,9 +76,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
+import HowItWorks from '~/components/Buttons/HowItWorks.vue';
 
 export default {
   name: "learn_more",
+  components: { HowItWorks },
   data() {
     return {
       currentUrl: '/',
