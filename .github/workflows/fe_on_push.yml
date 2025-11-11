@@ -12,13 +12,13 @@ on:
       - main
 
 jobs:
-  frontend-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4.1.7
-      - name: Run frontend UI tests
-        uses: ./.github/actions/frontend-ui-testing
+#  frontend-deploy:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4.1.7
+#      - name: Run frontend UI tests
+#        uses: ./.github/actions/frontend-ui-testing
 
   frontend-deploy:
     runs-on: ubuntu-latest
