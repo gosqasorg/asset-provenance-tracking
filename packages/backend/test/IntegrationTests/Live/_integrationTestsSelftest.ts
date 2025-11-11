@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+// A test of the tests themselves
 describe("Tests-Selftest-Smoketest", () => {
 	it("Can the tests run?", () => {
 		try { 
