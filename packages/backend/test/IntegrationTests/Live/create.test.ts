@@ -301,7 +301,7 @@ describe("Record Creation Tests", () => {
 			console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
 			throw error;
 		}
-	});
+	}, 600000);
 
 	
 	// Most basic + one feature
@@ -366,6 +366,6 @@ describe("Record Creation Tests", () => {
 			console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
 			throw error;
 		}
-	});
+	}, 600000);
 	
 });

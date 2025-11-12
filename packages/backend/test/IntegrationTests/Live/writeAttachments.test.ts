@@ -166,7 +166,7 @@ describe("Creating records with attachments", () => {
             throw error;
         }
 
-    });
+    }, 600000);
 
     it("Create record with PDF attachment", async () => {
         // Create record key
@@ -236,7 +236,7 @@ describe("Creating records with attachments", () => {
             console.error('(Create GET Test - PDF) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
             throw error;
         }
-    });
+    }, 600000);
 
     it("Create record with large attachment", async () => {
         // Create record key
@@ -312,7 +312,7 @@ describe("Creating records with attachments", () => {
             console.error('(Create GET Test - Large File) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
             throw error;
         }
-    });
+    }, 600000);
 
 
 });
