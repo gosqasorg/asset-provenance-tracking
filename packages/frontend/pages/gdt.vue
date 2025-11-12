@@ -43,19 +43,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <div class="col" style="text-align: left;">
-              <HowItWorks margin="25px 15px 0 0"/>
 
-              <RouterLink to="/dmdm"><button class="baseButton button" id="learn-more-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 10px 20px;
-                  margin: 15px 15px 0px 0px;
-                  font-size: 20px;
-                  border-radius: 10px;
-                "
-              >
-              Our Pilot Program
-              </button></RouterLink>
+              <NavButton to="/how-it-works" text="How It Works" margin="25px 15px 0 0" />
+
+              <NavButton to="/dmdm" text="Our Pilot Program" margin="15px 15px 0 0" />
 
               <a class="baseButton button" id="learn-more-button" href="user_manual.pdf"
                 style="
@@ -89,10 +80,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { EventBus } from '~/utils/event-bus';
-import HowItWorks from '~/components/Buttons/HowItWorks.vue';
+import NavButton from '~/components/Buttons/NavButton.vue';
 
 export default {
-    components: { HowItWorks },
+    components: { NavButton },
     data() {
         return {
             isLoading: false,
