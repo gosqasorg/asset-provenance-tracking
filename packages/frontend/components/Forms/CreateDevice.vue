@@ -165,7 +165,7 @@ export default {
             } catch (error) {
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Failed to create the record: ${error}`
+                    text: `Failed to create record: ${error}`
                 });
             } finally {
                 this.isSubmitting = false;
