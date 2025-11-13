@@ -1,5 +1,6 @@
 import bs58 from 'bs58';
 import JSON5 from 'json5';
+import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
@@ -168,6 +169,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     }
 
     const provRecord = { record, attachments: attachmentIDs };
+
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
     return { record: recordID, attachments };
@@ -225,6 +227,7 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
+        if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
@@ -288,6 +291,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
+        if (!validateJSON(json)) { return { status: 404 }; }
         const provRecord = JSON.parse(json) as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
@@ -306,12 +310,14 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
     const attachments = new Array<NamedBlob>();
     for (const attach of formData.values()) {
         if (typeof attach === 'string') continue;
+        console.log("attach type: " + typeof(attach))
         attachments.push({ blob: attach, name: attach.name });
     }
 
@@ -448,6 +454,28 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
             body: "",
             headers: { "Content-Type": "text/plain" }
         }
+    }
+}
+
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isReportingKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
     }
 }
 
