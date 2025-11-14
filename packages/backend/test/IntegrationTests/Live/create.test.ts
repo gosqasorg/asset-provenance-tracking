@@ -263,6 +263,7 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags.length).toBe(3);
 		});
 
+		// TODO: Need to add tests for recall/annotate (once a backend version of those functions is created)
 		// Verify the reporting key is actually a reporting key
 		expect(retrievedChildren[3][0].record.isReportingKey).toBe(true);
 
