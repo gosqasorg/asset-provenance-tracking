@@ -49,19 +49,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div>
-        <RouterLink to="/how-it-works"><button class="baseButton button first about-button" id="about-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 10px 20px;
-                  margin: 20px 20px 0px 0px;
-                  font-size: 18px;
-                  border-radius: 10px;
-                  width: 100%;
-                ">
-                    How It Works
-                </button></RouterLink>
+            <NavButton to="/how-it-works" text="How It Works" fontSize="18px" class="w-100"/>
         
-        <div class="dmdm test" >
+            <div class="dmdm test" >
                   <img src="../assets/images/dmdm-lightmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image lightmode-dmdm">
                  <img src="../assets/images/dmdm-darkmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image darkmode-dmdm">
                 <div class="dmdm-description" style="max-width: 100%;">
@@ -70,18 +60,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
         </div>
                 
+            <NavButton to="/dmdm" text="View our pilot program" fontSize="18px" class="w-100"/>
 
-        <RouterLink to="/dmdm"><button class="baseButton button first about-button" id="about-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 10px 20px;
-                  margin: 20px 20px 0px 0px;
-                  font-size: 18px;
-                  border-radius: 10px;
-                  width: 100%;
-                ">
-                    View our pilot program
-                </button></RouterLink>
         </div>
 
         <div class="row">
@@ -114,10 +94,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import Learn_more from '~/layouts/learn_more.vue';
+import NavButton from '~/components/Buttons/NavButton.vue';
 
 export default {
     components: {
-        ButtonComponent
+        ButtonComponent,
+        NavButton
     }
 };
 </script>

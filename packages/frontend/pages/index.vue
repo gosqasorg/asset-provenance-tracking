@@ -63,17 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px;">
-                <RouterLink to="/about"><button class="baseButton button" id="about-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 18px 22px;
-                  margin: 0px;
-                  font-size: 20px;
-                  border-radius: 10px;
-                "
-              >
-                About Us
-              </button></RouterLink>
+                <NavButton to="/about" text="About Us" id="about-button" margin="0" padding="18px 22px"/>
             </div>
 
         </div>
@@ -91,17 +81,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
           </div>
           <div class="col" style="text-align: center; margin-top: 50px;">
-          <RouterLink to="/dmdm"><button class="baseButton button" id="dmdm-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 18px 22px;
-                  margin: 0px;
-                  font-size: 20px;
-                  border-radius: 10px;
-                "
-              >
-               View our pilot program
-          </button></RouterLink>
+          <NavButton to="/dmdm" text="View our pilot program" id="dmdm-button" margin="0" padding="18px 22px"/>
           </div>
         </div>
 
@@ -116,6 +96,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import Learn_more from '~/layouts/learn_more.vue';
 import ButtonComponent from '~/components/ButtonComponent.vue';
+import NavButton from '~/components/Buttons/NavButton.vue';
 let showTrack = false;
 
 const second_row = [
@@ -125,6 +106,7 @@ const second_row = [
 ];
 
 export default {
+    components: { NavButton },
     data() {
     return {
     trackDivVisible: false
@@ -312,12 +294,12 @@ max-width: 70%;
     p {
         color: #E6F6FF;
     }
-    #about-button {
+    :deep(#about-button) {
         color: #FFFFFF;
         background-color: transparent;
         border: 2px solid #FFFFFF;
     }
-    #dmdm-button {
+    :deep(#dmdm-button) {
         color: #FFFFFF;
         background-color: #4E3681;
         border: 2px solid #FFFFFF;
@@ -328,11 +310,11 @@ max-width: 70%;
     #second-row-cols-h3 {
         color: #CCECFD;
     }
-    #about-button:hover {
+    :deep(#about-button:hover) {
         background-color: white;
         color: black;
     }
-    #dmdm-button:hover {
+    :deep(#dmdm-button:hover) {
         background-color: white;
         color: #4E3681;
 
@@ -353,21 +335,21 @@ max-width: 70%;
     p {
         color: #322253;
     }
-    #about-button {
+    :deep(#about-button) {
         color: #1E2019;;
         background-color: #CCECFD;
         border: 2px solid #CCECFD;
     }
-    #dmdm-button {
+    :deep(#dmdm-button) {
         color: #322253;
         background-color: #E6F6FF;
         border: 2px solid #4E3681;
     }
-    #about-button:hover {
+    :deep(#about-button:hover) {
         background-color: #E6F6FF;
         border: 2px solid #E6F6FF;
     }
-    #dmdm-button:hover {
+    :deep(#dmdm-button:hover) {
         background-color: #4E3681;
         color: white;
     }
