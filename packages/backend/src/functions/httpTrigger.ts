@@ -507,7 +507,7 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
         headers: { "Content-Type": "text/plain" }
     }
 }  
-export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getNewDeviceKey2(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         const key = await makeEncodedDeviceKey();
         return {
