@@ -243,6 +243,357 @@ describe("Group Creation Tests", () => {
 		});
 	}, 60000);
 	
+//TODO: Test making attachment for group itself as a parent of the children
+//. read group record for attachmment and then read one child record for attachment.
+
+	//Group record with one attachment test
+	it("should create a group record with one attachment", async () => {
+    	const baseUrl = "https://gosqasbe.azurewebsites.net/api"
+
+    	//Generate device keys in parallel
+    	const [groupKeyRes, childKeyRes] = await Promise.all([
+        	fetch(`${baseUrl}/getNewDeviceKey`),
+        	fetch(`${baseUrl}/getNewDeviceKey`)
+    	]);
+    	const groupKey = await groupKeyRes.text();
+    	const childKey = await childKeyRes.text();
+
+    	// child 
+    	const childFormData = new FormData()
+    	childFormData.append("provenanceRecord", JSON.stringify({
+        	blobType: "deviceInitializer",
+        	deviceName: "child_for_one_attachment",
+        	description: "child for group single-attachment test",
+        	tags: [],
+        	children_key: "",
+        	hasParent: false,
+        	isReportingKey: false
+    	}));
+    	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+    	expect(childPost.ok).toBe(true)
+
+    	//create group record with one attachment (using a200.jpg from repo)
+    	const groupFormData = new FormData()
+    	groupFormData.append("provenanceRecord", JSON.stringify({
+        	blobType: "deviceInitializer",
+        	deviceName: "group_with_one_attachment",
+        	description: "group with a single attachment",
+        	tags: [],
+        	children_key: [childKey],
+        	hasParent: false,
+        	isReportingKey: false
+    	}));
+
+        try {
+        	const buffer = await readFile('./test/attachments/a200.jpg')
+        	const blob = new Blob([buffer], { type: 'image/jpeg' })
+        	groupFormData.append('attachment', blob) 
+
+        	const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+            	method: "POST",
+            	body: groupFormData,
+        	});
+     		expect(postResponse.ok).toBe(true)
+    	} catch (error) {
+        	console.error("(Create POST Test) Error creating group with attachment: " + error)
+        	throw error
+    	}
+
+    	// GET and verify the record has one attachment
+    	try {
+        	// GET the group and check attachment
+    		const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			expect(getResponse).toBeDefined()
+			expect(getResponse.length).toBeGreaterThan(0)
+			let responseString = JSON.parse(JSON.stringify(getResponse[0]))
+
+			expect(JSON.stringify(getResponse)).not.toBe('[]')
+			expect(responseString.record.deviceName).toBe('group_with_one_attachment')
+			expect(responseString.record.description).toBe('group with a single attachment')
+			expect(responseString.record.children_key[0]).toBe(childKey)
+			expect(responseString.record.hasParent).toBe(false)
+			expect(responseString.record.isReportingKey).toBe(false)
+            expect(responseString.attachments.length).toBe(1)
+
+    		const groupEntry = getResponse[0]
+    		expect(groupEntry.attachments).toBeDefined()
+    		expect(groupEntry.attachments.length).toBeGreaterThanOrEqual(1)
+    
+			//const attHash = groupEntry.attachments[0]
+			const attHash = responseString.attachments[0]
+
+    		// GET the child and assert it hasn't inherited the attachment 
+			//Returns false, however we expect it to return true? 
+			const childGet = await (await fetch(`${baseUrl}/provenance/${childKey}`)).json()
+			expect(childGet).toBeDefined()
+			expect(childGet.length).toBeGreaterThan(0)
+    
+			const childEntry = childGet[0]
+    		expect(childEntry).toBeDefined()
+    		expect(childEntry.attachments).toBeDefined()
+			// == 0 -->>
+			//expect(childEntry.attachments.length).toBeGreaterThanOrEqual(1)
+    		expect(childEntry.attachments.includes(attHash)).toBe(false)
+    
+			// Try to download the attachment using the child's key (should fail)
+			const downloadUrl = `${baseUrl}/attachment/${childKey}/${attHash}`
+			const downloadResponse = await fetch(downloadUrl)
+    		expect(downloadResponse.ok).toBe(false)
+
+			// Try to download the attachment using the group's key (should succeed)
+			const downloadUrl2 = `${baseUrl}/attachment/${groupKey}/${attHash}`
+			const downloadResponse2 = await fetch(downloadUrl2)
+			expect(downloadResponse2.ok).toBe(true)
+
+    		const retrievedBuffer = Buffer.from(await downloadResponse2.arrayBuffer())
+    		const originalBuffer = await readFile('./test/attachments/a200.jpg')
+    		expect(originalBuffer.equals(retrievedBuffer)).toBe(true) 
+    	} catch (error) {
+        	console.error("(Create GET Test) Failed to fetch/verify group attachments: " + error)
+        	throw error
+    	}
+	}, 60000);
+
+	//Group record with multiple attachments test
+	it("should create a group record with multiple attachments", async() => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
+
+		// Generate device keys in parallel
+    	const [groupKeyRes, childKeyRes] = await Promise.all([
+        	fetch(`${baseUrl}/getNewDeviceKey`),
+        	fetch(`${baseUrl}/getNewDeviceKey`)
+    	]);
+    	const groupKey = await groupKeyRes.text()
+    	const childKey = await childKeyRes.text()
+
+		// child
+    	const childFormData = new FormData()
+    	childFormData.append("provenanceRecord", JSON.stringify({
+        	blobType: "deviceInitializer",
+        	deviceName: "child_for_multiple_attachments",
+        	description: "child for group multiple-attachments test",
+        	tags: [],
+        	children_key: "",
+        	hasParent: false,
+        	isReportingKey: false
+    	}));
+    	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+    	expect(childPost.ok).toBe(true)
+
+		// create group record with multiple attachments (using a200.jpg and c200.jpg from repo)
+		const groupFormData = new FormData()
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_with_multiple_attachments",
+			description: "group with multiple attachments",
+			tags: [],
+			children_key: [childKey],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		try {
+			const buffer1 = await readFile('./test/attachments/a200.jpg')
+			//converting buffer to Uint8Array to avoid "TypeError: Failed to construct 'Blob': The provided value cannot be converted to a sequence."
+			const blob1 = new Blob([Uint8Array.from(buffer1)], { type: 'image/jpeg' })
+			groupFormData.append('attachment1', blob1, 'attachment1.bin')
+
+			const buffer2 = await readFile('./test/attachments/c200.jpg')
+			const blob2 = new Blob([Uint8Array.from(buffer2)], { type: 'image/jpeg' })
+			groupFormData.append('attachment2', blob2, 'attachment2.bin')
+
+			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+				method: "POST",
+				body: groupFormData,
+			});
+			expect(postResponse.ok).toBe(true)
+		} catch (error) {
+			console.error("(Create POST Test) Error creating group with multiple attachments: " + error)
+			throw error;
+		}
+		
+		// GET and verify the record has multiple attachments
+		//Not checking whether the children have inherited attachments here: also because you cannot add more than one attachment to a group on the web
+		try {
+			const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			expect(getResponse).toBeDefined()
+			expect(getResponse.length).toBeGreaterThan(0)
+
+			const groupEntry = getResponse[0]
+			expect(groupEntry).toBeDefined()
+			expect(groupEntry.attachments).toBeDefined()
+			// Check whether two or moreattachments returned
+			expect(groupEntry.attachments.length).toBeGreaterThanOrEqual(2)
+			// check for the attachments
+			expect(groupEntry.attachments[0]).toBeDefined()
+			expect(groupEntry.attachments[1]).toBeDefined()
+
+			//Haven't implemented download check
+		} catch (error) {
+			console.error("(Create GET Test) Failed to fetch/verify group multiple attachments: " + error)
+			throw error
+		}
+	}, 60000);
+
+	//Group attachment includes a PDF
+	it("should create a group record with a PDF", async() => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
+
+		// Generate device keys in parallel
+    	const [groupKeyRes, childKeyRes] = await Promise.all([
+        	fetch(`${baseUrl}/getNewDeviceKey`),
+        	fetch(`${baseUrl}/getNewDeviceKey`)
+    	]);
+    	const groupKey = await groupKeyRes.text()
+    	const childKey = await childKeyRes.text()
+
+		// child
+    	const childFormData = new FormData();
+    	childFormData.append("provenanceRecord", JSON.stringify({
+        	blobType: "deviceInitializer",
+        	deviceName: "child_for_group_pdf",
+        	description: "child for group pdf attachment test",
+        	tags: [],
+        	children_key: "",
+        	hasParent: false,
+        	isReportingKey: false
+    	}));
+    	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+    	expect(childPost.ok).toBe(true)
+
+		// create group record with multiple attachments (using a200.jpg and c200.jpg from repo)
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_with_pdf_attachment",
+			description: "group with pdf attachment (download/compare)",
+			tags: [],
+			children_key: [childKey],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		try {
+			const buffer = await readFile('./test/attachments/PDFTest2.pdf')
+			const blob1 = new Blob([buffer], { type: 'application/pdf'})
+			groupFormData.append('document.pdf', blob1)
+
+			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+				method: "POST",
+				body: groupFormData,
+			});
+			expect(postResponse.ok).toBe(true)
+		} catch (error) {
+			console.error("(Group Create POST Test - PDF) Error creating group with PDF: " + error)
+			throw error
+		}
+		
+		// GET and verify 
+		try {
+			const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			expect(getResponse).toBeDefined()
+			expect(getResponse.length).toBeGreaterThan(0)
+
+			const groupEntry = getResponse[0]
+			expect(groupEntry).toBeDefined()
+			expect(groupEntry.attachments).toBeDefined()
+			expect(groupEntry.attachments.length).toBeGreaterThanOrEqual(1)
+			expect(groupEntry.attachments[0]).toBeDefined()
+
+			const attachmentHash = groupEntry.attachments[0]
+			const downloadUrl = `${baseUrl}/attachment/${groupKey}/${attachmentHash}`
+			const downloadResponse = await fetch(downloadUrl)
+			expect(downloadResponse.ok).toBe(true)
+	
+			const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
+			const originalBuffer = await readFile('./test/attachments/PDFTest2.pdf')
+			expect(Buffer.compare(originalBuffer, retrievedBuffer)).toBe(0)
+
+		} catch (error) {
+			console.error("(Group Create GET Test - PDF) Failed to fetch/verify group PDF attachment: " + error)
+			throw error
+		}
+	}, 60000);
+	
+	//Group: Large attachment (>2MB)
+	it("should create a group record with a large attachment and verify download", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
+
+		const [groupKeyRes, childKeyRes] = await Promise.all([
+			fetch(`${baseUrl}/getNewDeviceKey`),
+			fetch(`${baseUrl}/getNewDeviceKey`)
+		]);
+		const groupKey = await groupKeyRes.text()
+		const childKey = await childKeyRes.text()
+
+		// child
+		const childFormData = new FormData()
+		childFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "child_for_group_large",
+			description: "child for group large file test",
+			tags: [],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: false
+		}));
+		const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+		expect(childPost.ok).toBe(true)
+
+		const groupFormData = new FormData()
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_large_attachment",
+			description: "group with large attachment (>2MB)",
+			tags: [],
+			children_key: [childKey],
+			hasParent: false,
+			isReportingKey: false
+		}));
+
+		try {
+			const buffer = await readFile('./test/attachments/LargePDF2.pdf')
+			const blob = new Blob([Uint8Array.from(buffer)], { type: 'application/pdf' })
+			groupFormData.append('largefile.pdf', blob) 
+
+			const fileSizeInMB = buffer.length / (1024 * 1024)
+			console.log(`Group large file size: ${fileSizeInMB.toFixed(2)} MB`)
+			expect(fileSizeInMB).toBeGreaterThan(2)
+
+			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+				method: "POST",
+				body: groupFormData,
+			});
+			expect(postResponse.ok).toBe(true)
+		} catch (error) {
+			console.error("(Group Create POST Test - Large) Error creating group with large file: " + error)
+			throw error
+		}
+
+		try {
+			const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			expect(getResponse).toBeDefined()
+			expect(getResponse.length).toBeGreaterThan(0)
+			
+			const groupEntry = getResponse[0]
+			expect(groupEntry).toBeDefined()
+			expect(groupEntry.attachments).toBeDefined()
+			expect(groupEntry.attachments.length).toBe(1)
+
+			const attachmentHash = groupEntry.attachments[0]
+			const downloadUrl = `${baseUrl}/attachment/${groupKey}/${attachmentHash}`
+			const downloadResponse = await fetch(downloadUrl)
+			expect(downloadResponse.ok).toBe(true)
+
+			const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer())
+			const originalBuffer = await readFile('./test/attachments/LargePDF2.pdf')
+			expect(originalBuffer.equals(retrievedBuffer)).toBe(true)
+		} catch (error) {
+			console.error("(Group Create GET Test - Large) Failed to fetch/verify group large attachment: " + error)
+			throw error
+		}
+	}, 60000);
+
 });
 
 describe("Record Creation Tests", () => {
