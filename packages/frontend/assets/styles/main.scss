@@ -92,21 +92,32 @@ $form-file-button-hover-bg: #322253;
 
 
 //// Custom Styles for the API page:
+
+// 'Shell Curl' dropdown
+.scalar-app {
+    --scalar-color-accent: #4e3681 !important;
+}
+.scalar-app .text-b-1 {
+    color: #ffffff !important;
+}
+
 .dark-mode {
-    --scalar-background-1: #1e2019 !important;  // main page background color
-    --scalar-background-2: #1e2019 !important;  // code box background color
-    --scalar-background-3: #1e2019 !important;  // show scheme box color
-    --scalar-border-color: #8b8f85 !important;  // dividers
+    --scalar-background-1: #1e2019 !important;  // Main page background color
+    --scalar-background-2: #1e2019 !important;  // Code box background color
+    --scalar-background-3: #1e2019 !important;  // 'Show Schema' box color
+    --scalar-border-color: #8b8f85 !important;  // Dividers
 
     --scalar-color-1: #ffffff !important;  // Headings/basic text
     --scalar-color-2: #c8cbc2 !important;  // Return values/types
     --scalar-color-3: #b3b7ac !important;  // Code section numbers/client libraries
 
-    .text-sidebar-c-2 .no-underline {
-        color: #ffffff;  // Font color for "Powered by Scalar" (bottom left)
+    .text-sidebar-c-2 .no-underline,  // Font color for "Powered by Scalar" (bottom left)
+    .sidebar-heading-type--get,
+    .sidebar-heading-type--post {
+        color: #ffffff !important;
     }
 
-    // Accent color (code strings, numbers, emphasized words)
+    // Accent color (code strings, numbers, emphasized words, etc.)
     .hljs-string,
     .hljs-number,
     .request-method,
@@ -116,37 +127,30 @@ $form-file-button-hover-bg: #322253;
         color: #ccecfd !important;
     }
 
-    // Sidebar Get and Post colors
-    .sidebar-heading-type--get,
-    .sidebar-heading-type--post {
-        color: #ffffff !important;
-    }
-
-    // Navigation menu (left side)
+    // Navigation menu text (left side)
     .sidebar-heading-link-title {
         color: #ccecfd !important;
     }
-    .sidebar-heading-link-title :hover {
+    .sidebar-heading-link-title :hover,
+    .active_page.sidebar-heading p {
         color: #e6f6ff !important;
-        font-weight: bold;
+        font-weight: bold !important;
     }
 
-    // Test Request button
+    // 'Test Request' button
     .scalar-card .show-api-client-button {
         border: 1px solid #ffffff !important;
         background: none !important;
     }
 
-    // ^K button (top left)
-    kbd {
-        background-color: #ccecfd !important;
-        color: #1E2019 !important;
-    }
+    // '^K' button (top left)
+    --bs-body-color: #ccecfd !important;
+    --bs-body-bg: #1E2019 !important;  // font color
     kbd:hover {
         background-color: #e6f6ff !important;
     }
 
-    // Open API Client button (bottom left)
+    // 'Open API Client' button (bottom left)
     .open-api-client-button {
         background-color: #ccecfd;
         color: #1E2019 !important;
@@ -157,23 +161,10 @@ $form-file-button-hover-bg: #322253;
 }
 
 .light-mode {
-    .text-sidebar-c-2 .no-underline {
-        color: #4e3681;
-    }
-
-    .scalar-card-checkbox-checkmark {
-        background-color: #ccecfd !important;
-    }
-
-    .scalar-card-checkbox-checkmark::after {
-        border: solid 1px #4e3681 !important;
-        border-width: 0 1.5px 1.5px 0 !important;
-    }
-
-    // Code section background color
-    --scalar-background-2: #e6f6ff !important;
-    .scalar-card {
-        --scalar-background-2: #e6f6ff !important;
+    .text-sidebar-c-2 .no-underline,
+    .sidebar-heading-type--get,
+    .sidebar-heading-type--post {
+        color: #4e3681 !important;
     }
 
     .hljs-string,
@@ -184,6 +175,29 @@ $form-file-button-hover-bg: #322253;
     .property-required,
     .hljs .line {
         color: #4e3681 !important;
+    }
+
+    .sidebar-heading-link-title {
+        color: #1E2019 !important;
+    }
+    .sidebar-heading-link-title :hover,
+    .active_page.sidebar-heading p {
+        color: #4e3681 !important;
+        font-weight: bold !important;
+    }
+
+    .scalar-card-checkbox-checkmark {
+        background-color: #ccecfd !important;
+    }
+    .scalar-card-checkbox-checkmark::after {
+        border: solid 1px #4e3681 !important;
+        border-width: 0 1.5px 1.5px 0 !important;
+    }
+
+    // Code section background color
+    --scalar-background-2: #e6f6ff !important;
+    .scalar-card {
+        --scalar-background-2: #e6f6ff !important;
     }
 
     // Dark text for light blue code background
@@ -197,20 +211,7 @@ $form-file-button-hover-bg: #322253;
         color: #797979 !important;
     }
 
-    .sidebar-heading-type--get,
-    .sidebar-heading-type--post {
-        color: #4e3681 !important;
-    }
-
-    .sidebar-heading-link-title {
-        color: #1E2019 !important;
-    }
-    .sidebar-heading-link-title :hover {
-        color: #4e3681 !important;
-        font-weight: bold;
-    }
-
-    // Test Request button
+    // 'Test Request' button
     .scalar-card .show-api-client-button {
         border: 1px solid #4e3681 !important;
         background: none !important;
@@ -222,10 +223,8 @@ $form-file-button-hover-bg: #322253;
         fill: #4e3681 !important;
     }
 
-    // ^K button (top left)
-    kbd {
-        background-color: #4e3681 !important;
-    }
+    // '^K' button (top left)
+    --bs-body-color: #4e3681 !important;
     kbd:hover {
         background-color: #322253 !important;
     }
@@ -233,7 +232,7 @@ $form-file-button-hover-bg: #322253;
         background-color: transparent !important;
     }
 
-    // Open Api Client button (bottom left)
+    // 'Open Api Client' button (bottom left)
     .open-api-client-button {
         background-color: #4e3681;
         color: white !important;
