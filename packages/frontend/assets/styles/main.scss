@@ -91,11 +91,8 @@ $form-file-button-hover-bg: #322253;
 @import "bootstrap/scss/bootstrap";
 
 
-
-// TODO: Can we target specifically scalar's dark mode (rather than all .dark-mode)? Does it matter?
-// TODO: combine settings where possible to make code shorter
+//// Custom Styles for the API page:
 .dark-mode {
-    // --scalar-color-accent: #e6f6ff !important;
     --scalar-background-1: #1e2019 !important;  // main page background color
     --scalar-background-2: #1e2019 !important;  // code box background color
     --scalar-background-3: #1e2019 !important;  // show scheme box color
@@ -105,13 +102,62 @@ $form-file-button-hover-bg: #322253;
     --scalar-color-2: #c8cbc2 !important;  // Return values/types
     --scalar-color-3: #b3b7ac !important;  // Code section numbers/client libraries
 
-    .no-underline {
-        color: #ccecfd;
+    .text-sidebar-c-2 .no-underline {
+        color: #ffffff;  // Font color for "Powered by Scalar" (bottom left)
+    }
+
+    // Accent color (code strings, numbers, emphasized words)
+    .hljs-string,
+    .hljs-number,
+    .request-method,
+    .hljs-keyword,
+    .hljs-symbol,
+    .property-required {
+        color: #ccecfd !important;
+    }
+
+    // Sidebar Get and Post colors
+    .sidebar-heading-type--get,
+    .sidebar-heading-type--post {
+        color: #ffffff !important;
+    }
+
+    // Navigation menu (left side)
+    .sidebar-heading-link-title {
+        color: #ccecfd !important;
+    }
+    .sidebar-heading-link-title :hover {
+        color: #e6f6ff !important;
+        font-weight: bold;
+    }
+
+    // Test Request button
+    .scalar-card .show-api-client-button {
+        border: 1px solid #ffffff !important;
+        background: none !important;
+    }
+
+    // ^K button (top left)
+    kbd {
+        background-color: #ccecfd !important;
+        color: #1E2019 !important;
+    }
+    kbd:hover {
+        background-color: #e6f6ff !important;
+    }
+
+    // Open API Client button (bottom left)
+    .open-api-client-button {
+        background-color: #ccecfd;
+        color: #1E2019 !important;
+    }
+    .open-api-client-button:hover {
+        background-color: #e6f6ff !important;
     }
 }
 
 .light-mode {
-    .no-underline {
+    .text-sidebar-c-2 .no-underline {
         color: #4e3681;
     }
 
@@ -124,45 +170,23 @@ $form-file-button-hover-bg: #322253;
         border-width: 0 1.5px 1.5px 0 !important;
     }
 
-    // --scalar-color-1: #1E2019 !important;
-    // --scalar-color-2: #2c2d28 !important;
-    // --scalar-color-3: #3a3b38 !important;
-}
-
-// Removes dark mode background for code when in light mode
-.light-mode {
-    --scalar-background-1: #ffffff !important;
+    // Code section background color
     --scalar-background-2: #e6f6ff !important;
-    --scalar-background-3: #ffffff !important;
-
     .scalar-card {
         --scalar-background-2: #e6f6ff !important;
     }
-}
 
-// Accent color (code strings, numbers, emphasized words)
-.dark-mode {
     .hljs-string,
     .hljs-number,
     .request-method,
     .hljs-keyword,
     .hljs-symbol,
-    .property-required {
-        color: #ccecfd !important;
-    }
-}
-
-.light-mode {
-    .hljs-string,
-    .hljs-number,
-    .request-method,
-    .hljs-keyword,
-    .hljs-symbol,
-    .property-required {
+    .property-required,
+    .hljs .line {
         color: #4e3681 !important;
     }
 
-    // Dark text for light blue code background in light mode
+    // Dark text for light blue code background
     .hljs-literal {
         color: #1E2019 !important;
     }
@@ -172,91 +196,53 @@ $form-file-button-hover-bg: #322253;
     .\[\&_em\]\:text-c-1 em {
         color: #797979 !important;
     }
-    // link text
-    .hljs .line {
+
+    .sidebar-heading-type--get,
+    .sidebar-heading-type--post {
+        color: #4e3681 !important;
+    }
+
+    .sidebar-heading-link-title {
         color: #1E2019 !important;
+    }
+    .sidebar-heading-link-title :hover {
+        color: #4e3681 !important;
+        font-weight: bold;
+    }
+
+    // Test Request button
+    .scalar-card .show-api-client-button {
+        border: 1px solid #4e3681 !important;
+        background: none !important;
+    }
+    .show-api-client-button span {
+        color: #4e3681 !important;
+    }
+    .show-api-client-button svg {
+        fill: #4e3681 !important;
+    }
+
+    // ^K button (top left)
+    kbd {
+        background-color: #4e3681 !important;
+    }
+    kbd:hover {
+        background-color: #322253 !important;
+    }
+    span.bg-b-2 {
+        background-color: transparent !important;
+    }
+
+    // Open Api Client button (bottom left)
+    .open-api-client-button {
+        background-color: #4e3681;
+        color: white !important;
+    }
+    .open-api-client-button:hover {
+        background-color: #322253 !important;
     }
 }
 
-// Sidebar Get and Post colors
-.dark-mode .sidebar-heading-type--get,
-.dark-mode .sidebar-heading-type--post {
-    color: #ffffff !important;
-}
-.light-mode .sidebar-heading-type--get,
-.light-mode .sidebar-heading-type--post {
-    color: #4e3681 !important;
-}
-
-// Left side menu
-.dark-mode .sidebar-heading-link-title {
-    color: #ccecfd !important;
-}
-.dark-mode .sidebar-heading-link-title :hover {
-    color: #e6f6ff !important;
-    font-weight: bold;
-}
-
-.light-mode .sidebar-heading-link-title {
-    color: #1E2019 !important;
-}
-.light-mode .sidebar-heading-link-title :hover {
-    color: #4e3681 !important;
-    font-weight: bold;
-}
-
-// Test Request button
-.dark-mode .scalar-card .show-api-client-button {
-    border: 1px solid #ffffff !important;
-    background: none !important;
-}
-.light-mode .scalar-card .show-api-client-button {
-    border: 1px solid #4e3681 !important;
-    background: none !important;
-}
-.light-mode .show-api-client-button span {
-    color: #4e3681 !important;
-}
-.light-mode .show-api-client-button svg {
-    fill: #4e3681 !important;
-}
-
-
-// Style for the ^K button (top left)
-.dark-mode kbd {
-    background-color: #ccecfd !important;
-    color: #1E2019 !important;
-}
-.dark-mode kbd:hover {
-    background-color: #e6f6ff !important;
-}
-
-.light-mode kbd {
-    background-color: #4e3681 !important;
-}
-.light-mode kbd:hover {
-    background-color: #322253 !important;
-}
-.light-mode span.bg-b-2 {
-    background-color: transparent !important;
-}
-
-// Open Api Client button (bottom left)
-.light-mode .open-api-client-button {
-    background-color: #4e3681;
-    color: white !important;
-}
-.light-mode .open-api-client-button:hover {
-    background-color: #322253 !important;
-}
-
-.dark-mode .open-api-client-button {
-    background-color: #ccecfd;
-    color: #1E2019 !important;
-}
-.dark-mode .open-api-client-button:hover {
-    background-color: #e6f6ff !important;
-}
 
 //// Custom styles implementation:
 
