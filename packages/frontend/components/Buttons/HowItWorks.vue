@@ -2,13 +2,15 @@
 
 <template>                                                                      
     <RouterLink to="/how-it-works">                                   
-        <button class="baseButton button w-100" id="learn-more-button" style="
-            border-width: 2px;                                            
-            border-style: solid;                                          
-            padding: 10px 20px;                                           
-            margin: 0px;                                                  
-            font-size: 20px;                                              
-            border-radius: 10px;"                                         
+        <button class="baseButton button" id="how-it-works-button" 
+            :style="{
+            borderWidth: '2px',
+            borderStyle: 'solid',
+            padding: '10px 20px',
+            margin,
+            fontSize, // defaults to 20px
+            borderRadius: '10px'
+      }"                                    
         >
 
             How It Works
@@ -17,6 +19,28 @@
     </RouterLink>         
 </template>
 
+<script setup lang="ts">
+import { computed } from 'vue'
+
+    const props = defineProps<{ 
+        margin?: string 
+        fontSize?: string | number
+    }>()
+    
+    const margin = props.margin ?? '0px'
+
+    const fontSize = computed(() => {
+        if (props.fontSize === undefined || props.fontSize === null) {
+            return '20px'
+        }
+
+        if (typeof props.fontSize === 'number') {
+            return props.fontSize + 'px'
+        }
+
+        return props.fontSize
+    })
+</script>
                                                                                 
 <style scoped>
 
@@ -36,7 +60,7 @@
         background-clip: padding-box;                                           
         background-color: #1E2019;                                              
     }                                                                           
-    #learn-more-button {                                                        
+    #how-it-works-button {                                                        
         color: #CCECFD;                                                         
         background-color: #1E2019;                                              
         border: 2px solid #CCECFD;                                              
@@ -58,7 +82,7 @@
         background-clip: padding-box;                                           
         background-color: #FFFFFF;                                              
     }                                                                           
-    #learn-more-button {                                                        
+    #how-it-works-button {                                                        
         color: #322253;                                                         
         background-color: #FFFFFF;                                              
         border: 2px solid #4E3681;                                              
