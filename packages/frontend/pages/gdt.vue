@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="container-md">
             <h1 class="my-4 fs-1">Global Distributed Tracking</h1>
 
-
             <!-- create toggle for single or group  -->
             <ButtonsLargeToggle
                 @toggle-change="toggleView"
@@ -34,13 +33,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             />
 
             <!-- <div>Create a Single Asset:</div> -->
-            <div id="create_record"><FormsCreateDevice/></div>
+            <div id="create_record" v-if="toggled"><FormsCreateDevice/></div>
             <!-- <CreateDevice/> -->
             <!-- <div>Or, if you want to create a group of keys:</div> -->
             <!-- <div></div> -->
 
-            <div id="create_group" style="display:none"><FormsCreateContainer/></div>
-
+            <div id="create_group" v-if="!toggled"><FormsCreateContainer/></div>
 
             <div class="col" style="text-align: left;">
 
@@ -65,11 +63,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </a>
           </div>
 
-
             <p class="my-4 mb-5 form-control">
                 Global Distributed Tracking is a free, open source, and fully encrypted software solution enabling closed-loop tracking for products, information, and logistics.
             </p>
-
 
         </div>
     </div>
@@ -87,6 +83,7 @@ export default {
     data() {
         return {
             isLoading: false,
+            toggled: true
         }
     },
     mounted() {
@@ -96,23 +93,13 @@ export default {
         })
     },
     methods: {
-        toggleView() {
-            const toggle = document.getElementById("toggle") as HTMLInputElement;
-            const createRecord = document.getElementById("create_record");
-            const createGroup = document.getElementById("create_group");
-            if (toggle.checked) {
-                createRecord.style.display = "none";
-                createGroup.style.display = "block";
-            } else {
-                createRecord.style.display = "block";
-                createGroup.style.display = "none";
-            }
+        toggleView(){
+            this.toggled = !this.toggled
         }
     }
 }
 
 </script>
-
 
 <style scoped>
 
