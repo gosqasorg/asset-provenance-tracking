@@ -147,8 +147,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     req.query = {version: '44444'};
     const res = await httpTrigger.setVersion(req, context);
     expect(res.status).toBe(200);
-<<<<<<< HEAD
-  })
+  }, 7000)
   it('validateJSON correctly validates record', async () => {
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
       "hasParent": false,"isReportingKey": false};
@@ -191,8 +190,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     valid = await httpTrigger.validateJSON(invalidGroup);
     expect(valid).toBe(false);
   });
-=======
-  }, 7000);
->>>>>>> 01b1889 (Added 7000ms to prevent testing timeout)
- 
+
 });
+ 
+
