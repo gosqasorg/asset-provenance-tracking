@@ -463,7 +463,7 @@ export async function setVersion(request: HttpRequest, context: InvocationContex
         var versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true })
         await versionTableClient.createTable(); // create table if not exist, no error if it does
 
-        let versionNumber = request.query.get('version') // set the version here from passed argument
+        let versionNumber = request.query['version']; // set the version here from passed argument
         var serverEntity = {
             partitionKey: 'server',
             rowKey: 'version',

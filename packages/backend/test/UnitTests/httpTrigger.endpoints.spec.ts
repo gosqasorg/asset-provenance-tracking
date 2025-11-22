@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as httpTrigger from '../../src/functions/httpTrigger';
+import { http } from '@azure/functions/types/app';
 
 
 // Minimal Azure SDK mocks
@@ -137,8 +138,15 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getVersion(req, context);
-    expect(res).toHaveProperty('jsonBody');
-    expect(res).toHaveProperty('headers');
+    expect(res.body).toBe('44444');
+    expect(res.status).toBe(200);
   });
+
+  it('setVersion sets the server version', async () => {
+    const req = makeHttpRequest();
+    req.query = {version: '44444'};
+    const res = await httpTrigger.setVersion(req, context);
+    expect(res.status).toBe(200);
+  })
  
 });
