@@ -112,7 +112,7 @@ describe("Record Update Tests", () => {
     // Create initial record
     const deviceKey = await makeEncodedDeviceKey();
     let fullUrl = `${baseUrl}${deviceKey}`;
-	console.log("Update Test with tags: " + deviceKey);
+	  console.log("Update Test with tags: " + deviceKey);
     
     const initialData = {
       blobType: 'deviceInitializer',
@@ -207,5 +207,86 @@ describe("Record Update Tests", () => {
     expect(record.record.description).toBe("Updated with attachment");
     expect(record.record.tags.length).toBe(1);
     expect(record.attachments.length).toBeGreaterThan(0); 
+  });
+
+  // TODO: Update a record with a recalled record (should pin + send to all children)
+  it("Update with recall", async () => {
+    // Create a group with one child
+		const groupKey = await makeEncodedDeviceKey();
+    const childKey = await makeEncodedDeviceKey();
+    let fullUrl = `${baseUrl}${groupKey}`;
+		
+		const childFormData = new FormData();
+		childFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "child_smoketest",
+			description: "child for testing a recalled record",
+			tags: [],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_smoketest",
+			description: "group for testing a recalled record",
+			tags: [],
+			children_key: [childKey],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const [childResponse, groupResponse] = await Promise.all([
+			fetch(`${baseUrl}${childKey}`, {
+				method: "POST",
+				body: childFormData,
+			}),
+			fetch(`${baseUrl}${groupKey}`, {
+				method: "POST",
+				body: groupFormData,
+			})
+		]);
+		
+		expect(childResponse.ok).toBe(true);
+		expect(groupResponse.ok).toBe(true);
+
+    // Add a new recalled record (aka a record w/ the recall tag) to the group
+    // This should also send the recalled record to the child
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: "Updated with recall",
+      tags: ['recall', 'testing_recall'],
+      children_key: '',
+    };
+    
+    const updateFormData = new FormData();
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+    
+    const updateResponse = await fetch(fullUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+    
+    expect(updateResponse.ok).toBe(true);
+
+    // Test to see if the record was successfully recalled
+    // To succeed, the record should exist in both group and child record history
+    const getGroupResponse = await fetch(fullUrl);
+    const groupData = await getGroupResponse.json();
+    const groupRecord = JSON.parse(JSON.stringify(groupData[0]));
+
+    expect(groupRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
+    expect(groupRecord.record.description).toBe("Updated with recall");
+
+    // TODO: this current fails, since recall has not been implmeneted in the backend
+    // (so the recalled record is never sent from the group to the child)
+    const getChildResponse = await fetch(`${baseUrl}${childKey}`);
+    const childData = await getChildResponse.json();
+    const childRecord = JSON.parse(JSON.stringify(childData[0]));
+
+    expect(childRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
+    expect(childRecord.record.description).toBe("Updated with recall");
   });
 });
