@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as httpTrigger from '../../src/functions/httpTrigger';
+import { http } from '@azure/functions/types/app';
 
 
 // Minimal Azure SDK mocks
@@ -123,13 +124,30 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
   });
 
+  it('getNewDeviceKey returns key', async () =>{
+    const req = makeHttpRequest();
+    const res = await httpTrigger.getNewDeviceKey(req, context);
+    expect(res).toHaveProperty('body');
+    const pattern = /^[a-zA-Z0-9]+$/;
+    const deviceKey = res['body'];
+    expect(pattern.test(deviceKey)).toBe(true); 
+    expect(deviceKey.length).toBe(22)
+    expect(typeof deviceKey).toBe('string')
+  });
+  
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getVersion(req, context);
-    expect(res).toHaveProperty('jsonBody');
-    expect(res).toHaveProperty('headers');
-  });
+    expect(res.body).toBe('44444');
+    expect(res.status).toBe(200);
+  }, 7000);
 
+  it('setVersion sets the server version', async () => {
+    const req = makeHttpRequest();
+    req.query = {version: 44444};
+    const res = await httpTrigger.setVersion(req, context);
+    expect(res.status).toBe(200);
+  }, 7000)
   it('validateJSON correctly validates record', async () => {
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
       "hasParent": false,"isReportingKey": false};
@@ -172,5 +190,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     valid = await httpTrigger.validateJSON(invalidGroup);
     expect(valid).toBe(false);
   });
- 
+
 });
+ 
+
