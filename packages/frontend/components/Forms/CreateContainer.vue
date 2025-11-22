@@ -30,15 +30,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
-                <input type="number" class="form-inline" id="children-keys" v-model="childrenKeys" min="0" max="500" @change="displayFields">
+                <input type="number" v-model="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" @change="displayFields" >
             </h4>
 
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="customize-yes" name="customize"  @change="displayFields"/> Customize Grouped Record Titles?
+                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Grouped Record Titles?
             </h4>
-            <div class="text-iris" id="num-fields" style="display:none" >
-                <label for="input"></label>
+            <div v-if="customized" class="text-iris" id="num-fields">
+                <div v-for="(item, index) in fieldSet">
+                    <label>{{ item.id }}</label>
+                    <input v-model="item.customName" style="display:inline; border:0px; border-radius:4px; margin:3px" required: true></input>
+                    </div>
             </div>
 
             <h4 class="p-1 my-0">
@@ -46,7 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </h4>
  
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="annotate-all"/> Annotate all Children?
+                <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
             <!-- Volunteer Feedback Email --> 
@@ -87,9 +90,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
-
+import { ref } from 'vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
+import type { RefSymbol } from '@vue/reactivity';
+import { LazyClientOnly } from '#components';
 
 export default {
     data() {
@@ -103,6 +108,9 @@ export default {
             pictures: [] as File[] | null,
             isChecked: false,
             textInput: '',
+            customized: false,
+            annotate: false,
+            fieldSet: [{id: '', customName:''}],
         }
     },
     methods: {
@@ -126,43 +134,28 @@ export default {
             }
         },
         displayFields() {
-            const childrenNum = (<HTMLInputElement>document.getElementById("children-keys")).value;
 
-            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes"));
-            const customize_no = (<HTMLInputElement>document.getElementById("customize-no"));
-            
-            var newInput, newLabel;
-            var wrapper_div = document.getElementById('num-fields') as HTMLInputElement;
-            var fieldset = document.createElement('div') as HTMLInputElement;
-
-            while (wrapper_div.hasChildNodes()) {
-                wrapper_div.removeChild(wrapper_div.firstChild!);
+            // Remove child device names if user decrements number of children keys
+            if (this.fieldSet.length > this.childrenKeys){
+                let difference = this.fieldSet.length - this.childrenKeys
+                for (let i = 0; i < difference; i++){
+                    this.fieldSet.pop()
+               }
             }
 
-            for (var i=0; i<Number(childrenNum); i++) {
-                    newInput = document.createElement('input');
-                    newInput.id = 'name-input-' + (i);
-                    newInput.type = 'text';
-                    newInput.style.border = "0px";
-                    newInput.style.borderRadius = "4px";
-                    newInput.style.margin = "3px"
-                    newInput.required = true;
-                    newLabel =  document.createElement('label');
-                    newLabel.textContent = 'Device #'+ (i+1) +' Name:  ';
-                    fieldset.appendChild(newLabel);
-                    fieldset.appendChild(newInput);
-                    fieldset.appendChild(document.createElement('br'));
-            }
+            // Remove default blank object from dictionary creation
+            this.fieldSet.pop()
 
-            if (customize_yes.checked) {
-                wrapper_div.append(fieldset);
-                wrapper_div.style.display = "inline";
-
-            } else {
-                wrapper_div.style.display = "none";
+            // Create label for customized grouped record titles
+            for (var i=0; i<(this.childrenKeys); i++) {
+                try{
+                    if (this.fieldSet[i].id == 'Device #'+ (i+1) +' Name: '){
+                        continue
+                    }
+                }catch(error){
+                    this.fieldSet.push({id:'Device #'+ (i+1) +' Name: ', customName:''});
+                }   
             }
-            
-            
         },
 
         async submitForm() {
@@ -171,43 +164,26 @@ export default {
             // This code is copied from Judith;
             // I am going to retain her names even though they are
             // redundant until I get this workin.
-            const hasReportingKey = this.createReportingKey;
-            const numChildren = this.childrenKeys as Number;
             const childrenDeviceList = [];
             const childrenDeviceName = [];
             let reportingKey;
-
+     
             // Get all elements from the DOM
-            if ((<HTMLInputElement>document.getElementById("annotate-all")).checked) {
+            if (this.annotate) {
                 this.tags = (this.tags).concat(['notify_all'])
             } 
-            const customize_yes = (<HTMLInputElement>document.getElementById("customize-yes")).checked;
-
-            let custom_child_names = [];
-            if (numChildren) {
-                for (let i = 0; i < Number(numChildren); i++) {
-                    if (customize_yes) {
-                        // user has selected to customize names. use the inputted names.
-                        childName = (<HTMLInputElement>document.getElementById("name-input-" + i)).value
-                        custom_child_names.push(childName);
-                    } else {
-                        // user not customizing names. use default.                        
-                        childName = this.name + " #" + String(i + 1);
-                    }
-                }
-            };
-
+            
             // Emit an event to notify the gdt.vue page to display loading screen
             EventBus.emit('isLoading');
 
-            if (numChildren) {
+            if (this.childrenKeys) {
                 var childName;
 
-                for (let i = 0; i < Number(numChildren); i++) {
+                for (let i = 0; i<(this.childrenKeys); i++) {
                     const childKey =  await makeEncodedDeviceKey();
 
-                    if (customize_yes) {
-                        childName = custom_child_names[i];
+                    if (this.customized) {
+                        childName = this.fieldSet[i].customName;
                     } else {                      
                         childName = this.name + " #" + String(i + 1);
                     }
@@ -276,7 +252,7 @@ export default {
                 })
             }
 
-            if (hasReportingKey) {
+            if (this.createReportingKey) {
                 reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
                 let tag_set = (this.tags).concat(['reportingkey']);
 
@@ -307,7 +283,6 @@ export default {
             }
         },
     }
-
 }
 </script>
 
