@@ -144,7 +144,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   it('setVersion sets the server version', async () => {
     const req = makeHttpRequest();
-    req.query = {version: '44444'};
+    req.query = {version: 44444};
     const res = await httpTrigger.setVersion(req, context);
     expect(res.status).toBe(200);
   }, 7000)
