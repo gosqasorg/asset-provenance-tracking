@@ -242,6 +242,85 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags.length).toBe(3);
 		});
 	}, 60000);
+
+
+
+	it("should create a group record with tags", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		
+		// Generate device keys
+		const [groupKeyRes, childKeyRes] = await Promise.all([
+            fetch(`${baseUrl}/getNewDeviceKey`),
+            fetch(`${baseUrl}/getNewDeviceKey`)
+        ]);
+        const groupKey = await groupKeyRes.text();
+        const childKey = await childKeyRes.text();
+		
+		// Create one child record
+		const childFormData = new FormData();
+		childFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: `child_tag_feature`,
+			description: `Child with tags`,
+			tags: ["tag-feature", "child"],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: false
+		}));
+			
+		const childResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+			method: "POST",
+			body: childFormData,
+		});
+
+		expect(childResponse.ok).toBe(true);
+		
+		// Create group record with tags
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_tag_feature",
+			description: "Group record creation with tags for smoketest",
+			tags: ["tag-feature", "Group: 1 child"],
+			children_key: [childKey],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		
+		expect(groupResponse.ok).toBe(true);
+		
+		// Verify records
+		const verificationPromises = [
+			fetch(`${baseUrl}/provenance/${groupKey}`),
+			fetch(`${baseUrl}/provenance/${childKey}`)
+		];
+		const verificationResponses = await Promise.all(verificationPromises);
+		const verificationData = await Promise.all(
+			verificationResponses.map(res => res.json())
+		);
+		const [retrievedGroup, retrievedChild] = verificationData;
+		
+		expect(retrievedGroup).toBeDefined();
+		expect(retrievedGroup.length).toBeGreaterThan(0);
+		expect(retrievedGroup[0].record.blobType).toBe("deviceInitializer");
+		expect(retrievedGroup[0].record.deviceName).toBe("group_tag_feature");
+		expect(retrievedGroup[0].record.children_key).toEqual([childKey]);
+		expect(retrievedGroup[0].record.tags).toContain("tag-feature");
+		expect(retrievedGroup[0].record.tags).toContain("Group: 1 child");
+		expect(retrievedGroup[0].record.tags.length).toBe(2);
+		
+		// Verify child record were created
+		expect(retrievedChild).toBeDefined();
+        expect(retrievedChild.length).toBeGreaterThan(0);
+		expect(retrievedChild[0].record.deviceName).toBe(`child_tag_feature`);
+		expect(retrievedChild[0].record.tags).toContain("tag-feature");
+		expect(retrievedChild[0].record.tags.length).toBe(2);
+	}, 60000);
 	
 });
 
