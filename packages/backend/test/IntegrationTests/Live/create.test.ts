@@ -275,7 +275,35 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain(`child-${i + 1}`);
 			expect(child[0].record.tags.length).toBe(3);
 		});
-	}, 60000);	
+	}, 60000);
+
+	// Group creation with invalid device key
+	it("should fail to create a group record with an invalid device key", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		const invalidGroupKey = "INVALID_KEY_12345";
+		
+		// Attempt to create group record with invalid key
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "invalid_key_group_smoketest",
+			description: "group creation attempt with invalid device key",
+			tags: [],
+			children_key: [],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupResponse = await fetch(`${baseUrl}/provenance/${invalidGroupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		
+		// Expect the response to indicate failure (e.g., 500 Internal Server Error)
+		console.log("Response Status for Invalid Key Test: " + groupResponse.status);
+		expect(groupResponse.ok).toBe(false);
+		expect(groupResponse.status).toBe(500);
+	}, 60000);
 	
 });
 
