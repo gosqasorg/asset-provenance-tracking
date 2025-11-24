@@ -24,7 +24,41 @@ describe("Group of tests", () => {
 */
 
 describe("Group Creation Tests", () => {
-	// The most basic possible test
+	// Group with zero children
+	it("should create a group record with zero children", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		// Generate device key
+		const groupKeyRes = await fetch(`${baseUrl}/getNewDeviceKey`);
+		const groupKey = await groupKeyRes.text();
+		// Create group record
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_zero_children_smoketest",
+			description: "group with zero children for smoketest",
+			tags: [],
+			children_key: [],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		expect(groupResponse.ok).toBe(true);
+
+		// Verify group record
+		const verificationResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		const verificationData = await verificationResponse.json();
+		expect(verificationData).toBeDefined();
+		expect(verificationData.length).toBeGreaterThan(0);
+		expect(verificationData[0].record.deviceName).toBe("group_zero_children_smoketest");
+		expect(verificationData[0].record.children_key).toEqual([]);
+		expect(verificationData[0].record.children_key.length).toBe(0);
+		expect(verificationData[0].record.hasParent).toBe(false);
+		
+	}, 60000);
+	// Create a group record with one child
 	it("should create a group record with one child", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
@@ -241,7 +275,7 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain(`child-${i + 1}`);
 			expect(child[0].record.tags.length).toBe(3);
 		});
-	}, 60000);
+	}, 60000);	
 	
 });
 
