@@ -99,15 +99,15 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
             })
             */
             console.log('vvvv')
-            //console.log(response)
+            console.log(response)
             console.log(await response.text())
-            console.log(response.json())
+            //console.log(response.json())
            // console.log(await response.text())
           //  console.log(await response.json())
            // let text = response.text();
-            console.log(text)
+           // console.log(text)
            // text = await text
-            console.log(text)
+           // console.log(text)
             console.log('^^^^')
         } catch(error){
             const testName = baseTestName + thisTestName;
