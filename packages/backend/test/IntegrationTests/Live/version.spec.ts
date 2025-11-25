@@ -17,7 +17,7 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
 
         // ---- Section 1/2: Invoking the API ---- //
 
-        let response
+
         let responseCode;
         let dataBody; 
         try {
@@ -80,6 +80,7 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         // ---- Section 1/2: Invoking the API ---- //
 
         // setVersion(bogusVersion) 
+        let response
         let testVersion = "44444"
         const bogusVersion = 44444
         const testUrl = baseUrl + '/setVersion?version=' + `${bogusVersion}`
