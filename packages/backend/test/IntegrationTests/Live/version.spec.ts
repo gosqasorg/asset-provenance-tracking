@@ -85,7 +85,8 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         const bogusVersion = 44444
         const testUrl = baseUrl + '/setVersion?version=' + `${bogusVersion}`
         try {
-            response = await fetch(testUrl).then(function(response){
+            response = await fetch(testUrl) 
+            /*.then(function(response){
                 let text = response.text();
                 console.log('vvv')
                 console.log(text)
@@ -96,8 +97,14 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
                 console.log(data)
                 console.log('FOOOOOBAARRRRRR')
             })
+            */
             console.log('vvvv')
             console.log(response)
+            console.log(response.text)
+            let text = response.text
+            console.log(text)
+            text = await text
+            console.log(text)
             console.log('^^^^')
         } catch(error){
             const testName = baseTestName + thisTestName;
@@ -114,10 +121,15 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         const fullGetUrl = baseUrl + '/getVersion'
         try {
             response = await fetch(fullGetUrl).then(function(response){  
-                return response.text();
+                let responseText = response.text();
+                console.log('vvv')                
+                console.log(responseText)
+                console.log('vvv')
             }).then(function(data){
                 checkTestVersion = data,
+                                console.log('vvv')
                 console.log(data);
+                                console.log('vvv')
             })
         } catch(error){
             const testName = baseTestName + thisTestName;
