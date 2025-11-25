@@ -99,7 +99,7 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
             })
             */
             console.log('vvvv')
-            console.log(response)
+            //console.log(response)
             console.log(await response.text())
             console.log(response.json())
             console.log(await response.text())
