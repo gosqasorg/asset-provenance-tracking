@@ -88,6 +88,9 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
             response = await fetch(testUrl).then(function(response){
                 return response.text();
             }).then(function(data){
+                console.log('FOOOOOBAARRRRRR')
+                console.log(data)
+                console.log('FOOOOOBAARRRRRR')
             })
         } catch(error){
             const testName = baseTestName + thisTestName;
