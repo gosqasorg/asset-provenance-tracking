@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as httpTrigger from '../../src/functions/httpTrigger';
+import { http } from '@azure/functions/types/app';
 
 
 // Minimal Azure SDK mocks
@@ -123,11 +124,15 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('jsonBody');
   });
 
-  it('getVersion returns version info', async () => {
+  it('getNewDeviceKey returns key', async () =>{
     const req = makeHttpRequest();
-    const res = await httpTrigger.getVersion(req, context);
-    expect(res).toHaveProperty('jsonBody');
-    expect(res).toHaveProperty('headers');
+    const res = await httpTrigger.getNewDeviceKey(req, context);
+    expect(res).toHaveProperty('body');
+    const pattern = /^[a-zA-Z0-9]+$/;
+    const deviceKey = res['body'];
+    expect(pattern.test(deviceKey)).toBe(true); 
+    expect(deviceKey.length).toBe(22)
+    expect(typeof deviceKey).toBe('string')
   });
 
   it('validateJSON correctly validates record', async () => {
@@ -172,5 +177,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     valid = await httpTrigger.validateJSON(invalidGroup);
     expect(valid).toBe(false);
   });
- 
+
 });
+ 
+

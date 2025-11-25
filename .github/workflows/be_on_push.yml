@@ -71,5 +71,5 @@ jobs:
 
     - name: Run Backend Integration Tests
       working-directory: packages/backend
-      run: npm run api_integration_tests
+      run: npm run live_integration_tests
 
