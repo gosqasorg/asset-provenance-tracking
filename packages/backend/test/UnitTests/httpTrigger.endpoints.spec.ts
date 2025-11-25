@@ -136,11 +136,11 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
 
   it('setVersion sets the server version', async () => {
-    const req = makeHttpRequest();
+    let req = makeHttpRequest();
     req.query = {version: 44444};
-    const res = await httpTrigger.setVersion(req, context);
-    const req2 = makeHttpRequest();
-    const res2 = await httpTrigger.getVersion(req, context);
+    let res = await httpTrigger.setVersion(req, context);
+    req = makeHttpRequest();
+    res = await httpTrigger.getVersion(req, context);
   }, 7000)
 
   it('validateJSON correctly validates record', async () => {
