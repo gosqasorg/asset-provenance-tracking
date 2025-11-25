@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     multiple />
             </div>
             <h5>Add Tags (optional)</h5>
-            <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags"
+            <ProvenanceTagInput id="provenanceTag" v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"
                 placeholder="Record Tag" />
             <div>
                 <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
