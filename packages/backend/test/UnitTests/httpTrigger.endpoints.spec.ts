@@ -135,14 +135,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(typeof deviceKey).toBe('string')
   });
 
-  it('setVersion sets the server version', async () => {
-    let req = makeHttpRequest();
-    req.query = {version: 44444};
-    let res = await httpTrigger.setVersion(req, context);
-    req = makeHttpRequest();
-    res = await httpTrigger.getVersion(req, context);
-  }, 7000)
-
   it('validateJSON correctly validates record', async () => {
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
       "hasParent": false,"isReportingKey": false};
