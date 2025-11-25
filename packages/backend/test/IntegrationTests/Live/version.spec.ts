@@ -1,16 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
 
-let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
-    throw new Error('Env vars not set')
-}
-let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"])) {
-    throw new Error('Env vars not set')
-} 
-
-const baseUrl = accountName === "devstoreaccount1"
-    ? `http://127.0.0.1:10000/devstoreaccount1`
-    : `https://${accountName}.blob.core.windows.net`;
+const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance'
 
 let timeout = 30000;  // Milliseconds; integration testing can be laggycd
 
