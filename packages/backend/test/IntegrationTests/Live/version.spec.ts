@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
 
-const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance'
+const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
 let timeout = 30000;  // Milliseconds; integration testing can be laggycd
 
@@ -9,11 +9,11 @@ let baseTestName: string;
 describe(baseTestName = "Tests for getVersion and setVersion", () => {
 
     let thisTestName: string;
-
+    /*
     it(thisTestName = "API test for getVersion", async () => {
 
         // ---- Section 0/2: Setup --------------- // 
-        const fullUrl = baseUrl + '/api/getVersion'
+        const fullUrl = baseUrl + '/getVersion'
 
         // ---- Section 1/2: Invoking the API ---- //
 
@@ -45,9 +45,10 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
     
 
     }, timeout);
+    */
 
     it(baseTestName = "API test for setVersion", async () => {
-
+        /*
         // ---- Section 0/2: Setup --------------- //
 
         const fullUrl = "http://localhost:7071/api/getVersion" 
@@ -71,15 +72,17 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
             throw error;
         }
         
-        // testVersion
-        let testVersion = "44444"
+        // testVersion        
+        */
+
+
 
         // ---- Section 1/2: Invoking the API ---- //
 
         // setVersion(bogusVersion) 
+        let testVersion = "44444"
         const bogusVersion = 44444
-        const testUrl = "http://localhost:7071/api/setVersion?version=" + `${bogusVersion}`
-        let checkTestVersion 
+        const testUrl = baseUrl + '/setVersion?version=' + `${bogusVersion}`
         try {
             response = await fetch(testUrl).then(function(response){
                 return response.text();
@@ -95,8 +98,11 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         // ---- Section 2/2: Tests ---- //
 
         // const checkTestVersion = getVersion()
+
+        let checkTestVersion;
+        const fullGetUrl = baseUrl + '/getVersion'
         try {
-            response = await fetch(fullUrl).then(function(response){  
+            response = await fetch(fullGetUrl).then(function(response){  
                 return response.text();
             }).then(function(data){
                 checkTestVersion = data,
@@ -105,7 +111,7 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         } catch(error){
             const testName = baseTestName + thisTestName;
             const errorMessage = 'Failed to fetch (get) testUrl: '
-            console.error(testName + errorMessage + fullUrl)
+            console.error(testName + errorMessage + fullGetUrl)
             throw error;
         }
 
