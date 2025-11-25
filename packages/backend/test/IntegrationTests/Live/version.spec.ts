@@ -86,12 +86,19 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         const testUrl = baseUrl + '/setVersion?version=' + `${bogusVersion}`
         try {
             response = await fetch(testUrl).then(function(response){
-                return response.text();
+                let text = response.text();
+                console.log('vvv')
+                console.log(text)
+                console.log('^^^')
+                return text
             }).then(function(data){
                 console.log('FOOOOOBAARRRRRR')
                 console.log(data)
                 console.log('FOOOOOBAARRRRRR')
             })
+            console.log('vvvv')
+            console.log(response)
+            console.log('^^^^')
         } catch(error){
             const testName = baseTestName + thisTestName;
             const errorMessage = 'Failed to fetch (get) testUrl: '
