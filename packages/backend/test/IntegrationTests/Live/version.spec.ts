@@ -91,7 +91,7 @@ describe(baseTestName = "Tests for getVersion and setVersion", () => {
         } catch(error){
             const testName = baseTestName + thisTestName;
             const errorMessage = 'Failed to fetch (get) testUrl: '
-            console.error(testName + errorMessage + fullUrl)
+            console.error(testName + errorMessage + testUrl)
             throw error;
         }
 
