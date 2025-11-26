@@ -479,6 +479,114 @@ export async function validateJSON(json: any) {
     }
 }
 
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+export function getChildKeys(provenance: Provenance[]): string[] {
+    let childKeys: string[] = []
+
+    for (const p of provenance) {
+        const child = p.record.children_key; // Can be "" if not a group or string[] if a group
+        // child may be undefined or an empty array
+        if (!child || !child.length) {
+            continue;
+        }
+        childKeys = [...childKeys, ...child];
+    }
+
+    return childKeys;
+}
+
+// Annotate: Send new record's tags to all children
+export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
+    try {
+        // TODO: internalTag only exists in frontend, can just put annotate string but it makes updates messier (LEAVE NOTE!)
+        if (tags.includes("annotate")) {
+            // TODO: need httpRequest and InvocationContext (whatever that means, same for post, see other tests)
+                // Two options, commented and below (see read tests)
+            // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+            // let records = fetch(`${baseUrl}${recordKey}`);
+
+            let records = await fetch(`${baseUrl}/getProvenance/${recordKey}`);
+            records = await records.json(); 
+
+            // TODO: Implement this function in the backend as well?
+            let keysToCheck = deduplicateKeys(getChildKeys(records));
+
+            // Send annotated record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let keyProvenance = await getProvenance(key);
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
+                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
+
+                    if (uniqueChildKeys.includes(recordKey)) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(recordKey), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    postProvenance(key, {
+                        blobType: 'deviceRecord',
+                        description: "Annotated by admin",
+                        children_key: '',
+                        tags: tags,
+                    }, attachments || [])
+                }
+
+                keysToCheck.shift();
+            }
+
+            console.log("Finished updating children with 'annotate' tag.");
+        }
+    } catch (error) {
+        console.error(`Error annotating children: ${error}`);
+    }
+ }
+ 
+ // Recall: Pin and send new record entry to all children
+ export async function recallChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
+    try {
+        if (tags.includes("recall")) {
+            let records = await fetch(`${baseUrl}/getProvenance/${recordKey}`);
+            let keysToCheck = deduplicateKeys(getChildKeys(records));
+
+            // Send recalled record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let keyProvenance = await fetch(`${baseUrl}/getProvenance/${key}`);
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
+
+                    if (uniqueChildKeys.includes(recordKey)) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(recordKey), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    postProvenance(key, {
+                        blobType: 'deviceRecord',
+                        description: description,
+                        children_key: '',
+                        tags: tags,
+                    }, attachments || [])
+                }
+
+                keysToCheck.shift();
+            }
+
+            console.log("Finished updating children with 'recall' tag.");
+        }
+    } catch (error) {
+        console.error(`Error notifying children: ${error}`);
+    }
+ }
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
