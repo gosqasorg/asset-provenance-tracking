@@ -303,6 +303,93 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain("Why hello, child");})
 
 	}, 6000);
+
+
+	it("should create a group with two children having custom titles", async () => {
+    const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+    
+    // Generate device keys in parallel (1 group + 2 children)
+    const keyPromises = [
+        fetch(`${baseUrl}/getNewDeviceKey`),
+        fetch(`${baseUrl}/getNewDeviceKey`),
+        fetch(`${baseUrl}/getNewDeviceKey`)
+    ];
+    const keyResponses = await Promise.all(keyPromises);
+    const keys = await Promise.all(keyResponses.map(res => res.text()));
+    const groupKey = keys[0];
+    const childKeys = keys.slice(1);
+    
+    // Define custom titles for the children
+    const customTitles = [
+        "Custom Title DanielGreen",
+        "Custom Title JohnGreene"
+    ];
+	console.log("Creating children with custom titles:", customTitles);
+    console.log("Child keys:", childKeys);
+	
+    
+    // Create child records with custom titles in parallel
+    const childCreationPromises = childKeys.map((key, i) => {
+        const childFormData = new FormData();
+        childFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: customTitles[i],
+            description: `Child record ${i + 1} with custom title`,
+            tags: [],
+            children_key: "",
+            hasParent: false,
+            isReportingKey: false
+        }));
+        
+        return fetch(`${baseUrl}/provenance/${key}`, {
+            method: "POST",
+            body: childFormData,
+        });
+    });
+    
+    const childResponses = await Promise.all(childCreationPromises);
+    childResponses.forEach(response => {
+        expect(response.ok).toBe(true);
+    });
+    
+    // Create group record
+    const groupFormData = new FormData();
+    groupFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        deviceName: "group_custom_titles_test",
+        description: "Group with children having custom titles",
+        tags: [],
+        children_key: childKeys,
+        hasParent: false,
+        isReportingKey: false
+    }));
+	
+    
+    const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+        method: "POST",
+        body: groupFormData,
+    });
+    
+    expect(groupResponse.ok).toBe(true);
+    console.log("All children created successfully");
+    // Read back and verify custom titles
+    const verificationPromises = childKeys.map(key => 
+        fetch(`${baseUrl}/provenance/${key}`)
+    );
+    const verificationResponses = await Promise.all(verificationPromises);
+    const verificationData = await Promise.all(
+        verificationResponses.map(res => res.json())
+    );
+	
+    
+    // Verify each child has the correct custom title
+    verificationData.forEach((child, i) => {
+        expect(child).toBeDefined();
+        expect(child.length).toBeGreaterThan(0);
+        expect(child[0].record.deviceName).toBe(customTitles[i]);
+    });
+}, 60000);
+
 	
 });
 
