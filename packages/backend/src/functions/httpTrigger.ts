@@ -439,6 +439,15 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
+// TODO: REMOVE, just using this to figure out why app.get isn't adding new functions
+export async function getNewVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that returns the version of the server.
+    return { 
+        jsonBody: VERSION_INFO,
+        headers: { "Content-Type": "application/json" }
+    };
+}
+
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         const key = await makeEncodedDeviceKey();
@@ -499,25 +508,38 @@ export function getChildKeys(provenance: Provenance[]): string[] {
 }
 
 // Annotate: Send new record's tags to all children
-export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
+export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+// export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
+    console.log("REACHED NOTIFY CHILDREN!!")
     try {
+        const deviceKey = decodeKey(request.params.deviceKey);
+        const deviceID = await calculateDeviceID(deviceKey);
+        const record = await getProvenance(request, context);
+
+        console.log("RECORD: " + record);
+        console.log("DEVICE KEY: " + deviceKey)
+
+
+
         // TODO: internalTag only exists in frontend, can just put annotate string but it makes updates messier (LEAVE NOTE!)
-        if (tags.includes("annotate")) {
+        if (record.tags.includes("annotate")) {
             // TODO: need httpRequest and InvocationContext (whatever that means, same for post, see other tests)
                 // Two options, commented and below (see read tests)
             // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
             // let records = fetch(`${baseUrl}${recordKey}`);
 
-            let records = await fetch(`${baseUrl}/getProvenance/${recordKey}`);
-            records = await records.json(); 
+            let recordsFetch = await fetch(`${baseUrl}/getProvenance/${recordKey}`);
+            let records = await recordsFetch.json(); 
+            console.log("RECORDS: " + records)
 
-            // TODO: Implement this function in the backend as well?
-            let keysToCheck = deduplicateKeys(getChildKeys(records));
+            // TODO: records.record.child_keys instead of getChildKeys???
+            let keysToCheck = deduplicateKeys(getChildKeys(records.record.child_keys));
 
             // Send annotated record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let keyProvenance = await getProvenance(key);
+                // let keyProvenance = await getProvenance(key);
+                let keyProvenance = await fetch(`${baseUrl}/getProvenance/${key}`);
 
                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
                 if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
@@ -541,6 +563,11 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
             }
 
             console.log("Finished updating children with 'annotate' tag.");
+
+            // TODO: better return value, need failure return value as well!
+            return {
+                status: 200
+            }
         }
     } catch (error) {
         console.error(`Error annotating children: ${error}`);
@@ -548,44 +575,44 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
  }
  
  // Recall: Pin and send new record entry to all children
- export async function recallChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
-    try {
-        if (tags.includes("recall")) {
-            let records = await fetch(`${baseUrl}/getProvenance/${recordKey}`);
-            let keysToCheck = deduplicateKeys(getChildKeys(records));
+//  export async function recallChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
+//     try {
+//         if (tags.includes("recall")) {
+//             let records = await fetch(`${baseUrl}/getProvenance/${recordKey}`);
+//             let keysToCheck = deduplicateKeys(getChildKeys(records));
 
-            // Send recalled record to all children
-            while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
-                let keyProvenance = await fetch(`${baseUrl}/getProvenance/${key}`);
+//             // Send recalled record to all children
+//             while (keysToCheck.length != 0) {
+//                 let key = keysToCheck[0];
+//                 let keyProvenance = await fetch(`${baseUrl}/getProvenance/${key}`);
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
-                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
-                    let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
+//                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+//                 if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+//                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
-                    if (uniqueChildKeys.includes(recordKey)) {
-                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(recordKey), 1);
-                    }
+//                     if (uniqueChildKeys.includes(recordKey)) {
+//                         uniqueChildKeys.splice(uniqueChildKeys.indexOf(recordKey), 1);
+//                     }
 
-                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+//                     keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
-                    postProvenance(key, {
-                        blobType: 'deviceRecord',
-                        description: description,
-                        children_key: '',
-                        tags: tags,
-                    }, attachments || [])
-                }
+//                     postProvenance(key, {
+//                         blobType: 'deviceRecord',
+//                         description: description,
+//                         children_key: '',
+//                         tags: tags,
+//                     }, attachments || [])
+//                 }
 
-                keysToCheck.shift();
-            }
+//                 keysToCheck.shift();
+//             }
 
-            console.log("Finished updating children with 'recall' tag.");
-        }
-    } catch (error) {
-        console.error(`Error notifying children: ${error}`);
-    }
- }
+//             console.log("Finished updating children with 'recall' tag.");
+//         }
+//     } catch (error) {
+//         console.error(`Error notifying children: ${error}`);
+//     }
+//  }
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
@@ -638,8 +665,28 @@ app.get("getVersion", {
     handler: getVersion
 })
 
+// TODO: not actually getting added to backend, why??
+app.get("getNewVersion", {
+    authLevel: 'anonymous',
+    route: 'newversion',
+    handler: getNewVersion
+})
+
 app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
 })
+
+// TODO: define routes for these funcs and call them from the test files!
+app.post('annotateChildren', {
+    authLevel: 'anonymous',
+    route: 'provenance/annotateChildren/{deviceKey}',
+    handler: notifyChildren,
+})
+
+// app.post('recallChildren', {
+//     authLevel: 'anonymous',
+//     route: 'recallChildren',
+//     handler: recallChildren,  // TODO: handler is the problem, needs to have same inputs as rest of handlers
+// })

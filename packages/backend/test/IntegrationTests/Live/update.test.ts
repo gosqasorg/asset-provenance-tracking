@@ -53,7 +53,9 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 });
 
 describe("Record Update Tests", () => {
-  const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
+  // TODO: revert!
+  // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
+  const baseUrl = 'http://localhost:7071/api/provenance/'
 
   // updating a record
   it("Update descriptions", async () => {
@@ -269,7 +271,21 @@ describe("Record Update Tests", () => {
       body: updateFormData,
     });
     
+    console.log("**********")
+    console.log(`fetching url... ${baseUrl}annotateChildren/${groupKey}`)
+    const annotateResponse = await fetch(`${baseUrl}annotateChildren/${groupKey}`, {
+      method: "POST",
+      body: updateFormData,
+    });
+    const test = await fetch(`http://localhost:7071/api/newversion`, {
+      method: "GET"
+    });
+    console.log("DID TEST WORK??" + test);
+    console.log("**********")
+    
+    expect(test.ok).toBe(true);
     expect(updateResponse.ok).toBe(true);
+    expect(annotateResponse.ok).toBe(true);
 
     // Test to see if the record was successfully recalled
     // To succeed, the record should exist in both group and child record history
