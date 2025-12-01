@@ -305,6 +305,20 @@ class AzureFunctionsOpenAPIGenerator {
         version: '1.0.0',
         description: 'Auto-generated OpenAPI specification'
       },
+      servers: [
+        {
+          url: 'http://localhost:7017/api',
+          description: 'Local development server'
+        },
+        {
+          url: 'https://gosqasbe.azurewebsites.net/api',
+          description: 'Staging server'
+        },
+        {
+          url: process.env.BACKEND_URL || 'https://gdtprodbackend.azurewebsites.net/api',
+          description: 'Production server'
+        }
+      ],
       paths
     };
   }
