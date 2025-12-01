@@ -307,7 +307,7 @@ class AzureFunctionsOpenAPIGenerator {
       },
       servers: [
         {
-          url: 'http://localhost:7017/api',
+          url: 'http://localhost:7071/api',
           description: 'Local development server'
         },
         {
