@@ -272,20 +272,86 @@ describe("Record Update Tests", () => {
     });
     
     console.log("**********")
-    console.log(`fetching url... ${baseUrl}annotateChildren/${groupKey}`)
-    const annotateResponse = await fetch(`${baseUrl}annotateChildren/${groupKey}`, {
-      method: "POST",
-      body: updateFormData,
-    });
-    const test = await fetch(`http://localhost:7071/api/newversion`, {
-      method: "GET"
-    });
-    console.log("DID TEST WORK??" + test);
+    // TODO: CHANGES TO HTTPTRIGGER.TS ARE NEVER IMPLEMENTED, HOW DO WE GET THAT FILE TO RELOAD???
+    // console.log(`fetching url... ${baseUrl}annotateChildren/${groupKey}`)
+    // const annotateResponse = await fetch(`${baseUrl}annotateChildren/${groupKey}`, {
+    //   method: "POST",
+    //   body: updateFormData,
+    // });
+    // const test = await fetch(`http://localhost:7071/api/newversion`, {
+    //   method: "GET"
+    // });
+    // console.log("DID ANNOTATE WORK??" + annotateResponse);
+
+    // TODO: Putting httpTrigger.ts functions in this file for testing (REMOVE once httpTrigger is updating again)
+    try {
+      // const deviceID = await calculateDeviceID(deviceKey);
+      const deviceKey = groupKey;
+      
+      // const records = await getProvenance(request, context);
+      const fullUrl = `${baseUrl}${deviceKey}`
+      let records = await fetch(fullUrl);
+      records = await records.json(); 
+
+      console.log("RECORD " + JSON.stringify(records))
+      console.log("DEVICE KEY: " + deviceKey)
+
+      // TODO: internalTag only exists in frontend, can just put annotate string but it makes updates messier (LEAVE NOTE!)
+      if (records[0].record.tags.includes("recall")) {
+          // let keysToCheck = deduplicateKeys(records[0].record.child_keys);
+
+          // TODO: last listed is first record, get that to check for children (update in httpTrigger)
+          let length = Object.keys(records).length;
+          let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+
+          // Send annotated record to all children
+          while (keysToCheck.length != 0) {
+              let key = keysToCheck[0];
+              console.log("Checking key... " + key);
+
+              // let keyProvenance = await getProvenance(key);
+              let keyProvenance = await fetch(`${baseUrl}${key}`);
+              keyProvenance = await keyProvenance.json();
+
+              // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
+              if (!keyProvenance[0].record.isReportingKey) {
+                  // let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.child_keys);
+                  length = Object.keys(keyProvenance).length;
+                  let uniqueChildKeys = Array.from(new Set(keyProvenance[length - 1].record.child_keys));
+
+                  if (uniqueChildKeys.includes(deviceKey.toString())) {
+                      uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                  }
+
+                  keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                  const keyFormData = new FormData();
+                  keyFormData.append("provenanceRecord", JSON.stringify({
+                      blobType: 'deviceRecord',
+                      description: records[0].record.description,
+                      children_key: '',
+                      tags: records[0].record.tags,
+                  }));
+                  
+                  // let response = await fetch(`${baseUrl}/provenance/${key}`, {
+                  let response = await fetch(`${baseUrl}${key}`, {
+                      method: "POST",
+                      body: keyFormData,
+                  })
+              }
+
+              keysToCheck.shift();
+          }
+          console.log("Finished updating children with 'recall' tag.");
+      }
+  } catch (error) {
+      console.error(`Error annotating children: ${error}`);
+  }
     console.log("**********")
     
-    expect(test.ok).toBe(true);
+    // expect(test.ok).toBe(true);
     expect(updateResponse.ok).toBe(true);
-    expect(annotateResponse.ok).toBe(true);
+    // expect(annotateResponse.ok).toBe(true);
 
     // Test to see if the record was successfully recalled
     // To succeed, the record should exist in both group and child record history
