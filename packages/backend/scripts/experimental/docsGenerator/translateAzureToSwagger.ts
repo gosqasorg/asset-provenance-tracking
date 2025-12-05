@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 interface RouteInfo {
@@ -367,11 +368,67 @@ class AzureFunctionsOpenAPIGenerator {
   }
 }
 
+// This function is used to merge the auto-generated spec with the manual overrides
+function mergeWithManualOverrides(autoSpec: any, manualSpec: any): any {
+  const merged = { ...autoSpec };
+  
+  if (manualSpec.paths) {
+    // Collect operationIds from manual overrides to identify which auto paths to remove
+    const manualOperationIds = new Set<string>();
+    Object.values(manualSpec.paths).forEach((pathOps: any) => {
+      Object.values(pathOps).forEach((op: any) => {
+        if (op.operationId) {
+          manualOperationIds.add(op.operationId);
+        }
+      });
+    });
+    
+    // Remove auto-generated paths that have the same operationIds as a manual override
+    const filteredAutoPaths: any = {};
+    Object.entries(autoSpec.paths || {}).forEach(([path, pathOps]: [string, any]) => {
+      const filteredOps: any = {};
+      Object.entries(pathOps).forEach(([method, op]: [string, any]) => {
+        if (!op.operationId || !manualOperationIds.has(op.operationId)) {
+          filteredOps[method] = op;
+        }
+      });
+      if (Object.keys(filteredOps).length > 0) {
+        filteredAutoPaths[path] = filteredOps;
+      }
+    });
+    
+    // Merge filtered auto paths and manual paths, manual takes precedence
+    merged.paths = {
+      ...filteredAutoPaths,
+      ...manualSpec.paths
+    };
+  }
+  return merged;
+}
+
 // Usage function
 export function generateOpenAPI(sourceFilePath: string, outputPath?: string): void {
   try {
     const generator = new AzureFunctionsOpenAPIGenerator(sourceFilePath);
-    const spec = generator.generate();
+    let spec = generator.generate();
+    
+    // Check for manual overrides file
+    if (outputPath) {
+      const outputDir = path.dirname(outputPath);
+      const manualOverridesPath = path.join(outputDir, 'manual-openapi-overrides.yaml');
+      
+      if (fs.existsSync(manualOverridesPath)) {
+        try {
+          const manualContent = fs.readFileSync(manualOverridesPath, 'utf8');
+          const manualSpec = yaml.load(manualContent) as any;
+          spec = mergeWithManualOverrides(spec, manualSpec);
+          console.log(`Merged manual overrides from: ${manualOverridesPath}`);
+        } catch (error) {
+          console.warn(`Warning: Could not load manual overrides file: ${error}`);
+        }
+      }
+    }
+    
     const yamlOutput = yaml.dump(spec, { indent: 2 });
     
     if (outputPath) {

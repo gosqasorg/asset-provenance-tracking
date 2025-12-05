@@ -5,3 +5,7 @@
 - You can change the server endpoint under `Server` banner in the dropdown.
 
 The Swagger Editor does extensive syntax checking & issue reporting. 
+
+**Note: Manual Overrides **
+
+Created `packages/backend/api-docs/manual-openapi-overrides.yaml` to preserve manual documentation. The generator merges manual overrides with auto-generated specs (manual takes precedence).

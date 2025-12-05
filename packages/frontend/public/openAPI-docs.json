@@ -283,9 +283,9 @@
         }
       }
     },
-    "/getNewDeviceKey": {
-      "get": {
-        "summary": "GET /getNewDeviceKey",
+    "/device/Key": {
+      "post": {
+        "summary": "POST /device/Key",
         "operationId": "getNewDeviceKey",
         "responses": {
           "200": {
