@@ -246,90 +246,108 @@ describe("Group Creation Tests", () => {
 	// Group Creation test with 2 child keys + annotation
 	it("Group Creation - Annotating Child Records", async () => {
 
-		// Create new group and children keys
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-		const keysCreation = [fetch(`${baseUrl}/getNewDeviceKey`),...Array.from({length: 2}, () => fetch(`${baseUrl}/getNewDeviceKey`))];
-		const keyResponses = await Promise.all(keysCreation);
-		const keys = await Promise.all(keyResponses.map(res => res.text()));
-
-		const groupKey = keys[0];
-		const childKeys = keys.splice(1)
-
-		// Create group parent key
-		const groupFormData = new FormData();
-		groupFormData.append("provenanceRecord", JSON.stringify({
-			blobType: "deviceInitializer",
-			deviceName: "Group Creation - Annotation record",
-			description: "Group record for Annotating Child Records test",
-			tags: "Why hello, child",
-			children_key: childKeys,
-			annotated: true,
-			hasParent: false,
-			inReportingKey: false
-		}));
-
-		// Preparation for annotation option extraction
-		const formDataValue = groupFormData.get("provenanceRecord")
-		const formDataObject = JSON.parse(formDataValue)
-		let childFormData;
-		let childrenPromises
-
-		// If annotation is selected, create child keys in parallel with tags
-		if (formDataObject.annotated){
-			childrenPromises = childKeys.map((key, i) => {
-			childFormData = new FormData();
-				childFormData.append("provenanceRecord", JSON.stringify({
-				blobType: "deviceInitializer",
-				deviceName: `child_${i + 1}`,
-				description: "child for group creation annotation test",
-				tags: formDataObject.tags,
-				children_key: "",
-				hasParent: true,
-				isReportingKey: false
-			}));
-			return fetch(`${baseUrl}/provenance/${key}`, {
-				method: "POST",
-				body: childFormData,
-			})
-		})}
-
-		// Verify tags are present in all child keys
-		const verificationPromises = [fetch(`${baseUrl}/provenance/${groupKey}`), ...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))];
-		const verificationResponses = await Promise.all(verificationPromises);
-		const verificationData = await Promise.all(verificationResponses.map(response => response.json()));
-		const [retrievedGroup, ...retrievedChildren] = verificationData;
-
-		retrievedChildren.forEach((child, i) => {
-			expect(child[0].record.tags).toContain("Why hello, child");})
-
-	}, 6000);
-
-
-	it("should create a group with two children having custom titles", async () => {
+    // Create new group and children keys
     const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-    
-    // Generate device keys in parallel (1 group + 2 children)
-    const keyPromises = [
-        fetch(`${baseUrl}/getNewDeviceKey`),
-        fetch(`${baseUrl}/getNewDeviceKey`),
-        fetch(`${baseUrl}/getNewDeviceKey`)
-    ];
-    const keyResponses = await Promise.all(keyPromises);
+    const keysCreation = [fetch(`${baseUrl}/getNewDeviceKey`),...Array.from({length: 2}, () => fetch(`${baseUrl}/getNewDeviceKey`))];
+    const keyResponses = await Promise.all(keysCreation);
     const keys = await Promise.all(keyResponses.map(res => res.text()));
+
     const groupKey = keys[0];
-    const childKeys = keys.slice(1);
+    const childKeys = keys.splice(1);
+
+    // Create group parent key
+    const groupFormData = new FormData();
+    groupFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        deviceName: "Group Creation - Annotation record",
+        description: "Group record for Annotating Child Records test",
+        tags: "Why hello, child",
+        children_key: childKeys,
+        annotated: true,
+        hasParent: false,
+        inReportingKey: false
+    }));
+
+    // Preparation for annotation option extraction
+    const formDataValue = groupFormData.get("provenanceRecord");
+    const formDataObject = JSON.parse(formDataValue);
+    let childFormData;
+    let childrenPromises;
+
+    // If annotation is selected, create child keys in parallel with tags
+    if (formDataObject.annotated){
+        childrenPromises = childKeys.map((key, i) => {
+            childFormData = new FormData();
+            childFormData.append("provenanceRecord", JSON.stringify({
+                blobType: "deviceInitializer",
+                deviceName: `child_${i + 1}`,
+                description: "child for group creation annotation test",
+                tags: formDataObject.tags,
+                children_key: "",
+                hasParent: true,
+                isReportingKey: false
+            }));
+            return fetch(`${baseUrl}/provenance/${key}`, {
+                method: "POST",
+                body: childFormData,
+            });
+        });
+        
+        // WAIT for children to be created
+        const childResponses = await Promise.all(childrenPromises);
+        childResponses.forEach(response => {
+            expect(response.ok).toBe(true);
+        });
+    }
+
+    // CREATED THE GROUP RECORD 
+    const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+        method: "POST",
+        body: groupFormData,
+    });
+    
+    expect(groupResponse.ok).toBe(true);
+
+    // Verify tags are present in all child keys
+    const verificationPromises = [fetch(`${baseUrl}/provenance/${groupKey}`), ...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))];
+    const verificationResponses = await Promise.all(verificationPromises);
+    const verificationData = await Promise.all(verificationResponses.map(response => response.json()));
+    const [retrievedGroup, ...retrievedChildren] = verificationData;
+
+    retrievedChildren.forEach((child, i) => {
+        expect(child[0].record.tags).toContain("Why hello, child");
+    });
+
+}, 6000); 
+	// Khadija test for custom tiles
+	it("should create a group with two children having custom titles", async () => {
+    const baseUrl = "https://gdtprodbackend.azurewebsites.net/api/provenance/";
+    
+    // Generate device keys 
+    const groupKey = await makeEncodedDeviceKey();
+    const childKey1 = await makeEncodedDeviceKey();
+    const childKey2 = await makeEncodedDeviceKey();
+    const childKeys = [childKey1, childKey2];
     
     // Define custom titles for the children
     const customTitles = [
         "Custom Title DanielGreen",
         "Custom Title JohnGreene"
     ];
-	console.log("Creating children with custom titles:", customTitles);
+    
+    console.log("Group key:", groupKey);
     console.log("Child keys:", childKeys);
-	
+    
+    // Validate keys
+    expect(groupKey.length).toBe(22);
+    expect(validateKey(groupKey)).toBe(true);
+    childKeys.forEach(key => {
+        expect(key.length).toBe(22);
+        expect(validateKey(key)).toBe(true);
+    });
     
     // Create child records with custom titles in parallel
-    const childCreationPromises = childKeys.map((key, i) => {
+    const childrenPromises = childKeys.map((key, i) => {
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
@@ -341,46 +359,45 @@ describe("Group Creation Tests", () => {
             isReportingKey: false
         }));
         
-        return fetch(`${baseUrl}/provenance/${key}`, {
+        return fetch(`${baseUrl}${key}`, {
             method: "POST",
             body: childFormData,
         });
     });
     
-    const childResponses = await Promise.all(childCreationPromises);
+    // Wait for child creation to complete
+    const childResponses = await Promise.all(childrenPromises);
     childResponses.forEach(response => {
         expect(response.ok).toBe(true);
     });
     
-    // Create group record
+    // Create group parent record
     const groupFormData = new FormData();
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
-        deviceName: "group_custom_titles_test",
+        deviceName: "group with custom child ",
         description: "Group with children having custom titles",
         tags: [],
         children_key: childKeys,
         hasParent: false,
         isReportingKey: false
     }));
-	
     
-    const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+    const groupResponse = await fetch(`${baseUrl}${groupKey}`, {
         method: "POST",
         body: groupFormData,
     });
     
     expect(groupResponse.ok).toBe(true);
-    console.log("All children created successfully");
-    // Read back and verify custom titles
+    
+    // Verify custom titles are present in all child keys
     const verificationPromises = childKeys.map(key => 
-        fetch(`${baseUrl}/provenance/${key}`)
+        fetch(`${baseUrl}${key}`)
     );
     const verificationResponses = await Promise.all(verificationPromises);
     const verificationData = await Promise.all(
-        verificationResponses.map(res => res.json())
+        verificationResponses.map(response => response.json())
     );
-	
     
     // Verify each child has the correct custom title
     verificationData.forEach((child, i) => {
