@@ -439,15 +439,6 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
-// TODO: REMOVE, just using this to figure out why app.get isn't adding new functions
-export async function getNewVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // This is a simple function that returns the version of the server.
-    return { 
-        jsonBody: VERSION_INFO,
-        headers: { "Content-Type": "application/json" }
-    };
-}
-
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         const key = await makeEncodedDeviceKey();
@@ -509,117 +500,136 @@ export function deduplicateKeys(keys: string[]): string[] {
 // }
 
 // Annotate: Send new record's tags to all children
-export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-// export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
-    console.log("REACHED NOTIFY CHILDREN!!")
-    try {
-        const deviceKey = decodeKey(request.params.deviceKey);
-        // const deviceID = await calculateDeviceID(deviceKey);
-        const records = await getProvenance(request, context);
+// export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+//     // TODO: Change to match test urls after done testing (NOT LOCAL!)
+//     const baseUrl = 'http://localhost:7071/api/provenance'
 
-        console.log("RECORD: " + records);
-        console.log("DEVICE KEY: " + deviceKey)
+//     try {
+//         const deviceKey = decodeKey(request.params.deviceKey);
+//         // const deviceID = await calculateDeviceID(deviceKey);
+//         const records = await getProvenance(request, context);
 
-
-
-        // TODO: internalTag only exists in frontend, can just put annotate string but it makes updates messier (LEAVE NOTE!)
-        if (records[0].record.tags.includes("annotate")) {
-            // TODO: need httpRequest (url) and InvocationContext (whatever that means, same for post, see other tests)
-                // Two options, commented and below (see read tests)
-            // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
-            // let records = fetch(`${baseUrl}${recordKey}`);
-
-            // TODO: remove (this is done above already)
-            // let recordsFetch = await fetch(`${baseUrl}/getProvenance/${deviceKey}`);
-            // let records = await recordsFetch.json(); 
-            // console.log("RECORDS: " + records)
-
-            // TODO: records.record.children_keys instead of getChildKeys???
-            // let keysToCheck = deduplicateKeys(getChildKeys(records[0].record.child_keys));
-            let keysToCheck = deduplicateKeys(records[0].record.children_key);
-
-            // Send annotated record to all children
-            while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
-                // let keyProvenance = await getProvenance(key);
-                // TODO: double check fetch link
-                let keyProvenance = await fetch(`${baseUrl}/provenance/${key}`);
-
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
-                if (!keyProvenance[0].record.isReportingKey) {
-                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
-
-                    // TODO: deviceKey.toString might not work
-                    if (uniqueChildKeys.includes(deviceKey.toString())) {
-                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
-                    }
-
-                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
-
-                    // TODO: remove?
-                    // let postResponse = await fetch(`${baseUrl}/postProvenance/${key}`);
-                    // postProvenance(key, {
-                    //     blobType: 'deviceRecord',
-                    //     description: "Annotated by admin",
-                    //     children_key: '',
-                    //     tags: records[0].record.tags,
-                    // }, attachments || [])
+//         console.log("RECORD: " + records);
+//         console.log("DEVICE KEY: " + deviceKey)
 
 
-                    // TODO: See update tests!
-                        // TODO: this would lose attachments, see tests with attachments
-                            // (funcs getDecryptedBlob/getAttachments?? createRecord doesn't have this functionality but shouldn't matter in backend)
-                            // TODO: Test createRecord and recall/annotating with an attachment, does it get lost? If so create bug report
-                            // Or just leave a TODO for that feature!
-                        // const updateFormData = new FormData();
-                        // updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+
+//         // TODO: internalTag only exists in frontend, can just put annotate string but it makes updates messier (LEAVE NOTE!)
+//         if (records[0].record.tags.includes("annotate")) {
+//             // TODO: need httpRequest (url) and InvocationContext (whatever that means, same for post, see other tests)
+//                 // Two options, commented and below (see read tests)
+//             // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+//             // let records = fetch(`${baseUrl}${recordKey}`);
+
+//             // TODO: remove (this is done above already)
+//             // let recordsFetch = await fetch(`${baseUrl}/getProvenance/${deviceKey}`);
+//             // let records = await recordsFetch.json(); 
+//             // console.log("RECORDS: " + records)
+
+//             // TODO: records.record.children_keys instead of getChildKeys???
+//             // let keysToCheck = deduplicateKeys(getChildKeys(records[0].record.child_keys));
+//             let keysToCheck = deduplicateKeys(records[0].record.children_key);
+
+//             // Send annotated record to all children
+//             while (keysToCheck.length != 0) {
+//                 let key = keysToCheck[0];
+//                 // let keyProvenance = await getProvenance(key);
+//                 // TODO: double check fetch link
+//                 let keyProvenance = await fetch(`${baseUrl}/provenance/${key}`);
+
+//                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
+//                 if (!keyProvenance[0].record.isReportingKey) {
+//                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+
+//                     // TODO: deviceKey.toString might not work
+//                     if (uniqueChildKeys.includes(deviceKey.toString())) {
+//                         uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+//                     }
+
+//                     keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+//                     // TODO: remove?
+//                     // let postResponse = await fetch(`${baseUrl}/postProvenance/${key}`);
+//                     // postProvenance(key, {
+//                     //     blobType: 'deviceRecord',
+//                     //     description: "Annotated by admin",
+//                     //     children_key: '',
+//                     //     tags: records[0].record.tags,
+//                     // }, attachments || [])
+
+
+//                     // TODO: See update tests!
+//                         // TODO: this would lose attachments, see tests with attachments
+//                             // (funcs getDecryptedBlob/getAttachments?? createRecord doesn't have this functionality but shouldn't matter in backend)
+//                             // TODO: Test createRecord and recall/annotating with an attachment, does it get lost? If so create bug report
+//                             // Or just leave a TODO for that feature!
+//                         // const updateFormData = new FormData();
+//                         // updateFormData.append("provenanceRecord", JSON.stringify(updateData));
                         
-                        // const buffer = await readFile('./test/attachments/c200.jpg');
-                        // const blob = new Blob([buffer], { type: 'image/jpeg' });
-                        // updateFormData.append('updated-image.jpg', blob);
-                    const keyFormData = new FormData();
-                    keyFormData.append("provenanceRecord", JSON.stringify({
-                        blobType: 'deviceRecord',
-                        description: "Annotated by admin",
-                        children_key: '',
-                        tags: records[0].record.tags,
-                    }));
+//                         // const buffer = await readFile('./test/attachments/c200.jpg');
+//                         // const blob = new Blob([buffer], { type: 'image/jpeg' });
+//                         // updateFormData.append('updated-image.jpg', blob);
+//                     const keyFormData = new FormData();
+//                     keyFormData.append("provenanceRecord", JSON.stringify({
+//                         blobType: 'deviceRecord',
+//                         description: "Annotated by admin",
+//                         children_key: '',
+//                         tags: records[0].record.tags,
+//                     }));
                     
-                    // TODO: Directly call postProvenance? (nowhere else in the file uses fetch, but need to somehow include formdata)
-                    let response = await fetch(`${baseUrl}/provenance/${key}`, {
-                        method: "POST",
-                        body: keyFormData,
-                    })
-                }
+//                     // TODO: Directly call postProvenance? (nowhere else in the file uses fetch, but need to somehow include formdata)
+//                     let response = await fetch(`${baseUrl}/provenance/${key}`, {
+//                         method: "POST",
+//                         body: keyFormData,
+//                     })
+//                 }
 
-                keysToCheck.shift();
-            }
+//                 keysToCheck.shift();
+//             }
 
-            console.log("Finished updating children with 'annotate' tag.");
+//             console.log("Finished updating children with 'annotate' tag.");
 
-            // TODO: better return value? need failure return value as well (status: 500, generic internal server error?)!
-            return {
-                status: 200
-            }
-        }
-    } catch (error) {
-        console.error(`Error annotating children: ${error}`);
-    }
- }
+//             // TODO: better return value? need failure return value as well (status: 500, generic internal server error?)!
+//             return {
+//                 status: 200
+//             }
+//         }
+//     } catch (error) {
+//         console.error(`Error annotating children: ${error}`);
+//     }
+//  }
  
  // Recall: Pin and send new record entry to all children
  export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try {
-        const deviceKey = decodeKey(request.params.deviceKey);
-        const records = await getProvenance(request, context);
+    console.log("RECALLING CHILDREN!")
+    // TODO: Change to match test urls after done testing (NOT LOCAL! ALSO GETTING OVERRIDEN!)
+    const baseUrl = 'http://localhost:7071/api/provenance'
 
+    try {
+        // TODO: JUST DOESNT RETURN THE KEY?????? WHY?????
+        // const deviceKey = decodeKey(request.params.deviceKey);
+        const deviceKey = request.params.deviceKey;
+        // request.params.deviceKey  // ???
+
+        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        const records = await getRecords.json()
+
+
+        // TODO: records[0].record.tags.includes("recall") == record is undefined
         if (records[0].record.tags.includes("recall")) {
-            let keysToCheck = deduplicateKeys(records[0].record.children_key);
+            // TODO: This DOES correctly get the child key to check
+            // TODO: is this correct (yes im pretty sure)? ('len - 1' is creation, '0' is the most recent record)
+                // Test with grandparent relations tho!
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+            // let keysToCheck = deduplicateKeys(records[0].record.children_key);
+
 
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let keyProvenance = await fetch(`${baseUrl}/provenance/${key}`);
+                let getKey = await fetch(`${baseUrl}/${key}`);
+                const keyProvenance = await getKey.json();
 
                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
                 if (!keyProvenance[0].record.isReportingKey) {
@@ -639,17 +649,28 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/provenance/${key}`, {
+                    // TODO: syntax error unexpected end of JSON input
+                    let response = await fetch(`${baseUrl}/${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // TODO: THIS IS HOW YOU RETURN A STRING (replace records w/ this in return statement!)
+                //     const jsonBody = JSON.stringify(keysToCheck);
+                    
                 }
 
                 keysToCheck.shift();
             }
 
+            // TODO: revert/edit?? move outside of if statement??? 
             return {
-                status: 200
+                status: 200,
+                jsonBody: {
+                    ok: getRecords.ok,
+                    records,
+                    // response
+                }
             }
         }
     } catch (error) {
@@ -708,29 +729,20 @@ app.get("getVersion", {
     handler: getVersion
 })
 
-// TODO: not actually getting added to backend, why??
-// TODO: remove when it's working
-app.get("getNewVersion", {
-    authLevel: 'anonymous',
-    route: 'newversion',
-    handler: getNewVersion
-})
-
 app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
 })
 
-// TODO: define routes for these funcs and call them from the test files!
-app.post('annotateChildren', {
-    authLevel: 'anonymous',
-    route: 'provenance/annotateChildren/{deviceKey}',
-    handler: notifyChildren,
-})
+// app.post('annotateChildren', {
+//     authLevel: 'anonymous',
+//     route: 'provenance/annotateChildren/{deviceKey}',
+//     handler: notifyChildren,
+// })
 
 app.post('recallChildren', {
     authLevel: 'anonymous',
-    route: 'recallChildren/{deviceKey}',
-    handler: recallChildren,  // TODO: handler is the problem, needs to have same inputs as rest of handlers
+    route: 'provenance/recallChildren/{deviceKey}',
+    handler: recallChildren,
 })
