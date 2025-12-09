@@ -257,7 +257,7 @@ describe("Record Update Tests", () => {
 		expect(childResponse.ok).toBe(true);
 		expect(groupResponse.ok).toBe(true);
 
-    // Add a new recalled record (aka a record w/ the recall tag) to the group
+    // Add a new recalled record (aka a record w/ the recall tag) to the parent group
     // This should also send the recalled record to the child
     const updateData = {
       blobType: 'deviceRecord',
@@ -268,42 +268,19 @@ describe("Record Update Tests", () => {
     
     const updateFormData = new FormData();
     updateFormData.append("provenanceRecord", JSON.stringify(updateData));
-    
+
     const updateResponse = await fetch(fullUrl, {
       method: "POST",
       body: updateFormData,
     });
 
-    let test = await fetch(`${baseUrl}${groupKey}`, {
-      method: "GET"
-    })
-    test = await test.json()
-    console.log(`ROUTE: ${baseUrl}${groupKey}`);
-    // console.log("DATA: " + JSON.stringify(test));
-    // console.log("TAGS: " + test[0].record.tags)
+    // Call recall function to send recalled record to all the children
+    const recallResponse = await fetch(`${baseUrl}recall/${groupKey}`, {
+      method: "POST",
+      body: updateFormData,
+    });
+    expect(recallResponse.ok).toBe(true);
     
-    console.log("**********")
-    console.log(`fetching url... ${baseUrl}recallChildren/${groupKey}`)
-    try {
-      const annotateResponse = await fetch(`${baseUrl}recallChildren/${groupKey}`, {
-        method: "POST",
-        body: updateFormData,
-      });
-
-      let test = await annotateResponse.json()  // returns [Object object]
-      console.log("DID ANNOTATE WORK??" + JSON.stringify(test));
-      expect(annotateResponse.ok).toBe(true);
-
-    } catch (e) {
-      console.log("ERROR ERROR! " + e)
-    }
-
-    console.log("**********")
-    
-    // expect(test.ok).toBe(true);
-    expect(updateResponse.ok).toBe(true);
-    
-
     // Test to see if the record was successfully recalled
     // To succeed, the record should exist in both group and child record history
     const getGroupResponse = await fetch(fullUrl);
@@ -313,8 +290,6 @@ describe("Record Update Tests", () => {
     expect(groupRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
     expect(groupRecord.record.description).toBe("Updated with recall");
 
-    // TODO: this current fails, since recall has not been implmeneted in the backend
-    // (so the recalled record is never sent from the group to the child)
     const getChildResponse = await fetch(`${baseUrl}${childKey}`);
     const childData = await getChildResponse.json();
     const childRecord = JSON.parse(JSON.stringify(childData[0]));
