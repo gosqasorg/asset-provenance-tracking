@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">  
+            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500" @keydown.enter.prevent>  
             <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
