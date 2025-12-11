@@ -14,6 +14,7 @@ interface HandlerInfo {
   parameters: ParameterInfo[];
   returnType: string;
   description?: string;
+  isArray: boolean;
 }
 
 interface ParameterInfo {
@@ -27,7 +28,10 @@ class AzureFunctionsOpenAPIGenerator {
   private typeChecker: ts.TypeChecker;
 
   constructor(filePath: string) {
-    const program = ts.createProgram([filePath], {});
+    const program = ts.createProgram([filePath], {
+        target: ts.ScriptTarget.ESNext, 
+        module: ts.ModuleKind.CommonJS
+    });
     this.sourceFile = program.getSourceFile(filePath)!;
     this.typeChecker = program.getTypeChecker();
   }
@@ -73,9 +77,13 @@ class AzureFunctionsOpenAPIGenerator {
               });
               
               if (routePath && handlerName) {
+                // construct the full path
+                const cleanRoute = routePath.startsWith('/') ? routePath.slice(1) : routePath;
+                const fullPath = '/api/' + cleanRoute;
+
                 routes.push({
                   method,
-                  path: '/' + routePath,
+                  path: fullPath,
                   handlerName,
                   functionName
                 });
@@ -99,13 +107,14 @@ class AzureFunctionsOpenAPIGenerator {
       if (ts.isFunctionDeclaration(node) && node.name) {
         const name = node.name.text;
         const parameters = this.extractParameters(node);
-        const returnType = this.getReturnType(node);
+        const { type: returnType, isArray } = this.getReturnType(node);
         
         handlers.set(name, {
           name,
           parameters,
           returnType,
-          description: this.extractJSDocDescription(node)
+          description: this.extractJSDocDescription(node),
+          isArray,
         });
       }
       
@@ -172,18 +181,33 @@ class AzureFunctionsOpenAPIGenerator {
     return parameters;
   }
 
-  private getReturnType(func: ts.FunctionDeclaration): string {
+  private getReturnType(func: ts.FunctionDeclaration): { type: string, isArray: boolean } {
     // Analyze return statements to infer response type
-    const returnTypes: string[] = [];
+    const result = { type: 'application/json', isArray: false };
     
     const visit = (node: ts.Node) => {
       if (ts.isReturnStatement(node) && node.expression) {
         if (ts.isObjectLiteralExpression(node.expression)) {
-          const hasJsonBody = node.expression.properties.some(prop => 
+
+          const jsonBodyProp = node.expression.properties.find(prop => 
             ts.isPropertyAssignment(prop) && 
             ts.isIdentifier(prop.name) && 
             prop.name.text === 'jsonBody'
-          );
+          ) as ts.PropertyAssignment;
+          
+          if (jsonBodyProp) {
+            result.type = 'application/json';
+            
+            try {
+                const type = this.typeChecker.getTypeAtLocation(jsonBodyProp.initializer);
+                if (this.typeChecker.isArrayType(type) || (type.symbol && type.symbol.name === 'Array')) {
+                    result.isArray = true;
+                }
+            } catch (e) {
+                console.warn(`Warning: Could not resolve type for jsonBody in ${func.name?.text}`);
+            }
+            return; 
+          }
           
           const hasBody = node.expression.properties.some(prop => 
             ts.isPropertyAssignment(prop) && 
@@ -191,10 +215,8 @@ class AzureFunctionsOpenAPIGenerator {
             prop.name.text === 'body'
           );
           
-          if (hasJsonBody) {
-            returnTypes.push('application/json');
-          } else if (hasBody) {
-            returnTypes.push('text/plain');
+          if (hasBody) {
+            result.type = 'text/plain';
           }
         }
       }
@@ -206,7 +228,7 @@ class AzureFunctionsOpenAPIGenerator {
       visit(func.body);
     }
     
-    return returnTypes[0] || 'application/json';
+    return result;
   }
 
   private extractJSDocDescription(node: ts.Node): string | undefined {
@@ -252,7 +274,7 @@ class AzureFunctionsOpenAPIGenerator {
         responses: {
           '200': {
             description: 'Success',
-            content: this.getResponseContent(handler.returnType)
+            content: this.getResponseContent(handler.returnType, handler.isArray, route.handlerName, pathKey)
           },
           '404': {
             description: 'Not Found'
@@ -264,7 +286,6 @@ class AzureFunctionsOpenAPIGenerator {
       const pathParams = this.extractPathParameters(route.path);
       const parameters: any[] = [];
       
-      // Add all path parameters found in the route
       pathParams.forEach(paramName => {
         parameters.push({
           name: paramName,
@@ -287,7 +308,7 @@ class AzureFunctionsOpenAPIGenerator {
               'multipart/form-data': {
                 schema: {
                   type: 'object',
-                  properties: this.inferFormDataProperties(route.handlerName)
+                  properties: this.inferFormDataProperties(route.handlerName, pathKey)
                 }
               }
             }
@@ -305,32 +326,213 @@ class AzureFunctionsOpenAPIGenerator {
         version: '1.0.0',
         description: 'Auto-generated OpenAPI specification'
       },
+      servers: [
+        {
+          url: "http://localhost:7071",
+          description: "Local Development Server"
+        }
+      ],
       paths
     };
   }
   
   
-  private getResponseContent(contentType: string): any {
+  private getResponseContent(contentType: string, isArray: boolean = false, handlerName?: string, routePath: string = ''): any {
     const content: any = {};
+
+    if (routePath.includes('/attachment/')) {
+      return {
+        'application/octet-stream': {
+            schema: { type: 'string', format: 'binary' }
+        },
+        '*/*': {
+            schema: { type: 'string', format: 'binary' }
+        }
+      };
+    }
     
     if (contentType === 'application/json') {
-      content['application/json'] = {
-        schema: {
-          type: 'object'
-        }
+      let schema: any = {
+        type: isArray ? 'array' : 'object'
       };
+
+      if (handlerName === 'getProvenance' && isArray) {
+        schema.items = {
+          type: 'object',
+          properties: {
+            deviceID: { 
+              type: 'string', 
+              example: "426eceb480b07a16a1c27209183fcd572cc6e038a3ad663949e8794378367592" 
+            },
+            timestamp: { 
+              type: 'number', 
+              description: "Epoch timestamp",
+              example: 1764750945643 
+            },
+            attachments: { 
+              type: 'array', 
+              items: { type: 'string' },
+              description: "List of filenames for images or files",
+              example: ["bfaa8c93f70dbf50df7ae9c6a6874ad9123725bd3911b310566129574940bc16"]
+            },
+            
+            record: { 
+              type: 'object', 
+              properties: {
+                blobType: { type: 'string', example: "deviceInitializer" },
+                deviceName: { type: 'string', example: "test1" },
+                description: { type: 'string', example: "tes" },
+                
+                tags: { 
+                    type: 'array', 
+                    items: { type: 'string' },
+                    example: [] 
+                },
+                
+                children_key: { type: 'string', example: "" }, 
+                
+                hasParent: { 
+                    type: 'boolean', 
+                    example: false 
+                },
+                
+                isReportingKey: { 
+                    type: 'boolean', 
+                    example: false
+                }
+              }
+            }
+          }
+        };
+      }
+      else if (handlerName === 'postProvenance') {
+        schema = {
+          type: 'object',
+          properties: {
+            record: {
+              type: 'string',
+              description: 'The ID/Hash of the uploaded record',
+              example: "aac1df01fb03206c013fc06c61156796fe49ca9c719230b0e14d59ce54b6e8ed"
+            },
+            attachments: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  blob: { type: 'object', example: {} },
+                  name: { type: 'string', example: "IMG_5BC92842B87B-1.jpeg" }
+                }
+              }
+            }
+          }
+        };
+      }
+      else if (handlerName === 'upgradeProvenance') {
+        schema = {
+          type: 'object',
+          properties: {
+            "already-converted": {
+              type: 'boolean',
+              description: 'Indicates if the legacy provenance records were already converted.',
+              example: true
+            }
+          }
+        };
+      }
+
+      else if (routePath.includes('/upgrade/')) {
+        schema = {
+          type: 'object',
+          properties: {
+            "already-converted": {
+              type: 'boolean',
+              description: 'Indicates if the legacy provenance records were already converted.',
+              example: true
+            }
+          },
+          required: ["already-converted"] 
+        };
+      }
+
+      else if (handlerName === 'getStatistics') {
+        schema.items = {
+          type: 'object',
+          properties: {
+            timestamp: {
+              type: 'string', 
+              description: 'Timestamp from blob metadata',
+              example: "1765060293569"
+            },
+            deviceID: {
+              type: 'string',
+              description: 'Device ID Hash',
+              example: "40a5b65099eb332bb18e1f135721d17d48cb2b84fe66b72e20460e31df7faf8f"
+            }
+          }
+        };
+      }
+
+      else if (handlerName === 'getVersion') {
+        schema = {
+          type: 'object',
+          properties: {
+            version: { 
+              type: 'string', 
+              description: 'Server version number',
+              example: "0.0.3" 
+            },
+            gitCommit: { 
+              type: 'string', 
+              description: 'Git commit hash of the build',
+              example: "4f5491d" 
+            },
+            buildTime: { 
+              type: 'string', 
+              description: 'ISO 8601 timestamp of when the server was built',
+              example: "2025-05-16T18:43:14.324Z" 
+            }
+          }
+        };
+      }
+
+      else if (isArray) {
+        schema.items = { type: 'object' };
+      }
+
+      content['application/json'] = { schema };
+
     } else if (contentType === 'text/plain') {
-      content['text/plain'] = {
-        schema: {
-          type: 'string'
-        }
-      };
+      let schema: any = { type: 'string' };
+
+      if (handlerName === 'getAttachmentName') {
+        schema = {
+          type: 'string',
+          description: "The original filename of the attachment.",
+          example: "IMG_5528.PNG"
+        };
+      }
+      else if (handlerName === 'postEmail') {
+        schema = { 
+          type: 'string', 
+          description: "Success confirmation message", 
+          example: "Created" 
+        };
+      }
+      else if (handlerName === 'getNewDeviceKey') {
+        schema = { 
+          type: 'string', 
+          description: "A newly generated encoded device key", 
+          example: "VecKCTnzJ1iq5xKC6AVS5G" 
+        };
+      }
+      
+      content['text/plain'] = { schema };
     }
     
     return content;
   }
   
-  private inferFormDataProperties(handlerName: string): any {
+  private inferFormDataProperties(handlerName: string, routePath: string = ''): any {
     // Basic form data inference - could be enhanced by analyzing the handler body
     const commonProperties: any = {
       'provenanceRecord': {
@@ -344,7 +546,35 @@ class AzureFunctionsOpenAPIGenerator {
         'email': {
           type: 'string',
           format: 'email',
-          description: 'User email address'
+          description: 'User email address',
+          example: 'user@example.ca'
+        }
+      };
+    }
+
+    if (handlerName === 'postProvenance') {
+      const recordExample = {
+        blobType: "deviceInitializer",
+        deviceName: "device_name",
+        description: "record description",
+        tags: ["is_payload_correct"],
+        children_key: "",
+        hasParent: false,
+        isReportingKey: false
+      };
+      return {
+        'provenanceRecord': {
+          type: 'string',
+          description: 'Provenance record details (JSON5 string).',
+          example: JSON.stringify(recordExample)
+        },
+        'attachments': {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary'
+          },
+          description: 'Multiple file attachments'
         }
       };
     }

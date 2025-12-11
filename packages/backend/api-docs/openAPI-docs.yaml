@@ -3,10 +3,13 @@ info:
   title: Azure Functions API
   version: 1.0.0
   description: Auto-generated OpenAPI specification
+servers:
+  - url: http://localhost:7071
+    description: Local Development Server
 paths:
-  /provenance/{deviceKey}:
+  /api/provenance/{deviceKey}:
     get:
-      summary: GET /provenance/{deviceKey}
+      summary: GET /api/provenance/{deviceKey}
       operationId: getProvenance
       responses:
         '200':
@@ -14,7 +17,52 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
+                  properties:
+                    deviceID:
+                      type: string
+                      example: >-
+                        426eceb480b07a16a1c27209183fcd572cc6e038a3ad663949e8794378367592
+                    timestamp:
+                      type: number
+                      description: Epoch timestamp
+                      example: 1764750945643
+                    attachments:
+                      type: array
+                      items:
+                        type: string
+                      description: List of filenames for images or files
+                      example:
+                        - >-
+                          bfaa8c93f70dbf50df7ae9c6a6874ad9123725bd3911b310566129574940bc16
+                    record:
+                      type: object
+                      properties:
+                        blobType:
+                          type: string
+                          example: deviceInitializer
+                        deviceName:
+                          type: string
+                          example: test1
+                        description:
+                          type: string
+                          example: tes
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                          example: []
+                        children_key:
+                          type: string
+                          example: ''
+                        hasParent:
+                          type: boolean
+                          example: false
+                        isReportingKey:
+                          type: boolean
+                          example: false
         '404':
           description: Not Found
       parameters:
@@ -24,7 +72,7 @@ paths:
           schema:
             type: string
     post:
-      summary: POST /provenance/{deviceKey}
+      summary: POST /api/provenance/{deviceKey}
       operationId: postProvenance
       responses:
         '200':
@@ -33,6 +81,23 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  record:
+                    type: string
+                    description: The ID/Hash of the uploaded record
+                    example: >-
+                      aac1df01fb03206c013fc06c61156796fe49ca9c719230b0e14d59ce54b6e8ed
+                  attachments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        blob:
+                          type: object
+                          example: {}
+                        name:
+                          type: string
+                          example: IMG_5BC92842B87B-1.jpeg
         '404':
           description: Not Found
       parameters:
@@ -49,10 +114,20 @@ paths:
               properties:
                 provenanceRecord:
                   type: string
-                  description: JSON string containing provenance record
-  /upgrade/{deviceKey}:
+                  description: Provenance record details (JSON5 string).
+                  example: >-
+                    {"blobType":"deviceInitializer","deviceName":"test-payload","description":"record
+                    description -
+                    payload","tags":["what_is_payload"],"children_key":"","hasParent":false,"isReportingKey":false}
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Multiple file attachments
+  /api/upgrade/{deviceKey}:
     get:
-      summary: GET /upgrade/{deviceKey}
+      summary: GET /api/upgrade/{deviceKey}
       operationId: upgradeProvenance
       responses:
         '200':
@@ -61,6 +136,13 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  already-converted:
+                    type: boolean
+                    description: >-
+                      Indicates if the legacy provenance records were already
+                      converted.
+                    example: true
         '404':
           description: Not Found
       parameters:
@@ -69,17 +151,22 @@ paths:
           required: true
           schema:
             type: string
-  /attachment/{deviceKey}/{attachmentID}:
+  /api/attachment/{deviceKey}/{attachmentID}:
     get:
-      summary: GET /attachment/{deviceKey}/{attachmentID}
+      summary: GET /api/attachment/{deviceKey}/{attachmentID}
       operationId: getAttachment
       responses:
         '200':
           description: Success
           content:
-            text/plain:
+            application/octet-stream:
               schema:
                 type: string
+                format: binary
+            '*/*':
+              schema:
+                type: string
+                format: binary
         '404':
           description: Not Found
       parameters:
@@ -93,17 +180,22 @@ paths:
           required: true
           schema:
             type: string
-  /attachment/{deviceKey}/{attachmentID}/name:
+  /api/attachment/{deviceKey}/{attachmentID}/name:
     get:
-      summary: GET /attachment/{deviceKey}/{attachmentID}/name
+      summary: GET /api/attachment/{deviceKey}/{attachmentID}/name
       operationId: getAttachmentName
       responses:
         '200':
           description: Success
           content:
-            text/plain:
+            application/octet-stream:
               schema:
                 type: string
+                format: binary
+            '*/*':
+              schema:
+                type: string
+                format: binary
         '404':
           description: Not Found
       parameters:
@@ -117,9 +209,9 @@ paths:
           required: true
           schema:
             type: string
-  /statistics:
+  /api/statistics:
     get:
-      summary: GET /statistics
+      summary: GET /api/statistics
       operationId: getStatistics
       responses:
         '200':
@@ -127,12 +219,24 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp:
+                      type: string
+                      description: Timestamp from blob metadata
+                      example: '1765060293569'
+                    deviceID:
+                      type: string
+                      description: Device ID Hash
+                      example: >-
+                        40a5b65099eb332bb18e1f135721d17d48cb2b84fe66b72e20460e31df7faf8f
         '404':
           description: Not Found
-  /feedbackVolunteer:
+  /api/feedbackVolunteer:
     post:
-      summary: POST /feedbackVolunteer
+      summary: POST /api/feedbackVolunteer
       operationId: postEmail
       responses:
         '200':
@@ -141,6 +245,8 @@ paths:
             text/plain:
               schema:
                 type: string
+                description: Success confirmation message
+                example: Created
         '404':
           description: Not Found
       requestBody:
@@ -153,9 +259,10 @@ paths:
                   type: string
                   format: email
                   description: User email address
-  /version:
+                  example: user@example.ca
+  /api/version:
     get:
-      summary: GET /version
+      summary: GET /api/version
       operationId: getVersion
       responses:
         '200':
@@ -164,11 +271,24 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  version:
+                    type: string
+                    description: Server version number
+                    example: 0.0.3
+                  gitCommit:
+                    type: string
+                    description: Git commit hash of the build
+                    example: 4f5491d
+                  buildTime:
+                    type: string
+                    description: ISO 8601 timestamp of when the server was built
+                    example: '2025-05-16T18:43:14.324Z'
         '404':
           description: Not Found
-  /device/Key:
-    post:
-      summary: POST /device/Key
+  /api/getNewDeviceKey:
+    get:
+      summary: GET /api/getNewDeviceKey
       operationId: getNewDeviceKey
       responses:
         '200':
@@ -177,5 +297,7 @@ paths:
             text/plain:
               schema:
                 type: string
+                description: A newly generated encoded device key
+                example: VecKCTnzJ1iq5xKC6AVS5G
         '404':
           description: Not Found
