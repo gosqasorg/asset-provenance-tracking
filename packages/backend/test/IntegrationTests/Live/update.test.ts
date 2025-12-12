@@ -54,8 +54,11 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 
 describe("Record Update Tests", () => {
   // TODO: revert!
-  // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
-  const baseUrl = 'http://localhost:7071/api/provenance/'
+  const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
+  // const baseUrl = 'http://localhost:7071/api/provenance/'
+  // const baseUrl = 'https://gosqasbe.azurewebsites.net/api/provenance/';
+  // const baseUrl = process.env['backend_url'];
+  console.log("baseUrl: " + baseUrl);
 
   // updating a record
   it("Update descriptions", async () => {

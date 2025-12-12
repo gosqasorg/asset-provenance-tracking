@@ -549,7 +549,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
  // Recall: Pin and send new record entry to all children
  export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // TODO: Change to match test urls after done testing (NOT LOCAL! ALSO GETTING OVERRIDEN!)
-    const baseUrl = 'http://localhost:7071/api/provenance'
+    // const baseUrl = 'http://localhost:7071/api/provenance'
+    // const baseUrl = 'https://gosqasbe.azurewebsites.net/api/provenance'
+    const baseUrl = process.env['backend_url'];
+    // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance';
 
     try {
         const deviceKey = request.params.deviceKey;
