@@ -321,8 +321,12 @@ describe("Group Creation Tests", () => {
 		expect(retrievedChild[0].record.tags).toContain("tag-feature");
 		expect(retrievedChild[0].record.tags.length).toBe(2);
 	}, 60000);
+<<<<<<< HEAD
 
 	
+=======
+  
+>>>>>>> a102ab3a08004524270b3052cdf29e4b25544034
 	// Group Creation test with 2 child keys + annotation
 	it("Group Creation - Annotating Child Records", async () => {
 
