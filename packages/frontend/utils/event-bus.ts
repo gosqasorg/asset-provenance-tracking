@@ -19,6 +19,7 @@ import type { Emitter } from 'mitt';
 interface Events {
   feedRefresh: void;
   isLoading: void;
+  isCreating: void;
   // Add other events here
 }
 
