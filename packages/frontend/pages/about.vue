@@ -55,8 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                   <img src="../assets/images/dmdm-lightmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image lightmode-dmdm">
                  <img src="../assets/images/dmdm-darkmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image darkmode-dmdm">
                 <div class="dmdm-description" style="max-width: 100%;">
-                    <p class="dmdm-header">Decentralized Medical Device Manufacturing (DMDM)</p>
-                    <p class="dmdm-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA–registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process. Explore how the DMDM and GOSQAS partnership expands open-source technology access for medical device compliance and distribution.</p>
+                    <p class="dmdm-header">Distributed Medical Device Manufacturing (DMDM)</p>
+                    <p class="dmdm-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA–registered Distributed Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process. Explore how the DMDM and GOSQAS partnership expands open-source technology access for medical device compliance and distribution.</p>
                 </div>
         </div>
                 

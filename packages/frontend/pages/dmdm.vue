@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <p style="font-weight: 400;" >
                 Manufacturing open source medical hardware at scale, while meeting quality assurance standards, 
                 can sometimes be a mysterious process to the outside observer. Through the GOSQAS-sponsored 
-                pilot program with Decentralized Medical Device Manufacturing 
+                pilot program with Distributed Medical Device Manufacturing 
                 (<a href="https://dmdm.icu/" class="dmdm-link">DMDM</a>), 
                 this process is becoming more transparent and accessible.
             </p><br>

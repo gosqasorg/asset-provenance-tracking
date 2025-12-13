@@ -74,7 +74,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div id="flexright">
               <h3>Decentralized Medical Device Manufacturing (DMDM)</h3>
               <p class="text" style="font-weight: 400;">Inspired by the need for life-saving tourniquets in Sudan and Gaza,
-  the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.
+  the FDA-registered Distributed Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.
   Explore how the DMDM and GOSQAS partnership expands open-source technology access
   for medical device compliance and distribution.
               </p>
