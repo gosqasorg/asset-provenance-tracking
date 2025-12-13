@@ -5,8 +5,7 @@ import { readFile } from 'fs/promises';
 describe("Creating records with attachments", () => {
 	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 
-	// create a record with an attachement 
-	it("(Smoketest) Create the most basic record", async () => {
+	it("Create a record with an attachment", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("Created Device Key: " + deviceKey);
