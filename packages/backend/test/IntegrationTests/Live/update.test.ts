@@ -314,5 +314,5 @@ describe("Record Update Tests", () => {
 
     expect(grandchildRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
     expect(grandchildRecord.record.description).toBe("Updated with recall");
-  });
+  }, timeout);
 });
