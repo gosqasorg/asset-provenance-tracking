@@ -485,8 +485,7 @@ export function deduplicateKeys(keys: string[]): string[] {
 
 // Annotate: Send new record's tags to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // TODO: replace w/ normal url
-    const baseUrl = 'http://localhost:7071/api/provenance'
+    const baseUrl = process.env['backend_url'];
 
     try {
         const deviceKey = request.params.deviceKey;
@@ -542,17 +541,9 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
  
-
-// TODO: MASTER LIST
-    // TODO: TEST GRANDPARENT RELATIONS, REPLACE LOCAL WITH BASE AND FINAL TEST, UNCOMMENT READ/CREATE/remove final comments
-
  // Recall: Pin and send new record entry to all children
  export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // TODO: Change to match test urls after done testing (NOT LOCAL! ALSO GETTING OVERRIDEN!)
-    // const baseUrl = 'http://localhost:7071/api/provenance'
-    // const baseUrl = 'https://gosqasbe.azurewebsites.net/api/provenance'
     const baseUrl = process.env['backend_url'];
-    // const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance';
 
     try {
         const deviceKey = request.params.deviceKey;
@@ -560,8 +551,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
         const records = await getRecords.json()
 
         if (records[0].record.tags.includes("recall")) {
-            // TODO: is this correct (yes im pretty sure)? ('len - 1' is creation, '0' is the most recent record)
-                // Test with grandparent relations tho!
             let length = Object.keys(records).length;
             let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 

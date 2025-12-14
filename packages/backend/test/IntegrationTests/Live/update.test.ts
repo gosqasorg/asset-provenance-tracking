@@ -53,12 +53,7 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 });
 
 describe("Record Update Tests", () => {
-  // TODO: revert!
   const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
-  // const baseUrl = 'http://localhost:7071/api/provenance/'
-  // const baseUrl = 'https://gosqasbe.azurewebsites.net/api/provenance/';
-  // const baseUrl = process.env['backend_url'];
-  console.log("baseUrl: " + baseUrl);
 
   // updating a record
   it("Update descriptions", async () => {
@@ -220,7 +215,7 @@ describe("Record Update Tests", () => {
     const childKey = await makeEncodedDeviceKey();
     const grandchildKey = await makeEncodedDeviceKey();
     let fullUrl = `${baseUrl}${groupKey}`;
-    console.log("Update to test Recall: " + groupKey);
+    console.log("Update to test recall: " + groupKey);
 
     const groupFormData = new FormData();
 		groupFormData.append("provenanceRecord", JSON.stringify({
@@ -248,7 +243,7 @@ describe("Record Update Tests", () => {
 		grandchildFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
 			deviceName: "child_smoketest",
-			description: "grandchild record for testing a recalled record",
+			description: "child record for testing a recalled record",
 			tags: [],
 			children_key: "",
 			hasParent: false,
