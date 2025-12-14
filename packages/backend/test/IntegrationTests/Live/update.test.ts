@@ -220,7 +220,7 @@ describe("Record Update Tests", () => {
     const groupFormData = new FormData();
 		groupFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
-			deviceName: "group_smoketest",
+			deviceName: "grandparent_smoketest",
 			description: "grandparent group for testing a recalled record",
 			tags: [],
 			children_key: [childKey],
@@ -231,7 +231,7 @@ describe("Record Update Tests", () => {
 		const childFormData = new FormData();
 		childFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
-			deviceName: "child_smoketest",
+			deviceName: "parent_smoketest",
 			description: "parent group for testing a recalled record",
 			tags: [],
 			children_key: [grandchildKey],
