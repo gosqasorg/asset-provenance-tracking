@@ -164,6 +164,9 @@ describe("Group Creation Tests", () => {
 		];
 		const keyResponses = await Promise.all(keyPromises);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
+
+        // TODO: move this reporting key test to ITS OWN TEST!! (feature complete is a unique thing)
+        // Then revert this to original state
 		const groupKey = keys[0];
 		const reportingKey = keys[1];
 		let childKeys = keys.slice(2);
