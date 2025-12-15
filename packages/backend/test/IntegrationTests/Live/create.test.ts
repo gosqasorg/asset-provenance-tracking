@@ -301,21 +301,18 @@ describe("Group Creation Tests", () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate all device keys in parallel
-		const numChildKeys = 4;
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
-			...Array.from({length: numChildKeys}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
 		];
 		const keyResponses = await Promise.all(keyPromises);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
 
-        // TODO: revert reporting key section here to original state (already have a separate section for reporting)
-		const groupKey = keys[0];
-		const reportingKey = keys[1];
-		let childKeys = keys.slice(2);
+        const groupKey = keys[0];
+		let childKeys = keys.slice(1);
 		
 		// Create all child records in parallel
-		let childCreationPromises = childKeys.map((key, i) => {
+		const childCreationPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
 				blobType: "deviceInitializer",
@@ -333,25 +330,6 @@ describe("Group Creation Tests", () => {
 			});
 		});
 
-		// Create reporting key record
-		const reportingData = new FormData();
-		reportingData.append("provenanceRecord", JSON.stringify({
-			blobType: "deviceInitializer",
-			deviceName: `child_${numChildKeys}_feature_complete_creation`,
-			description: `Child ${numChildKeys} with full features`,
-			tags: ["feature-complete", "child", `child-${numChildKeys}`],
-			children_key: "",
-			hasParent: false,
-			isReportingKey: true
-		}));
-
-		const response = fetch(`${baseUrl}/provenance/${reportingKey}`, {
-			method: "POST",
-			body: reportingData,
-		});
-		childCreationPromises.push(response);
-		childKeys.push(reportingKey);
-		
 		const childResponses = await Promise.all(childCreationPromises);
 		childResponses.forEach(response => {
 			expect(response.ok).toBe(true);
@@ -408,9 +386,6 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain(`child-${i + 1}`);
 			expect(child[0].record.tags.length).toBe(3);
 		});
-
-		// Verify the reporting key is actually a reporting key
-		expect(retrievedChildren[3][0].record.isReportingKey).toBe(true);
 
 	}, 60000);
 	
