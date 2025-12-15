@@ -479,6 +479,126 @@ export async function validateJSON(json: any) {
     }
 }
 
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+// Annotate: Send new record's tags to all children
+export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const baseUrl = process.env['backend_url'];
+
+    try {
+        const deviceKey = request.params.deviceKey;
+        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        const records = await getRecords.json()
+
+        if (records[0].record.tags.includes("annotate")) {
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+
+            // Send annotated record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let getKey = await fetch(`${baseUrl}/${key}`);
+                const keyProvenance = await getKey.json();
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+
+                    if (uniqueChildKeys.includes(deviceKey.toString())) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    const keyFormData = new FormData();
+                    keyFormData.append("provenanceRecord", JSON.stringify({
+                        blobType: 'deviceRecord',
+                        description: "Annotated by admin",
+                        children_key: '',
+                        tags: records[0].record.tags,
+                    }));
+                    
+                    let response = await fetch(`${baseUrl}/${key}`, {
+                        method: "POST",
+                        body: keyFormData,
+                    })
+                }
+
+                keysToCheck.shift();
+            }
+        }
+
+        return {
+            status: 200
+        }
+    } catch (error) {
+        console.error(`Error annotating children: ${error}`);
+        return {
+            status: 500
+        }
+    }
+ }
+ 
+ // Recall: Pin and send new record entry to all children
+ export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const baseUrl = process.env['backend_url'];
+
+    try {
+        const deviceKey = request.params.deviceKey;
+        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        const records = await getRecords.json()
+
+        if (records[0].record.tags.includes("recall")) {
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+
+            // Send recalled record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let getKey = await fetch(`${baseUrl}/${key}`);
+                const keyProvenance = await getKey.json();
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+
+                    if (uniqueChildKeys.includes(deviceKey.toString())) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    const keyFormData = new FormData();
+                    keyFormData.append("provenanceRecord", JSON.stringify({
+                        blobType: 'deviceRecord',
+                        description: records[0].record.description,
+                        children_key: '',
+                        tags: records[0].record.tags,
+                    }));
+                    
+                    let response = await fetch(`${baseUrl}/${key}`, {
+                        method: "POST",
+                        body: keyFormData,
+                    })
+                }
+
+                keysToCheck.shift();
+            }
+        }
+
+        return {
+            status: 200
+        }
+    } catch (error) {
+        console.error(`Error notifying children: ${error}`);
+        return {
+            status: 500
+        }
+    }
+ }
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
@@ -534,4 +654,16 @@ app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
+})
+
+app.post('annotateChildren', {
+    authLevel: 'anonymous',
+    route: 'provenance/annotate/{deviceKey}',
+    handler: notifyChildren,
+})
+
+app.post('recallChildren', {
+    authLevel: 'anonymous',
+    route: 'provenance/recall/{deviceKey}',
+    handler: recallChildren,
 })
