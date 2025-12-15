@@ -20,15 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 -->
 <template>
     <div>
-        <div v-for="(report, index) in provenance" class="report-box" :style="{ border }">
+        <div v-for="(report, index) in filteredProvenance" class="report-box" :style="{ border }">
 
             <div v-if="recalledRecord">
                 <img src="../../assets/images/pin-icon.svg" class="pin-image">
             </div>
-
-            <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3 id="createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
-            </template>
 
             <div class="text"
                 style="font-size: small; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 12px; line-height: 30px;">
@@ -44,29 +40,64 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     {{ tag }}</span>
             </div>
 
-
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
                 <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
                     data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                <a :href="attachment.url" :download="attachment.fileName" class="download-link">Download File</a>
+            </div>
+
+        </div>
+
+         <!-- For Created Record: box -->
+        <div v-for="(report, index) in filteredProvenanceDeviceInit" class="device-creation-box">
+
+            <template v-if="report.record.blobType === 'deviceInitializer'">
+                <h3 id="createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
+            </template>
+
+            <div v-if="recalledRecord">
+                <img src="../../assets/images/pin-icon.svg" class="pin-image">
+            </div>
+
+            <div class="text"
+                style="font-size: small; font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 12px; line-height: 30px;">
+                {{ new Date(report.timestamp) }}
+            </div>
+
+            <div class="text"
+                style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
+                <span v-html="clickableLink(report.record?.description)"></span>
+            </div>
+
+            <div class="mb-1 tag-container">
+                <span class="tag" v-for="tag in report.record.tags"
+                    v-bind:style="'color: ' + textColorForTag(tag) + '; background-color: ' + getColorForTag(tag) + ';'">
+                    {{ tag }}</span>
+            </div>
+
+            <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
+                <img :src="attachment.url" 
+                :alt="attachment.fileName" 
+                class="thumbnail"
+                @click="onThumbClick(attachment)">
+
+
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">
                     Download File
                 </a>
             </div>
-
-
         </div>
+
     </div>
 
-    <!-- Image Preview Modal -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <img v-bind:src="modalImage" alt="Image" class="modal-image">
-                </div>
+    <div class="modal-backdrop fade show" v-if="showModal" aria-hidden="true"></div>
+    <div class="modal modal-dialog-centered" style="width: 60%; left: 20%" aria-hidden="true" tabindex="-1" v-if="showModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" @click="showModal = false" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img v-bind:src="modalImage" alt="Image" class="modal-image">
             </div>
         </div>
     </div>
@@ -95,11 +126,20 @@ export default {
             type: Boolean
         }
     },
+    computed: {
+        filteredProvenance(){
+            return this.provenance.filter(item => item.record.blobType != 'deviceInitializer')
+        },
+        filteredProvenanceDeviceInit(){
+            return this.provenance.filter(item => item.record.blobType === 'deviceInitializer')
+        }
+    },
     data() {
         return {
             attachmentURLs: {},
             modalImage: "",
-            recalledRecord: false
+            recalledRecord: false,
+            showModal: false
         };
     },
     mounted() {
@@ -135,6 +175,10 @@ export default {
             
             this.recalledRecord = false;
             this.recalledRecord = (this.disabled ? true : false);
+        },
+        onThumbClick(attachment) {
+            this.modalImage = attachment.url;
+            this.showModal = true;
         }
     },
 };
@@ -151,7 +195,14 @@ export default {
     border-radius: 20px;
     word-wrap: break-word;
 }
-
+.device-creation-box {
+    display:block;
+    padding: 20px;
+    margin-bottom: 14px;
+    margin-top: 14px;
+    border-radius: 6px;
+    word-wrap: break-word;
+}
 .tag-container {
     display: flex;
     flex-wrap: wrap;
@@ -215,7 +266,7 @@ export default {
 
 .btn-close {
     background-color: white;
-    opacity: 0.8;
+    opacity: 0.5;
     border-radius: 50%;
     padding: 0.5rem;
 }
@@ -226,7 +277,6 @@ export default {
 
 .modal-content {
     background-color: rgba(0, 0, 0, 0.9);
-    border: none;
 }
 
 .modal-body {
@@ -238,9 +288,7 @@ export default {
 }
 
 .modal-image {
-    display: block;
-    height: auto;
-    margin: auto;
+    max-height: 600px;
     max-width: 100%;
 }
 
@@ -258,7 +306,9 @@ export default {
     .report-box {
         background-color: #353535;
     }
-
+    .device-creation-box {
+        background-color: #4B4D47;
+    }
     .download-link {
         color: #CCECFD;
     }
@@ -281,7 +331,9 @@ export default {
     .report-box {
         background-color: #F1F5F9;
     }
-
+    .device-creation-box {
+        background-color: #E6F6FF
+    }
     .download-link {
         color: #4e3681;
     }

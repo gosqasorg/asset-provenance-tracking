@@ -25,38 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <a class="learn-more-desc" href="mailto:info@gosqas.org">info@gosqas.org</a> 
                     or visiting the links below.</p>
         <div>
+            <NavButton to="/how-it-works" text="How It Works" fontSize="18px"/>
 
-            <RouterLink 
-                to="/how-it-works"
-                v-if="$route.path !== '/how-it-works'"
-            >
-                <button class="baseButton button first learn-more" id="learn-more-button" style="
-                    border-width: 2px;
-                    border-style: solid;
-                    padding: 10px 20px;
-                    margin: 20px 20px 0px 0px;
-                    font-size: 18px;
-                    border-radius: 10px;
-                ">
-                    How It Works
-                </button>
-            </RouterLink>
-
-            <RouterLink 
-                to="/data-privacy"
+            <NavButton
                 v-if="$route.path !== '/data-privacy'"
-            >
-                <button class="baseButton button middle learn-more" id="learn-more-button" style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 10px 20px;
-                  margin: 20px 20px 0px 0px;
-                  font-size: 18px;
-                  border-radius: 10px;
-                ">
-                    Data & Privacy
-                </button>
-            </RouterLink>
+                to="/data-privacy"
+                text="Data & Privacy"
+                fontSize="18px"
+            />
 
             <button class="baseButton button learn-more" id="learn-more-button" onclick="window.location.href='https://github.com/gosqasorg/asset-provenance-tracking'" style="
                   border-width: 2px;
@@ -91,9 +67,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
+import NavButton from '~/components/Buttons/NavButton.vue';
 
 export default {
   name: "learn_more",
+  components: { NavButton },
   data() {
     return {
       currentUrl: '/',
