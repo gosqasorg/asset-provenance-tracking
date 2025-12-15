@@ -152,6 +152,171 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 
+    // Test reporting key functionality
+    it("should create a group record with a reporting key", async () => {
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		
+		// Generate all device keys in parallel
+		const numChildKeys = 2;
+		const keyPromises = [
+			fetch(`${baseUrl}/getNewDeviceKey`),
+			...Array.from({length: numChildKeys}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+		];
+		const keyResponses = await Promise.all(keyPromises);
+		const keys = await Promise.all(keyResponses.map(res => res.text()));
+
+        const groupKey = keys[0];
+		const reportingKey = keys[1];
+		const childKey = keys[2];
+		let childKeys = [childKey, reportingKey];
+
+		// Create a group with a child and a reporting key
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_reporting_test",
+			description: "Group with a reporting key and a regular child",
+			tags: [],
+			children_key: childKeys,
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+        const childFormData = new FormData();
+		childFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: `child_1_reporting_test`,
+			description: `Child 1 to compare to reporting key`,
+			tags: ["reporting-test", "child", `child-1`],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: false
+		}));
+
+		const reportingData = new FormData();
+		reportingData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: `reporting_key_reporting_test`,
+			description: `A reporting key to test reporting key functionality`,
+			tags: ["reporting-test", "reportingKey"],
+			children_key: "",
+			hasParent: false,
+			isReportingKey: true
+		}));
+		
+		const creationPromises = [
+			fetch(`${baseUrl}/provenance/${groupKey}`, {
+				method: "POST",
+				body: groupFormData,
+			}),
+			fetch(`${baseUrl}/provenance/${childKey}`, {
+				method: "POST",
+				body: childFormData,
+			}),
+			fetch(`${baseUrl}/provenance/${reportingKey}`, {
+				method: "POST",
+				body: reportingData,
+			}),
+		];
+		const creationResponses = await Promise.all(creationPromises);
+		creationResponses.forEach(response => {
+			expect(response.ok).toBe(true)
+		})
+		
+		// Verify all records in parallel
+		const verificationPromises = [
+			fetch(`${baseUrl}/provenance/${groupKey}`),
+			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+		];
+		const verificationResponses = await Promise.all(verificationPromises);
+		const verificationData = await Promise.all(
+			verificationResponses.map(res => res.json())
+		);
+		const [retrievedGroup, retrievedChild, retrievedReporting] = verificationData;
+		
+		// Verify that the records were created, and that the reporting key is a reporting key
+		expect(retrievedGroup).toBeDefined();
+		expect(retrievedGroup.length).toBeGreaterThan(0);
+		expect(retrievedGroup[0].record.deviceName).toBe("group_reporting_test");
+		expect(retrievedGroup[0].record.children_key).toEqual(childKeys);
+		
+		expect(retrievedChild).toBeDefined();
+		expect(retrievedChild.length).toBeGreaterThan(0);
+		expect(retrievedChild[0].record.deviceName).toBe(`child_1_reporting_test`);
+		expect(retrievedChild[0].record.tags).toContain(`reporting-test`);
+
+		expect(retrievedReporting).toBeDefined();
+		expect(retrievedReporting.length).toBeGreaterThan(0);
+		expect(retrievedReporting[0].record.deviceName).toBe(`reporting_key_reporting_test`);
+		expect(retrievedReporting[0].record.tags).toContain("reportingKey");
+		expect(retrievedReporting[0].record.isReportingKey).toBe(true);
+
+		// Recall a new record (should be sent to parent and child, not reporting key)
+		const recallRecord = {
+			blobType: 'deviceRecord',
+			description: "Updated only the child with recall",
+			tags: ['recall', 'reporting-test'],
+			children_key: '',
+		};
+		
+		const recallFormData = new FormData();
+		recallFormData.append("provenanceRecord", JSON.stringify(recallRecord));
+	
+		const updateResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: recallFormData,
+		});
+		const recallResponse = await fetch(`${baseUrl}/provenance/recall/${groupKey}`, {
+			method: "POST",
+			body: recallFormData,
+		});
+		expect(updateResponse.ok).toBe(true);
+		expect(recallResponse.ok).toBe(true);
+
+		// Annotate a new record (should be sent to parent and child, not reporting key)
+		const annotatedRecord = {
+			blobType: 'deviceRecord',
+			description: "Updated only the child with annotate",
+			tags: ['annotate', 'reporting-test', 'test-2'],
+			children_key: '',
+		};
+		
+		const annotateFormData = new FormData();
+		annotateFormData.append("provenanceRecord", JSON.stringify(annotatedRecord));
+	
+		const annotateUpdateResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: annotateFormData,
+		});
+		const annotateResponse = await fetch(`${baseUrl}/provenance/annotate/${groupKey}`, {
+			method: "POST",
+			body: annotateFormData,
+		});
+		expect(annotateUpdateResponse.ok).toBe(true);
+		expect(annotateResponse.ok).toBe(true);
+
+		// Make sure the child got the recalled/annotated records and that the reporting key did not get them
+		const updatePromises = [
+			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+		];
+		const updateResponses = await Promise.all(updatePromises);
+		const updateData = await Promise.all(
+			updateResponses.map(res => res.json())
+		);
+		const [childRecord, reportingRecord] = updateData;
+
+		expect(childRecord[1].record.description).toBe("Updated only the child with recall");
+		expect(childRecord[1].record.tags).toStrictEqual(['recall', 'reporting-test']);
+		expect(childRecord[0].record.description).toBe("Annotated by admin");
+		expect(childRecord[0].record.tags).toStrictEqual(['annotate', 'reporting-test', 'test-2']);
+
+		expect(reportingRecord.length).toBe(1);
+		expect(reportingRecord[0].record.description).toBe(`A reporting key to test reporting key functionality`);
+		expect(reportingRecord[0].record.deviceName).toBe(`reporting_key_reporting_test`);
+		expect(reportingRecord[0].record.tags).toStrictEqual(['reporting-test', 'reportingKey']);
+    });
+
+
 	// Everything all at once
 	it("should create a group record with all features", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
@@ -163,8 +328,9 @@ describe("Group Creation Tests", () => {
 		];
 		const keyResponses = await Promise.all(keyPromises);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
-		const groupKey = keys[0];
-		const childKeys = keys.slice(1);
+
+        const groupKey = keys[0];
+		let childKeys = keys.slice(1);
 		
 		// Create all child records in parallel
 		const childCreationPromises = childKeys.map((key, i) => {
@@ -184,12 +350,12 @@ describe("Group Creation Tests", () => {
 				body: childFormData,
 			});
 		});
-		
+
 		const childResponses = await Promise.all(childCreationPromises);
 		childResponses.forEach(response => {
 			expect(response.ok).toBe(true);
 		});
-		
+
 		// Create group record with all features
 		const groupFormData = new FormData();
 		groupFormData.append("provenanceRecord", JSON.stringify({
@@ -241,6 +407,7 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain(`child-${i + 1}`);
 			expect(child[0].record.tags.length).toBe(3);
 		});
+
 	}, 60000);
 
 
