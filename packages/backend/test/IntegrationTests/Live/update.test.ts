@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
+import { writeFile } from 'fs/promises';
 /* README: To add a test, add inside the global describe an additional it. For example:
 
 describe("Group of tests", () => {
@@ -60,7 +61,7 @@ describe("Record Update Tests", () => {
     //  Creating initial record key
     const deviceKey = await makeEncodedDeviceKey();
     let fullUrl = `${baseUrl}${deviceKey}`;
-	console.log("Update Test with description: " + deviceKey)
+	  console.log("Update Test with description: " + deviceKey)
     
     const initialData = {
       blobType: 'deviceInitializer',
@@ -314,5 +315,6 @@ describe("Record Update Tests", () => {
 
     expect(grandchildRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
     expect(grandchildRecord.record.description).toBe("Updated with recall");
-  }, timeout);
+    }, timeout);
 });
+
