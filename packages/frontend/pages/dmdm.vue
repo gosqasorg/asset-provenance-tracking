@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <p style="font-weight: 400;" >
                 Manufacturing open source medical hardware at scale, while meeting quality assurance standards, 
                 can sometimes be a mysterious process to the outside observer. Through the GOSQAS-sponsored 
-                pilot program with Decentralized Medical Device Manufacturing 
+                pilot program with Distributed Medical Device Manufacturing 
                 (<a href="https://dmdm.icu/" class="dmdm-link">DMDM</a>), 
                 this process is becoming more transparent and accessible.
             </p><br>
@@ -61,7 +61,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     <iframe src="https://player.vimeo.com/video/1086646484?h=f0cbc7fd6d&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
         style="width: 100%; display: block; aspect-ratio: 7 / 4;"
-        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="How to Create a Group Record with Decentralized Medical Device Manufacturing (DMDM)"></iframe>
+        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="How to Create a Group Record with Distributed Medical Device Manufacturing (DMDM)"></iframe>
     <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
 
     </div>
