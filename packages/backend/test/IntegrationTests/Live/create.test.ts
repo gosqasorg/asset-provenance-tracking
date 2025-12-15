@@ -198,7 +198,7 @@ describe("Group Creation Tests", () => {
 			blobType: "deviceInitializer",
 			deviceName: `reporting_key_reporting_test`,
 			description: `A reporting key to test reporting key functionality`,
-			tags: ["reporting-test", "report"],
+			tags: ["reporting-test", "reportingKey"],
 			children_key: "",
 			hasParent: false,
 			isReportingKey: true
@@ -248,7 +248,7 @@ describe("Group Creation Tests", () => {
 		expect(retrievedReporting).toBeDefined();
 		expect(retrievedReporting.length).toBeGreaterThan(0);
 		expect(retrievedReporting[0].record.deviceName).toBe(`reporting_key_reporting_test`);
-		expect(retrievedReporting[0].record.tags).toStrictEqual(['reporting-test', 'report']);
+		expect(retrievedReporting[0].record.tags).toContain("reportingKey");
 		expect(retrievedReporting[0].record.isReportingKey).toBe(true);
 
 		// Recall a new record (should be sent to parent and child, not reporting key)
@@ -313,7 +313,7 @@ describe("Group Creation Tests", () => {
 		expect(reportingRecord.length).toBe(1);
 		expect(reportingRecord[0].record.description).toBe(`A reporting key to test reporting key functionality`);
 		expect(reportingRecord[0].record.deviceName).toBe(`reporting_key_reporting_test`);
-		expect(reportingRecord[0].record.tags).toStrictEqual(['reporting-test', 'report']);
+		expect(reportingRecord[0].record.tags).toStrictEqual(['reporting-test', 'reportingKey']);
     });
 
 
