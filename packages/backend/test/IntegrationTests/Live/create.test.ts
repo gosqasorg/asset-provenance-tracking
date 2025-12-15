@@ -151,6 +151,7 @@ describe("Group Creation Tests", () => {
 		});
 	}, 60000);
 
+
     // Test reporting key functionality
     it("should create a group record with a reporting key", async () => {
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
@@ -258,22 +259,43 @@ describe("Group Creation Tests", () => {
 			children_key: '',
 		};
 		
-		const updateFormData = new FormData();
-		updateFormData.append("provenanceRecord", JSON.stringify(recallRecord));
+		const recallFormData = new FormData();
+		recallFormData.append("provenanceRecord", JSON.stringify(recallRecord));
 	
 		const updateResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 			method: "POST",
-			body: updateFormData,
+			body: recallFormData,
 		});
-		expect(updateResponse.ok).toBe(true);
-		
 		const recallResponse = await fetch(`${baseUrl}/provenance/recall/${groupKey}`, {
 			method: "POST",
-			body: updateFormData,
+			body: recallFormData,
 		});
+		expect(updateResponse.ok).toBe(true);
 		expect(recallResponse.ok).toBe(true);
 
-		// Make sure the child got the recalled record and that the reporting key did not get it
+		// Annotate a new record (should be sent to parent and child, not reporting key)
+		const annotatedRecord = {
+			blobType: 'deviceRecord',
+			description: "Updated only the child with annotate",
+			tags: ['annotate', 'reporting-test', 'test-2'],
+			children_key: '',
+		};
+		
+		const annotateFormData = new FormData();
+		annotateFormData.append("provenanceRecord", JSON.stringify(annotatedRecord));
+	
+		const annotateUpdateResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: annotateFormData,
+		});
+		const annotateResponse = await fetch(`${baseUrl}/provenance/annotate/${groupKey}`, {
+			method: "POST",
+			body: annotateFormData,
+		});
+		expect(annotateUpdateResponse.ok).toBe(true);
+		expect(annotateResponse.ok).toBe(true);
+
+		// Make sure the child got the recalled/annotated records and that the reporting key did not get them
 		const updatePromises = [
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
 		];
@@ -283,8 +305,10 @@ describe("Group Creation Tests", () => {
 		);
 		const [childRecord, reportingRecord] = updateData;
 
-		expect(childRecord[0].record.description).toBe("Updated only the child with recall");
-		expect(childRecord[0].record.tags).toStrictEqual(['recall', 'reporting-test']);
+		expect(childRecord[1].record.description).toBe("Updated only the child with recall");
+		expect(childRecord[1].record.tags).toStrictEqual(['recall', 'reporting-test']);
+		expect(childRecord[0].record.description).toBe("Annotated by admin");
+		expect(childRecord[0].record.tags).toStrictEqual(['annotate', 'reporting-test', 'test-2']);
 
 		expect(reportingRecord.length).toBe(1);
 		expect(reportingRecord[0].record.description).toBe(`A reporting key to test reporting key functionality`);
