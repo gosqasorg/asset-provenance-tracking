@@ -51,6 +51,8 @@ interface NamedBlob {
     blob: Blob,
 }
 
+const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
+
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
     // where the id is that last part (before the last slash)
@@ -162,6 +164,13 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     const attachmentIDs = new Array<string>();
     for (const attach of attachments) {
         if (typeof attach === 'string') continue;
+        // Check attachment size
+        let attachSize = attach.blob.size;
+        console.log(`Final attachment size: ${attachSize}, MAX_ATTACHMENT_SIZE: ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+        if (attachSize > MAX_ATTACHMENT_SIZE) {
+            console.log(`REJECTING: Attachment size ${attachSize} exceeds maximum ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+            throw new Error(`Attachment size exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+        }
         const data = await attach.blob.arrayBuffer()
         const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
         attachmentIDs.push(attachmentID);
