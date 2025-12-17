@@ -164,11 +164,18 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     const attachmentIDs = new Array<string>();
     for (const attach of attachments) {
         if (typeof attach === 'string') continue;
-        // Check attachment size
-        let attachSize = attach.blob.size;
-        console.log(`Final attachment size: ${attachSize}, MAX_ATTACHMENT_SIZE: ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
-        if (attachSize > MAX_ATTACHMENT_SIZE) {
-            console.log(`REJECTING: Attachment size ${attachSize} exceeds maximum ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+        // Count attachment bytes in chunks until MAX_ATTACHMENT_SIZE is reached
+        let byteCount = 0;
+        for await (const chunk of attach.blob.stream()) {
+            byteCount+= chunk.length;
+
+            if (byteCount > MAX_ATTACHMENT_SIZE) {
+                break;
+            }
+        }
+        console.log(`Final attachment size: ${byteCount}, MAX_ATTACHMENT_SIZE: ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+        if (byteCount > MAX_ATTACHMENT_SIZE) {
+            console.log(`REJECTING: Attachment size ${byteCount} exceeds maximum ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
             throw new Error(`Attachment size exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
         }
         const data = await attach.blob.arrayBuffer()
