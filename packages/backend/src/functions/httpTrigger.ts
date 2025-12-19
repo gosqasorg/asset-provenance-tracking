@@ -268,6 +268,10 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+async function validateBlobSize(file: any){
+   console.log(file) 
+ }
+
 
 /*=================  Endpoints  =====================*/
 
@@ -299,6 +303,14 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
+export async function postProvenanceMiddleware(request: HttpRequest): Promise<Boolean> {
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+    var result = false;
+
+
+    return result
+}
+
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -311,6 +323,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
     if (!validateJSON(record)) { return { status: 404 }; }
+    //if (!validateBlobSize(record)) { return { status: 304 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
