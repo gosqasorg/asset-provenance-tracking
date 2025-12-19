@@ -268,7 +268,7 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
-export async function postProvenanceMiddleware(body: FormData): Promise<Boolean> {
+export function postProvenanceMiddleware(body): Boolean {
     // This may seem simple but it is expected to grow
 
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
