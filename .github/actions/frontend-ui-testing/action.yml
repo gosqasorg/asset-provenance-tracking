@@ -9,7 +9,7 @@ on:
     branches:
       -main
 
-jobs:
+runs:
   selenium:
     runs-on: ubuntu-latest
 
