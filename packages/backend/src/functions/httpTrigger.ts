@@ -27,7 +27,7 @@ let accountKey; if (isEmpty(accountKey = process.env["AZURE_STORAGE_ACCOUNT_KEY"
 
 const baseUrl = accountName === "devstoreaccount1"
     ? `http://127.0.0.1:10000/devstoreaccount1`
-    : `https://${accountName}.blob.core.windows.net`;
+    : `https://${accountName}.blob.core.windows.net`;                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
@@ -433,13 +433,87 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
-    return { 
-        jsonBody: VERSION_INFO,
-        headers: { "Content-Type": "application/json" }
-    };
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;  
+
+        // table name to look up, table made in setVersion
+        const tableName = "versionTable1";
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const client = new TableClient(tableUrl, tableName, credential, { allowInsecureConnection: true });
+        const entity = await client.getEntity("server", "version");
+        console.log("Server version : ", entity.versionNumber)
+        return { 
+            status: 200,
+            body: `${entity.versionNumber}`
+        };
+    } catch(error) {
+        console.log(error)
+        return { 
+            status: 500,
+            body: ""
+        };
+    }
 }
 
+export async function setVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // function that sets the version of server
+    try {
+        const versionTableUrl = accountName === 'devstoreaccount1'
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let versionTable = 'versionTable1'
+        const versionTableCredential = new AzureNamedKeyCredential(accountName, accountKey);
+        var versionTableClient = new TableClient(versionTableUrl, versionTable, versionTableCredential, { allowInsecureConnection: true })
+        await versionTableClient.createTable(); // create table if not exist, no error if it does
+
+        let versionNumber = request.query['version']; // set the version here from passed argument
+        var serverEntity = {
+            partitionKey: 'server',
+            rowKey: 'version',
+            versionNumber: versionNumber,
+        }
+        try{
+            // if there's already an entity created, will throw error and caught below
+            const versionResponse = await versionTableClient.createEntity(serverEntity)
+            console.log('Server version created')
+            return {
+                status: 200,
+                body: "Server version created"
+            }
+        }catch(error){
+            // because an entity with above information exists, just update the property of the entity -> versionNumber
+            await versionTableClient.updateEntity(serverEntity, "Replace")
+            console.log('Server version updated')
+            return {
+                status: 200,
+                body: "Server version updated"
+            }
+        }
+    }catch(error){
+        console.log(error)
+        return {
+            status: 500,
+            body: "Internal server error.",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+// Note: Work in progress. This template was for setting up endpoint. 
+// Adding new key generation, ie, filling out this function, is an upcoming ticket. 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    console.log('getNewDeviceKey: Got new device key')
+
+    return {
+        status: 200,
+        body: "5LAtuNjm3iuAR3ohpjTMy7",
+        headers: { "Content-Type": "text/plain" }
+    }
+}  
+export async function getNewDeviceKey2(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         const key = await makeEncodedDeviceKey();
         return {
@@ -644,9 +718,15 @@ app.post('postEmail', {
     handler: postEmail,
 })
 
+app.get("setVersion", {
+    authLevel: 'anonymous',
+    route: 'setVersion',
+    handler: setVersion
+})
+
 app.get("getVersion", {
     authLevel: 'anonymous',
-    route: 'version',
+    route: 'getVersion',
     handler: getVersion
 })
 
