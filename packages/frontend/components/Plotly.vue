@@ -19,9 +19,11 @@
     },
     methods: {
       renderChart() {
-        // TODO: how to get rid of toolbar??
-        // TODO: need x and y labels, and a title
-        Plotly.newPlot(this.$refs.plotElement, this.data, this.layout);
+        var config = {
+          displayModeBar: false
+        };
+
+        Plotly.newPlot(this.$refs.plotElement, this.data, this.layout, config);
       }
     },
     watch: {

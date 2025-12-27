@@ -145,10 +145,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         // Raw array of { timestamp, deviceID } items from API
         myTimestampPairs: [],
 
-        // TODO: replace with actual data (plotly.js)
-        // WANT: Times records were created in the last week (one for days of week, one for times of day??)
+        // TODO: WANT: Times records were created in the last week (one for days of week, one for times of day??)
         chartLayout: {
-          title: 'Records Created This Week'
+          title: {text: 'Records Created This Week'},
+          xaxis: {
+            title: {text: 'Day Records Were Created',
+                    type : 'category'}
+          },
+          yaxis: {
+            title: {text: 'Number of Records Created'}
+          }
         }
       }
     },
@@ -233,30 +239,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }
       },
 
+      // TODO: test w/ actual backend (how much longer does the page take to load?)
       // Get # of records per day to graph
       recordsPerDay() {
+        // TODO: Modify below to calculate based on what day of the week it is!!
+        const d = new Date();
+        let today = d.getDay();  // RETURNS 0-6 (0 is Sunday, 6 is Saturday)
         const now = Date.now()
         let counted = 0  // TODO: replace counted with a lowerbound filter?? (hours - 24?)
         let hours = 24
-        let x = [1, 2, 3, 4, 5, 6, 7]  // # of days ago
-        let y = []  // number of records created
 
+        // TODO: MODIFY TO BE STRING DAYS OF WEEK
+        // TODO: not technically # of days ago (1 is actually today, so 0 instead..?)
+        let x = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat']  // # of days ago
+        let y = [0, 0, 0, 0, 0, 0, 0]  // number of records created
+
+        // TODO: modify to not be last 24 hours but just TODAY (ex. last 11 hours, if it's 11am [but time zone based..? Note!])
         // Get records in last 24 hours
+        // Update current day with that number
         let recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
         )
 
-        // Loop to get # of records per day
-        x.forEach(day => {
-          hours = 24 * day
+        // Now create a loop for the above
+        for (let i = 0; i <= today; i++) {
+          y[today - i] = recent.length - counted
+          counted = recent.length
 
           recent = this.myTimestampPairs.filter(
-            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
+            r => now - Number(r.timestamp) <= hours * 2 * 60 * 60 * 1000
           )
-
-          y.push(recent.length - counted)
-          counted = recent.length
-        })
+        }
 
         // Return x and y, and make sure the call to ployly.vue gets it!!
         console.log("x : " + x, " y: " + y)
