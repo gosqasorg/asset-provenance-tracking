@@ -16,7 +16,8 @@
     "packages/legacy"
   ],
   "dependencies": {
-    "@azure/communication-email": "^1.0.0"
+    "@azure/communication-email": "^1.0.0",
+    "plotly.js-dist": "^3.3.1"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.6",

@@ -116,6 +116,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </div>
             </div>
           </div>
+
+          <!-- TODO: This adds the Plotly.vue template chart (where does title go??) -->
+          <div id="app">
+            <Plotly :data="chartData" :layout="chartLayout" />
+          </div>
+
         </div>
       </div>
     </div>
@@ -123,16 +129,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
   <script>
   import { getStatistics } from '~/services/azureFuncs'
+  import PlotlyChart from '../components/Plotly.vue'
   
   export default {
     name: 'Statistics',
+
+    components: {
+      PlotlyChart
+    },
   
     data() {
       return {
         // Controls loading spinner
         isLoading: true,
         // Raw array of { timestamp, deviceID } items from API
-        myTimestampPairs: []
+        myTimestampPairs: [],
+
+        // TODO: replace with actual data (plotly.js)
+        // WANT: Times records were created in the last week (one for days of week, one for times of day??)
+        chartData: [{
+          x: [1, 2, 3, 4, 5],
+          y: [10, 15, 13, 17, 22],
+          type: 'scatter'
+        }],
+        chartLayout: {
+          title: 'Sample Chart'
+        }
       }
     },
   
@@ -180,13 +202,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         )
         return new Set(recent.map(r => r.deviceID)).size
       },
+
+      // TODO: figure out what timestamp is and what how to get daily/hourly info
+        // NOTE: i think if we do the same as these functions but just for days/hours it should work!
       last24hDeviceCount() {
+        console.log("24 HOURS!")
         const now = Date.now()
         const recent = this.myTimestampPairs.filter(
+          // NOTE: current time - creation time <= 24 hours ago in MILLISECONDS!
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
         )
+
+        // TODO: same as recent..?
+        // [{"timestamp":"1765850588878","deviceID":"258cc003b7dbacb098a05310c7982d2ebdf16477d8cd20795a8e1e659507106d"}]
+        console.log("*original: " + JSON.stringify(this.myTimestampPairs))
+
+        // [{"timestamp":"1765850588878","deviceID":"258cc003b7dbacb098a05310c7982d2ebdf16477d8cd20795a8e1e659507106d"}]
+        console.log("*recent: " + JSON.stringify(recent))
+
+        let test = new Set(recent.map(r => r.deviceID))
+        // console.log("*group: " + new Set(recent.map(r => r.deviceID)))
         return new Set(recent.map(r => r.deviceID)).size
       },
+
       last7DaysDeviceCount() {
         const now = Date.now()
         const recent = this.myTimestampPairs.filter(
