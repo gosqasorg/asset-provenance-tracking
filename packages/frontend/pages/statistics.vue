@@ -119,7 +119,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
           <!-- TODO: This adds the Plotly.vue template chart (where does title go??) -->
           <div id="app">
-            <Plotly :data="chartData" :layout="chartLayout" />
+            <Plotly :data="recordsPerDay()" :layout="chartLayout" />
           </div>
 
         </div>
@@ -147,13 +147,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         // TODO: replace with actual data (plotly.js)
         // WANT: Times records were created in the last week (one for days of week, one for times of day??)
-        chartData: [{
-          x: [1, 2, 3, 4, 5],
-          y: [10, 15, 13, 17, 22],
-          type: 'scatter'
-        }],
         chartLayout: {
-          title: 'Sample Chart'
+          title: 'Records Created This Week'
         }
       }
     },
@@ -203,25 +198,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         return new Set(recent.map(r => r.deviceID)).size
       },
 
-      // TODO: figure out what timestamp is and what how to get daily/hourly info
-        // NOTE: i think if we do the same as these functions but just for days/hours it should work!
       last24hDeviceCount() {
         console.log("24 HOURS!")
         const now = Date.now()
         const recent = this.myTimestampPairs.filter(
-          // NOTE: current time - creation time <= 24 hours ago in MILLISECONDS!
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
         )
 
-        // TODO: same as recent..?
-        // [{"timestamp":"1765850588878","deviceID":"258cc003b7dbacb098a05310c7982d2ebdf16477d8cd20795a8e1e659507106d"}]
+        // TODO: remove when finished
         console.log("*original: " + JSON.stringify(this.myTimestampPairs))
-
-        // [{"timestamp":"1765850588878","deviceID":"258cc003b7dbacb098a05310c7982d2ebdf16477d8cd20795a8e1e659507106d"}]
         console.log("*recent: " + JSON.stringify(recent))
 
-        let test = new Set(recent.map(r => r.deviceID))
-        // console.log("*group: " + new Set(recent.map(r => r.deviceID)))
         return new Set(recent.map(r => r.deviceID)).size
       },
 
@@ -244,6 +231,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           this.$snackbar.add({ type: 'error', text: `Error: ${error}` })
           return []
         }
+      },
+
+      // Get # of records per day to graph
+      recordsPerDay() {
+        const now = Date.now()
+        let counted = 0  // TODO: replace counted with a lowerbound filter?? (hours - 24?)
+        let hours = 24
+        let x = [1, 2, 3, 4, 5, 6, 7]  // # of days ago
+        let y = []  // number of records created
+
+        // Get records in last 24 hours
+        let recent = this.myTimestampPairs.filter(
+          r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
+        )
+
+        // Loop to get # of records per day
+        x.forEach(day => {
+          hours = 24 * day
+
+          recent = this.myTimestampPairs.filter(
+            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
+          )
+
+          y.push(recent.length - counted)
+          counted = recent.length
+        })
+
+        // Return x and y, and make sure the call to ployly.vue gets it!!
+        console.log("x : " + x, " y: " + y)
+        const chartData = [{
+          x: x,
+          y: y,
+          type: 'scatter'
+        }]
+
+        return chartData
       }
     },
   
