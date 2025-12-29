@@ -2,7 +2,7 @@
  <!-- https://www.explo.co/chart-library-tutorials/plotly-js-vue-js-tutorial -->
 
 <template>
-    <div ref="plotElement"></div>
+    <div id="plotlyGraph" ref="plotElement"></div>
 </template>
    
 <script>
@@ -20,7 +20,8 @@
     methods: {
       renderChart() {
         var config = {
-          displayModeBar: false
+          displayModeBar: false,
+          responsive: true
         };
 
         Plotly.newPlot(this.$refs.plotElement, this.data, this.layout, config);
