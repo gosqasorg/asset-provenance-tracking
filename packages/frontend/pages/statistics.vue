@@ -118,12 +118,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           </div>
           <!-- Graph of records created this week -->
           <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
-            <Plotly :data="recordsPerDay()" :layout="chartLayout" />
+            <Plotly :data="recordsPerDay" :layout="chartLayout" />
           </div>
 
           <!-- Graph of times records were created this week -->
           <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
-            <Plotly :data="recordsPerHour()" :layout="chartLayout2" />
+            <Plotly :data="recordsPerHour" :layout="chartLayout2" />
           </div>
         </div>
       </div>
@@ -156,21 +156,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           },
           yaxis: {
             title: {text: 'Number of Records Created'},
-            tickmode: 'linear',
-            dtick: 1,
+            tickmode: 'auto',
+            nticks: 10,
             rangemode: 'tozero'
           }
         },
 
         chartLayout2: {
-          title: {text: 'Record Entries Created Per Hour (Last 7 Days)'},
+          title: {text: 'Record Entries Created Per Hour (Last 28 Days)'},
           xaxis: {
             title: {text: 'Hour Created'}
           },
           yaxis: {
             title: {text: 'Number of Records Created'},
-            tickmode: 'linear',
-            dtick: 1,
+            tickmode: 'auto',
+            nticks: 10,
             rangemode: 'tozero'
           }
         }
@@ -223,7 +223,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       },
 
       last24hDeviceCount() {
-        console.log("24 HOURS!")
         const now = Date.now()
         const recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
@@ -238,29 +237,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           r => now - Number(r.timestamp) <= 7 * 24 * 60 * 60 * 1000
         )
         return new Set(recent.map(r => r.deviceID)).size
-      }
-    },
-  
-    methods: {
-      // Fetches data from your existing API function
-      async fetchData() {
-        try {
-          return await getStatistics()
-        } catch (error) {
-          // Show error via your snackbar utility
-          this.$snackbar.add({ type: 'error', text: `Error: ${error}` })
-          return []
-        }
       },
 
       // Get number of records created each day of the past week to graph
       recordsPerDay() {
         const d = new Date()
-        let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
         const now = Date.now()
+        let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
         let hours = d.getHours() + (d.getMinutes() / 60)
-
-        let counted = 0  // TODO: replace counted with a lowerbound filter?? (hours - 24?)
+        let counted = 0
 
         let x = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat']
         let y = [0, 0, 0, 0, 0, 0, 0]
@@ -293,7 +278,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         return chartData
       },
 
-      // Get number of records created each hour of the past week to graph
+      // Get number of records created each hour of the past month to graph
       recordsPerHour() {
         const d = new Date()
         const now = Date.now()
@@ -307,28 +292,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00']
         let y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        // Loop over all the days on the week
-        for (let i = 0; i < 7; i++) {
-          // Loop over all the hours of the day
-          for (let j = 0; j < 24; j++) {
-            // Get the records created each hour
-              // ((0-1 [minutes in the current hour] + 0-24 [the hour] + 0,24,48,... [the day]) * translate to milliseconds)
-              // starting at the current minutes go back j + day hours to see if records were created in that time
+        for (let weekday = 0; weekday < 28; weekday++) {
+          for (let hour = 0; hour < 24; hour++) {
             let hourly = this.myTimestampPairs.filter(
-              r => now - Number(r.timestamp) <= (minutes + j + day) * 60 * 60 * 1000
+              // (0-1 [minutes in the current hour] + 0-24 [hours ago] + 0,24,48,... [the day]) * translate to milliseconds)
+              r => now - Number(r.timestamp) <= (minutes + hour + day) * 60 * 60 * 1000
             )
 
-            // Add records to the graph everytime a record was created within an hour
+            // If a record was created within an hour, add it to the graph
             if (hourly.length - counted > 0) {
-              // ex. 11am now, record created @ 8am, 3 hours since now (j+hours = 3+0)
-              // y[currHour - (j)] for hour created, -1 to get to the correct index
-              y[Math.abs(currentHour - j - 1)] += hourly.length - counted
+              y[Math.abs(currentHour - hour - 1)] += hourly.length - counted
               counted = hourly.length
             }
           }
 
-          // Update hours to the next day
           day += 24
+
         }
 
         const chartData = [{
@@ -341,6 +320,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }]
 
         return chartData
+      }
+    },
+  
+    methods: {
+      // Fetches data from your existing API function
+      async fetchData() {
+        try {
+          return await getStatistics()
+        } catch (error) {
+          // Show error via your snackbar utility
+          this.$snackbar.add({ type: 'error', text: `Error: ${error}` })
+          return []
+        }
       }
     },
   
