@@ -117,8 +117,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
           </div>
           <!-- Graph of records created this week -->
-          <div>
+          <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
             <Plotly :data="recordsPerDay()" :layout="chartLayout" />
+          </div>
+
+          <!-- Graph of times records were created this week -->
+          <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
+            <Plotly :data="recordsPerHour()" :layout="chartLayout2" />
           </div>
         </div>
       </div>
@@ -144,13 +149,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         myTimestampPairs: [],
 
         chartLayout: {
-          title: {text: 'Records Created This Week'},
+          title: {text: 'Record Entries Created This Week'},
           xaxis: {
-            title: {text: 'Day Records Were Created',
+            title: {text: 'Day Created',
                     type : 'category'}
           },
           yaxis: {
-            title: {text: 'Number of Records Created'}
+            title: {text: 'Number of Records Created'},
+            tickmode: 'linear',
+            dtick: 1,
+            rangemode: 'tozero'
+          }
+        },
+
+        chartLayout2: {
+          title: {text: 'Record Entries Created Per Hour (Last 7 Days)'},
+          xaxis: {
+            title: {text: 'Hour Created'}
+          },
+          yaxis: {
+            title: {text: 'Number of Records Created'},
+            tickmode: 'linear',
+            dtick: 1,
+            rangemode: 'tozero'
           }
         }
       }
@@ -208,10 +229,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
         )
 
-        // TODO: remove when finished
-        console.log("*original: " + JSON.stringify(this.myTimestampPairs))
-        console.log("*recent: " + JSON.stringify(recent))
-
         return new Set(recent.map(r => r.deviceID)).size
       },
 
@@ -236,11 +253,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }
       },
 
-      // TODO: test w/ actual backend (how much longer does the page take to load?)
       // Get number of records created each day of the past week to graph
       recordsPerDay() {
-        const d = new Date();
-        let today = d.getDay();  // returns 0-6 (0 is Sunday, 6 is Saturday)
+        const d = new Date()
+        let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
         const now = Date.now()
         let hours = d.getHours() + (d.getMinutes() / 60)
 
@@ -254,29 +270,74 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
         )
 
-        // TODO: do more testing with this loop, make sure it graphs correctly
-        // EX. Sun 3 record, Mon 2 records, Tues 1 record
-          // recent = 1, then recent = 3, then = 6
         for (let i = 0; i <= today; i++) {
-          console.log("TODAY (0 = sun): " + (today - i))
-          console.log("records today: " + recent.length)
-          console.log("count " + counted)
-
-          // Add the records we found to the current day, subtracting already counted records
+          // Add the records we found to the current day, subtracting records we already counted
           y[today - i] = recent.length - counted
           counted = recent.length
-          console.log("hour " + hours)
           hours += 24
 
           recent = this.myTimestampPairs.filter(
-            r => now - Number(r.timestamp) <= hours * 2 * 60 * 60 * 1000
+            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
           )
         }
 
         const chartData = [{
           x: x,
           y: y,
-          type: 'scatter'
+          type: 'scatter',
+          marker: {
+            color: '#4e3681'
+          }
+        }]
+
+        return chartData
+      },
+
+      // Get number of records created each hour of the past week to graph
+      recordsPerHour() {
+        const d = new Date()
+        const now = Date.now()
+        let currentHour = d.getHours()
+        let minutes = d.getMinutes() / 60
+        let day = 0
+
+        let counted = 0
+
+        let x = ['1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00',
+                '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00']
+        let y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        // Loop over all the days on the week
+        for (let i = 0; i < 7; i++) {
+          // Loop over all the hours of the day
+          for (let j = 0; j < 24; j++) {
+            // Get the records created each hour
+              // ((0-1 [minutes in the current hour] + 0-24 [the hour] + 0,24,48,... [the day]) * translate to milliseconds)
+              // starting at the current minutes go back j + day hours to see if records were created in that time
+            let hourly = this.myTimestampPairs.filter(
+              r => now - Number(r.timestamp) <= (minutes + j + day) * 60 * 60 * 1000
+            )
+
+            // Add records to the graph everytime a record was created within an hour
+            if (hourly.length - counted > 0) {
+              // ex. 11am now, record created @ 8am, 3 hours since now (j+hours = 3+0)
+              // y[currHour - (j)] for hour created, -1 to get to the correct index
+              y[Math.abs(currentHour - j - 1)] += hourly.length - counted
+              counted = hourly.length
+            }
+          }
+
+          // Update hours to the next day
+          day += 24
+        }
+
+        const chartData = [{
+          x: x,
+          y: y,
+          type: 'bar',
+          marker: {
+            color: '#4e3681'
+          }
         }]
 
         return chartData
