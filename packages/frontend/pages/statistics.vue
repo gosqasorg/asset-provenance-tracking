@@ -163,7 +163,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
 
         chartLayout2: {
-          title: {text: 'Record Entries Created Per Hour (Last 28 Days)'},
+          title: {text: 'Record Entries Created Per Hour (Last 7 Days)'},
           xaxis: {
             title: {text: 'Hour Created'}
           },
@@ -284,7 +284,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         const now = Date.now()
         let currentHour = d.getHours()
         let minutes = d.getMinutes() / 60
-        let day = 0
 
         let counted = 0
 
@@ -292,21 +291,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00']
         let y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        for (let weekday = 0; weekday < 28; weekday++) {
+        for (let weekday = 1; weekday <= 7; weekday++) {
           for (let hour = 0; hour < 24; hour++) {
             let hourly = this.myTimestampPairs.filter(
-              // (0-1 [minutes in the current hour] + 0-24 [hours ago] + 0,24,48,... [the day]) * translate to milliseconds)
-              r => now - Number(r.timestamp) <= (minutes + hour + day) * 60 * 60 * 1000
+              // (1,2,3,... [the day] * (0-24 [hours ago] + 0-1 [minutes in the current hour])) * translate to milliseconds)
+              r => now - Number(r.timestamp) <= weekday * (hour + minutes) * 60 * 60 * 1000
             )
 
             // If a record was created within an hour, add it to the graph
             if (hourly.length - counted > 0) {
-              y[Math.abs(currentHour - hour - 1)] += hourly.length - counted
+              y[Math.abs(currentHour - hour) - 1] += hourly.length - counted
               counted = hourly.length
             }
           }
-
-          day += 24
 
         }
 
