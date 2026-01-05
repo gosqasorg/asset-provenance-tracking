@@ -667,3 +667,207 @@ app.post('recallChildren', {
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
 })
+
+
+
+// Experimental
+/* Notes. httpTrigger.ts line 315
+    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+    const timestamp = new Date().getTime();
+    const attachments = new Array<NamedBlob>();
+    for (const attach of formData.values()) {
+        if (typeof attach === 'string') continue;
+        console.log("attach type: " + typeof(attach))
+        attachments.push({ blob: attach, name: attach.name });
+    }
+
+    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+*/
+/* Notes. httpTrigger.ts line 50
+
+interface NamedBlob {
+    name?: string,
+    blob: Blob,
+}
+*/
+/*
+Notes. httpTrigger.ts line 160
+
+async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
+
+    const attachmentIDs = new Array<string>();
+    for (const attach of attachments) {
+        if (typeof attach === 'string') continue;
+        const data = await attach.blob.arrayBuffer()
+        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
+        attachmentIDs.push(attachmentID);
+    }
+
+    const provRecord = { record, attachments: attachmentIDs };
+
+    const data = new TextEncoder().encode(JSON.stringify(provRecord));
+    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+    return { record: recordID, attachments };
+}
+*/
+/* Notes. httpTrigger.ts line 127
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+    const dataHash = toHex(await sha256(data));
+    const deviceID = await calculateDeviceID(deviceKey);
+    const { salt, encryptedData } = await encrypt(deviceKey, data);
+    const blobID = toHex(await sha256(encryptedData));
+
+    let blobName;
+    if (type === 'prov') {
+        blobName = `prov/${deviceID}/${blobID}`;
+    } else if (type === 'attach') {
+        blobName = `attach/${blobID}`;
+    } else {
+        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
+    }
+
+    const { encryptedData: encryptedName } = fileName
+        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
+        : { encryptedData: undefined };
+
+    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
+        metadata: {
+            gdtcontenttype: contentType,
+            gdthash: dataHash,
+            gdtsalt: toHex(salt),
+            gdttimestamp: `${timestamp}`,
+            gdtname: encryptedName ? toHex(encryptedName) : ""
+        },
+        blobHTTPHeaders: {
+            blobContentType: "application/octet-stream"
+        }
+    });
+    return blobID;
+}
+*/
+/* Notes on upbloadblockblob
+
+From: https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+The function signature:
+function uploadBlockBlob(blobName: string, body: RequestBodyType, contentLength: number, options?: BlockBlobUploadOptions): Promise<{ blockBlobClient: BlockBlobClient, response: BlockBlobUploadResponse }>
+
+*/
+/* Notes. Thanks, @milena!
+
+        	const buffer = await readFile('./test/attachments/a200.jpg')
+        	const blob = new Blob([buffer], { type: 'image/jpeg' })
+        	groupFormData.append('attachment', blob) 
+*/ 
+
+
+
+interface GroupCreationOrder {
+    title: ;
+    description: ;
+    group_image?: ;
+    tags?: ;
+    number_of_children?: ;
+    custom_record_titles?: ;
+    create_reporting_key?: ;
+    annotate?: ;
+}
+
+/*
+// User is responsible for telling us what they want
+const group_spec = {
+    title: "Box of tourniquets",
+    description: "",
+    group_image: None, // TODO verify syntax,
+    tags: [],
+    number_of_children: 3,,
+    custom_record_titles: ["TQ597", "TQ598", "TQ599"],
+    create_reporting_key: true,
+    annotate: true,
+}
+*/
+
+
+
+interface ProvenanceRecord {
+    record: any,
+    attachments?: readonly string[],
+}
+
+interface DecryptedBlob {
+    data: Uint8Array;
+    contentType: string;
+    timestamp: number;
+    filename?: string;
+}
+
+interface NamedBlob {
+    name?: string,
+    blob: Blob,
+}
+
+app.post('createGroup', {
+    authLevel: 'anonymous',
+    route: 'provenance/recall/{deviceKey}',
+    handler: createGroup,
+})
+
+ 
+ // Recall: Pin and send new record entry to all children
+ export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const baseUrl = process.env['backend_url'];
+
+    try {
+        const deviceKey = request.params.deviceKey;
+        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        const records = await getRecords.json()
+
+        if (records[0].record.tags.includes("recall")) {
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+
+            // Send recalled record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let getKey = await fetch(`${baseUrl}/${key}`);
+                const keyProvenance = await getKey.json();
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+
+                    if (uniqueChildKeys.includes(deviceKey.toString())) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    const keyFormData = new FormData();
+                    keyFormData.append("provenanceRecord", JSON.stringify({
+                        blobType: 'deviceRecord',
+                        description: records[0].record.description,
+                        children_key: '',
+                        tags: records[0].record.tags,
+                    }));
+                    
+                    let response = await fetch(`${baseUrl}/${key}`, {
+                        method: "POST",
+                        body: keyFormData,
+                    })
+                }
+
+                keysToCheck.shift();
+            }
+        }
+
+        return {
+            status: 200
+        }
+    } catch (error) {
+        console.error(`Error notifying children: ${error}`);
+        return {
+            status: 500
+        }
+    }
+ }
+
