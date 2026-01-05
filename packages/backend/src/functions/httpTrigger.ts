@@ -285,7 +285,6 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
 /*=================  Endpoints  =====================*/
 
 /* ----- API Endpoints Section 1/2: Functions ----- */
-
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);

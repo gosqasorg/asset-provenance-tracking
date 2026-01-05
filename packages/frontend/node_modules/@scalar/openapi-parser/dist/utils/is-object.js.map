@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/utils/is-object.ts"],
+  "sourcesContent": ["/**\n * Check if the given value is an object\n */\nexport const isObject = (obj: any) => typeof obj === 'object' && !Array.isArray(obj) && obj !== null\n"],
+  "mappings": "AAGO,MAAM,WAAW,CAAC,QAAa,OAAO,QAAQ,YAAY,CAAC,MAAM,QAAQ,GAAG,KAAK,QAAQ;",
+  "names": []
+}

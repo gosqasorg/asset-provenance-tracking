@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/legacy/index.ts"],
+  "sourcesContent": ["export * from './reference-config'\n"],
+  "mappings": "AAAA,cAAc;",
+  "names": []
+}

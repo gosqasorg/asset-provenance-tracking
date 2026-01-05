@@ -1,0 +1,3 @@
+declare const _default: "\nSummary / Details\n\n<details>\n  <summary>Using Details Tags</summary>\n  <p>HTML Example</p>\n</details>\n\n---\n\nDescription List\n\n<dl>\n  <dt>Beast of Bodmin</dt>\n  <dd>A large feline inhabiting Bodmin Moor.</dd>\n  <dt>Morgawr</dt>\n  <dd>A sea serpent.</dd>\n  <dt>Owlman</dt>\n  <dd>A giant owl-like creature.</dd>\n</dl>\n";
+export default _default;
+//# sourceMappingURL=html.d.ts.map

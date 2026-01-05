@@ -1,0 +1,1 @@
+{"version":3,"file":"register-globals.d.ts","sourceRoot":"","sources":["../../../src/standalone/lib/register-globals.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,6BAA6B,CAAA;AAKrE,OAAO,CAAC,MAAM,CAAC;IACb,UAAU,MAAM;QACd,MAAM,EAAE;YACN,kBAAkB,EAAE,kBAAkB,CAAA;SACvC,CAAA;KACF;CACF;AAED,2GAA2G;AAC3G,eAAO,MAAM,eAAe,YAS3B,CAAA"}

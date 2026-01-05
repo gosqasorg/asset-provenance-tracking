@@ -1,0 +1,1 @@
+{"version":3,"file":"external-documentation.d.ts","sourceRoot":"","sources":["../../../../src/schemas/v3.1/strict/external-documentation.ts"],"names":[],"mappings":"AAEA,0EAA0E;AAC1E,eAAO,MAAM,2CAA2C;IACtD,yFAAyF;;IAEzF,6GAA6G;;EAE7G,CAAA;AAEF,0EAA0E;AAC1E,MAAM,MAAM,2BAA2B,GAAG;IACxC,yFAAyF;IACzF,GAAG,EAAE,MAAM,CAAA;IACX,6GAA6G;IAC7G,WAAW,CAAC,EAAE,MAAM,CAAA;CACrB,CAAA"}

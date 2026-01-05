@@ -1,0 +1,1 @@
+{"version":3,"file":"callback.d.ts","sourceRoot":"","sources":["../../../../src/schemas/v3.1/strict/callback.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,aAAa,CAAA;AAEjD,OAAO,EAAE,KAAK,aAAa,EAAa,MAAM,aAAa,CAAA;AAE3D,eAAO,MAAM,8BAA8B;;;;;;;;;OAI1C,CAAA;AAED,oHAAoH;AACpH,MAAM,MAAM,cAAc,GAAG,MAAM,CAAC,MAAM,EAAE,aAAa,CAAC,cAAc,CAAC,CAAC,CAAA"}

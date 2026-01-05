@@ -1,0 +1,3 @@
+declare const _default: "\nA paragraph is simply one or more consecutive lines of text, separated\nby one or more blank lines. (A blank line is any line that looks like a\nblank line -- a line containing nothing but spaces or tabs is considered\nblank.) Normal paragraphs should not be indented with spaces or tabs.\n\n---\n\nLine with a soft break\n...following line.\n\nLine with a hard break  \n...following line.\n\n--- \n\nLine with several blank lines after...\n\n\n\n...following paragraph.\n";
+export default _default;
+//# sourceMappingURL=paragraphs.d.ts.map

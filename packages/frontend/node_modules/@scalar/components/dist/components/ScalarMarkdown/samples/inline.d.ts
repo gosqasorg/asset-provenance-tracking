@@ -1,0 +1,3 @@
+declare const _default: "\nParagraph with inline elements\n\nThis is a demo paragraph with **bold text**, _italic text_, a [link](https://example.com), and some `inline code` to show various Markdown inline elements.\n\n---\n\nLink\n\nThis is [an example](http://example.com/) inline link.\n\nThis [link](http://example.com/ \"Title\") has a title attribute.\n\n---\n\nEmphasis\n\n_single asterisks_\n\n_single underscores_\n\n**double asterisks**\n\n**double underscores**\n\n---\n\nInline Code\n\nUse the `printf()` function.\n\n---\n\nEmoji\n\n:sparkles:\n";
+export default _default;
+//# sourceMappingURL=inline.d.ts.map

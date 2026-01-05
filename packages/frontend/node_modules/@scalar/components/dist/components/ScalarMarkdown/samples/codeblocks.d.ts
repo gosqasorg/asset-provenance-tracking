@@ -1,0 +1,3 @@
+declare const _default: "\nCodeblock via indent\n\n    tell application \"Foo\"\n        beep\n    end tell\n\n---\n\nCodeblock via backticks\n\n```javascript\nconst message = 'this is a code block'\n\nconsole.log(message)\n```\n\n---\n\nCodeblock with HTML\n\n```html\n<div class=\"footer\">&copy; 2004 Foo Corporation</div>\n```\n\n---\n\nCodeblock with markdown\n\n\n```md\n# Title\n\nI should not be **bold**.\n```\n";
+export default _default;
+//# sourceMappingURL=codeblocks.d.ts.map
