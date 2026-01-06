@@ -83,6 +83,16 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         method: "POST",
         body: formData,
     });
+    if (response.status === 400) {
+        const errorData = await response.json()
+        
+        if(errorData.error) {
+            throw new Error(errorData.error);
+        }
+        else {
+            throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
+        }
+    }
     if (response.status !== 200) {
         throw new Error(`Failed to post provenance: ${response.status} ${response.statusText}`);
     }
