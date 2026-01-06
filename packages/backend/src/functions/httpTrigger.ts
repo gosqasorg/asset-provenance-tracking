@@ -272,12 +272,11 @@ export function postProvenanceMiddleware(body): Boolean {
     // This may seem simple but it is expected to grow
 
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
-    var result = false;
+    var result = true
     
-    if (JSON.stringify(body).length < sizeLimit) {
-        return result = true
+    if (JSON.stringify(body).length > sizeLimit) {
+        result = false
     } 
-
     return result
 }
 
