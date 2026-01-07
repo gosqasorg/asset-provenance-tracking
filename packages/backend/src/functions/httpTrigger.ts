@@ -274,12 +274,12 @@ export function postGetProvenanceMiddleware(body): Boolean {
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
     var result = true
 
-    // For when getProvenance gets called and all records entries of one key summed up
+    // When getProvenance gets called by searching up a created record
     if (typeof body === 'number') {
         if (body > sizeLimit) {
             result = false
         } 
-    // For postProvenance
+    // For creation of one record through postProvenance
     } else if (body instanceof FormData) {
         if (JSON.stringify(body).length > sizeLimit) {
             result = false
