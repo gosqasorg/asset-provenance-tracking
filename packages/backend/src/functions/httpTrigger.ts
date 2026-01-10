@@ -608,7 +608,7 @@ import { sendEmail } from './sendEmail.js';
 
 
 export async function emailExperiment0(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const from: string = 'foo@bar.com'
+    const from: string = 'noreply@gosqas.org'
     const to: string = request.params.sendTo
     const subject: string = 'This is a test of the Azure email system'
     const body: string = 'Email body'
