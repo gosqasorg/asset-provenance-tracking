@@ -1,5 +1,5 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
-https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/communication/communication-email/README.md
+//https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/communication/communication-email/README.md
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 const emailClient = new EmailClient(connectionString);

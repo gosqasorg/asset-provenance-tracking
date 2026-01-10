@@ -12,6 +12,9 @@ import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
 //  * Azure Functions Core Tools: https://github.com/Azure/azure-functions-core-tools/blob/v4.x/README.md
 
+// More useful docs:
+// * https://learn.microsoft.com/en-us/javascript/api/@azure/functions/httpresponseinit?view=azure-node-latest
+
 // Once you've logged into Azure via 'az login' to an Azure account w/ PubInv permissions,
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
@@ -611,7 +614,23 @@ export async function emailExperiment0(request: HttpRequest, context: Invocation
     const body: string = 'Email body'
     const displayName: string = from
 
-    sendEmail(from, to, subject, body, displayName)
+    try {
+        const emailResponse = await sendEmail(from, to, subject, body, displayName)
+        return {
+            status: 200,
+            jsonBody: emailResponse,
+        }
+    } catch(e) {
+        return {
+            status: 500
+        }
+    }
+
+    /* 
+    const emailResponse = await sendEmail(from, to, subject, body, displayName)
+
+    return { status: 200 }
+    */
 }
 
 
@@ -622,7 +641,7 @@ export async function emailExperiment0(request: HttpRequest, context: Invocation
 app.get("emailExperiment0", {
     authLevel: 'anonymous',
     route: 'emailExperiment0/{sendTo}',
-    handler: getProvenance,
+    handler: emailExperiment0,
 })
 
 
