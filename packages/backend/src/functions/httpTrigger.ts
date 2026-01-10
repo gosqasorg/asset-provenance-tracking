@@ -601,7 +601,30 @@ export async function recallChildren(request: HttpRequest, context: InvocationCo
 }
 
 
+import { sendEmail } from './sendEmail.js';
+
+
+export async function emailExperiment0(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const from: string = 'foo@bar.com'
+    const to: string = request.params.sendTo
+    const subject: string = 'This is a test of the Azure email system'
+    const body: string = 'Email body'
+    const displayName: string = from
+
+    sendEmail(from, to, subject, body, displayName)
+}
+
+
+
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.get("emailExperiment0", {
+    authLevel: 'anonymous',
+    route: 'emailExperiment0/{sendTo}',
+    handler: getProvenance,
+})
+
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
