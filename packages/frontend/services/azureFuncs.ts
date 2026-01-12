@@ -103,6 +103,20 @@ export async function postEmail(email: string) {
     }
 }
 
+export async function postNotificationEmail(email: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const formData = new FormData();
+    formData.append("email", email);
+
+    const response = await fetch(`${baseUrl}/notificationSubscription`, {
+        method: 'POST',
+        body: formData,
+    });
+    if (response.status != 200) {
+        throw new Error('postNotificationEmail: Failed to save email');
+    }
+}
+
 export async function getStatistics() {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/statistics`, {
