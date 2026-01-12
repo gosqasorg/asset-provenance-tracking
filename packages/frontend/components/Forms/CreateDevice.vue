@@ -111,8 +111,17 @@ export default {
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
-            if (files) {
+
+            const maxFileSize = 2097152;  // aka 2MB
+
+            if (files && files[0].size <= maxFileSize) {
                 this.pictures = Array.from(files);
+            } else {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
+                })
+                target.value = '';
             }
         },
         async submitForm() {
@@ -156,7 +165,7 @@ export default {
             } catch (error) {
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Failed to create the record: ${error}`
+                    text: `Failed to create record: ${error}`
                 });
             } finally {
                 this.isSubmitting = false;

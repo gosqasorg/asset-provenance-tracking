@@ -7,10 +7,17 @@ on:
     paths:
       - packages/backend/**
       - .github/workflows/be_on_push.yml
+      - '!packages/frontend/**'
+      - '!.github/workflows/fe_on_push.yml'
   pull_request:
     branches:
       - main
-
+    paths:
+      - packages/backend/**
+      - .github/workflows/be_on_push.yml
+      - '!packages/frontend/**'
+      - '!.github/workflows/fe_on_push.yml'
+      
 # Docs: https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=linux%2Cjavascript&pivots=method-manual
 
 env:

@@ -7,11 +7,27 @@ on:
     paths:
       - packages/frontend/**
       - .github/workflows/fe_on_push.yml
+      - '!packages/backend/**'
+      - '!.github/workflows/be_on_push.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - packages/frontend/**
+      - .github/workflows/fe_on_push.yml
+      - '!packages/backend/**'
+      - '!.github/workflows/be_on_push.yml'
 
 jobs:
+#  note: job currently not working
+#  frontend-ui-testing:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4.1.7
+#      - name: Run frontend UI tests
+#        uses: ./.github/actions/frontend-ui-testing
+
   frontend-deploy:
     runs-on: ubuntu-latest
     steps:

@@ -16,5 +16,6 @@ export FRONTEND_URL=https://gosqas.org
 
 # Deploy frontend
 cd packages/frontend
+npm install
 npx nuxi build
 swa deploy .output/public/ --app-name=$MY_STATIC_WEB_APP_NAME --no-use-keychain --env production
