@@ -39,24 +39,28 @@ const route = useRoute();
         >
       </p>
 
-      <p>
-        <span class="p-text-color" style="font-weight: 600">Our current products</span> <br />
-        Global Distributed Tracking - an open source software enabling closed-loop tracking for
-        products, information, and logistics.
-      </p>
-      <iframe
-        src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-        style="width: 100%; border: none; display: block; aspect-ratio: 7 / 4"
-        frameborder="0"
-        allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
-        title="Global Distributed Tracking"
-      >
-      </iframe>
-      <p id="video-caption" style="font-size: 14px">
-        Video production by
-        <a href="https://www.prodigium-pictures.com/" style="font-size: 14px">Prodigium Pictures</a>
-      </p>
-    </div>
+            <p> <span class="p-text-color" style="font-weight:600">Our current products</span> <br>
+                Global Distributed Tracking - an open source software enabling closed-loop tracking for products, information, and logistics.</p>
+                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; border: none; display: block; aspect-ratio: 7 / 4;"
+                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+               </iframe>
+               <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+        </div>
+
+        <div>
+            <NavButton to="/how-it-works" text="How It Works" fontSize="18px" class="w-100"/>
+        
+            <div class="dmdm test" >
+                  <img src="../assets/images/dmdm-lightmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image lightmode-dmdm">
+                 <img src="../assets/images/dmdm-darkmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image darkmode-dmdm">
+                <div class="dmdm-description" style="max-width: 100%;">
+                    <p class="dmdm-header">Distributed Medical Device Manufacturing (DMDM)</p>
+                    <p class="dmdm-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA–registered Distributed Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process. Explore how the DMDM and GOSQAS partnership expands open-source technology access for medical device compliance and distribution.</p>
+                </div>
+        </div>
+                
+            <NavButton to="/dmdm" text="View our pilot program" fontSize="18px" class="w-100"/>
 
     <div>
       <NavButton to="/how-it-works" text="How It Works" fontSize="18px" class="w-100" />
