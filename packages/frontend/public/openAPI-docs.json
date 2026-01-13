@@ -5,20 +5,6 @@
     "version": "1.0.0",
     "description": "Auto-generated OpenAPI specification"
   },
-  "servers": [
-    {
-      "url": "http://localhost:7071/api",
-      "description": "Local development server"
-    },
-    {
-      "url": "https://gosqasbe.azurewebsites.net/api",
-      "description": "Staging server"
-    },
-    {
-      "url": "https://gdtprodbackend.azurewebsites.net/api",
-      "description": "Production server"
-    }
-  ],
   "paths": {
     "/provenance/{deviceKey}": {
       "get": {

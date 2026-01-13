@@ -1,6 +1,5 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 interface RouteInfo {
@@ -306,20 +305,21 @@ class AzureFunctionsOpenAPIGenerator {
         version: '1.0.0',
         description: 'Auto-generated OpenAPI specification'
       },
-      servers: [
-        {
-          url: 'http://localhost:7071/api',
-          description: 'Local development server'
-        },
-        {
-          url: 'https://gosqasbe.azurewebsites.net/api',
-          description: 'Staging server'
-        },
-        {
-          url: process.env.BACKEND_URL || 'https://gdtprodbackend.azurewebsites.net/api',
-          description: 'Production server'
-        }
-      ],
+      // This is commented out for now to not affect autogeneration of the openAPI-docs yaml and json files. You can find the yaml file with servers in the  packages/backend/api-docs/openAPI-docs-with-servers.yaml
+      // servers: [
+      //   {
+      //     url: 'http://localhost:7071/api',
+      //     description: 'Local development server'
+      //   },
+      //   {
+      //     url: 'https://gosqasbe.azurewebsites.net/api',
+      //     description: 'Staging server'
+      //   },
+      //   {
+      //     url: process.env.BACKEND_URL || 'https://gdtprodbackend.azurewebsites.net/api',
+      //     description: 'Production server'
+      //   }
+      // ],
       paths
     };
   }
@@ -368,66 +368,11 @@ class AzureFunctionsOpenAPIGenerator {
   }
 }
 
-// This function is used to merge the auto-generated spec with the manual overrides
-function mergeWithManualOverrides(autoSpec: any, manualSpec: any): any {
-  const merged = { ...autoSpec };
-  
-  if (manualSpec.paths) {
-    // Collect operationIds from manual overrides to identify which auto paths to remove
-    const manualOperationIds = new Set<string>();
-    Object.values(manualSpec.paths).forEach((pathOps: any) => {
-      Object.values(pathOps).forEach((op: any) => {
-        if (op.operationId) {
-          manualOperationIds.add(op.operationId);
-        }
-      });
-    });
-    
-    // Remove auto-generated paths that have the same operationIds as a manual override
-    const filteredAutoPaths: any = {};
-    Object.entries(autoSpec.paths || {}).forEach(([path, pathOps]: [string, any]) => {
-      const filteredOps: any = {};
-      Object.entries(pathOps).forEach(([method, op]: [string, any]) => {
-        if (!op.operationId || !manualOperationIds.has(op.operationId)) {
-          filteredOps[method] = op;
-        }
-      });
-      if (Object.keys(filteredOps).length > 0) {
-        filteredAutoPaths[path] = filteredOps;
-      }
-    });
-    
-    // Merge filtered auto paths and manual paths, manual takes precedence
-    merged.paths = {
-      ...filteredAutoPaths,
-      ...manualSpec.paths
-    };
-  }
-  return merged;
-}
-
 // Usage function
 export function generateOpenAPI(sourceFilePath: string, outputPath?: string): void {
   try {
     const generator = new AzureFunctionsOpenAPIGenerator(sourceFilePath);
     let spec = generator.generate();
-    
-    // Check for manual overrides file
-    if (outputPath) {
-      const outputDir = path.dirname(outputPath);
-      const manualOverridesPath = path.join(outputDir, 'manual-openapi-overrides.yaml');
-      
-      if (fs.existsSync(manualOverridesPath)) {
-        try {
-          const manualContent = fs.readFileSync(manualOverridesPath, 'utf8');
-          const manualSpec = yaml.load(manualContent) as any;
-          spec = mergeWithManualOverrides(spec, manualSpec);
-          console.log(`Merged manual overrides from: ${manualOverridesPath}`);
-        } catch (error) {
-          console.warn(`Warning: Could not load manual overrides file: ${error}`);
-        }
-      }
-    }
     
     const yamlOutput = yaml.dump(spec, { indent: 2 });
     
