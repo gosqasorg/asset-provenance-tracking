@@ -372,7 +372,7 @@ class AzureFunctionsOpenAPIGenerator {
 export function generateOpenAPI(sourceFilePath: string, outputPath?: string): void {
   try {
     const generator = new AzureFunctionsOpenAPIGenerator(sourceFilePath);
-    let spec = generator.generate();
+    const spec = generator.generate();
     
     const yamlOutput = yaml.dump(spec, { indent: 2 });
     
