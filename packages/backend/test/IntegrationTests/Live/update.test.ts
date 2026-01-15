@@ -286,7 +286,7 @@ describe("Record Update Tests", () => {
       body: updateFormData,
     });
 
-    // Call recall function to send recalled record to all the children and grandchildren
+    // Call the recall function to send recalled record to all the children and grandchildren
     const recallResponse = await fetch(`${baseUrl}recall/${groupKey}`, {
       method: "POST",
       body: updateFormData,
