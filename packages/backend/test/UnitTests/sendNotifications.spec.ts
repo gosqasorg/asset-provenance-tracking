@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { postNotificationEmail } from '../../src/functions/sendNotifications';
-import { json } from 'stream/consumers';
+
 
 describe('PostNotificationEmail', () => {
     it("should return the email and record key", async() => {
         const mockRequest = {
             async json(){
                return {
-                email:"test@test.com",
-                recordKey:'123'
+                email:"example@email.com",
+                recordKey:"123"
                }
             }
         
@@ -20,8 +20,12 @@ describe('PostNotificationEmail', () => {
         } as any;
 
         const response = await postNotificationEmail(mockRequest, mockContext);
+        console.log(response)
         expect(response.status).toBe(201);
 
 
     });
 });
+
+// should i test for email format like .com
+//should i also tests and make sure that the recordkey follows our rules...

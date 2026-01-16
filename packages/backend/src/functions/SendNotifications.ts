@@ -13,14 +13,14 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 status: 400
             }
         }
-        context.log("Received signup for " + email)
+        console.log("Received signup for " + email)
         return {
             jsonBody: {message: "Success"},
             status: 201
         } 
         
     }catch(error){
-        context.error(error.message);
+        console.error(error.message);
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
