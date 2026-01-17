@@ -631,6 +631,50 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 /* Notification Email Signup Datastore Exp 0
 
 
+
+async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
+
+    const attachmentIDs = new Array<string>();
+    for (const attach of attachments) {
+        if (typeof attach === 'string') continue;
+        const data = await attach.blob.arrayBuffer()
+        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
+        attachmentIDs.push(attachmentID);
+    }
+
+    const provRecord = { record, attachments: attachmentIDs };
+
+    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+    return { record: recordID, attachments };
+}
+
+
+export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+
+    await containerClient.createIfNotExists();
+
+    const formData = await request.formData();
+    const provenanceRecord = formData.get("provenanceRecord");
+    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+    const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
+
+    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+    const timestamp = new Date().getTime();
+    const attachments = new Array<NamedBlob>();
+    for (const attach of formData.values()) {
+        if (typeof attach === 'string') continue;
+        console.log("attach type: " + typeof(attach))
+        attachments.push({ blob: attach, name: attach.name });
+    }
+
+    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    return { jsonBody: body ?? { converted: true}};
+}
+
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
     const deviceID = await calculateDeviceID(deviceKey);
@@ -664,51 +708,44 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     });
     return blobID;
 }
+*/
 
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
-
-    const attachmentIDs = new Array<string>();
-    for (const attach of attachments) {
-        if (typeof attach === 'string') continue;
-        const data = await attach.blob.arrayBuffer()
-        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
-        attachmentIDs.push(attachmentID);
-    }
-
-    const provRecord = { record, attachments: attachmentIDs };
-
-    const data = new TextEncoder().encode(JSON.stringify(provRecord));
-    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-    return { record: recordID, attachments };
-}
-
-export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function signupForNotifications(key: string, email: string, tags: string[] = []) {
+    /*
+    Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+    */ 
+    // 0: setup
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
+    // 1 get client
+    // Blobs live in a container, organized by paths
     await containerClient.createIfNotExists();
 
-    const formData = await request.formData();
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        console.log("attach type: " + typeof(attach))
-        attachments.push({ blob: attach, name: attach.name });
+    const datum = {
+        'key': {
+            'email': email,
+            'tags': tags
+        }
     }
 
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    return { jsonBody: body ?? { converted: true}};
-}
+    const data = new TextEncoder().encode(JSON.stringify(datum));
+    const blobID = toHex(await sha256(data)); // TODO: shouldn't this be device id?
+    const type = 'notificationSignups'
+    const blobName = `notificationSignups/${blobID}`  // see above todo. this should work for proof of concept
 
-*/
+
+    // 2. Upload via uploadblockblob
+    // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+    // do I need the metadata section?
+
+    // TODO: possibly incomplete / incorrect
+    if (status = (await uploadBlockBlob(/**/).response._response.status) < 200 || status >= 300) {
+        // log and return opaque error code to user
+        // todo: have frontend display in snackbar for status 4xx
+    }
+}
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
