@@ -628,6 +628,88 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
+/* Notification Email Signup Datastore Exp 0
+
+
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+    const dataHash = toHex(await sha256(data));
+    const deviceID = await calculateDeviceID(deviceKey);
+    const { salt, encryptedData } = await encrypt(deviceKey, data);
+    const blobID = toHex(await sha256(encryptedData));
+
+    let blobName;
+    if (type === 'prov') {
+        blobName = `prov/${deviceID}/${blobID}`;
+    } else if (type === 'attach') {
+        blobName = `attach/${blobID}`;
+    } else {
+        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
+    }
+
+    const { encryptedData: encryptedName } = fileName
+        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
+        : { encryptedData: undefined };
+
+    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
+        metadata: {
+            gdtcontenttype: contentType,
+            gdthash: dataHash,
+            gdtsalt: toHex(salt),
+            gdttimestamp: `${timestamp}`,
+            gdtname: encryptedName ? toHex(encryptedName) : ""
+        },
+        blobHTTPHeaders: {
+            blobContentType: "application/octet-stream"
+        }
+    });
+    return blobID;
+}
+
+async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
+
+    const attachmentIDs = new Array<string>();
+    for (const attach of attachments) {
+        if (typeof attach === 'string') continue;
+        const data = await attach.blob.arrayBuffer()
+        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
+        attachmentIDs.push(attachmentID);
+    }
+
+    const provRecord = { record, attachments: attachmentIDs };
+
+    const data = new TextEncoder().encode(JSON.stringify(provRecord));
+    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+    return { record: recordID, attachments };
+}
+
+export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+
+    await containerClient.createIfNotExists();
+
+    const formData = await request.formData();
+    const provenanceRecord = formData.get("provenanceRecord");
+    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+    const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
+
+    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+    const timestamp = new Date().getTime();
+    const attachments = new Array<NamedBlob>();
+    for (const attach of formData.values()) {
+        if (typeof attach === 'string') continue;
+        console.log("attach type: " + typeof(attach))
+        attachments.push({ blob: attach, name: attach.name });
+    }
+
+    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    return { jsonBody: body ?? { converted: true}};
+}
+
+*/
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
 app.post("postNotificationEmail", {
