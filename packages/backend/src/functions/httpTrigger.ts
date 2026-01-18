@@ -790,19 +790,74 @@ async function signupForNotifications(key: string, email: string, tags: string[]
     }
 }
 
+async function retrieveNotifEmails(key: string) {
+    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
+    const deviceID = await calculateDeviceID(key);
+    const type = 'notificationSignups'
+    const blobName = `${type}/${deviceID}/`
+
+    try {
+        const blobClient = containerClient.getBlobClient(blobName);
+
+        const downloadResponse = await blobClient.download();
+
+        const downloaded = await streamToString(downloadResponse.readableStreamBody);
+        console.log('Downloaded blob content:', downloaded.toString());
+
+        return {
+            jsonBody: { message: downloaded},
+//                        moreMessage: JSON.parse(downloaded) },
+            status: 200
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
+        }
+    } 
+}
+
+async function streamToString(readableStream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => {
+            chunks.push(data.toString());
+        });
+        readableStream.on("end", () => {
+            resolve(chunks.join(""));
+        });
+        readableStream.on("error", reject);
+    });
+}
+
+function streamToBuffer(readableStream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on('data', (data) => {
+            chunks.push(data instanceof Buffer ? data : Buffer.from(data));
+        });
+        readableStream.on('end', () => {
+            resolve(Buffer.concat(chunks));
+        });
+        readableStream.on('error', reject);
+    });
+}
+
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
         /* Dev */
 
     try {
+        const key = await makeEncodedDeviceKey()
         // Add it
-        const putRresponse = await signupForNotifications(await makeEncodedDeviceKey(), "email@email.foo")
+        const putResponse = await signupForNotifications(key, "email@email.foo")
         console.log(putResponse)
 
         // Access it
+        const getResponse = await retrieveNotifEmails(key)
 
 
         return {
-            jsonBody: {message: JSON.stringify(response)},
+            jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
             status: 200,
         }
     } catch(error) {
