@@ -713,37 +713,77 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
 async function signupForNotifications(key: string, email: string, tags: string[] = []) {
     /*
     Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+
+    We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
+
+    // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+    blobName: string, body: RequestBodyType, contentLength: number, options?: BlockBlobUploadOptions
+
+    > BlockBlobUploadOptions 
+    > Options to configure the Block Blob Upload operation.
+
+    https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    It looks like I may be able to use similar options as the other invocations in this file.
+
+    ////////////////////////////////////////////////////////////
+    //                   IMPORTANT!                           //
+    ////////////////////////////////////////////////////////////
+    The BlockBlobUploadOptions Interface is where storage tier is set. 
     */ 
+
     // 0: setup
-    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceKey = key; //decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    //context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });  // accountname not needed outside of this log
 
     // 1 get client
     // Blobs live in a container, organized by paths
     await containerClient.createIfNotExists();
 
+    // 2 Setup data
     const datum = {
         'key': {
             'email': email,
             'tags': tags
         }
-    }
+    }    
+    //const data = new TextEncoder().encode(JSON.stringify(datum));
+    const data = JSON.stringify(datum)
 
-    const data = new TextEncoder().encode(JSON.stringify(datum));
-    const blobID = toHex(await sha256(data)); // TODO: shouldn't this be device id?
+
+    // 3 Setup blob name & id
+    //const blobID = toHex(await sha256(datum)); // TODO: shouldn't this be device id? // not neeed
     const type = 'notificationSignups'
-    const blobName = `notificationSignups/${blobID}`  // see above todo. this should work for proof of concept
+    const blobName = `${type}/${deviceID}/`//${blobID}`  // see above todo. this should work for proof of concept    
+
+    try {
+        // TODO: possibly incomplete / incorrect
+        let status; 
+        if ((status = (await containerClient.uploadBlockBlob(
+                // 1. Blobname
+                blobName,
+                // 2. body (can be a string)
+                data,
+                // 3. length of body in bytes
+                data.length
+                // 4. optional options
+                // nothing for now
+            )).response._response.status) < 300 || status >= 100) {
 
 
-    // 2. Upload via uploadblockblob
-    // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-    // do I need the metadata section?
-
-    // TODO: possibly incomplete / incorrect
-    if (status = (await uploadBlockBlob(/**/).response._response.status) < 200 || status >= 300) {
-        // log and return opaque error code to user
-        // todo: have frontend display in snackbar for status 4xx
+                return {
+                    jsonBody: { message: "Success" }, 
+                    status: 200
+                }
+            // TODO: have frontend display in snackbar for status 4xx
+        } else {
+            throw Error('Failed to store email')
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
+        }
     }
 }
 
@@ -754,6 +794,7 @@ app.post("postNotificationEmail", {
     route: 'ReceiveNotificationEmail',
     handler: postNotificationEmail
 })
+
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
