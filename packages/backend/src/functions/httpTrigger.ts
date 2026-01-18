@@ -611,6 +611,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 status: 400
             }
         }
+
+
         console.log("Received signup for " + email)
         return {
             jsonBody: {message: "Success"},
@@ -772,7 +774,8 @@ async function signupForNotifications(key: string, email: string, tags: string[]
 
 
                 return {
-                    jsonBody: { message: "Success" }, 
+                    jsonBody: { message: "Success",
+                    name: blobName }, 
                     status: 200
                 }
             // TODO: have frontend display in snackbar for status 4xx
@@ -787,7 +790,38 @@ async function signupForNotifications(key: string, email: string, tags: string[]
     }
 }
 
+async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+        /* Dev */
+
+    try {
+        // Add it
+        const putRresponse = await signupForNotifications(await makeEncodedDeviceKey(), "email@email.foo")
+        console.log(putResponse)
+
+        // Access it
+
+
+        return {
+            jsonBody: {message: JSON.stringify(response)},
+            status: 200,
+        }
+    } catch(error) {
+        console.log(error)
+
+        return {
+            jsonBody: {message: error.message},
+            status: 500,
+        }
+    }
+}
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.get("emailSignupTestEndpoint", {
+    authLevel: 'anonymous',
+    route: 'emailSignupTestEndpoint',
+    handler: emailSignupTestEndpoint
+})
 
 app.post("postNotificationEmail", {
     authLevel: 'anonymous',
