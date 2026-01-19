@@ -268,6 +268,26 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+export function postGetProvenanceMiddleware(body): Boolean {
+
+    // This may seem simple but it is expected to grow
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+    var result = true
+
+    // When getProvenance gets called by searching up a created record
+    if (typeof body === 'number') {
+        if (body > sizeLimit) {
+            result = false
+        } 
+    // For creation of one record through postProvenance
+    } else if (body instanceof FormData) {
+        if (JSON.stringify(body).length > sizeLimit) {
+            result = false
+        } 
+    }
+    return result
+}
+
 
 /*=================  Endpoints  =====================*/
 
@@ -287,7 +307,10 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+    let totalBlobSize = 0;
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        totalBlobSize += blob.properties.contentLength;
+        if (!postGetProvenanceMiddleware(totalBlobSize)) { return { status: 304 }; }
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
@@ -300,6 +323,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -307,6 +331,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    if (!postGetProvenanceMiddleware(formData)) {return {status: 304 }; }
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
