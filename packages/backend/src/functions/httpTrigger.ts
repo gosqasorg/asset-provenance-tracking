@@ -612,7 +612,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
         }
 
-
         console.log("Received signup for " + email)
         return {
             jsonBody: {message: "Success"},
@@ -630,155 +629,53 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
-/* Notification Email Signup Datastore Exp 0
-
-
-
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
-
-    const attachmentIDs = new Array<string>();
-    for (const attach of attachments) {
-        if (typeof attach === 'string') continue;
-        const data = await attach.blob.arrayBuffer()
-        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
-        attachmentIDs.push(attachmentID);
-    }
-
-    const provRecord = { record, attachments: attachmentIDs };
-
-    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-    return { record: recordID, attachments };
-}
-
-
-export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
-    await containerClient.createIfNotExists();
-
-    const formData = await request.formData();
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        console.log("attach type: " + typeof(attach))
-        attachments.push({ blob: attach, name: attach.name });
-    }
-
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    return { jsonBody: body ?? { converted: true}};
-}
-
-export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
-    const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey);
-    const { salt, encryptedData } = await encrypt(deviceKey, data);
-    const blobID = toHex(await sha256(encryptedData));
-
-    let blobName;
-    if (type === 'prov') {
-        blobName = `prov/${deviceID}/${blobID}`;
-    } else if (type === 'attach') {
-        blobName = `attach/${blobID}`;
-    } else {
-        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
-    }
-
-    const { encryptedData: encryptedName } = fileName
-        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
-        : { encryptedData: undefined };
-
-    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
-        metadata: {
-            gdtcontenttype: contentType,
-            gdthash: dataHash,
-            gdtsalt: toHex(salt),
-            gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName) : ""
-        },
-        blobHTTPHeaders: {
-            blobContentType: "application/octet-stream"
-        }
-    });
-    return blobID;
-}
-*/
-
-async function signupForNotifications(key: string, email: string, tags: string[] = []) {
+async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
     /*
-    Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
 
-    We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
 
-    // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-    blobName: string, body: RequestBodyType, contentLength: number, options?: BlockBlobUploadOptions
-
-    > BlockBlobUploadOptions 
-    > Options to configure the Block Blob Upload operation.
-
-    https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
-    It looks like I may be able to use similar options as the other invocations in this file.
-
-    ////////////////////////////////////////////////////////////
-    //                   IMPORTANT!                           //
-    ////////////////////////////////////////////////////////////
-    The BlockBlobUploadOptions Interface is where storage tier is set. 
+       * The BlockBlobUploadOptions Interface is where storage tier is set. 
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */ 
 
-    // 0: setup
-    const deviceKey = key; //decodeKey(request.params.deviceKey);
+    // 0: setup id
     const deviceID = await calculateDeviceID(deviceKey);
-    //context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });  // accountname not needed outside of this log
 
-    // 1 get client
-    // Blobs live in a container, organized by paths
-    await containerClient.createIfNotExists();
-
-    // 2 Setup data
+    // 1: setup data
     const datum = {
         'key': {
             'email': email,
             'tags': tags
         }
     }    
-    //const data = new TextEncoder().encode(JSON.stringify(datum));
     const data = JSON.stringify(datum)
 
-
-    // 3 Setup blob name & id
-    //const blobID = toHex(await sha256(datum)); // TODO: shouldn't this be device id? // not neeed
+    // 2 Setup blob name & id
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`//${blobID}`  // see above todo. this should work for proof of concept    
+    const blobName = `${type}/${deviceID}/`
 
     try {
-        // TODO: possibly incomplete / incorrect
-        let status; 
-        if ((status = (await containerClient.uploadBlockBlob(
-                // 1. Blobname
-                blobName,
-                // 2. body (can be a string)
-                data,
-                // 3. length of body in bytes
-                data.length
-                // 4. optional options
-                // nothing for now
-            )).response._response.status) < 300 || status >= 100) {
+        // Note: do not reformat; leave as commented
+        let status = (await containerClient.uploadBlockBlob(
+                        blobName,   // 1. Blob name
+                        data,       // 2. body (can be a string)
+                        data.length // 3. length of body in bytes
+                        // 4. optional options
+                        // nothing for now
+                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+        )).response._response.status
 
-
-                return {
-                    jsonBody: { message: "Success",
-                    name: blobName }, 
-                    status: 200
-                }
+        if (status < 300 || status >= 100) {
+            return {
+                jsonBody: { message: "Success",
+                            name: blobName }, 
+                status: 200
+            }
             // TODO: have frontend display in snackbar for status 4xx
+            // This means nothing for now since we're not validating that what we're being handed is an email. 
         } else {
             throw Error('Failed to store email')
         }
@@ -798,15 +695,12 @@ async function retrieveNotifEmails(key: string) {
 
     try {
         const blobClient = containerClient.getBlobClient(blobName);
-
         const downloadResponse = await blobClient.download();
-
         const downloaded = await streamToString(downloadResponse.readableStreamBody);
         console.log('Downloaded blob content:', downloaded.toString());
 
         return {
             jsonBody: { message: downloaded},
-//                        moreMessage: JSON.parse(downloaded) },
             status: 200
         }
     } catch(error) {
@@ -830,39 +724,31 @@ async function streamToString(readableStream) {
     });
 }
 
-function streamToBuffer(readableStream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        readableStream.on('data', (data) => {
-            chunks.push(data instanceof Buffer ? data : Buffer.from(data));
-        });
-        readableStream.on('end', () => {
-            resolve(Buffer.concat(chunks));
-        });
-        readableStream.on('error', reject);
-    });
-}
-
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-        /* Dev */
+    /* How this pseudo-smoketest works:
+       1. Put a string into blobstore
+       2. Get it back out
+       3. Hand both responses back
+     */
 
     try {
         const key = await makeEncodedDeviceKey()
+
         // Add it
         const putResponse = await signupForNotifications(key, "email@email.foo")
-        console.log(putResponse)
 
         // Access it
         const getResponse = await retrieveNotifEmails(key)
-
 
         return {
             jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
             status: 200,
         }
-    } catch(error) {
-        console.log(error)
 
+    } catch(error) {
+
+        console.log(error)
+        
         return {
             jsonBody: {message: error.message},
             status: 500,
