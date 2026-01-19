@@ -603,11 +603,12 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     try{
         const body = await request.json() as any;
         const email = body.email;
-        const recordKey= body.recordKey;
+        const recordKey = body.recordKey;
+        const tags = body.tags;
 
         if (!email || !recordKey){
             return {
-                jsonBody: {error: "missing data"},
+                jsonBody: {error: "Error: email and record key required"},
                 status: 400
             }
         }
@@ -615,7 +616,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         console.log("Received signup for " + email)
         return {
             jsonBody: {message: "Success"},
-            status: 201
+            status: 200
         } 
         
     }catch(error){
