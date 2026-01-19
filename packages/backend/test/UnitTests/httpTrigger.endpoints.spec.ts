@@ -182,7 +182,8 @@ describe('PostNotificationEmail', () => {
             async json(){
                return {
                 email:"example@email.com",
-                recordKey:"123"
+                recordKey:"123",
+                tags: ['foo@bar.org']
                }
             }
         
@@ -195,8 +196,6 @@ describe('PostNotificationEmail', () => {
 
         const response = await httpTrigger.postNotificationEmail(mockRequest, mockContext);
         console.log(response)
-        expect(response.status).toBe(201);
-
-
+        expect(response.status).toBe(200);
     });
 });

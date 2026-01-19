@@ -767,7 +767,7 @@ app.get("emailSignupTestEndpoint", {
 
 app.post("postNotificationEmail", {
     authLevel: 'anonymous',
-    route: 'ReceiveNotificationEmail',
+    route: 'notificationSubscription',
     handler: postNotificationEmail
 })
 
