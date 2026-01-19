@@ -1005,6 +1005,69 @@ describe("Group Creation Tests", () => {
 		}
 	}, 60000);
 
+	// Group creation with invalid device key
+	it("should fail to create a group record with an invalid device key", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		const invalidGroupKey = "INVALID_KEY_12345";
+		
+		// Attempt to create group record with invalid key
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "invalid_key_group_smoketest",
+			description: "group creation attempt with invalid device key",
+			tags: [],
+			children_key: [],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		
+		const groupResponse = await fetch(`${baseUrl}/provenance/${invalidGroupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		
+		// Expect the response to indicate failure (e.g., 500 Internal Server Error)
+		console.log("Response Status for Invalid Key Test: " + groupResponse.status);
+		expect(groupResponse.ok).toBe(false);
+		expect(groupResponse.status).toBe(500);
+	}, 60000);
+
+		// Group with zero children
+	it("should create a group record with zero children", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		// Generate device key
+		const groupKeyRes = await fetch(`${baseUrl}/getNewDeviceKey`);
+		const groupKey = await groupKeyRes.text();
+		// Create group record
+		const groupFormData = new FormData();
+		groupFormData.append("provenanceRecord", JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "group_zero_children_smoketest",
+			description: "group with zero children for smoketest",
+			tags: [],
+			children_key: [],
+			hasParent: false,
+			isReportingKey: false
+		}));
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			method: "POST",
+			body: groupFormData,
+		});
+		expect(groupResponse.ok).toBe(true);
+
+		// Verify group record
+		const verificationResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		const verificationData = await verificationResponse.json();
+		expect(verificationData).toBeDefined();
+		expect(verificationData.length).toBeGreaterThan(0);
+		expect(verificationData[0].record.deviceName).toBe("group_zero_children_smoketest");
+		expect(verificationData[0].record.children_key).toEqual([]);
+		expect(verificationData[0].record.children_key.length).toBe(0);
+		expect(verificationData[0].record.hasParent).toBe(false);
+
+	}, 60000);
+
 });
 
 describe("Record Creation Tests", () => {
