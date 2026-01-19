@@ -1,0 +1,7 @@
+azure_functions_worker
+build
+docs
+eng
+pack
+python
+tests

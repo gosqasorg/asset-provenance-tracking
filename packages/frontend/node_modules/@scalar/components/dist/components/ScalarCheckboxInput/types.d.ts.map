@@ -1,0 +1,1 @@
+{"version":3,"file":"types.d.ts","sourceRoot":"","sources":["../../../src/components/ScalarCheckboxInput/types.ts"],"names":[],"mappings":"AAAA,yCAAyC;AACzC,MAAM,MAAM,kBAAkB,GAAG,UAAU,GAAG,OAAO,CAAA;AAErD,MAAM,MAAM,oBAAoB,GAAG;IACjC,KAAK,EAAE,MAAM,CAAA;IACb,KAAK,EAAE,MAAM,CAAA;CACd,CAAA"}

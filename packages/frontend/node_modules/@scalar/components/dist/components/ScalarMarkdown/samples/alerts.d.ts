@@ -1,0 +1,3 @@
+declare const _default: "\n> [!NOTE]  \n> Highlights information that users should take into account, even when skimming.\n\n> [!TIP]\n> Optional information to help a user be more successful.\n\n> [!IMPORTANT]  \n> Crucial information necessary for users to succeed.\n\n> [!WARNING]  \n> Critical content demanding immediate user attention due to potential risks.\n\n> [!CAUTION]\n> Negative potential consequences of an action.\n";
+export default _default;
+//# sourceMappingURL=alerts.d.ts.map

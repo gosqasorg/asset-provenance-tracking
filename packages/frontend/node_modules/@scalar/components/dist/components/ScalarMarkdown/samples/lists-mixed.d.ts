@@ -1,0 +1,3 @@
+declare const _default: "\nNested mixed lists \n\n* ul level 1\n* ul level 1\n    1. ol level 2\n    1. ol level 2\n        * ul level 3\n        * ul level 3\n    1. ol level 2\n    1. ol level 2\n\n---\n\nWith task lists\n\n- Unordered item\n- [x] Completed task\n- [ ] Incomplete task\n    1. Ordered item\n    - [x] Completed sub-task\n    2. Ordered item\n        - [x] Completed sub-task\n        - [ ] Incomplete sub-Task\n    - Unordered item\n    - [ ] Incomplete sub-Task\n";
+export default _default;
+//# sourceMappingURL=lists-mixed.d.ts.map

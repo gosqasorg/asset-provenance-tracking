@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/utils/transform-errors.ts"],
+  "sourcesContent": ["import type { AnyObject } from '@/types/index'\nimport { betterAjvErrors } from './betterAjvErrors/index'\n\n/**\n * Transforms ajv errors, finds the positions in the schema and returns an enriched format.\n */\nexport function transformErrors(specification: AnyObject, errors: any) {\n  // TODO: This should work with multiple files\n\n  if (typeof errors === 'string') {\n    return [\n      {\n        message: errors,\n      },\n    ]\n  }\n\n  return betterAjvErrors(specification, null, errors, {\n    indent: 2,\n  }).map((error) => {\n    error.message = error.message.trim()\n\n    return error\n  })\n}\n"],
+  "mappings": "AACA,SAAS,uBAAuB;AAKzB,SAAS,gBAAgB,eAA0B,QAAa;AAGrE,MAAI,OAAO,WAAW,UAAU;AAC9B,WAAO;AAAA,MACL;AAAA,QACE,SAAS;AAAA,MACX;AAAA,IACF;AAAA,EACF;AAEA,SAAO,gBAAgB,eAAe,MAAM,QAAQ;AAAA,IAClD,QAAQ;AAAA,EACV,CAAC,EAAE,IAAI,CAAC,UAAU;AAChB,UAAM,UAAU,MAAM,QAAQ,KAAK;AAEnC,WAAO;AAAA,EACT,CAAC;AACH;",
+  "names": []
+}

@@ -1,0 +1,3 @@
+declare const _default: "\nBasic Table\n\n| Syntax                                            | Description |\n| ------------------------------------------------- | ----------- |\n| Header                                            | Title       |\n| Paragraph                                         | Text        |\n| Superlongtextinasinglecolumnshouldwrapatsomepoint | Text        |\n\n\n---\n\nTable with alignment\n\n| Syntax      | Description | Test Text     |\n| :---        |    :----:   |          ---: |\n| Header      | Title       | Here's this   |\n| Paragraph   | Text        | And more      |\n";
+export default _default;
+//# sourceMappingURL=tables.d.ts.map
