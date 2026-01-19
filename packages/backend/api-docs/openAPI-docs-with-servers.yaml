@@ -1,0 +1,188 @@
+openapi: 3.0.0
+info:
+  title: Azure Functions API
+  version: 1.0.0
+  description: Auto-generated OpenAPI specification
+servers:
+  - url: http://localhost:7071/api
+    description: Local development server
+  - url: https://gosqasbe.azurewebsites.net/api
+    description: Staging server
+  - url: https://gdtprodbackend.azurewebsites.net/api
+    description: Production server
+paths:
+  /provenance/{deviceKey}:
+    get:
+      summary: GET /provenance/{deviceKey}
+      operationId: getProvenance
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      summary: POST /provenance/{deviceKey}
+      operationId: postProvenance
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                provenanceRecord:
+                  type: string
+                  description: JSON string containing provenance record
+  /upgrade/{deviceKey}:
+    get:
+      summary: GET /upgrade/{deviceKey}
+      operationId: upgradeProvenance
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      summary: GET /attachment/{deviceKey}/{attachmentID}
+      operationId: getAttachment
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Not Found
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attachmentID
+          in: path
+          required: true
+          schema:
+            type: string
+  /attachment/{deviceKey}/{attachmentID}/name:
+    get:
+      summary: GET /attachment/{deviceKey}/{attachmentID}/name
+      operationId: getAttachmentName
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Not Found
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: attachmentID
+          in: path
+          required: true
+          schema:
+            type: string
+  /statistics:
+    get:
+      summary: GET /statistics
+      operationId: getStatistics
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+  /feedbackVolunteer:
+    post:
+      summary: POST /feedbackVolunteer
+      operationId: postEmail
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Not Found
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User email address
+  /version:
+    get:
+      summary: GET /version
+      operationId: getVersion
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+  /device/Key:
+    post:
+      summary: POST /device/Key
+      operationId: getNewDeviceKey
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Not Found

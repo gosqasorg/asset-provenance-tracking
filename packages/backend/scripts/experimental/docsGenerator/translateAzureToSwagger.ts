@@ -305,6 +305,21 @@ class AzureFunctionsOpenAPIGenerator {
         version: '1.0.0',
         description: 'Auto-generated OpenAPI specification'
       },
+      // This is commented out for now to not affect autogeneration of the openAPI-docs yaml and json files. You can find the yaml file with servers in the  packages/backend/api-docs/openAPI-docs-with-servers.yaml
+      // servers: [
+      //   {
+      //     url: 'http://localhost:7071/api',
+      //     description: 'Local development server'
+      //   },
+      //   {
+      //     url: 'https://gosqasbe.azurewebsites.net/api',
+      //     description: 'Staging server'
+      //   },
+      //   {
+      //     url: process.env.BACKEND_URL || 'https://gdtprodbackend.azurewebsites.net/api',
+      //     description: 'Production server'
+      //   }
+      // ],
       paths
     };
   }
@@ -358,6 +373,7 @@ export function generateOpenAPI(sourceFilePath: string, outputPath?: string): vo
   try {
     const generator = new AzureFunctionsOpenAPIGenerator(sourceFilePath);
     const spec = generator.generate();
+    
     const yamlOutput = yaml.dump(spec, { indent: 2 });
     
     if (outputPath) {
