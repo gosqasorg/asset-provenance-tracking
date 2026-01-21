@@ -174,3 +174,28 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
  
 });
+
+
+describe('PostNotificationEmail', () => {
+    it("should return the email and record key", async() => {
+        const mockRequest = {
+            async json(){
+               return {
+                email:"example@email.com",
+                recordKey:"123",
+                tags: ['foo@bar.org']
+               }
+            }
+        
+        } as any;
+
+        const mockContext = {
+            log: vi.fn(),
+            error: vi.fn()
+        } as any;
+
+        const response = await httpTrigger.postNotificationEmail(mockRequest, mockContext);
+        console.log(response)
+        expect(response.status).toBe(200);
+    });
+});
