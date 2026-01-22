@@ -143,16 +143,23 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
-export async function offlineTestFetch(): Promise<boolean> {
+export async function offlineTestFetch(url? : string) : Promise<boolean> {
     let result = true;
 
+    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+    // Given parameter can be bogus url to mock offlineness
+    if (url === undefined) {
+        url = 'https://www.google.com/';
+    }
+
     try {
-        let response = await fetch('www.google.com');
+        let response = await fetch(url);
         if (response.status !== 200) {
             result = false;
         } 
     } catch (error) {
         console.log("Fetch attempt failed: " + error);
+        result = false;
     }
 
     return result
