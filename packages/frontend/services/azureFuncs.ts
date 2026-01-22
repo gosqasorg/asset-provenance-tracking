@@ -142,3 +142,19 @@ async function fetchUrl(url: string, formData?: FormData) {
         throw new Error(`Could not connect to the server, check your internet connection and try again`);
     }
 }
+
+export async function offlineTestFetch(): Promise<boolean> {
+    let result = true;
+
+    try {
+        let response = await fetch('www.google.com');
+        if (response.status !== 200) {
+            result = false;
+        } 
+    } catch (error) {
+        console.log("Fetch attempt failed: " + error);
+    }
+
+    return result
+
+}
