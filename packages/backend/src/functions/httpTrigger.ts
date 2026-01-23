@@ -16,6 +16,9 @@ import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
 
+// Docs
+// https://learn.microsoft.com/en-us/javascript/api/@azure/functions/httpresponseinit?view=azure-node-latest
+
 /*=================  Setup  =================*/
 
 let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
@@ -757,14 +760,63 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+
+export type NotificationSignUp = {
+
+    noTagsMeansAllUpdates: string[];
+    [tags: string]: string[];
+
+}
+
+export function validateNotification(data: any) {
+
+    try {
+        const validationCheck: NotificationSignUp = data;
+        return true;
+    } catch(error) {
+        return false
+    }
+
+}
+
+async function notificationSignUpTags(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    let data;
+    try{
+        data = await request.json();
+    }
+    catch (error){
+        return {
+            status: 400,
+            body: 'Invalid JSON format'
+        }
+    }
+
+    if (!validateNotification(data)){
+        return {
+            status: 400,
+            body: 'Invalid email list'
+        }
+    }
+
+    return{
+        status: 200,
+        body: 'Signup data received and validated'
+    }
+}
+
+
+
 interface GroupCreationOrder {
     title: string;
-    description: st;
+    description: string;
+    /*
     tags?: [string];
     number_of_children?: strin;
     custom_record_titles?: ;
     create_reporting_key?: ;
     annotate?: ;
+    */
 }
 
 
@@ -797,6 +849,17 @@ interface GroupCreationOrder {
 */
 export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
+
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+
         /*
         const key = await makeEncodedDeviceKey()
         const groupFormData = new FormData();
@@ -815,26 +878,51 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
         });
         */
 
+        
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+        context.log('--------------------')
+
         return {
             status: 200,
-            key: "",
+            jsonBody: {},
             headers: { "Content-Type": "text/plain" }
         }
-    }
     } catch(error) {
         console.error('Failed to create group', error.message)
         return {
             status: 500,
-            body: "",
+            jsonBody: {},
             headers: { "Content-Type": "text/plain" }
         }
     }
 }
 
 
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
-<<<<<<< Updated upstream
+
+//
+app.post("createGroup", {
+    authLevel: 'anonymous',
+    route: 'createGroup',
+    handler: createGroup,
+})
+//
+
+app.post("notificationSignUpTags", {
+    authLevel: 'anonymous',
+    route: 'notificationSignUpTags',
+    handler: notificationSignUpTags
+})
+
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',
     route: 'emailSignupTestEndpoint',
@@ -845,12 +933,6 @@ app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
-=======
-app.post("createGroup", {
-    authLevel: 'anonymous',
-    route: 'createGroup',
-    handler: createGroup,
->>>>>>> Stashed changes
 })
 
 app.get("getProvenance", {
