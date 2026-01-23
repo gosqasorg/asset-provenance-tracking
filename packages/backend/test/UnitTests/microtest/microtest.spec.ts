@@ -10,21 +10,31 @@ as needed.
 
 */
 
+const createGroup = async (title, description) => {
+  let cg_url = 'http://localhost:7071/api/createGroup'
+
+  let groupSpec = JSON.stringify({
+    deviceName: title,
+    description: description
+  })
+
+  let response = await (await fetch(cg_url, {
+      method: "POST",
+      body: groupSpec,
+  })).json()
+
+  console.log(response.url)
+  return response.url
+}
+
 describe('MicroTestLand', () => {
   it('APIv2GroupCreationIntegrationTest', async () => {
-    let cg_url = 'http://localhost:7071/api/createGroup'
 
-    let groupSpec = JSON.stringify({
-      deviceName: 'GroupTitle',
-      description: 'GroupDescription'
-    })
+    let url = await createGroup('Group Title', 'Group Description')
 
-    let response = await fetch(cg_url, {
-        method: "POST",
-        body: groupSpec,
-    })
+    console.log(url)
 
-    console.log(response)
+    //console.log(await response.json())
     expect(true).toBe(true)
   });
 });
