@@ -765,7 +765,7 @@ export type NotificationSignUp = {
 
 }
 
-export function validateNotification(data: any): data is NotificationSignUp {
+export function validateNotification(data: NotificationSignUp) {
 
     if (!data || typeof data!== 'object') {
         return false;
