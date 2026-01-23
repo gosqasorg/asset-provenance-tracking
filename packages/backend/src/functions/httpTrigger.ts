@@ -757,7 +757,71 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+ 
+export type NotificationSignUp = {
+
+    noTagsMeansAllUpdates: string[];
+    [tags: string]: string[];
+
+}
+
+export function validateNotification(data: any): data is NotificationSignUp {
+
+    if (!data || typeof data!== 'object') {
+        return false;
+    }
+    
+    if (!('noTagsMeansAllUpdates' in data)) {
+        return false;
+    }
+
+    for (const val of Object.values(data)) {
+
+        if (!Array.isArray(val)) {
+            return false;
+        }
+
+        const allStrings = val.every(email => typeof email === 'string');
+        if (!allStrings) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+async function notificationSignUpTags(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    let data;
+    try{
+        data = await request.json();
+    }
+    catch (error){
+        return {
+            status: 400,
+            body: 'Invalid JSON format'
+        }
+    }
+
+    if (!validateNotification(data)){
+        return {
+            status: 400,
+            body: 'Invalid email list'
+        }
+    }
+
+    return{
+        status: 200,
+        body: 'Signup data received and validated'
+    }
+}
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.post("notificationSignUpTags", {
+    authLevel: 'anonymous',
+    route: 'notificationSignUpTags',
+    handler: notificationSignUpTags
+})
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',
