@@ -852,6 +852,7 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
 
         context.log('--------------------')
         const apiUrl = 'http://localhost:7071/api'
+        const frontendUrl = 'http://localhost:3000'
 
         let theGroupCreationOrder: Record<string, any> = await request.json()
         context.log(theGroupCreationOrder)
@@ -893,7 +894,7 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
 
         return {
             status: 200,
-            jsonBody: {},
+            jsonBody: {url: `${frontendUrl}/record/${groupKey}`},
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
