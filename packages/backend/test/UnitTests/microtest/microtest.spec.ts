@@ -3,13 +3,19 @@ import * as httpTrigger from '../../../src/functions/httpTrigger';
 
 describe('NotificationSignUpTags', () => {
   it('get response for vaidateNotifications', async () => {
-    let response = httpTrigger.validateNotification() 
+
+    const testData = {
+      noTagsMeansAllUpdates : [],
+
+    }
+    let response = httpTrigger.validateNotification(testData) 
     console.log(response)
     expect(response).toBe(true)
 
 
   });
   
+
 
 
   // currently working on test
