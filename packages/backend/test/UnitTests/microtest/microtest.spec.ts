@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { httpTrigger} from '../../../src/functions/';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as httpTrigger from '../../../src/functions/httpTrigger';
 
 describe('NotificationSignUpTags', () => {
   it('get response for vaidateNotifications', async () => {
