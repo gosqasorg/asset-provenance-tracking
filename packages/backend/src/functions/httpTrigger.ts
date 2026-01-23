@@ -757,8 +757,84 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+interface GroupCreationOrder {
+    title: string;
+    description: st;
+    tags?: [string];
+    number_of_children?: strin;
+    custom_record_titles?: ;
+    create_reporting_key?: ;
+    annotate?: ;
+}
+
+
+/*
+    it("should create a group record with zero children", async () => {
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // Generate device key
+        const groupKeyRes = await fetch(`${baseUrl}/getNewDeviceKey`);
+        const groupKey = await groupKeyRes.text();
+        // Create group record
+        const groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: "group_zero_children_smoketest",
+            description: "group with zero children for smoketest",
+            tags: [],
+            children_key: [],
+            hasParent: false,
+            isReportingKey: false
+        }));
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+            method: "POST",
+            body: groupFormData,
+        });
+        expect(groupResponse.ok).toBe(true);
+
+        // Verify group record
+        const verificationResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const verificationData = await verificationResponse.json();
+*/
+export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        /*
+        const key = await makeEncodedDeviceKey()
+        const groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: "group_zero_children_smoketest",
+            description: "group with zero children for smoketest",
+            tags: [],
+            children_key: [],
+            hasParent: false,
+            isReportingKey: false
+        }));
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+            method: "POST",
+            body: groupFormData,
+        });
+        */
+
+        return {
+            status: 200,
+            key: "",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+    } catch(error) {
+        console.error('Failed to create group', error.message)
+        return {
+            status: 500,
+            body: "",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+<<<<<<< Updated upstream
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',
     route: 'emailSignupTestEndpoint',
@@ -769,6 +845,12 @@ app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
+=======
+app.post("createGroup", {
+    authLevel: 'anonymous',
+    route: 'createGroup',
+    handler: createGroup,
+>>>>>>> Stashed changes
 })
 
 app.get("getProvenance", {
@@ -929,114 +1011,4 @@ function uploadBlockBlob(blobName: string, body: RequestBodyType, contentLength:
         	groupFormData.append('attachment', blob) 
 */ 
 
-
-
-interface GroupCreationOrder {
-    title: ;
-    description: ;
-    group_image?: ;
-    tags?: ;
-    number_of_children?: ;
-    custom_record_titles?: ;
-    create_reporting_key?: ;
-    annotate?: ;
-}
-
-/*
-// User is responsible for telling us what they want
-const group_spec = {
-    title: "Box of tourniquets",
-    description: "",
-    group_image: None, // TODO verify syntax,
-    tags: [],
-    number_of_children: 3,,
-    custom_record_titles: ["TQ597", "TQ598", "TQ599"],
-    create_reporting_key: true,
-    annotate: true,
-}
-*/
-
-
-
-interface ProvenanceRecord {
-    record: any,
-    attachments?: readonly string[],
-}
-
-interface DecryptedBlob {
-    data: Uint8Array;
-    contentType: string;
-    timestamp: number;
-    filename?: string;
-}
-
-interface NamedBlob {
-    name?: string,
-    blob: Blob,
-}
-
-app.post('createGroup', {
-    authLevel: 'anonymous',
-    route: 'provenance/recall/{deviceKey}',
-    handler: createGroup,
-})
-
- 
- // Recall: Pin and send new record entry to all children
- export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const baseUrl = process.env['backend_url'];
-
-    try {
-        const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
-        const records = await getRecords.json()
-
-        if (records[0].record.tags.includes("recall")) {
-            let length = Object.keys(records).length;
-            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
-
-            // Send recalled record to all children
-            while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
-                const keyProvenance = await getKey.json();
-
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
-                if (!keyProvenance[0].record.isReportingKey) {
-                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
-
-                    if (uniqueChildKeys.includes(deviceKey.toString())) {
-                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
-                    }
-
-                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
-
-                    const keyFormData = new FormData();
-                    keyFormData.append("provenanceRecord", JSON.stringify({
-                        blobType: 'deviceRecord',
-                        description: records[0].record.description,
-                        children_key: '',
-                        tags: records[0].record.tags,
-                    }));
-                    
-                    let response = await fetch(`${baseUrl}/${key}`, {
-                        method: "POST",
-                        body: keyFormData,
-                    })
-                }
-
-                keysToCheck.shift();
-            }
-        }
-
-        return {
-            status: 200
-        }
-    } catch (error) {
-        console.error(`Error notifying children: ${error}`);
-        return {
-            status: 500
-        }
-    }
- }
 
