@@ -851,32 +851,43 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
     try{
 
         context.log('--------------------')
+        const apiUrl = 'http://localhost:7071/api'
 
-        context.log(request)
-        context.log(request.body)
-        //context.log(await request.json())
-
-        let theGroupCreationOrder = await request.json()
+        let theGroupCreationOrder: Record<string, any> = await request.json()
         context.log(theGroupCreationOrder)
 
-        /*
-        const key = await makeEncodedDeviceKey()
+
+        const groupKey = await makeEncodedDeviceKey()
         const groupFormData = new FormData();
+
+        /*
+        A group is a record with a 
+                    children_key: childrenDeviceList,
+                    children_name: childrenDeviceName,
+        */
+
+        
         groupFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
-            deviceName: "group_zero_children_smoketest",
-            description: "group with zero children for smoketest",
-            tags: [],
-            children_key: [],
+            ...theGroupCreationOrder,
+            children_key: [], // Note: this is what turns a record into a group
+            tags: [],            
             hasParent: false,
             isReportingKey: false
         }));
-        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+
+        context.log(groupFormData)
+        
+
+        const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+        const groupResponse = await fetch(createInitUrl, {
             method: "POST",
             body: groupFormData,
         });
-        */
 
+        /**/
+
+        context.log(groupResponse)
 
         context.log('--------------------')
 

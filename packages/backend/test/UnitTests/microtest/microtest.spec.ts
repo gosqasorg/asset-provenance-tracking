@@ -15,7 +15,7 @@ describe('MicroTestLand', () => {
     let cg_url = 'http://localhost:7071/api/createGroup'
 
     let groupSpec = JSON.stringify({
-      title: 'GroupTitle',
+      deviceName: 'GroupTitle',
       description: 'GroupDescription'
     })
 
