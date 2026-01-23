@@ -765,29 +765,15 @@ export type NotificationSignUp = {
 
 }
 
-export function validateNotification(data: NotificationSignUp) {
+export function validateNotification(data: any) {
 
-    if (!data || typeof data!== 'object') {
-        return false;
-    }
-    
-    if (!('noTagsMeansAllUpdates' in data)) {
-        return false;
-    }
-
-    for (const val of Object.values(data)) {
-
-        if (!Array.isArray(val)) {
-            return false;
-        }
-
-        const allStrings = val.every(email => typeof email === 'string');
-        if (!allStrings) {
-            return false;
-        }
+    try {
+        const validationCheck: NotificationSignUp = data;
+        return true;
+    } catch(error) {
+        return false
     }
 
-    return true;
 }
 
 async function notificationSignUpTags(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
