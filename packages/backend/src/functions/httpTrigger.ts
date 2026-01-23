@@ -851,14 +851,13 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
     try{
 
         context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
+
+        context.log(request)
+        context.log(request.body)
+        //context.log(await request.json())
+
+        let theGroupCreationOrder = await request.json()
+        context.log(theGroupCreationOrder)
 
         /*
         const key = await makeEncodedDeviceKey()
@@ -878,15 +877,7 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
         });
         */
 
-        
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
-        context.log('--------------------')
+
         context.log('--------------------')
 
         return {

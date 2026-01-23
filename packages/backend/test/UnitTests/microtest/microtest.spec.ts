@@ -14,10 +14,10 @@ describe('MicroTestLand', () => {
   it('APIv2GroupCreationIntegrationTest', async () => {
     let cg_url = 'http://localhost:7071/api/createGroup'
 
-    let groupSpec = {
+    let groupSpec = JSON.stringify({
       title: 'GroupTitle',
       description: 'GroupDescription'
-    }
+    })
 
     let response = await fetch(cg_url, {
         method: "POST",

@@ -4,5 +4,5 @@ cd ../../..
 
 while true; do
     npm run microtest
-    #sleep 15
+    sleep 15
 done
