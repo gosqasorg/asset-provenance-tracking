@@ -80,9 +80,9 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			response = await fetch(fullUrl);
 			response = await response.json(); 
 		} catch(error) {  
-			const testName = baseTestName + thisTestName;
-			const errorMessage = 'Failed to fetch (get) url: '
-			console.error(testName + errorMessage + fullUrl) 
+			const failedTest = baseTestName + ": Record with > 1 tags and a photo attachment";
+			const errorMessage = '\nFailed to fetch (get) url: '
+			console.error(failedTest + errorMessage + fullUrl) 
 			throw error;
 		}
  		
@@ -164,9 +164,9 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			response = await fetch(fullUrl);
 			response = await response.json(); 
 		} catch(error) {  
-			const testName = baseTestName + thisTestName;
-			const errorMessage = 'Failed to fetch (get) url: '
-			console.error(testName + errorMessage + fullUrl) 
+			const failedTest = baseTestName + ": Record with > 1 History Items";
+			const errorMessage = '\nFailed to fetch (get) url: '
+			console.error(failedTest + errorMessage + fullUrl) 
 			throw error;
 		}
  		
@@ -208,9 +208,9 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			statusCode = response.status
 			response = await response.json();
 		} catch(error) {
-			const testName = baseTestName + thisTestName;
-			const errorMessage = 'Failed to fetch (get) url: '
-			console.error(testName + errorMessage + fullUrl)
+			const failedTest = baseTestName + ": Read Group with Annotated Children";
+			const errorMessage = '\nFailed to fetch (get) url: '
+			console.error(failedTest + errorMessage + fullUrl)
 			throw error;
 		}
 
@@ -284,15 +284,15 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 				let secondResponse = await fetch(secondFullUrl)
 				secondData = await secondResponse.json()
 			}catch(error){
-				const testName = baseTestName + thisTestName;
-				const errorMessage = 'Failed to fetch (get) url: '
-				console.error(testName + errorMessage + secondFullUrl)
+				const failedTest = baseTestName + ": Attachments: JPEG and PDF";
+				const errorMessage = '\nFailed to fetch (get) url: '
+				console.error(failedTest + errorMessage + secondFullUrl)
 				throw error;
 			}
 		}catch(error) {
-			const testName = baseTestName + thisTestName;
-			const errorMessage = 'Failed to fetch (get) url: '
-			console.error(testName + errorMessage + firstFullUrl)
+			const failedTest = baseTestName + ": Attachments: JPEG and PDF";
+			const errorMessage = '\nFailed to fetch (get) url: '
+			console.error(failedTest + errorMessage + firstFullUrl)
 			throw error;
 		}
 
@@ -351,9 +351,9 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			response = await fetch(fullUrl);
 			response = await response.json();
 		} catch(error) {
-			const testName = baseTestName + thisTestName;
-			const errorMessage = 'Failed to fetch (get) url: '
-			console.error(testName + errorMessage + fullUrl)
+			const failedTest = baseTestName + ": Feature Complete";
+			const errorMessage = '\nFailed to fetch (get) url: '
+			console.error(failedTest + errorMessage + fullUrl)
 			throw error;
 		}
 
@@ -423,15 +423,15 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 				let secondResponse = await fetch(secondFullUrl)
 				secondData = await secondResponse.json()
 			}catch(error){
-				const testName = baseTestName + thisTestName;
-				const errorMessage = 'Failed to fetch (get) url: '
-				console.error(testName + errorMessage + secondFullUrl)
+				const failedTest = baseTestName + ": Feature Complete";
+				const errorMessage = '\nFailed to fetch (get) url: '
+				console.error(failedTest + errorMessage + secondFullUrl)
 				throw error;
 			}
 		}catch(error) {
-			const testName = baseTestName + thisTestName;
-			const errorMessage = 'Failed to fetch (get) url: '
-			console.error(testName + errorMessage + firstFullUrl)
+			const failedTest = baseTestName + ": Feature Complete";
+			const errorMessage = '\nFailed to fetch (get) url: '
+			console.error(failedTest + errorMessage + firstFullUrl)
 			throw error;
 		}
 

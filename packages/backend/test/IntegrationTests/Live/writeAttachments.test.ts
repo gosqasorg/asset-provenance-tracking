@@ -7,7 +7,7 @@ import { writeFile } from 'fs/promises';
 
 
 describe("Creating records with attachments", () => {
-	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
 	// create a record with an attachement 
 	it("Create record with one attachment ", async () => {
@@ -65,7 +65,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare original attached file and downlaod
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -141,7 +141,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare FIRST attachment
             const attachmentHash1 = responseString.attachments[0];
-            const downloadUrl1 = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash1}`;
+            const downloadUrl1 = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash1}`;
             console.log('Downloading first attachment from:', downloadUrl1);
             const downloadResponse1 = await fetch(downloadUrl1);
             expect(downloadResponse1.ok).toBe(true);
@@ -152,7 +152,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare SECOND attachment
             const attachmentHash2 = responseString.attachments[1];
-            const downloadUrl2 = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash2}`;
+            const downloadUrl2 = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash2}`;
             console.log('Downloading second attachment from:', downloadUrl2);
             const downloadResponse2 = await fetch(downloadUrl2);
             expect(downloadResponse2.ok).toBe(true);
@@ -221,7 +221,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare PDF attachment
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading PDF from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -297,7 +297,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare large attachment
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading large file from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
