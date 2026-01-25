@@ -849,8 +849,13 @@ interface GroupCreationOrder {
 */
 export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-
+        /*
+        A group is a record with a 
+                    children_key: childrenDeviceList,
+                    children_name: childrenDeviceName,
+        */
         context.log('--------------------')
+        
         const apiUrl = 'http://localhost:7071/api'
         const frontendUrl = 'http://localhost:3000'
 
@@ -861,26 +866,17 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
         const groupKey = await makeEncodedDeviceKey()
         const groupFormData = new FormData();
 
-        /*
-        A group is a record with a 
-                    children_key: childrenDeviceList,
-                    children_name: childrenDeviceName,
-        */
-
-        
         groupFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
             ...theGroupCreationOrder,
-            children_key: [], // Note: this is what turns a record into a group
+            children_key: ['9qQcMcbQ5AcrsDFUSFY7Kn'], // Note: this is what turns a record into a group
             tags: [],            
             hasParent: false,
             isReportingKey: false
-        }));
-
-        context.log(groupFormData)
+        })); context.log(groupFormData)
         
 
-        const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+        const createInitUrl = `${apiUrl}/proven ance/${groupKey}`
         const groupResponse = await fetch(createInitUrl, {
             method: "POST",
             body: groupFormData,
@@ -888,13 +884,16 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
 
         /**/
 
+
         context.log(groupResponse)
+        let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
+        context.log(groupUrlRecordPage)
 
         context.log('--------------------')
 
         return {
             status: 200,
-            jsonBody: {url: `${frontendUrl}/record/${groupKey}`},
+            jsonBody: {url: groupUrlRecordPage},
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
