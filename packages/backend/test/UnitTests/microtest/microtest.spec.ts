@@ -10,12 +10,13 @@ as needed.
 
 */
 
-const createGroup = async (title, description) => {
+const createGroup = async (title, description, number_of_children?) => {
   let cg_url = 'http://localhost:7071/api/createGroup'
 
   let groupSpec = JSON.stringify({
     deviceName: title,
-    description: description
+    description: description,
+    number_of_children: number_of_children
   })
 
   let response = await (await fetch(cg_url, {
@@ -30,7 +31,7 @@ const createGroup = async (title, description) => {
 describe('MicroTestLand', () => {
   it('APIv2GroupCreationIntegrationTest', async () => {
 
-    let url = await createGroup('Group Title', 'Group Description')
+    let url = await createGroup('Group Title', 'Group Description', 5)
 
     console.log(url)
 

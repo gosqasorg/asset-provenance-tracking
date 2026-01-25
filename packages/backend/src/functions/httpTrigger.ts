@@ -847,6 +847,14 @@ interface GroupCreationOrder {
         const verificationResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
         const verificationData = await verificationResponse.json();
 */
+
+async function addChild(parentKey, number_of_children) {
+
+}
+
+async function doCreateGroup(groupCreationOrder) {
+
+}
 export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         /*
@@ -855,13 +863,20 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
                     children_name: childrenDeviceName,
         */
         context.log('--------------------')
-        
-        const apiUrl = 'http://localhost:7071/api'
+        let theGroupCreationOrder: Record<string, any> = await request.json()
+
         const frontendUrl = 'http://localhost:3000'
 
-        let theGroupCreationOrder: Record<string, any> = await request.json()
-        context.log(theGroupCreationOrder)
 
+        const apiUrl = 'http://localhost:7071/api'
+
+        context.log('vvvvvv')
+        context.log(theGroupCreationOrder)
+        context.log(theGroupCreationOrder.deviceName)
+        context.log(theGroupCreationOrder.description)
+        context.log(theGroupCreationOrder.number_of_children)
+        context.log(theGroupCreationOrder.number_of_children ? 1 : 0)
+        context.log('^^^^^^')
 
         const groupKey = await makeEncodedDeviceKey()
         const groupFormData = new FormData();
@@ -876,7 +891,7 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
         })); context.log(groupFormData)
         
 
-        const createInitUrl = `${apiUrl}/proven ance/${groupKey}`
+        const createInitUrl = `${apiUrl}/provenance/${groupKey}`
         const groupResponse = await fetch(createInitUrl, {
             method: "POST",
             body: groupFormData,
