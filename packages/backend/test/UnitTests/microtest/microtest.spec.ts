@@ -19,13 +19,14 @@ const createGroup = async (title, description, number_of_children?) => {
     number_of_children: number_of_children
   })
 
-  let response = await (await fetch(cg_url, {
+  let response = await fetch(cg_url, {
       method: "POST",
       body: groupSpec,
-  })).json()
+  }); response = await response.json()
+  //console.log(response)
 
-  console.log(response.url)
-  return response.url
+  //console.log(response.url)
+  return response.groupUrl
 }
 
 describe('MicroTestLand', () => {

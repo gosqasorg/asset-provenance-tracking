@@ -848,13 +848,98 @@ interface GroupCreationOrder {
         const verificationData = await verificationResponse.json();
 */
 
-async function addChild(parentKey, number_of_children) {
+
+async function createChild(tags: string[] = [], context: InvocationContext) {
+    /* 
+    Note to self: Curious that since children are created before the group parent (implied by groups taking the 
+    list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
+    solve all cases. Then the db gets littered. How large an issue this is is tbd. This may happen, but be nothing
+    to worry about. Question for later: possible to see the "last accessed" date of blob in Azure? Is there an
+    access count? Can we enact a policy of "delete if not accessed since creation and it's been three years"?
+    */ 
+
+
+    //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+    const baseUrl = 'http://localhost:7071/api'
+    const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text();
+    
+    // Create child and group records
+    const childFormData = new FormData();
+    childFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        deviceName: "",
+        description: "",
+        tags: tags,
+        hasParent: true,
+        isReportingKey: false
+    }));
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/Response
+    const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+        method: "POST",
+        body: childFormData,
+    });
+    const theJson = await theResponse.json()
+    const dataUrl = theResponse.url.split('/')
+    const theRecordKey = dataUrl[dataUrl.length - 1]
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    context.log(theRecordKey)
+    return theRecordKey
+
+
+    //const theRecordUrl = `http://localhost:3000/history/${theRecordKey}`
+    //return theRecordUrl
+    /*
+        response
+        Response {
+          status: 200,
+          statusText: 'OK',
+          headers: Headers {
+            'content-type': 'application/json',
+            date: 'Mon, 26 Jan 2026 00:11:20 GMT',
+            server: 'Kestrel',
+            'transfer-encoding': 'chunked'
+          },
+          body: ReadableStream { locked: true, state: 'closed', supportsBYOB: true },
+          bodyUsed: true,
+          ok: true,
+          redirected: false,
+          type: 'basic',
+          url: 'http://localhost:7071/api/provenance/SMyioW9dGbznMSkoFQc7XB'  <--- Blob url, not record url
+        }
+        json
+        {
+          record: '19f56f83ed77281efb5a4a2ce00751c7f4ff35cb398d8a136d3edf7a7ce90e7a',
+          attachments: []
+        }
+    */
+    /*
+    context.log('response')
+    context.log(theResponse)
+    context.log()
+    context.log('json')
+    context.log(theJson)
+
+    context.log('vvvvvv')
+    context.log(theResponse)
+    return theJson;
+    */
+}
+
+async function addChildren(parentKey, number_of_children) {
 
 }
 
 async function doCreateGroup(groupCreationOrder) {
 
 }
+
 export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         /*
@@ -863,6 +948,15 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
                     children_name: childrenDeviceName,
         */
         context.log('--------------------')
+        let childKey = await createChild([], context)
+        context.log(`childkey: ${childKey}`)
+
+        return {
+            status: 200,
+            jsonBody: {url: childKey},
+            headers: { "Content-Type": "text/plain" }
+        }
+
         let theGroupCreationOrder: Record<string, any> = await request.json()
 
         const frontendUrl = 'http://localhost:3000'
@@ -908,7 +1002,7 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
 
         return {
             status: 200,
-            jsonBody: {url: groupUrlRecordPage},
+            jsonBody: {groupUrl: groupUrlRecordPage},
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
