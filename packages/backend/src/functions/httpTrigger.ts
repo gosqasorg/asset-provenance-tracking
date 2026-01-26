@@ -839,8 +839,8 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
         const theJson = await theResponse.json()
         const dataUrl = theResponse.url.split('/')
         const theRecordKey = dataUrl[dataUrl.length - 1]
-        context.log(theRecordKey)
-        context.log(theRecordKey)
+        //context.log(theRecordKey)
+        //context.log(theRecordKey)
         context.log(theRecordKey)
         return theRecordKey
     } catch(e) {
@@ -888,7 +888,7 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     */
 }
 
-async function createChildren(context, tags, parentKey, number_of_children) {
+async function createChildren(context, number_of_children, tags?) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
@@ -905,15 +905,20 @@ async function createChildren(context, tags, parentKey, number_of_children) {
     return childrenKeys; 
 }
 
-async function createGroup(theGroupCreationOrder, context, name, description, tags, parentKey, n_children) {
+async function createGroup(context, name, description, n_children) {
     context.log('--------------------')
-
     const frontendUrl = 'http://localhost:3000'
-
-
     const apiUrl = 'http://localhost:7071/api'
 
+    //context.log('--------------------')
+    //context.log('--------------------')
+    // Create children first
+    let childKeys = await createChildren(context, n_children)
 
+    //context.log('--------------------')
+    //context.log('--------------------')
+
+    /*
     context.log('vvvvvv')
     context.log(theGroupCreationOrder)
     context.log(theGroupCreationOrder.deviceName)
@@ -921,14 +926,17 @@ async function createGroup(theGroupCreationOrder, context, name, description, ta
     context.log(theGroupCreationOrder.number_of_children)
     context.log(theGroupCreationOrder.number_of_children ? 1 : 0)
     context.log('^^^^^^')
+    */
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
 
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
-        ...theGroupCreationOrder,
-        children_key: ['9qQcMcbQ5AcrsDFUSFY7Kn'], // Note: this is what turns a record into a group
+        //...theGroupCreationOrder,
+        deviceName: name,
+        description: description,
+        children_key: childKeys,//['9qQcMcbQ5AcrsDFUSFY7Kn'], // Note: this is what turns a record into a group
         tags: [],            
         hasParent: false,
         isReportingKey: false
@@ -988,7 +996,7 @@ export async function validateJSON(json: any) {
 */
 
 const GroupCreationOrderSchema = z.object({
-    title: z.string(),
+    deviceName: z.string(),
     description: z.string(),
     tags: z.array(z.string()).optional(),
     number_of_children: z.number().optional(),
@@ -1004,12 +1012,19 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let theRequest = await request.json()
         context.log(theRequest)
         GroupCreationOrderSchema.parse(theRequest)
+        let title = theRequest['title']
+        let description = theRequest['description']
+        let n_children = theRequest['number_of_children']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        //context.log(response)
+        //let theGroupRecordPageUrl = await response.json()
+        context.log(theGroupRecordPageUrl)
 
         context.log('^^^^^^^^^')
 
         return {
             status: 200,
-            jsonBody: {groupUrl: ''},
+            jsonBody: { groupUrl: theGroupRecordPageUrl },
             headers: { "Content-Type": "text/plain" }
         }
         /*
@@ -1043,27 +1058,34 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         }
         */
     } catch(error) {
-        context.error('Failed to create group', error.message)
+        context.error('Failed to create group: ', error.message)
+        let message;
 
         if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
             return {
                 status: 400,
-                jsonBody: { data: 'Error: Check argument format.' },
+                jsonBody: { data: message },
                 headers: { "Content-Type": "text/plain" }
             }
         }
 
         if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
             return {
                 status: 400,
-                jsonBody: { data: 'Error: Check json structure.' },
+                jsonBody: { data: message },
                 headers: { "Content-Type": "text/plain" }
             }
         };
 
+        message = 'Error: Internal server error.'
+        context.error(message)
         return {
             status: 500,
-            jsonBody: { data: 'Error: Internal server error.' },
+            jsonBody: { data: message },
             headers: { "Content-Type": "text/plain" }
         }
     }
