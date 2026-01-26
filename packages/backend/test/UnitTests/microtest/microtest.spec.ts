@@ -23,11 +23,9 @@ const createGroup = async (title, description, number_of_children?) => {
       method: "POST",
       body: groupSpec,
   }); response = await response.json()
-  //console.log(response)
 
-  //console.log(response.url)
   // TODO: handle 400; should be separate test
-  return response.data
+  return response.groupUrl
 }
 
 describe('MicroTestLand', () => {
@@ -37,25 +35,6 @@ describe('MicroTestLand', () => {
 
     console.log(url)
 
-    //console.log(await response.json())
     expect(true).toBe(true)
   });
 });
-
-function makeHttpRequest(overrides: any = {}) {
-  return {
-    method: 'GET',
-    url: '/',
-    headers: new Headers(),
-    query: {},
-    params: {},
-    user: undefined,
-    body: undefined,
-    bodyUsed: false,
-    arrayBuffer: async () => new ArrayBuffer(0),
-    text: async () => '',
-    json: async () => ({}),
-    formData: async () => ({}),
-    ...overrides,
-  };
-}

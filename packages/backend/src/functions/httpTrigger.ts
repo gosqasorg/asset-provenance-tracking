@@ -818,7 +818,7 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     try {
         //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const baseUrl = 'http://localhost:7071/api'
-        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text();
+        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
         const childFormData = new FormData();
@@ -839,53 +839,12 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
         const theJson = await theResponse.json()
         const dataUrl = theResponse.url.split('/')
         const theRecordKey = dataUrl[dataUrl.length - 1]
-        //context.log(theRecordKey)
-        //context.log(theRecordKey)
         context.log(theRecordKey)
         return theRecordKey
     } catch(e) {
         context.log('createChild Error: Failed to create child record')
         return '';
     }
-
-
-    //const theRecordUrl = `http://localhost:3000/history/${theRecordKey}`
-    //return theRecordUrl
-    /*
-        response
-        Response {
-          status: 200,
-          statusText: 'OK',
-          headers: Headers {
-            'content-type': 'application/json',
-            date: 'Mon, 26 Jan 2026 00:11:20 GMT',
-            server: 'Kestrel',
-            'transfer-encoding': 'chunked'
-          },
-          body: ReadableStream { locked: true, state: 'closed', supportsBYOB: true },
-          bodyUsed: true,
-          ok: true,
-          redirected: false,
-          type: 'basic',
-          url: 'http://localhost:7071/api/provenance/SMyioW9dGbznMSkoFQc7XB'  <--- Blob url, not record url
-        }
-        json
-        {
-          record: '19f56f83ed77281efb5a4a2ce00751c7f4ff35cb398d8a136d3edf7a7ce90e7a',
-          attachments: []
-        }
-    */
-    /*
-    context.log('response')
-    context.log(theResponse)
-    context.log()
-    context.log('json')
-    context.log(theJson)
-
-    context.log('vvvvvv')
-    context.log(theResponse)
-    return theJson;
-    */
 }
 
 async function createChildren(context, number_of_children, tags?) {
@@ -910,90 +869,33 @@ async function createGroup(context, name, description, n_children) {
     const frontendUrl = 'http://localhost:3000'
     const apiUrl = 'http://localhost:7071/api'
 
-    //context.log('--------------------')
-    //context.log('--------------------')
     // Create children first
     let childKeys = await createChildren(context, n_children)
-
-    //context.log('--------------------')
-    //context.log('--------------------')
-
-    /*
-    context.log('vvvvvv')
-    context.log(theGroupCreationOrder)
-    context.log(theGroupCreationOrder.deviceName)
-    context.log(theGroupCreationOrder.description)
-    context.log(theGroupCreationOrder.number_of_children)
-    context.log(theGroupCreationOrder.number_of_children ? 1 : 0)
-    context.log('^^^^^^')
-    */
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
 
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
-        //...theGroupCreationOrder,
         deviceName: name,
         description: description,
-        children_key: childKeys,//['9qQcMcbQ5AcrsDFUSFY7Kn'], // Note: this is what turns a record into a group
+        children_key: childKeys,  // Note: this is what turns a record into a group
         tags: [],            
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
     
-
     const createInitUrl = `${apiUrl}/provenance/${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
     });
 
-    /**/
-
-
-    context.log(groupResponse)
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
 
-    context.log('--------------------')
     return groupUrlRecordPage;
 }
-
-/* // Compile time only. Use zod for runtime. 
-interface GroupCreationOrder {
-    title: string;
-    description: string;
-    tags?: string[];
-    number_of_children?: number;
-    custom_record_titles?: string[];
-    create_reporting_key?: boolean;
-    annotate?: boolean;
-}
-
-// Use something like this instead
-export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),
-        description: z.string(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isReportingKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        console.log("Format of JSON provided was invalid.")
-        return false;
-    }
-}
-*/
 
 const GroupCreationOrderSchema = z.object({
     deviceName: z.string(),
@@ -1005,58 +907,21 @@ const GroupCreationOrderSchema = z.object({
     annotate: z.boolean().optional(),
 });
 
-
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        context.log('vvvvvvvvv')
         let theRequest = await request.json()
-        context.log(theRequest)
         GroupCreationOrderSchema.parse(theRequest)
         let title = theRequest['title']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
         let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
-        //context.log(response)
-        //let theGroupRecordPageUrl = await response.json()
         context.log(theGroupRecordPageUrl)
-
-        context.log('^^^^^^^^^')
 
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
             headers: { "Content-Type": "text/plain" }
         }
-        /*
-        context.log(request)
-        let foo = await request.json()
-        context.log(foo)
-        const theGroupCreationOrder: GroupCreationOrder = foo as GroupCreationOrder;
-        context.log(theGroupCreationOrder)
-        context.log('made it!')
-        */
-        /*
-        A group is a record with a 
-                    children_key: childrenDeviceList,
-                    children_name: childrenDeviceName,
-        */
-        /*
-        let childKey = await createChild(context)
-        context.log(`childkey: ${childKey}`)
-
-        return {
-            status: 200,
-            jsonBody: {groupUrl: childKey},
-            headers: { "Content-Type": "text/plain" }
-        }
-        */
-        /*
-        return {
-            status: 200,
-            jsonBody: { data: groupUrlRecordPage },
-            headers: { "Content-Type": "text/plain" }
-        }
-        */
     } catch(error) {
         context.error('Failed to create group: ', error.message)
         let message;
@@ -1079,7 +944,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
                 jsonBody: { data: message },
                 headers: { "Content-Type": "text/plain" }
             }
-        };
+        }
 
         message = 'Error: Internal server error.'
         context.error(message)
@@ -1090,7 +955,6 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         }
     }
 }
-
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
