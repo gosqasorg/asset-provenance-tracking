@@ -14,7 +14,7 @@ const createGroup = async (title, description, number_of_children?) => {
   let cg_url = 'http://localhost:7071/api/createGroup'
 
   let groupSpec = JSON.stringify({
-    deviceName: title,
+    //deviceName: title,
     description: description,
     number_of_children: number_of_children
   })
@@ -26,7 +26,8 @@ const createGroup = async (title, description, number_of_children?) => {
   //console.log(response)
 
   //console.log(response.url)
-  return response.groupUrl
+  // TODO: handle 400; should be separate test
+  return response.data
 }
 
 describe('MicroTestLand', () => {

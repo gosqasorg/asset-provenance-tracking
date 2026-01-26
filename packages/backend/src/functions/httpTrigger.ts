@@ -806,49 +806,6 @@ async function notificationSignUpTags(request: HttpRequest, context: InvocationC
 }
 
 
-
-interface GroupCreationOrder {
-    title: string;
-    description: string;
-    /*
-    tags?: [string];
-    number_of_children?: strin;
-    custom_record_titles?: ;
-    create_reporting_key?: ;
-    annotate?: ;
-    */
-}
-
-
-/*
-    it("should create a group record with zero children", async () => {
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        // Generate device key
-        const groupKeyRes = await fetch(`${baseUrl}/getNewDeviceKey`);
-        const groupKey = await groupKeyRes.text();
-        // Create group record
-        const groupFormData = new FormData();
-        groupFormData.append("provenanceRecord", JSON.stringify({
-            blobType: "deviceInitializer",
-            deviceName: "group_zero_children_smoketest",
-            description: "group with zero children for smoketest",
-            tags: [],
-            children_key: [],
-            hasParent: false,
-            isReportingKey: false
-        }));
-        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
-            method: "POST",
-            body: groupFormData,
-        });
-        expect(groupResponse.ok).toBe(true);
-
-        // Verify group record
-        const verificationResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-        const verificationData = await verificationResponse.json();
-*/
-
-
 async function createChild(context: InvocationContext, tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
@@ -931,32 +888,144 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     */
 }
 
-async function addChildren(parentKey, number_of_children) {
+async function createChildren(context, tags, parentKey, number_of_children) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    for (let i = 0; i <= number_of_children; i++) {
-        if(!(thisChild = await createChild
-    }
+    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, tags))) {
+            continue;
+        }
 
-    async function retry() {
-
+        childrenKeys.push(thisChild)
+        if(childrenKeys.length == number_of_children) { 
+            break;
+        }
     }
 
     return childrenKeys; 
 }
 
-async function doCreateGroup(groupCreationOrder) {
+async function createGroup(theGroupCreationOrder, context, name, description, tags, parentKey, n_children) {
+    context.log('--------------------')
 
+    const frontendUrl = 'http://localhost:3000'
+
+
+    const apiUrl = 'http://localhost:7071/api'
+
+
+    context.log('vvvvvv')
+    context.log(theGroupCreationOrder)
+    context.log(theGroupCreationOrder.deviceName)
+    context.log(theGroupCreationOrder.description)
+    context.log(theGroupCreationOrder.number_of_children)
+    context.log(theGroupCreationOrder.number_of_children ? 1 : 0)
+    context.log('^^^^^^')
+
+    const groupKey = await makeEncodedDeviceKey()
+    const groupFormData = new FormData();
+
+    groupFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        ...theGroupCreationOrder,
+        children_key: ['9qQcMcbQ5AcrsDFUSFY7Kn'], // Note: this is what turns a record into a group
+        tags: [],            
+        hasParent: false,
+        isReportingKey: false
+    })); context.log(groupFormData)
+    
+
+    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const groupResponse = await fetch(createInitUrl, {
+        method: "POST",
+        body: groupFormData,
+    });
+
+    /**/
+
+
+    context.log(groupResponse)
+    let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
+    context.log(groupUrlRecordPage)
+
+    context.log('--------------------')
+    return groupUrlRecordPage;
 }
 
-export async function createGroup(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+/* // Compile time only. Use zod for runtime. 
+interface GroupCreationOrder {
+    title: string;
+    description: string;
+    tags?: string[];
+    number_of_children?: number;
+    custom_record_titles?: string[];
+    create_reporting_key?: boolean;
+    annotate?: boolean;
+}
+
+// Use something like this instead
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isReportingKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
+    }
+}
+*/
+
+const GroupCreationOrderSchema = z.object({
+    title: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).optional(),
+    number_of_children: z.number().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
+    create_reporting_key: z.boolean().optional(),
+    annotate: z.boolean().optional(),
+});
+
+
+export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
+        context.log('vvvvvvvvv')
+        let theRequest = await request.json()
+        context.log(theRequest)
+        GroupCreationOrderSchema.parse(theRequest)
+
+        context.log('^^^^^^^^^')
+
+        return {
+            status: 200,
+            jsonBody: {groupUrl: ''},
+            headers: { "Content-Type": "text/plain" }
+        }
+        /*
+        context.log(request)
+        let foo = await request.json()
+        context.log(foo)
+        const theGroupCreationOrder: GroupCreationOrder = foo as GroupCreationOrder;
+        context.log(theGroupCreationOrder)
+        context.log('made it!')
+        */
         /*
         A group is a record with a 
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
         */
-        context.log('--------------------')
+        /*
         let childKey = await createChild(context)
         context.log(`childkey: ${childKey}`)
 
@@ -965,60 +1034,36 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
             jsonBody: {groupUrl: childKey},
             headers: { "Content-Type": "text/plain" }
         }
-
-        let theGroupCreationOrder: Record<string, any> = await request.json()
-
-        const frontendUrl = 'http://localhost:3000'
-
-
-        const apiUrl = 'http://localhost:7071/api'
-
-        context.log('vvvvvv')
-        context.log(theGroupCreationOrder)
-        context.log(theGroupCreationOrder.deviceName)
-        context.log(theGroupCreationOrder.description)
-        context.log(theGroupCreationOrder.number_of_children)
-        context.log(theGroupCreationOrder.number_of_children ? 1 : 0)
-        context.log('^^^^^^')
-
-        const groupKey = await makeEncodedDeviceKey()
-        const groupFormData = new FormData();
-
-        groupFormData.append("provenanceRecord", JSON.stringify({
-            blobType: "deviceInitializer",
-            ...theGroupCreationOrder,
-            children_key: ['9qQcMcbQ5AcrsDFUSFY7Kn'], // Note: this is what turns a record into a group
-            tags: [],            
-            hasParent: false,
-            isReportingKey: false
-        })); context.log(groupFormData)
-        
-
-        const createInitUrl = `${apiUrl}/provenance/${groupKey}`
-        const groupResponse = await fetch(createInitUrl, {
-            method: "POST",
-            body: groupFormData,
-        });
-
-        /**/
-
-
-        context.log(groupResponse)
-        let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
-        context.log(groupUrlRecordPage)
-
-        context.log('--------------------')
-
+        */
+        /*
         return {
             status: 200,
-            jsonBody: {groupUrl: groupUrlRecordPage},
+            jsonBody: { data: groupUrlRecordPage },
             headers: { "Content-Type": "text/plain" }
         }
+        */
     } catch(error) {
-        console.error('Failed to create group', error.message)
+        context.error('Failed to create group', error.message)
+
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { data: 'Error: Check argument format.' },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            return {
+                status: 400,
+                jsonBody: { data: 'Error: Check json structure.' },
+                headers: { "Content-Type": "text/plain" }
+            }
+        };
+
         return {
             status: 500,
-            jsonBody: {},
+            jsonBody: { data: 'Error: Internal server error.' },
             headers: { "Content-Type": "text/plain" }
         }
     }
@@ -1033,9 +1078,10 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
-    handler: createGroup,
+    handler: createGroupHandler,
 })
 //
+
 
 app.post("notificationSignUpTags", {
     authLevel: 'anonymous',
