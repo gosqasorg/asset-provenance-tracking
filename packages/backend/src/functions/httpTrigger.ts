@@ -849,7 +849,7 @@ interface GroupCreationOrder {
 */
 
 
-async function createChild(tags: string[] = [], context: InvocationContext) {
+async function createChild(context: InvocationContext, tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -858,39 +858,38 @@ async function createChild(tags: string[] = [], context: InvocationContext) {
     access count? Can we enact a policy of "delete if not accessed since creation and it's been three years"?
     */ 
 
+    try {
+        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const baseUrl = 'http://localhost:7071/api'
+        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text();
+        
+        // Create child and group records
+        const childFormData = new FormData();
+        childFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: "",
+            description: "",
+            tags: tags,
+            hasParent: true,
+            isReportingKey: false
+        }));
 
-    //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-    const baseUrl = 'http://localhost:7071/api'
-    const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text();
-    
-    // Create child and group records
-    const childFormData = new FormData();
-    childFormData.append("provenanceRecord", JSON.stringify({
-        blobType: "deviceInitializer",
-        deviceName: "",
-        description: "",
-        tags: tags,
-        hasParent: true,
-        isReportingKey: false
-    }));
-
-    // https://developer.mozilla.org/en-US/docs/Web/API/Response
-    const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
-        method: "POST",
-        body: childFormData,
-    });
-    const theJson = await theResponse.json()
-    const dataUrl = theResponse.url.split('/')
-    const theRecordKey = dataUrl[dataUrl.length - 1]
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    context.log(theRecordKey)
-    return theRecordKey
+        // https://developer.mozilla.org/en-US/docs/Web/API/Response
+        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+            method: "POST",
+            body: childFormData,
+        });
+        const theJson = await theResponse.json()
+        const dataUrl = theResponse.url.split('/')
+        const theRecordKey = dataUrl[dataUrl.length - 1]
+        context.log(theRecordKey)
+        context.log(theRecordKey)
+        context.log(theRecordKey)
+        return theRecordKey
+    } catch(e) {
+        context.log('createChild Error: Failed to create child record')
+        return '';
+    }
 
 
     //const theRecordUrl = `http://localhost:3000/history/${theRecordKey}`
@@ -933,7 +932,17 @@ async function createChild(tags: string[] = [], context: InvocationContext) {
 }
 
 async function addChildren(parentKey, number_of_children) {
+    const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
+    let thisChild;
+    for (let i = 0; i <= number_of_children; i++) {
+        if(!(thisChild = await createChild
+    }
 
+    async function retry() {
+
+    }
+
+    return childrenKeys; 
 }
 
 async function doCreateGroup(groupCreationOrder) {
@@ -948,12 +957,12 @@ export async function createGroup(request: HttpRequest, context: InvocationConte
                     children_name: childrenDeviceName,
         */
         context.log('--------------------')
-        let childKey = await createChild([], context)
+        let childKey = await createChild(context)
         context.log(`childkey: ${childKey}`)
 
         return {
             status: 200,
-            jsonBody: {url: childKey},
+            jsonBody: {groupUrl: childKey},
             headers: { "Content-Type": "text/plain" }
         }
 

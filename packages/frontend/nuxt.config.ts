@@ -15,6 +15,20 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: [
+            'mixed-decls', 
+            'color-functions',
+            'global-builtin',
+            'import',
+          ],
+        },
+      },
+    },
+  },
   runtimeConfig: {
     // The private keys which are only available server-side
     // Keys within public are also exposed client-side
