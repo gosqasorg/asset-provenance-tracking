@@ -49,6 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         v-model="textInput"
                         placeholder="Email"
                         @keyup.enter=""
+                        @keydown.enter.prevent
                     />
                 </div>
             </div>
