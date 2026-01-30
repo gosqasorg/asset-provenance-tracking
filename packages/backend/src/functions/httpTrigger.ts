@@ -1,5 +1,6 @@
 import bs58 from 'bs58';
 import JSON5 from 'json5';
+import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
@@ -236,6 +237,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     }
 
     const provRecord = { record, attachments: attachmentIDs };
+
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
     return { record: recordID, attachments, oversizedAttachments: oversizedAttachments.length > 0 ? oversizedAttachments : undefined};
@@ -293,6 +295,7 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: st
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
+        if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
@@ -356,6 +359,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
+        if (!validateJSON(json)) { return { status: 404 }; }
         const provRecord = JSON.parse(json) as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
@@ -374,12 +378,14 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
     const attachments = new Array<NamedBlob>();
     for (const attach of formData.values()) {
         if (typeof attach === 'string') continue;
+        console.log("attach type: " + typeof(attach))
         attachments.push({ blob: attach, name: attach.name });
     }
 
@@ -529,8 +535,319 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
     }
 }
 
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isReportingKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
+    }
+}
+
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+// Annotate: Send new record's tags to all children
+export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const baseUrl = process.env['backend_url'];
+
+    try {
+        const deviceKey = request.params.deviceKey;
+        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        const records = await getRecords.json()
+
+        if (records[0].record.tags.includes("annotate")) {
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+
+            // Send annotated record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let getKey = await fetch(`${baseUrl}/${key}`);
+                const keyProvenance = await getKey.json();
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+
+                    if (uniqueChildKeys.includes(deviceKey.toString())) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    const keyFormData = new FormData();
+                    keyFormData.append("provenanceRecord", JSON.stringify({
+                        blobType: 'deviceRecord',
+                        description: "Annotated by admin",
+                        children_key: '',
+                        tags: records[0].record.tags,
+                    }));
+                    
+                    let response = await fetch(`${baseUrl}/${key}`, {
+                        method: "POST",
+                        body: keyFormData,
+                    })
+                }
+
+                keysToCheck.shift();
+            }
+        }
+
+        return {
+            status: 200
+        }
+    } catch (error) {
+        console.error(`Error annotating children: ${error}`);
+        return {
+            status: 500
+        }
+    }
+ }
+ 
+ // Recall: Pin and send new record entry to all children
+ export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const baseUrl = process.env['backend_url'];
+
+    try {
+        const deviceKey = request.params.deviceKey;
+        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        const records = await getRecords.json()
+
+        if (records[0].record.tags.includes("recall")) {
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+
+            // Send recalled record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0];
+                let getKey = await fetch(`${baseUrl}/${key}`);
+                const keyProvenance = await getKey.json();
+
+                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isReportingKey) {
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+
+                    if (uniqueChildKeys.includes(deviceKey.toString())) {
+                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                    }
+
+                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                    const keyFormData = new FormData();
+                    keyFormData.append("provenanceRecord", JSON.stringify({
+                        blobType: 'deviceRecord',
+                        description: records[0].record.description,
+                        children_key: '',
+                        tags: records[0].record.tags,
+                    }));
+                    
+                    let response = await fetch(`${baseUrl}/${key}`, {
+                        method: "POST",
+                        body: keyFormData,
+                    })
+                }
+
+                keysToCheck.shift();
+            }
+        }
+
+        return {
+            status: 200
+        }
+    } catch (error) {
+        console.error(`Error notifying children: ${error}`);
+        return {
+            status: 500
+        }
+    }
+ }
+
+export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        const body = await request.json() as any;
+        const email = body.email;
+        const recordKey = body.recordKey;
+        const tags = body.tags;
+
+        if (!email || !recordKey){
+            return {
+                jsonBody: {error: "Error: email and record key required"},
+                status: 400
+            }
+        }
+
+        console.log("Received signup for " + email)
+        return {
+            jsonBody: {message: "Success"},
+            status: 200
+        } 
+        
+    }catch(error){
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Server Error"},
+            status: 500,
+
+        }
+
+    }
+}
+
+async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
+    /*
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
+
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+       * The BlockBlobUploadOptions Interface is where storage tier is set. 
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    */ 
+
+    // 0: setup id
+    const deviceID = await calculateDeviceID(deviceKey);
+
+    // 1: setup data
+    const datum = {
+        'key': {
+            'email': email,
+            'tags': tags
+        }
+    }    
+    const data = JSON.stringify(datum)
+
+    // 2 Setup blob name & id
+    const type = 'notificationSignups'
+    const blobName = `${type}/${deviceID}/`
+
+    try {
+        // Note: do not reformat; leave as commented
+        let status = (await containerClient.uploadBlockBlob(
+                        blobName,   // 1. Blob name
+                        data,       // 2. body (can be a string)
+                        data.length // 3. length of body in bytes
+                        // 4. optional options
+                        // nothing for now
+                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+        )).response._response.status
+
+        if (status < 300 || status >= 100) {
+            return {
+                jsonBody: { message: "Success",
+                            name: blobName }, 
+                status: 200
+            }
+            // TODO: have frontend display in snackbar for status 4xx
+            // This means nothing for now since we're not validating that what we're being handed is an email. 
+        } else {
+            throw Error('Failed to store email')
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
+        }
+    }
+}
+
+async function retrieveNotifEmails(key: string) {
+    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
+    const deviceID = await calculateDeviceID(key);
+    const type = 'notificationSignups'
+    const blobName = `${type}/${deviceID}/`
+
+    try {
+        const blobClient = containerClient.getBlobClient(blobName);
+        const downloadResponse = await blobClient.download();
+        const downloaded = await streamToString(downloadResponse.readableStreamBody);
+        console.log('Downloaded blob content:', downloaded.toString());
+
+        return {
+            jsonBody: { message: downloaded},
+            status: 200
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
+        }
+    } 
+}
+
+async function streamToString(readableStream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => {
+            chunks.push(data.toString());
+        });
+        readableStream.on("end", () => {
+            resolve(chunks.join(""));
+        });
+        readableStream.on("error", reject);
+    });
+}
+
+async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    /* How this pseudo-smoketest works:
+       1. Put a string into blobstore
+       2. Get it back out
+       3. Hand both responses back
+     */
+
+    try {
+        const key = await makeEncodedDeviceKey()
+
+        // Add it
+        const putResponse = await signupForNotifications(key, "email@email.foo")
+
+        // Access it
+        const getResponse = await retrieveNotifEmails(key)
+
+        return {
+            jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
+            status: 200,
+        }
+
+    } catch(error) {
+
+        console.log(error)
+        
+        return {
+            jsonBody: {message: error.message},
+            status: 500,
+        }
+    }
+}
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.get("emailSignupTestEndpoint", {
+    authLevel: 'anonymous',
+    route: 'emailSignupTestEndpoint',
+    handler: emailSignupTestEndpoint
+})
+
+app.post("postNotificationEmail", {
+    authLevel: 'anonymous',
+    route: 'notificationSubscription',
+    handler: postNotificationEmail
+})
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
@@ -584,4 +901,16 @@ app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
+})
+
+app.post('annotateChildren', {
+    authLevel: 'anonymous',
+    route: 'provenance/annotate/{deviceKey}',
+    handler: notifyChildren,
+})
+
+app.post('recallChildren', {
+    authLevel: 'anonymous',
+    route: 'provenance/recall/{deviceKey}',
+    handler: recallChildren,
 })

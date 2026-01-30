@@ -51,7 +51,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Mailing Address:<br>
                 Public Invention<br>
                 1709 Norris Dr.<br>
-                Address 2<br>
         Austin, TX, 78704, USA</p>
         </div>
     </div>

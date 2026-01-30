@@ -183,8 +183,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
-            if (files) {
+
+            const maxFileSize = 2097152;
+
+            if (files && files[0].size <= maxFileSize) {
                 this.pictures = Array.from(files);
+            } else {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
+                })
+                target.value = '';
             }
         },
         refresh() {
@@ -199,8 +208,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            // Emit an event to notify the history/[deviceKey].vue page to display loading screen
+            EventBus.emit('isCreating');
+
             // Get a refreshed copy of the records
-            const records = await getProvenance(this.recordKey);
+            let records;
+            try {
+                records = await getProvenance(this.recordKey);
+            } catch (e) {
+                EventBus.emit('isCreating');
+            }
 
             if (!records || records.length === 0) {
                 this.$snackbar.add({
@@ -304,7 +321,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 // Refresh CreateRecord component
                 this.refresh();
 
-                // Emit an event to notify the Feed.vue component
+                // Emit an event to notify history/[deviceKey].vue to refresh
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
