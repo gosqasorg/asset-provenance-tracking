@@ -604,7 +604,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         const body = await request.json() as any;
         const email = body.email;
         const recordKey = body.recordKey;
-        const tags = (body.tags ?? []) as string[];
+        const tags: string[] = [];
 
         if (!email || !recordKey){
             return {
@@ -626,7 +626,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             status: 500,
 
         }
-
     }
 }
 
@@ -652,7 +651,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     //         'tags': tags
     //     }
     // }    
-    // const data = JSON.stringify(datum)
+    // const datumJson = JSON.stringify(datum)
 
     // 2 Setup blob name & id
     const type = 'notificationSignups'
@@ -663,40 +662,51 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     if (!normalized) {
         return { jsonBody: { message: "Ignored empty email" }, status: 200 };
     }
-    if (normalized.includes("|")) {
-        return { jsonBody: { message: "Invalid email" }, status: 400 };
-    }
 
-    /** Check if the notifications blob exists
-     * if not, create it and store the data
-     * if yes, get and edit the data, and store back */
+    // 3 Update blob content：read existing content, merge email list, write back
     const exists = await blobClient.exists();
 
-    let existingText = "";
+    let existingEmails: string[] = [];
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
-        existingText = buffer.toString("utf8");
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            const emailsFromBlob = parsed?.email;
+            if (Array.isArray(emailsFromBlob)) {
+                existingEmails = emailsFromBlob.filter(email => {
+                    return typeof email === "string";
+                });
+            }
+        }
     }
 
     const emailSet = new Set(
-        existingText
-        .split("|")
+        existingEmails
         .map(s => s.trim().toLowerCase())
         .filter(Boolean)
     );
 
-    const sizBeforeAdding = emailSet.size;
+    const sizeBeforeAdding = emailSet.size;
     emailSet.add(normalized);
 
-    // If email already exists
-    if (exists && emailSet.size === sizBeforeAdding) {
+    if (exists && emailSet.size === sizeBeforeAdding) {
         return {
         jsonBody: { message: "Success", name: blobName },
         status: 200,
         };
     }
 
-    const data = Array.from(emailSet).join("|");
+    const payloadObj = { email: Array.from(emailSet), tags};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
 
     try {
         // Note: do not reformat; leave as commented
@@ -706,7 +716,8 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
                         data.length, // 3. length of body in bytes (or Buffer.byteLength(data))
                         // 4. optional options
                         // nothing for now
-                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+                        // we need to set BlockBlobUploadOptions to set usage tier
+                        uploadOptions
         )).response._response.status
 
         if (status < 300 && status >= 200) {
@@ -723,7 +734,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     } catch(error) {
         const msg = error instanceof Error ? error.message : String(error);
         return {
-            jsonBody: {message: error.message},
+            jsonBody: {message: msg},
             status: 500,
         }
     }
@@ -733,7 +744,7 @@ async function retrieveNotifEmails(key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
     const deviceID = await calculateDeviceID(key);
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
+    const blobName = `${type}/${deviceID}`
 
     try {
         const blobClient = containerClient.getBlobClient(blobName);
