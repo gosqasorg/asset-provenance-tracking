@@ -164,7 +164,6 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
 
     const attachmentIDs = new Array<string>();
     const oversizedAttachments = new Array<string>();
-    let validAttachments = new Array<NamedBlob>();
     for (const attach of attachments) {
         if (typeof attach === 'string') continue;
         // Count attachment bytes in chunks until MAX_ATTACHMENT_SIZE is reached
@@ -190,7 +189,6 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
                 }
 
             }
-            validAttachments.push(attach);
             reader.releaseLock(); // Release the lock on the reader after reading is successful + completed
         } catch (error) {
             try{
@@ -213,24 +211,8 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     if (oversizedAttachments.length > 0) {
         return {record: '',attachments: [],oversizedAttachments: oversizedAttachments};
     }
-    for (const attach of validAttachments) {
-        let byteCount = 0;
-        const reader = attach.blob.stream().getReader(); // Get a reader for the blob stream
-        try{
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break; // Exit loop when reading is complete
-                byteCount += value.length; // Increment byte count
-            }
-            reader.releaseLock(); // Release the lock on the reader after reading is successful + completed
-        } catch (error) {
-            try{
-                reader.releaseLock(); // Release the lock on the reader
-            } catch (e) {
-                throw error; // Throw other errors
-            }
-        }
-        console.log(`Final attachment size: ${byteCount}, MAX_ATTACHMENT_SIZE: ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+    for (const attach of attachments) {    // Upload all attachments if they pass the size check
+        if (typeof attach === 'string') continue;
         const data = await attach.blob.arrayBuffer()
         const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
         attachmentIDs.push(attachmentID);
@@ -240,7 +222,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-    return { record: recordID, attachments, oversizedAttachments: oversizedAttachments.length > 0 ? oversizedAttachments : undefined};
+    return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
 async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {

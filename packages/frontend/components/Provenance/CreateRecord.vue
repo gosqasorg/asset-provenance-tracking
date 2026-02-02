@@ -116,6 +116,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
+ import { validateFileSize } from '~/utils/fileSizeValidation';
 
  export default {
     data() {
@@ -180,13 +181,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
-        onFileChange(e: Event) {
+        async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
+            if (!files || files.length === 0) return;
+
             const maxFileSize = 2097152;
 
-            if (files && files[0].size <= maxFileSize) {
+            let validFileSize = true;
+
+            for (const file of Array.from(files)) {
+                const validResults = await validateFileSize(file, maxFileSize);
+                if (!validResults.valid) {
+                    validFileSize = false;
+                    break;
+                }
+            }
+
+            if (validFileSize) {
+                // All files are valid, set this.pictures to the selected files
                 this.pictures = Array.from(files);
             } else {
                 this.$snackbar.add({
@@ -194,6 +208,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
                 })
                 target.value = '';
+                this.pictures = null;
             }
         },
         refresh() {
