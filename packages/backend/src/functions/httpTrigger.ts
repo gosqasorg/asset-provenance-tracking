@@ -8,6 +8,7 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 
+
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
 //  * Azure Functions Core Tools: https://github.com/Azure/azure-functions-core-tools/blob/v4.x/README.md
@@ -758,55 +759,23 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
  
-export type NotificationSignUp = {
+const notificationSignupSchema = z.object({
+    noTagsmeansAllUpdates : z.array(z.email()),
 
-    noTagsMeansAllUpdates: string[];
-    [tags: string]: string[];
+});
 
-}
-
-export function validateNotification(data: any) {
-
-    try {
-        const validationCheck: NotificationSignUp = data;
-        return true;
-    } catch(error) {
-        return false
-    }
-
-}
-
-async function notificationSignUpTags(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
-    let data;
+export async function notificationSignUp(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> { 
     try{
-        data = await request.json();
-    }
-    catch (error){
-        return {
-            status: 400,
-            body: 'Invalid JSON format'
-        }
+        let theRequest = await request.json()
+        notificationSignupSchema.parse(theRequest)
     }
 
-    if (!validateNotification(data)){
-        return {
-            status: 400,
-            body: 'Invalid email list'
-        }
-    }
-
-    return{
-        status: 200,
-        body: 'Signup data received and validated'
-    }
-}
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
-app.post("notificationSignUpTags", {
+app.post("notificationSignUp", {
     authLevel: 'anonymous',
     route: 'notificationSignUpTags',
-    handler: notificationSignUpTags
+    handler: notificationSignUp
 })
 
 app.get("emailSignupTestEndpoint", {

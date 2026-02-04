@@ -200,16 +200,10 @@ describe('PostNotificationEmail', () => {
     });
 });
 
-describe('NotificationSignUpTags', () => {
-  
-  // currently working on test
-  //test 1
-  // check with all the correct format
-  //test 2
-  //check with missing tag selection
-  //test 3
-  // is values are not arrays 
-  //test 4
-  //check if array contains numbers or some other weird stuff
+describe('NotificationSignUp', () => {
+  it("should test if it recieved the email from the no tags", async() => {
+    
 
-})
+  });
+
+});
