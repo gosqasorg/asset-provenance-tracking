@@ -36,6 +36,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
 
+            <!-- Subscribe to notifications -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
+                        Receive email notifications for this record
+                </h4>
+
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+            </div>
+
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
@@ -75,12 +93,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
+//TODO: add const for max limit of notification subscriptions
 export default {
     data() {
         return {
@@ -93,6 +112,8 @@ export default {
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
+            notify: false,     // email notification checkbox
+            emailInput: '',
         }
     },
     computed: {
@@ -146,6 +167,20 @@ export default {
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
                 }
+
+                //TODO: make 3 cases: 
+                //do all 3 cases exist in submit form ()??
+                //form for alr created device? 
+                
+                if (response && this.notify && this.emailInput) {
+                    const email = this.emailInput.trim();
+                    if (email.length > 3 && email.includes('@')) {
+                        await postNotificationEmail(deviceKey,email);
+                    } else {
+                        this.$snackbar.add({ type: 'error', text: 'Please enter a valid email address' });
+                    }
+                }
+                //TODO: this.$snackbar add message if max number of notification subscriptions reached
 
                 this.$snackbar.add({
                     type: 'success',

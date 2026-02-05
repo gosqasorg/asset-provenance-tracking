@@ -103,15 +103,30 @@ export async function postEmail(email: string) {
     }
 }
 
-export async function postNotificationEmail(email: string) {
+//TODO: update function call parameters in createDevice.vue, createContainer.vue, and test/postNotificationEmail.spec.ts
+//TODO: find file with field for already created record
+
+
+export async function postNotificationEmail(deviceKey: string, email: string) {
+    // Validate 
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
+    }
+    if (!email || typeof email !== 'string') {
+        throw new Error("Bad email provided.");
+    }
+
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
+    // send both device key and email to the backend
     formData.append("email", email);
+    formData.append("deviceKey", deviceKey);
 
     const response = await fetch(`${baseUrl}/notificationSubscription`, {
         method: 'POST',
         body: formData,
     });
+    // change this to check for specific error codes from backend later ?
     if (response.status != 200) {
         throw new Error('postNotificationEmail: Failed to save email');
     }
