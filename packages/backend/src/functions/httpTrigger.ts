@@ -599,8 +599,177 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
 
+export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        const body = await request.json() as any;
+        const email = body.email;
+        const recordKey = body.recordKey;
+        const tags = body.tags;
+
+        if (!email || !recordKey){
+            return {
+                jsonBody: {error: "Error: email and record key required"},
+                status: 400
+            }
+        }
+
+        console.log("Received signup for " + email)
+        return {
+            jsonBody: {message: "Success"},
+            status: 200
+        } 
+        
+    }catch(error){
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Server Error"},
+            status: 500,
+
+        }
+
+    }
+}
+
+async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
+    /*
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
+
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+       * The BlockBlobUploadOptions Interface is where storage tier is set. 
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    */ 
+
+    // 0: setup id
+    const deviceID = await calculateDeviceID(deviceKey);
+
+    // 1: setup data
+    const datum = {
+        'key': {
+            'email': email,
+            'tags': tags
+        }
+    }    
+    const data = JSON.stringify(datum)
+
+    // 2 Setup blob name & id
+    const type = 'notificationSignups'
+    const blobName = `${type}/${deviceID}/`
+
+    try {
+        // Note: do not reformat; leave as commented
+        let status = (await containerClient.uploadBlockBlob(
+                        blobName,   // 1. Blob name
+                        data,       // 2. body (can be a string)
+                        data.length // 3. length of body in bytes
+                        // 4. optional options
+                        // nothing for now
+                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+        )).response._response.status
+
+        if (status < 300 || status >= 100) {
+            return {
+                jsonBody: { message: "Success",
+                            name: blobName }, 
+                status: 200
+            }
+            // TODO: have frontend display in snackbar for status 4xx
+            // This means nothing for now since we're not validating that what we're being handed is an email. 
+        } else {
+            throw Error('Failed to store email')
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
+        }
+    }
+}
+
+async function retrieveNotifEmails(key: string) {
+    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
+    const deviceID = await calculateDeviceID(key);
+    const type = 'notificationSignups'
+    const blobName = `${type}/${deviceID}/`
+
+    try {
+        const blobClient = containerClient.getBlobClient(blobName);
+        const downloadResponse = await blobClient.download();
+        const downloaded = await streamToString(downloadResponse.readableStreamBody);
+        console.log('Downloaded blob content:', downloaded.toString());
+
+        return {
+            jsonBody: { message: downloaded},
+            status: 200
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
+        }
+    } 
+}
+
+async function streamToString(readableStream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => {
+            chunks.push(data.toString());
+        });
+        readableStream.on("end", () => {
+            resolve(chunks.join(""));
+        });
+        readableStream.on("error", reject);
+    });
+}
+
+async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    /* How this pseudo-smoketest works:
+       1. Put a string into blobstore
+       2. Get it back out
+       3. Hand both responses back
+     */
+
+    try {
+        const key = await makeEncodedDeviceKey()
+
+        // Add it
+        const putResponse = await signupForNotifications(key, "email@email.foo")
+
+        // Access it
+        const getResponse = await retrieveNotifEmails(key)
+
+        return {
+            jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
+            status: 200,
+        }
+
+    } catch(error) {
+
+        console.log(error)
+        
+        return {
+            jsonBody: {message: error.message},
+            status: 500,
+        }
+    }
+}
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.get("emailSignupTestEndpoint", {
+    authLevel: 'anonymous',
+    route: 'emailSignupTestEndpoint',
+    handler: emailSignupTestEndpoint
+})
+
+app.post("postNotificationEmail", {
+    authLevel: 'anonymous',
+    route: 'notificationSubscription',
+    handler: postNotificationEmail
+})
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
