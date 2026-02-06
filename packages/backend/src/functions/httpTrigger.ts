@@ -52,6 +52,8 @@ interface NamedBlob {
     blob: Blob,
 }
 
+const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
+
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
     // where the id is that last part (before the last slash)
@@ -158,10 +160,58 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     return blobID;
 }
 
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
+async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> {
 
     const attachmentIDs = new Array<string>();
+    const oversizedAttachments = new Array<string>();
     for (const attach of attachments) {
+        if (typeof attach === 'string') continue;
+        // Count attachment bytes in chunks until MAX_ATTACHMENT_SIZE is reached
+        let byteCount = 0;
+        const reader = attach.blob.stream().getReader(); // Get a reader for the blob stream
+        try{
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break; // Exit loop when reading is complete
+                byteCount += value.length; // Increment byte count
+                if (byteCount > MAX_ATTACHMENT_SIZE) {
+                    const fileName = attach.name ?? "Unknown";
+                    oversizedAttachments.push(fileName);
+                    // Log the oversized attachment
+                    console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+                    //Stop reading further
+                    try {
+                        await reader.cancel();
+                    } catch (ignoreError) {
+                        // Ignore cancel errors
+                    }
+                    break;
+                }
+
+            }
+            reader.releaseLock(); // Release the lock on the reader after reading is successful + completed
+        } catch (error) {
+            try{
+                reader.releaseLock(); // Release the lock on the reader
+            } catch (e) {
+                // Do nothing since the lock is already released
+            }
+            if (error.statusCode === 400) {
+                byteCount = 0;
+                attach.blob = null as any; // Set the blob to null to help garbage collection
+                const fileName = attach.name ?? "Unknown";
+                oversizedAttachments.push(fileName);
+                console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+            }
+            throw error; // Throw other errors
+        }
+    }
+
+    // If ANY attachment is oversized, return early without uploading anything
+    if (oversizedAttachments.length > 0) {
+        return {record: '',attachments: [],oversizedAttachments: oversizedAttachments};
+    }
+    for (const attach of attachments) {    // Upload all attachments if they pass the size check
         if (typeof attach === 'string') continue;
         const data = await attach.blob.arrayBuffer()
         const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
@@ -172,7 +222,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-    return { record: recordID, attachments };
+    return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
 async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
@@ -322,6 +372,16 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     }
 
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    if (body.oversizedAttachments) {
+        return {
+            status: 400,
+            jsonBody: {
+                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                oversizedAttachments: body.oversizedAttachments,
+                attachments: body.attachments
+            }
+        }
+    }
     return { jsonBody: body ?? { converted: true}};
 }
 
