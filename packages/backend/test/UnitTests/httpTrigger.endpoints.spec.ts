@@ -201,16 +201,15 @@ describe('PostNotificationEmail', () => {
 });
 
 describe('NotificationSignUp', () => {
+  //set the json in it
+  //mock request
+  //one with
+  //one with no tags
+  //one that is meant to fail
+  //test environment for mocks .. plenty of mucking around!
   it("should test if it recieved the email with no tags", async() => {
-    //set the json in it
-    //mock request
-    //one with
-    //one with no tags
-    //one that is meant to fail
-    //test environment for mocks .. plenty of mucking around!
     const thejson = {json: function() {return {email : "m@gmail.com"}}}
     const requestVar = makeHttpRequest(thejson)
-    console.log(requestVar)
     const mockContext = {
             log: vi.fn(),
             error: vi.fn()
@@ -223,7 +222,6 @@ describe('NotificationSignUp', () => {
   it("should test if it recieved the email with tags", async() => {
     const thejson = {json: function() {return {tags:["Complete","Aragorn"] , email : "m@gmail.com"}}}
     const requestVar = makeHttpRequest(thejson)
-    console.log(requestVar)
     const mockContext = {
             log: vi.fn(),
             error: vi.fn()
@@ -236,7 +234,6 @@ describe('NotificationSignUp', () => {
   it("should fail because not a valid email", async() => {
     const thejson = {json: function() {return {tags:["Complete","Aragorn"] , email : "m@gmail.flu."}}}
     const requestVar = makeHttpRequest(thejson)
-    console.log(requestVar)
     const mockContext = {
             log: vi.fn(),
             error: vi.fn()

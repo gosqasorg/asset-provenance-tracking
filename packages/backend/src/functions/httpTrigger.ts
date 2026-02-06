@@ -773,15 +773,12 @@ export async function notificationSignUp(request: HttpRequest, context: Invocati
         return{
             status: 200,
             jsonBody: {message: "Successful SignUp"}
-
         }  
-
     }catch(error){
         return{
             status: 400,
             jsonBody:{message:"SignUp Failed!"} 
         }
-
     }
 }  
   
