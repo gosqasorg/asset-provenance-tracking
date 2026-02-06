@@ -639,7 +639,7 @@ describe("Group Creation Tests", () => {
 		
 		// Verify custom titles are present in all child keys
 		const verificationPromises = childKeys.map(key => 
-			fetch(`${baseUrl}/${key}`)
+			fetch(`${baseUrl}/provenance/${key}`)
 		);
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
