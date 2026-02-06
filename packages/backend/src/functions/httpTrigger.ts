@@ -274,17 +274,23 @@ export function postGetProvenanceMiddleware(body): Boolean {
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
     var result = true
 
-    // When getProvenance gets called by searching up a created record
-    if (typeof body === 'number') {
-        if (body > sizeLimit) {
-            result = false
-        } 
     // For creation of one record through postProvenance
-    } else if (body instanceof FormData) {
+    if (body instanceof FormData) {
         if (JSON.stringify(body).length > sizeLimit) {
             result = false
         } 
+    } else {
+        // When getProvenance gets called by a record already created, 
+        // count the total number of bytes in the string and compare to sizeLimit
+        let stringSize = '';
+        for (const byte in body) {
+            stringSize += byte;
+        }
+        if (stringSize.length > sizeLimit) {
+            result = false
+        } 
     }
+
     return result
 }
 
@@ -307,10 +313,19 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-    let totalBlobSize = 0;
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-        totalBlobSize += blob.properties.contentLength;
-        if (!postGetProvenanceMiddleware(totalBlobSize)) { return { status: 304 }; }
+        
+        // Retrieve readableStreamBody, send to streamToString for string conversion, 
+        // then have postgetProvenanceMiddleware function check the string size against the size limit
+        const blobCLientForStream = containerClient.getBlobClient(blob.name);
+        const downloadResponse = await blobCLientForStream.download();
+        if (!downloadResponse.errorCode && downloadResponse.readableStreamBody) {
+            const downloaded = await streamToString(downloadResponse.readableStreamBody)
+            if (downloaded) {
+                if (!postGetProvenanceMiddleware(downloaded)) { return { status: 304 }; }
+            }
+        }
+
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
