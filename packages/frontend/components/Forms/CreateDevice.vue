@@ -77,6 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+import { validateFileSize } from '~/utils/fileSizeValidation';
 
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
@@ -108,13 +109,26 @@ export default {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
-        onFileChange(e: Event) {
+        async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
+            if (!files || files.length === 0) return;
+
             const maxFileSize = 2097152;  // aka 2MB
 
-            if (files && files[0].size <= maxFileSize) {
+            let validFileSize = true;
+
+            for (const file of Array.from(files)) {
+                // All files are valid, set this.pictures to the selected files
+                const validResults = await validateFileSize(file, maxFileSize);
+                if (!validResults.valid) {
+                    validFileSize = false;
+                    break;
+                }
+            }
+
+            if (validFileSize) {
                 this.pictures = Array.from(files);
             } else {
                 this.$snackbar.add({
@@ -122,6 +136,7 @@ export default {
                     text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
                 })
                 target.value = '';
+                this.pictures = null;
             }
         },
         async submitForm() {
