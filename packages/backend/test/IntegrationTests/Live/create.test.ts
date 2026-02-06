@@ -606,7 +606,7 @@ describe("Group Creation Tests", () => {
 				isReportingKey: false
 			}));
 			
-			return fetch(`${baseUrl}/${key}`, {
+			return fetch(`${baseUrl}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -1079,7 +1079,7 @@ describe("Record Creation Tests", () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(1st Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}/${deviceKey}`
+		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
@@ -1140,7 +1140,7 @@ describe("Record Creation Tests", () => {
 	it("(Smoketest) Create a record with tags and attachments", async() => {
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(3rd Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}/${deviceKey}`
+		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
