@@ -760,21 +760,42 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 
  
 const notificationSignupSchema = z.object({
-    noTagsmeansAllUpdates : z.array(z.email()),
-
+    email : z.email(),
+    tags: z.array(z.string()).optional()
 });
 
 export async function notificationSignUp(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> { 
+
+    const theRequest = await request.json()
+    console.log("entered the function (:")
+
     try{
-        let theRequest = await request.json()
+        console.log("tryBloke")
         notificationSignupSchema.parse(theRequest)
+        console.log("parse Succeded")
+        return{
+            status: 200,
+            jsonBody: {message: "Successful SignUp"}
+
+        }  
+
+    }catch(error){
+        console.log("catchBlock")
+        return{
+            status: 400,
+            jsonBody:{message:"SignUp Failed!"} 
+        }
+
     }
+}  
+  
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
 app.post("notificationSignUp", {
     authLevel: 'anonymous',
-    route: 'notificationSignUpTags',
+    route: 'notificationSignUp',
     handler: notificationSignUp
 })
 

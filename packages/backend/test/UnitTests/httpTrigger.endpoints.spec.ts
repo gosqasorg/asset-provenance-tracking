@@ -177,7 +177,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
 
 describe('PostNotificationEmail', () => {
-    it("should return the email and record key", async() => {
+    it("return the email and record key", async() => {
         const mockRequest = {
             async json(){
                return {
@@ -202,7 +202,21 @@ describe('PostNotificationEmail', () => {
 
 describe('NotificationSignUp', () => {
   it("should test if it recieved the email from the no tags", async() => {
-    
+    //set the json in it
+    //mock request
+    //one with
+    //one with no tags
+    //one that is meant to fail
+    //test environment for mocks .. plenty of mucking around!
+    const thejson = {json: function() {return {email : "m@gmail.com"}}}
+    const requestVar = makeHttpRequest(thejson)
+    console.log(requestVar)
+    const mockContext = {
+            log: vi.fn(),
+            error: vi.fn()
+        } as any;
+    const response = await httpTrigger.notificationSignUp(requestVar,mockContext);
+    expect(response.status).toBe(200)
 
   });
 
