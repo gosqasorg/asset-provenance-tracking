@@ -630,7 +630,7 @@ describe("Group Creation Tests", () => {
 			isReportingKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}/${groupKey}`, {
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
