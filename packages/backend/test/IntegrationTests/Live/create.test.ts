@@ -292,6 +292,7 @@ describe("Group Creation Tests", () => {
 			method: "POST",
 			body: annotateFormData,
 		});
+        console.log(annotateResponse)
 		expect(annotateUpdateResponse.ok).toBe(true);
 		expect(annotateResponse.ok).toBe(true);
 
