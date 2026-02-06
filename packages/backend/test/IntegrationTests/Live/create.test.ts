@@ -26,7 +26,7 @@ describe("Group of tests", () => {
 describe("Group Creation Tests", () => {
 	// The most basic possible test
 	it("should create a group record with one child", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate device keys in parallel
 		const [groupKeyRes, childKeyRes] = await Promise.all([
@@ -77,7 +77,7 @@ describe("Group Creation Tests", () => {
 
 	// Most basic + one feature
 	it("should create a group record with multiple children", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate all device keys in parallel
 		const keyPromises = [
@@ -154,7 +154,7 @@ describe("Group Creation Tests", () => {
 
     // Test reporting key functionality
     it("should create a group record with a reporting key", async () => {
-        const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate all device keys in parallel
 		const numChildKeys = 2;
@@ -320,7 +320,7 @@ describe("Group Creation Tests", () => {
 
 	// Everything all at once
 	it("should create a group record with all features", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate all device keys in parallel
 		const keyPromises = [
@@ -414,7 +414,7 @@ describe("Group Creation Tests", () => {
 
 
 	it("should create a group record with tags", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
@@ -494,7 +494,7 @@ describe("Group Creation Tests", () => {
 	it("Group Creation - Annotating Child Records", async () => {
 
 		// Create new group and children keys
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		const keysCreation = [fetch(`${baseUrl}/getNewDeviceKey`),...Array.from({length: 2}, () => fetch(`${baseUrl}/getNewDeviceKey`))];
 		const keyResponses = await Promise.all(keysCreation);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
@@ -568,7 +568,7 @@ describe("Group Creation Tests", () => {
 	}, 6000); 
 	// Test for custom titles
 	it("should create a group with two children having custom titles", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate device keys 
 		const groupKey = await makeEncodedDeviceKey();
@@ -660,7 +660,7 @@ describe("Group Creation Tests", () => {
 
 	//Group record with one attachment test
 	it("should create a group record with one attachment", async () => {
-    	const baseUrl = "https://gdtprodbackend.azurewebsites.net/api"
+    	const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
     	//Generate device keys in parallel
     	const [groupKeyRes, childKeyRes] = await Promise.all([
@@ -768,7 +768,7 @@ describe("Group Creation Tests", () => {
 
 	//Group record with multiple attachments test
 	it("should create a group record with multiple attachments", async() => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api"
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
 		// Generate device keys in parallel
     	const [groupKeyRes, childKeyRes] = await Promise.all([
@@ -849,7 +849,7 @@ describe("Group Creation Tests", () => {
 
 	//Group attachment includes a PDF
 	it("should create a group record with a PDF", async() => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api"
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
 		// Generate device keys in parallel
     	const [groupKeyRes, childKeyRes] = await Promise.all([
@@ -929,7 +929,7 @@ describe("Group Creation Tests", () => {
 	
 	//Group: Large attachment (>2MB)
 	it("should create a group record with a large attachment and verify download", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api"
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
 		const [groupKeyRes, childKeyRes] = await Promise.all([
 			fetch(`${baseUrl}/getNewDeviceKey`),
@@ -1008,7 +1008,7 @@ describe("Group Creation Tests", () => {
 
 	// Group creation with invalid device key
 	it("should fail to create a group record with an invalid device key", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		const invalidGroupKey = "INVALID_KEY_12345";
 		
 		// Attempt to create group record with invalid key
@@ -1036,7 +1036,7 @@ describe("Group Creation Tests", () => {
 
 		// Group with zero children
 	it("should create a group record with zero children", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		// Generate device key
 		const groupKeyRes = await fetch(`${baseUrl}/getNewDeviceKey`);
 		const groupKey = await groupKeyRes.text();
@@ -1072,7 +1072,7 @@ describe("Group Creation Tests", () => {
 });
 
 describe("Record Creation Tests", () => {
-	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api'
+	const baseUrl = 'https://gosqasbe.azurewebsites.net/api'
 
 	// The most basic possible test -- create a record
 	it("(Smoketest) Create the most basic record", async () => {
