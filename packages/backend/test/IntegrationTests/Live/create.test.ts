@@ -26,7 +26,8 @@ describe("Group of tests", () => {
 describe("Group Creation Tests", () => {
 	// The most basic possible test
 	it("should create a group record with one child", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api/provenance/";
+		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api";
+                        // https://gdtprodbackend.azurewebsites.net/api/provenance/ 
 		
 		// Generate device keys in parallel
 		const [groupKeyRes, childKeyRes] = await Promise.all([
