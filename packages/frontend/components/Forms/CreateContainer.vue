@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h4 class="mt-1 mb-3">Create New Group</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
+            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500" @keydown.enter.prevent>
             <textarea id="container-description" v-model="description" placeholder="Group Description" maxlength="5000" rows="3"></textarea>
 
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
@@ -54,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Volunteer Feedback Email --> 
             <h4 class="p-1">
-                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
+                <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
             <div v-if="isChecked">
@@ -65,6 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     v-model="textInput"
                     placeholder="Email"
                     @keyup.enter=""
+                    @keydown.enter.prevent
                 />
             </div>
         </div>
