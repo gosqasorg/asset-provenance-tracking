@@ -80,7 +80,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			response = await fetch(fullUrl);
 			response = await response.json(); 
 		} catch(error) {  
-			const testName = baseTestName + thisTestName;
+			const testName = baseTestName + testName;
 			const errorMessage = 'Failed to fetch (get) url: '
 			console.error(testName + errorMessage + fullUrl) 
 			throw error;
@@ -164,7 +164,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			response = await fetch(fullUrl);
 			response = await response.json(); 
 		} catch(error) {  
-			const testName = baseTestName + thisTestName;
+			const testName = baseTestName + testName;
 			const errorMessage = 'Failed to fetch (get) url: '
 			console.error(testName + errorMessage + fullUrl) 
 			throw error;
@@ -208,7 +208,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			statusCode = response.status
 			response = await response.json();
 		} catch(error) {
-			const testName = baseTestName + thisTestName;
+			const testName = baseTestName + testName;
 			const errorMessage = 'Failed to fetch (get) url: '
 			console.error(testName + errorMessage + fullUrl)
 			throw error;
@@ -284,13 +284,13 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 				let secondResponse = await fetch(secondFullUrl)
 				secondData = await secondResponse.json()
 			}catch(error){
-				const testName = baseTestName + thisTestName;
+				const testName = baseTestName + testName;
 				const errorMessage = 'Failed to fetch (get) url: '
 				console.error(testName + errorMessage + secondFullUrl)
 				throw error;
 			}
 		}catch(error) {
-			const testName = baseTestName + thisTestName;
+			const testName = baseTestName + testName;
 			const errorMessage = 'Failed to fetch (get) url: '
 			console.error(testName + errorMessage + firstFullUrl)
 			throw error;
@@ -351,7 +351,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 			response = await fetch(fullUrl);
 			response = await response.json();
 		} catch(error) {
-			const testName = baseTestName + thisTestName;
+			const testName = baseTestName + testName;
 			const errorMessage = 'Failed to fetch (get) url: '
 			console.error(testName + errorMessage + fullUrl)
 			throw error;
@@ -423,13 +423,13 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 				let secondResponse = await fetch(secondFullUrl)
 				secondData = await secondResponse.json()
 			}catch(error){
-				const testName = baseTestName + thisTestName;
+				const testName = baseTestName + testName;
 				const errorMessage = 'Failed to fetch (get) url: '
 				console.error(testName + errorMessage + secondFullUrl)
 				throw error;
 			}
 		}catch(error) {
-			const testName = baseTestName + thisTestName;
+			const testName = baseTestName + testName;
 			const errorMessage = 'Failed to fetch (get) url: '
 			console.error(testName + errorMessage + firstFullUrl)
 			throw error;

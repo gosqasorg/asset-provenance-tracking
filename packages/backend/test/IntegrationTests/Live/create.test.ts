@@ -292,6 +292,7 @@ describe("Group Creation Tests", () => {
 			method: "POST",
 			body: annotateFormData,
 		});
+        console.log(annotateResponse)
 		expect(annotateUpdateResponse.ok).toBe(true);
 		expect(annotateResponse.ok).toBe(true);
 
@@ -567,7 +568,7 @@ describe("Group Creation Tests", () => {
 	}, 6000); 
 	// Test for custom titles
 	it("should create a group with two children having custom titles", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api/provenance/";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate device keys 
 		const groupKey = await makeEncodedDeviceKey();
@@ -605,7 +606,7 @@ describe("Group Creation Tests", () => {
 				isReportingKey: false
 			}));
 			
-			return fetch(`${baseUrl}${key}`, {
+			return fetch(`${baseUrl}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -629,7 +630,7 @@ describe("Group Creation Tests", () => {
 			isReportingKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}${groupKey}`, {
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -638,7 +639,7 @@ describe("Group Creation Tests", () => {
 		
 		// Verify custom titles are present in all child keys
 		const verificationPromises = childKeys.map(key => 
-			fetch(`${baseUrl}${key}`)
+			fetch(`${baseUrl}/provenance/${key}`)
 		);
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -1071,14 +1072,14 @@ describe("Group Creation Tests", () => {
 });
 
 describe("Record Creation Tests", () => {
-	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+	const baseUrl = 'https://gosqasbe.azurewebsites.net/api'
 
 	// The most basic possible test -- create a record
 	it("(Smoketest) Create the most basic record", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(1st Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}${deviceKey}`
+		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
@@ -1139,7 +1140,7 @@ describe("Record Creation Tests", () => {
 	it("(Smoketest) Create a record with tags and attachments", async() => {
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(3rd Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}${deviceKey}`
+		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
