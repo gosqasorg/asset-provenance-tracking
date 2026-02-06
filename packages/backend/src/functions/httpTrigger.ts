@@ -767,12 +767,9 @@ const notificationSignupSchema = z.object({
 export async function notificationSignUp(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> { 
 
     const theRequest = await request.json()
-    console.log("entered the function (:")
 
     try{
-        console.log("tryBloke")
         notificationSignupSchema.parse(theRequest)
-        console.log("parse Succeded")
         return{
             status: 200,
             jsonBody: {message: "Successful SignUp"}
@@ -780,7 +777,6 @@ export async function notificationSignUp(request: HttpRequest, context: Invocati
         }  
 
     }catch(error){
-        console.log("catchBlock")
         return{
             status: 400,
             jsonBody:{message:"SignUp Failed!"} 

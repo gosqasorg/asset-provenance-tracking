@@ -201,7 +201,7 @@ describe('PostNotificationEmail', () => {
 });
 
 describe('NotificationSignUp', () => {
-  it("should test if it recieved the email from the no tags", async() => {
+  it("should test if it recieved the email with no tags", async() => {
     //set the json in it
     //mock request
     //one with
@@ -217,6 +217,32 @@ describe('NotificationSignUp', () => {
         } as any;
     const response = await httpTrigger.notificationSignUp(requestVar,mockContext);
     expect(response.status).toBe(200)
+
+  });
+
+  it("should test if it recieved the email with tags", async() => {
+    const thejson = {json: function() {return {tags:["Complete","Aragorn"] , email : "m@gmail.com"}}}
+    const requestVar = makeHttpRequest(thejson)
+    console.log(requestVar)
+    const mockContext = {
+            log: vi.fn(),
+            error: vi.fn()
+        } as any;
+    const response = await httpTrigger.notificationSignUp(requestVar,mockContext);
+    expect(response.status).toBe(200)
+
+  });
+
+  it("should fail because not a valid email", async() => {
+    const thejson = {json: function() {return {tags:["Complete","Aragorn"] , email : "m@gmail.flu."}}}
+    const requestVar = makeHttpRequest(thejson)
+    console.log(requestVar)
+    const mockContext = {
+            log: vi.fn(),
+            error: vi.fn()
+        } as any;
+    const response = await httpTrigger.notificationSignUp(requestVar,mockContext);
+    expect(response.status).toBe(400)
 
   });
 
