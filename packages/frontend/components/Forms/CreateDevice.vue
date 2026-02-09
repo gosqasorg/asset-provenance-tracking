@@ -36,6 +36,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
 
+            <!-- Subscribe to notifications -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
+                        Receive email notifications for this record
+                </h4>
+
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+            </div>
+
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
@@ -75,13 +93,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
+//TODO: add const for max limit of notification subscriptions
 export default {
     data() {
         return {
@@ -94,6 +113,8 @@ export default {
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
+            notify: false,     // email notification checkbox
+            emailInput: '',
         }
     },
     computed: {
@@ -161,6 +182,28 @@ export default {
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
                 }
+
+                /*TODO: 3 cases: 
+                    1) no call to post provenance made: case of existing record
+
+                    2) Call to postprovenance is made and fails: don’t want to hand email
+
+                    Call to post provenance: creating a. Record and signing up for notifications: will want to check to see that response is truthful
+                */
+
+                //do all 3 cases exist in submit form ()?? --> I dont think so?
+                //where is the form for notification signups on an existing record? 
+                    //found it, NotificationSignupModal.vue
+                
+                //Case #3
+                if (response && this.notify && this.emailInput) {
+                    const email = this.emailInput.trim(); //necessary to trim? 
+                    await postNotificationEmail(deviceKey,email);
+                //Case #2 --> sufficient? 
+                } else if (!response && this.notify && this.emailInput) {
+                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
+                }
+                //TODO: this.$snackbar add message if max number of notification subscriptions reached 
 
                 this.$snackbar.add({
                     type: 'success',
