@@ -45,6 +45,8 @@ describe('postNotificationEmail', () => {
         expect(fd.get('email')).toBe(testEmail);
     });
 
+    //Don't know that the following is necessary/ communicates what we want it to
+    //TODO: revisit importance of ^
     it('throws on non-200 responses', async () => {
         // @ts-ignore
         (globalThis as any).useRuntimeConfig = () => ({ public: { baseUrl: 'https://api.test' }});

@@ -168,19 +168,27 @@ export default {
                     await postEmail(this.textInput);
                 }
 
-                //TODO: make 3 cases: 
-                //do all 3 cases exist in submit form ()??
-                //form for alr created device? 
+                /*TODO: 3 cases: 
+                    1) no call to post provenance made: case of existing record
+
+                    2) Call to postprovenance is made and fails: don’t want to hand email
+
+                    Call to post provenance: creating a. Record and signing up for notifications: will want to check to see that response is truthful
+                */
+
+                //do all 3 cases exist in submit form ()?? --> I dont think so?
+                //where is the form for notification signups on an existing record? 
+                    //found it, NotificationSignupModal.vue
                 
+                //Case #3
                 if (response && this.notify && this.emailInput) {
-                    const email = this.emailInput.trim();
-                    if (email.length > 3 && email.includes('@')) {
-                        await postNotificationEmail(deviceKey,email);
-                    } else {
-                        this.$snackbar.add({ type: 'error', text: 'Please enter a valid email address' });
-                    }
+                    const email = this.emailInput.trim(); //necessary to trim? 
+                    await postNotificationEmail(deviceKey,email);
+                //Case #2 --> sufficient? 
+                } else if (!response && this.notify && this.emailInput) {
+                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
-                //TODO: this.$snackbar add message if max number of notification subscriptions reached
+                //TODO: this.$snackbar add message if max number of notification subscriptions reached 
 
                 this.$snackbar.add({
                     type: 'success',
