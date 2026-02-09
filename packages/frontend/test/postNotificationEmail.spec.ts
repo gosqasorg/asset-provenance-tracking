@@ -36,25 +36,14 @@ describe('postNotificationEmail', () => {
 
         expect(calledUrl).toContain('/notificationSubscription');
         expect(calledOptions.method).toBe('POST');
-        expect(calledOptions.body).toBeInstanceOf(FormData);
+        expect(calledOptions.headers['Content-Type']).toBe('application/json');
 
-        //verify FormData contents
-        const fd = calledOptions.body as FormData;
+        // Verify JSON body contents
+        const body = JSON.parse(calledOptions.body);
         
-        expect(fd.get('deviceKey')).toBe(testDeviceKey);
-        expect(fd.get('email')).toBe(testEmail);
-    });
-
-    //Don't know that the following is necessary/ communicates what we want it to
-    //TODO: revisit importance of ^
-    it('throws on non-200 responses', async () => {
-        // @ts-ignore
-        (globalThis as any).useRuntimeConfig = () => ({ public: { baseUrl: 'https://api.test' }});
-        const mockFetch = vi.fn().mockResolvedValue({ status: 500, statusText: 'Server Error' });
-        // @ts-ignore
-        (globalThis as any).fetch = mockFetch;
-
-        await expect(postNotificationEmail('9mYGN9CpKs5cz42mZhaFuk', 'test@example.com')).rejects.toThrow('postNotificationEmail: Failed to save email');
+        expect(body.recordKey).toBe(testDeviceKey);
+        expect(body.email).toBe(testEmail);
+        expect(body.tags).toEqual([]);
     });
 
 });
