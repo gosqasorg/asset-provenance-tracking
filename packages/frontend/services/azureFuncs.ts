@@ -85,7 +85,6 @@ export async function postProvenance(deviceKey: string, record: any, attachments
   }
 
   const fullUrl = baseUrl + '/provenance/' + deviceKey;
-  // console.log("PARSE FORMDATA: " + JSON.stringify(JSON.parse(formData)))  // ERROR: not valid json
 
   // TODO: remove!
   cacheRequest(fullUrl, formData);
@@ -156,45 +155,27 @@ async function fetchUrl(url: string, formData?: FormData) {
   }
 }
 
-// key = formUrl (string) and data = formData (json ish)
-
-// Alt. storing option
-// localStorage.setItem('gosqas_offline_cache', JSON.stringify([{'formUrl': formUrl}, {'formData': formData}]))
-// localStorage.setItem('gosqas_offline_cache', JSON.stringify([{formUrl: formData}]))
-
 export async function cacheRequest(formUrl: string, formData: FormData) {
   // Convert formData to string and store it
-  // localStorage.setItem(formUrl, JSON.stringify([formData]))  // NOTE: FINAL?
-  // localStorage.setItem(formUrl, formData.get('provenanceRecord'))  // return string
-  // localStorage.setItem('gosqas_offline_cache', JSON.stringify([{'formUrl': formUrl}, {'formData': formData.get('provenanceRecord')}]))  // return object
-  // TODO: try returning without adding front stuff to fix \ issue?
-  // TODO: array instead of json.stringify??
   localStorage.setItem(
     'gosqas_offline_cache',
     JSON.stringify([formUrl, formData.get('provenanceRecord')])
   );
 
   // TEST DELETE/MOVE TO TEST FILE: can we retrieve the data from localstorage? does the type stay the same?
-  // let test = localStorage.getItem(formUrl)
   let test = localStorage.getItem('gosqas_offline_cache');
 
-  // NOTE: can successfully parse and stringify the return! (note this when submitting, helpful for fulfilling cache)
-  // original and parse are the same! both are string though
-  // console.log("ORIGINAL: " + localStorage.getItem(formUrl))
-  // console.log("PARSE: " + JSON.stringify(JSON.parse(localStorage.getItem(formUrl))))
+  // Check return values (delete later)
+  console.log('return type: ' + typeof JSON.parse(test)[1]); // TODO: what type?
+  console.log('Information Stored: ' + JSON.parse(test)[0] + '\n*' + JSON.parse(test)[1]);
 
-  // TODO: weird '/' are being added when we get formData out of localStorage (straight from getItem)
-  console.log('return type: ' + typeof localStorage.getItem(formUrl));
-  console.log('Information Stored: ' + JSON.parse(test)[1]);
+  // Need FormData object for posting!!
+  const formData2 = new FormData();
+  console.log('string record ' + JSON.parse(test)[1]); // TODO: We need only the SECOND part of the return AND TYPE STRING!!
+  formData2.append('provenanceRecord', JSON.parse(test)[1]);
 
-  // Need FormData object for posting!! formData.append("provenanceRecord", JSON.stringify(record));
-  // const formData2 = new FormData();
-  // console.log("string record " + JSON.stringify(test))  // TODO: We need only the SECOND part of the return AND TYPE STRING!!
-  // formData2.append("provenanceRecord", JSON.stringify(test));
-
-  // const newformData = new FormData();
-  // newformData.append("provenanceRecord", JSON.stringify(localStorage.getItem(formUrl)));
-  return [formUrl, localStorage.getItem(formUrl)];
+  // TODO: delete return, this is just to test if we can use return for creating record
+  return [formUrl, formData2];
 
   // TODO: return true/false to indicate record was or was not cached? need error handling of some sort
 
