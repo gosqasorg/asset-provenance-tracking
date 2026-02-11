@@ -76,19 +76,25 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     throw new Error('Bad key provided.');
   }
 
+  console.log('FILES: ' + JSON.stringify(attachments));
+
   const baseUrl = useRuntimeConfig().public.baseUrl;
   const formData = new FormData();
   console.log('string record ' + typeof JSON.stringify(record) + JSON.stringify(record));
   console.log('original record: ' + typeof record + ' ' + record);
   formData.append('provenanceRecord', JSON.stringify(record));
   for (const blob of attachments) {
+    console.log('ATTASCH ' + blob.name + ' ' + blob); // JSON.stringify returns {}
     formData.append(blob.name, blob);
   }
 
   const fullUrl = baseUrl + '/provenance/' + deviceKey;
 
   // TODO: remove!
-  console.log('FORMURL/DATA: ' + fullUrl + '\n' + formData + ' ' + typeof formData);
+  for (const [key, value] of formData.entries()) {
+    console.log(`Stored in FormData: ${key}: ${value}`);
+  }
+  console.log('FORMDATA INFO WE HAVE: ' + formData.entries() + '\n' + formData.values()); // typeof formData == object
   cacheRequest(fullUrl, formData);
   // throw fullUrl
 
@@ -159,6 +165,11 @@ export async function fetchUrl(url: string, formData?: FormData) {
 
 export async function cacheRequest(formUrl: string, formData: FormData) {
   // Convert formData to string and store it
+
+  // TODO: using.get(provenanceRecord) IGNORES THE ATTACHMENTS!! We want to take all of formData and convert it to a string to cache
+  // [(provRecord: ...), (filename: ...), ...]
+  // Get all formData keys and set for each..? (.get(prov) and .get(file)?)
+  // Look up how to convert formData into a string value
   localStorage.setItem(
     'gosqas_offline_cache',
     JSON.stringify([formUrl, formData.get('provenanceRecord')])

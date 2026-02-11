@@ -3,25 +3,7 @@ import { cacheRequest, fetchUrl } from '~/services/azureFuncs';
 import * as z from 'zod';
 
 describe('Tests to see if requests can be cached', () => {
-  it('Test to see if request was successfully cached', async () => {
-    // Create mock formUrl/formData
-    const formUrl = 'http://fakeUrl.com';
-    const formData = new FormData();
-    formData.append(
-      'provenanceRecord',
-      '{"blobType":"deviceInitializer","deviceName":"name","description":"descr","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}'
-    );
-
-    // Cache the request
-    cacheRequest(formUrl, formData);
-
-    // Check to make sure items exist in the cache
-    let requestFromCache = localStorage.getItem('gosqas_offline_cache');
-    expect(JSON.parse(requestFromCache)[0] == formUrl);
-    expect(JSON.parse(requestFromCache)[1] == formData);
-  });
-
-  it('Test to see if data types are correct', async () => {
+  it('Test to see if returned data types are correct', async () => {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const deviceKey = await makeEncodedDeviceKey();
     const formUrl = baseUrl + '/record/' + deviceKey;
@@ -63,9 +45,45 @@ describe('Tests to see if requests can be cached', () => {
     ValidFormData.parse(JSON.parse(returnedFormData));
   });
 
-  // TODO: combine first two tests
-  // TODO: add another test for attachments..?
-  //  TODO: test for storing multiple things
+  it('Test to see if attachments are also stored', async () => {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const deviceKey = await makeEncodedDeviceKey();
+    const formUrl = baseUrl + '/record/' + deviceKey;
+    const record = {
+      blobType: 'deviceInitializer',
+      deviceName: 'name',
+      description: 'description',
+      tags: [],
+      children_key: '',
+      hasParent: false,
+      isReportingKey: false
+    };
+
+    // TODO: add attachment (option_1.png: [object File])
+
+    const formData = new FormData();
+    formData.append('provenanceRecord', JSON.stringify(record));
+
+    cacheRequest(formUrl, formData);
+    let requestFromCache = localStorage.getItem('gosqas_offline_cache');
+
+    const returnedFormData = JSON.parse(requestFromCache)[1];
+    const formData2 = new FormData();
+    formData2.append('provenanceRecord', returnedFormData);
+
+    // to make above into object: JSON.parse(returnedFormData)
+
+    // TODO: confirm attachment still exists after caching
+    // WANT: provkey: value, filename: file
+    for (const [key, value] of formData.entries()) {
+      console.log(`Stored in FormData: ${key}: ${value}`);
+    }
+  });
+
+  it('Test to see if we can store multiple requests', async () => {
+    // TODO: We CAN'T with out current method (setItem overrides, maybe get item, append, then set again..?)
+    // Could store with unique keys, but would be messy and hard to get later (get based on key's character length (key == deviceKey)?)
+  });
 
   //  TODO FINAL: merge hieu's branch into this one or at least fix the file paths
   // (currently have tests in test/data rather than test, move manually on desktop)
