@@ -79,6 +79,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
   const baseUrl = useRuntimeConfig().public.baseUrl;
   const formData = new FormData();
   console.log('string record ' + typeof JSON.stringify(record) + JSON.stringify(record));
+  console.log('original record: ' + typeof record + ' ' + record);
   formData.append('provenanceRecord', JSON.stringify(record));
   for (const blob of attachments) {
     formData.append(blob.name, blob);
@@ -87,6 +88,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
   const fullUrl = baseUrl + '/provenance/' + deviceKey;
 
   // TODO: remove!
+  console.log('FORMURL/DATA: ' + fullUrl + '\n' + formData + ' ' + typeof formData);
   cacheRequest(fullUrl, formData);
   // throw fullUrl
 
@@ -121,7 +123,7 @@ export async function getStatistics() {
   return (await response.json()) as { record: string; timestamp: number }[];
 }
 
-async function fetchUrl(url: string, formData?: FormData) {
+export async function fetchUrl(url: string, formData?: FormData) {
   let response = undefined;
 
   for (let i = 1; i <= 3; i++) {
@@ -162,24 +164,7 @@ export async function cacheRequest(formUrl: string, formData: FormData) {
     JSON.stringify([formUrl, formData.get('provenanceRecord')])
   );
 
-  // TEST DELETE/MOVE TO TEST FILE: can we retrieve the data from localstorage? does the type stay the same?
-  let test = localStorage.getItem('gosqas_offline_cache');
-
-  // Check return values (delete later)
-  console.log('return type: ' + typeof JSON.parse(test)[1]); // TODO: what type?
-  console.log('Information Stored: ' + JSON.parse(test)[0] + '\n*' + JSON.parse(test)[1]);
-
-  // Need FormData object for posting!!
-  const formData2 = new FormData();
-  console.log('string record ' + JSON.parse(test)[1]); // TODO: We need only the SECOND part of the return AND TYPE STRING!!
-  formData2.append('provenanceRecord', JSON.parse(test)[1]);
-
-  // TODO: delete return, this is just to test if we can use return for creating record
-  return [formUrl, formData2];
-
-  // TODO: return true/false to indicate record was or was not cached? need error handling of some sort
-
-  // TODO: make sure tests/code work for attachments as well!
+  // TODO: return true/false to indicate record was or was not cached? need error handling of some sort??
 
   // NOTE: missing key 'provenanceRecord', make sure that doesn't break anything when creating!!
 }
