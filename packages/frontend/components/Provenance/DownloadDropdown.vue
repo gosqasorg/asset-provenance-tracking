@@ -1,5 +1,5 @@
 <!--
-ShareDropdown.vue -- A share button and dropdown menu
+DownloadDropdown.vue -- A download button and dropdown menu
 Copyright (C) 2024 GOSQAS Team
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -15,22 +15,22 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-    This component is used for the share button and dropdown.
+    This component is used for the download button and dropdown.
     It is used in the history and record [deviceKey].vue pages.
 -->
 <template>
   <div class="buttons-container" :style="containerStyles">
-    <div class="share-container">
+    <div class="download-container">
       <button
-        id="shareRecordBtn"
-        class="btn share-btn device-btn"
+        id="downloadRecordBtn"
+        class="btn download-btn device-btn"
         :style="btnStyles"
         data-bs-toggle="collapse"
-        data-bs-target="#share-dropdown"
+        data-bs-target="#download-dropdown"
         @click="buttonFormat"
       >
-        Share Record Link
-        <picture v-if="!shareDropdown">
+        Download Record
+        <picture v-if="!downloadDropdown">
           <img id="hover-icon" src="../../assets/images/dropdown-icon.svg" style="display: none" />
           <source
             srcset="../../assets/images/darkmode-dropdown.svg"
@@ -39,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             style="display: inline"
           />
           <img
-            id="light-share-icon"
+            id="light-download-icon"
             src="../../assets/images/dropdown-icon.svg"
             class="dropdown-image"
             style="display: inline"
@@ -65,21 +65,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </picture>
       </button>
 
-      <ul id="share-dropdown" class="collapse" style="padding: 5px 20px 15px 20px">
+      <ul id="download-dropdown" class="collapse" style="padding: 5px 10px 15px 10px">
         <li class="dropdown-item" style="padding: 7px">
-          <a @click="copy()" class="drop-text item-link">Copy</a>
+          <a @click="downloadQRImage()" class="drop-text item-link">Download Image</a>
         </li>
         <li class="dropdown-item" style="padding: 7px">
-          <a @click="text()" class="drop-text item-link">Messages</a>
-        </li>
-        <li class="dropdown-item" style="padding: 7px">
-          <a @click="mail()" class="drop-text item-link">Email</a>
-        </li>
-        <li class="dropdown-item" style="padding: 7px">
-          <a @click="whatsApp()" class="drop-text item-link">WhatsApp</a>
-        </li>
-        <li class="dropdown-item" style="padding: 7px">
-          <a @click="telegram()" class="drop-text item-link">Telegram</a>
+          <a
+            @click="downloadQRImageWithText()"
+            class="drop-text item-link"
+            @mouseenter="showWithText"
+            @mouseleave="resetToDefault"
+            >Download Image with Text</a
+          >
         </li>
       </ul>
     </div>
@@ -87,16 +84,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-let dropdownVisible = false;
+// let dropdownVisible = false;
 
 export default {
   props: {
-    deviceName: {
-      type: String,
+    downloadQRCodeMethod: {
+      type: Function,
       required: true
     },
-    description: {
-      type: String,
+    downloadQRCodeWithTextMethod: {
+      type: Function,
+      required: true
+    },
+    showWithTextMethod: {
+      type: Function,
+      required: true
+    },
+    resetToDefaultMethod: {
+      type: Function,
       required: true
     },
     fontSize: { type: [String, Number], default: () => '18px' },
@@ -136,62 +141,39 @@ export default {
   },
   data() {
     return {
-      shareDropdown: false
+      downloadDropdown: false,
+      dropdownVisible: false
     };
   },
   methods: {
     buttonFormat() {
-      let shareBtn = <HTMLDivElement>document.getElementById('shareRecordBtn');
+      let downloadBtn = <HTMLDivElement>document.getElementById('downloadRecordBtn');
 
-      if (!dropdownVisible) {
+      if (!this.dropdownVisible) {
         // button clicked, dropdown now visible
-        dropdownVisible = true;
-        this.shareDropdown = true;
-        shareBtn.style.borderRadius = '10px 10px 0px 0px';
+        this.dropdownVisible = true;
+        this.downloadDropdown = true;
+        downloadBtn.style.borderRadius = '10px 10px 0px 0px';
       } else {
-        dropdownVisible = false;
-        this.shareDropdown = false;
-        shareBtn.style.borderRadius = '10px';
+        this.dropdownVisible = false;
+        this.downloadDropdown = false;
+        downloadBtn.style.borderRadius = '10px';
       }
     },
-    getDescription() {
-      return encodeURIComponent(
-        `Device Name: "${this.deviceName}"\nDescription: "${this.description}"\nClick Link & View Records: ${window.location.href}`
-      );
+    downloadQRImage() {
+      this.downloadQRCodeMethod();
     },
-    copy() {
-      navigator.clipboard
-        .writeText(window.location.href)
-        .then(() => {
-          alert('Record Link copied to clipboard!');
-        })
-        .catch((error) => {
-          console.error('Failed to copy text: ', error);
-          alert('Failed to copy Record Link. Please try again.');
-        });
-    },
-    mail() {
-      var shareDescr = this.getDescription();
-      window.location =
-        'mailto:?subject=GOSQAS%20Asset%20History%20Record%20Link&body=' + shareDescr;
-    },
-    text() {
-      var shareDescr = this.getDescription();
-      window.location = 'sms:?&body=Record Link: ' + shareDescr;
-    },
-    whatsApp() {
-      var shareDescr = this.getDescription();
-      window.location = 'https://wa.me/send?text=' + shareDescr;
-    },
-    telegram() {
-      var shareLink = encodeURIComponent(window.location.href);
-      var shareDescr = encodeURIComponent(
-        `Device Name: "${this.deviceName}"\nDescription: "${this.description}"`
-      );
-      window.location = 'https://t.me/share?url=' + shareLink + '&text=' + shareDescr;
+    downloadQRImageWithText() {
+      this.downloadQRCodeWithTextMethod();
     },
     isNumeric(value: any) {
       return /^\d+$/.test(value);
+    },
+    showWithText() {
+      this.showWithTextMethod();
+    },
+    resetToDefault() {
+      this.resetToDefaultMethod();
     }
   }
 };
@@ -206,12 +188,12 @@ export default {
   height: 66px;
 }
 
-.share-btn {
+.download-btn {
   margin-right: 0px;
   width: 100%;
 }
 
-#share-dropdown {
+#download-dropdown {
   border-radius: 0px 0px 10px 10px;
   margin-left: auto;
   margin-right: 0;
@@ -237,13 +219,13 @@ export default {
   margin-right: 30px;
 }
 
-.share-container {
+.download-container {
   width: 100%;
 }
 
 /* Switches to mobile sizing */
 @media (max-width: 991px) {
-  .share-container {
+  .download-container {
     width: 100%;
   }
 
@@ -252,7 +234,7 @@ export default {
     margin-right: 0 !important;
   }
 
-  #share-dropdown {
+  #download-dropdown {
     width: 100%;
   }
 
@@ -277,13 +259,13 @@ export default {
     color: #ffffff;
   }
 
-  .share-btn {
+  .download-btn {
     background-color: #1e2019;
     border: 2px solid #ffffff;
     color: white;
   }
 
-  .share-btn:hover {
+  .download-btn:hover {
     background-color: white;
     color: black;
   }
@@ -298,16 +280,16 @@ export default {
     background-color: #1e2019;
   }
 
-  #share-dropdown {
+  #download-dropdown {
     background-color: #1e2019;
     border: 2px solid #ffffff;
   }
 
-  #shareRecordBtn:hover .dropdown-image {
+  #downloadRecordBtn:hover .dropdown-image {
     display: none !important;
   }
 
-  #shareRecordBtn:hover #hover-icon {
+  #downloadRecordBtn:hover #hover-icon {
     display: inline !important;
   }
 
@@ -335,21 +317,21 @@ export default {
     color: #1e2019;
   }
 
-  .share-btn {
+  .download-btn {
     background-color: #ccecfd;
     border: #ccecfd;
     color: black;
   }
 
-  #share-dropdown {
+  #download-dropdown {
     background-color: #ccecfd;
   }
 
-  .share-btn:active {
+  .download-btn:active {
     background-color: #ccecfd;
   }
 
-  .share-btn:hover {
+  .download-btn:hover {
     background-color: #e6f6ff !important;
   }
 
