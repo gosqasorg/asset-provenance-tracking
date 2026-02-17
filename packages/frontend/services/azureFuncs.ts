@@ -142,3 +142,13 @@ async function fetchUrl(url: string, formData?: FormData) {
         throw new Error(`Could not connect to the server, check your internet connection and try again`);
     }
 }
+
+export async function connectivityChecker() {
+    // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
+    while (!offlineTestFetch()) {
+        await new Promise(r => setTimeout(r, 5000));
+    }
+
+    return;
+
+}
