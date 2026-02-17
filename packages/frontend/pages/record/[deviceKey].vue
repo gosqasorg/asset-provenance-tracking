@@ -160,6 +160,7 @@ export default {
             this._recordKey = route.params.deviceKey as string;
             const response = await getProvenance(this._recordKey);
             deviceRecord = response[response.length - 1].record;
+            console.log("device record: ", deviceRecord);
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
             // We will remove the reportingKey, because although it is a child,
             // we have already rendered it.
