@@ -865,6 +865,14 @@ async function createChildren(context, number_of_children, tags?) {
 }
 
 async function createGroup(context, name, description, n_children) {
+    const baseUrl = process.env['backend_url'];
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
     context.log('--------------------')
     const frontendUrl = 'http://localhost:3000'
     const apiUrl = 'http://localhost:7071/api'
@@ -960,14 +968,11 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
 
-//
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
     handler: createGroupHandler,
 })
-//
-
 
 app.post("notificationSignUpTags", {
     authLevel: 'anonymous',
@@ -1052,97 +1057,3 @@ app.post('recallChildren', {
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
 })
-
-
-
-// Experimental
-/* Notes. httpTrigger.ts line 315
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        console.log("attach type: " + typeof(attach))
-        attachments.push({ blob: attach, name: attach.name });
-    }
-
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-*/
-/* Notes. httpTrigger.ts line 50
-
-interface NamedBlob {
-    name?: string,
-    blob: Blob,
-}
-*/
-/*
-Notes. httpTrigger.ts line 160
-
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
-
-    const attachmentIDs = new Array<string>();
-    for (const attach of attachments) {
-        if (typeof attach === 'string') continue;
-        const data = await attach.blob.arrayBuffer()
-        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
-        attachmentIDs.push(attachmentID);
-    }
-
-    const provRecord = { record, attachments: attachmentIDs };
-
-    const data = new TextEncoder().encode(JSON.stringify(provRecord));
-    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-    return { record: recordID, attachments };
-}
-*/
-/* Notes. httpTrigger.ts line 127
-export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
-    const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey);
-    const { salt, encryptedData } = await encrypt(deviceKey, data);
-    const blobID = toHex(await sha256(encryptedData));
-
-    let blobName;
-    if (type === 'prov') {
-        blobName = `prov/${deviceID}/${blobID}`;
-    } else if (type === 'attach') {
-        blobName = `attach/${blobID}`;
-    } else {
-        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
-    }
-
-    const { encryptedData: encryptedName } = fileName
-        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
-        : { encryptedData: undefined };
-
-    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
-        metadata: {
-            gdtcontenttype: contentType,
-            gdthash: dataHash,
-            gdtsalt: toHex(salt),
-            gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName) : ""
-        },
-        blobHTTPHeaders: {
-            blobContentType: "application/octet-stream"
-        }
-    });
-    return blobID;
-}
-*/
-/* Notes on upbloadblockblob
-
-From: https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-
-The function signature:
-function uploadBlockBlob(blobName: string, body: RequestBodyType, contentLength: number, options?: BlockBlobUploadOptions): Promise<{ blockBlobClient: BlockBlobClient, response: BlockBlobUploadResponse }>
-
-*/
-/* Notes. Thanks, @milena!
-
-        	const buffer = await readFile('./test/attachments/a200.jpg')
-        	const blob = new Blob([buffer], { type: 'image/jpeg' })
-        	groupFormData.append('attachment', blob) 
-*/ 
-
-
