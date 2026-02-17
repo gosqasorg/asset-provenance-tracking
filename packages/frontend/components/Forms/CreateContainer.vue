@@ -229,13 +229,45 @@ export default {
                     };                
                 }
             };
+
+            if (this.createReportingKey) {
+                // Should be higher up?
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
+
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
+                    })
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
+                childrenDeviceList.push(reportingKey);
+                childrenDeviceName.push(this.name);
+            }
+
             try {
                 const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey,
+                    reportingKey: reportingKey, 
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
                     hasParent: false,
@@ -267,35 +299,7 @@ export default {
                 })
             }
 
-            if (this.createReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
-
-                try {
-                    await postProvenance(reportingKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
-                        tags: tag_set,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
-                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: 'Successfully created reporting key'
-                    })
-                } catch (error) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
-                };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
-            }
+            
         },
     }
 }

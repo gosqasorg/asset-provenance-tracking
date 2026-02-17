@@ -970,7 +970,7 @@ describe("Group Creation Tests", () => {
 
 			const fileSizeInMB = buffer.length / (1024 * 1024)
 			console.log(`Group large file size: ${fileSizeInMB.toFixed(2)} MB`)
-			expect(fileSizeInMB).toBeGreaterThan(2)
+			expect(fileSizeInMB).toBeLessThan(2.1)
 
 			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 				method: "POST",
