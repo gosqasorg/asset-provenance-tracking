@@ -76,15 +76,14 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     throw new Error('Bad key provided.');
   }
 
-  console.log('FILES: ' + JSON.stringify(attachments));
-
   const baseUrl = useRuntimeConfig().public.baseUrl;
   const formData = new FormData();
   console.log('string record ' + typeof JSON.stringify(record) + JSON.stringify(record));
   console.log('original record: ' + typeof record + ' ' + record);
   formData.append('provenanceRecord', JSON.stringify(record));
+
   for (const blob of attachments) {
-    console.log('ATTASCH ' + blob.name + ' ' + blob); // JSON.stringify returns {}
+    // TODO: need [object File] as string to store? (might need a file reader)
     formData.append(blob.name, blob);
   }
 
@@ -92,11 +91,9 @@ export async function postProvenance(deviceKey: string, record: any, attachments
 
   // TODO: remove!
   for (const [key, value] of formData.entries()) {
-    console.log(`Stored in FormData: ${key}: ${value}`);
+    console.log(`Stored in FormData (postprov): ${key}: ${value}`);
   }
-  console.log('FORMDATA INFO WE HAVE: ' + formData.entries() + '\n' + formData.values()); // typeof formData == object
   cacheRequest(fullUrl, formData);
-  // throw fullUrl
 
   try {
     let response = await fetchUrl(fullUrl, formData);
@@ -163,19 +160,23 @@ export async function fetchUrl(url: string, formData?: FormData) {
   }
 }
 
+// TODO: update to include attachments! (will value break cause not technically string?)
 export async function cacheRequest(formUrl: string, formData: FormData) {
   // Convert formData to string and store it
+  let valuesToStore = [];
+  valuesToStore.push(['formUrl', formUrl]);
 
-  // TODO: using.get(provenanceRecord) IGNORES THE ATTACHMENTS!! We want to take all of formData and convert it to a string to cache
-  // [(provRecord: ...), (filename: ...), ...]
-  // Get all formData keys and set for each..? (.get(prov) and .get(file)?)
-  // Look up how to convert formData into a string value
-  localStorage.setItem(
-    'gosqas_offline_cache',
-    JSON.stringify([formUrl, formData.get('provenanceRecord')])
-  );
+  // formData = [(provRecord: ...), (filename: ...), ...]
+  for (const [key, value] of formData.entries()) {
+    valuesToStore.push([key, value]);
+  }
+
+  // console.log("Storing... ")
+  // for (const item of valuesToStore) {
+  //   console.log(item)
+  // }
+
+  localStorage.setItem('gosqas_offline_cache', JSON.stringify(valuesToStore));
 
   // TODO: return true/false to indicate record was or was not cached? need error handling of some sort??
-
-  // NOTE: missing key 'provenanceRecord', make sure that doesn't break anything when creating!!
 }

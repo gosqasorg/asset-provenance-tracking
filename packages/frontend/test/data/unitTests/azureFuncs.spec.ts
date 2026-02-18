@@ -20,17 +20,21 @@ describe('Tests to see if requests can be cached', () => {
     formData.append('provenanceRecord', JSON.stringify(record));
 
     cacheRequest(formUrl, formData);
-    let requestFromCache = localStorage.getItem('gosqas_offline_cache');
+    let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache'));
 
     // Confirm that the datatypes are the same as they started
-    const returnedFormUrl = JSON.parse(requestFromCache)[0];
-    const returnedFormData = JSON.parse(requestFromCache)[1];
+    const returnedFormUrl = requestFromCache[0][1];
+    const returnedFormData = JSON.parse(requestFromCache[1][1]);
     expect(typeof returnedFormUrl == typeof formUrl);
-    expect(typeof returnedFormData == typeof formData);
+    expect(returnedFormUrl == formUrl);
 
-    // Convert formData return back to FormData (stored in localStorage as string)
+    // Convert formData return back to type FormData (stored in localStorage as string)
     const formData2 = new FormData();
-    formData2.append('provenanceRecord', returnedFormData);
+
+    for (let i = 1; i < requestFromCache.length; i++) {
+      formData2.append(requestFromCache[i][0], requestFromCache[i][1]);
+    }
+    expect(typeof formData2 == typeof formData);
 
     // Validate that the formData has the correct format
     const ValidFormData = z.object({
@@ -42,7 +46,7 @@ describe('Tests to see if requests can be cached', () => {
       hasParent: z.boolean().optional(),
       isReportingKey: z.boolean().optional()
     });
-    ValidFormData.parse(JSON.parse(returnedFormData));
+    ValidFormData.parse(returnedFormData);
   });
 
   it('Test to see if attachments are also stored', async () => {
@@ -59,25 +63,41 @@ describe('Tests to see if requests can be cached', () => {
       isReportingKey: false
     };
 
-    // TODO: add attachment (option_1.png: [object File])
-
     const formData = new FormData();
     formData.append('provenanceRecord', JSON.stringify(record));
 
-    cacheRequest(formUrl, formData);
-    let requestFromCache = localStorage.getItem('gosqas_offline_cache');
-
-    const returnedFormData = JSON.parse(requestFromCache)[1];
-    const formData2 = new FormData();
-    formData2.append('provenanceRecord', returnedFormData);
-
-    // to make above into object: JSON.parse(returnedFormData)
-
-    // TODO: confirm attachment still exists after caching
-    // WANT: provkey: value, filename: file
-    for (const [key, value] of formData.entries()) {
-      console.log(`Stored in FormData: ${key}: ${value}`);
+    // Add test attachment to formData
+    const filename = 'filename.txt';
+    const files = [new File(['file contents'], filename, { type: 'text/plain' })];
+    let attachments = Array.from(files);
+    for (const blob of attachments) {
+      console.log('CACHED: ', blob.name, blob);
+      formData.append(blob.name, blob);
     }
+
+    cacheRequest(formUrl, formData);
+    let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache'));
+    const returnedFileData = requestFromCache[2]; // [0] is str name, [1] is the file
+
+    // Make sure attachment still exists and hasn't changed
+    expect(returnedFileData[0] == filename);
+    expect(typeof returnedFileData[1] == typeof files); // TODO: maybe change/remove this test? can we get the contents??
+
+    // console.log("ATTACHMENTS TEST:")
+    // console.dir(attachments, { depth: null });
+
+    // TODO: confirm attachment still exists after caching (expect() tests)
+    // WANT: provkey: value, filename: file
+
+    // Recreate formData and confirm it's the same as the original
+    console.log('Get returned values, do they match what we put in?');
+    const formData2 = new FormData();
+    for (let i = 1; i < requestFromCache.length; i++) {
+      console.log('RETURNED: ', requestFromCache[i][0], requestFromCache[i][1]); // TODO: lost [Symbol(buffer)] from original
+      formData2.append(requestFromCache[i][0], requestFromCache[i][1]);
+    }
+    expect(typeof formData2 == typeof formData);
+    expect(formData2 == formData);
   });
 
   it('Test to see if we can store multiple requests', async () => {
