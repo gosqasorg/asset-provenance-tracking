@@ -11,3 +11,6 @@ if(fs.existsSync(envVarPath)) {
     if(typeof v === 'string' && !(k in process.env)) process.env[k] = v
   }
 }
+
+process.env.COMMUNICATION_SERVICES_CONNECTION_STRING =
+  "endpoint=https://example.communication.azure.com/;accesskey=ZmFrZQ==";

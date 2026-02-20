@@ -1,20 +1,7 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 
-let emailClient: EmailClient | null = null;
-
-function getEmailClient() {
-  if (emailClient) {
-    return emailClient;
-  }
-  const connectionString = process.env["COMMUNICATION_SERVICES_CONNECTION_STRING"];
-  
-  if (!connectionString) {
-    throw new Error("Missing COMMUNICATION_SERVICES_CONNECTION_STRING");
-  }
-
-  emailClient = new EmailClient(connectionString);
-  return emailClient;
-}
+const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
+const emailClient = new EmailClient(connectionString);
 
 // Send an email using the Azure Communication Services Email SDK
 export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
@@ -41,7 +28,6 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     };
 
     console.log("Sending email...", message);
-    const emailClient = getEmailClient();  
     const poller = await emailClient.beginSend(message);
 
     if (!poller.getOperationState().isStarted) {
