@@ -382,6 +382,19 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+    // Notify users who subscribed to this record.
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(request.params.deviceKey);
+    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+
+    const from_address: string = "DoNotReply@5c235288-f7ff-4193-adaa-c4c934799e14.azurecomm.net";
+    const subject: string = 'Tracking update'; 
+    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
+    const displayName: string = from_address;
+
+    const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+    for (const to_email of emailSet) {
+        await sendEmail(from_address, to_email, subject, email_body, displayName);
+    }
     return { jsonBody: body ?? { converted: true}};
 }
 
@@ -743,7 +756,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     } catch(error) {
         return {
             jsonBody: {message: error.message},
-            status: status,
+            status: 500,
         }
     }
 }
@@ -752,7 +765,7 @@ async function retrieveNotifEmails(key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
     const deviceID = await calculateDeviceID(key);
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
+    const blobName = `${type}/${deviceID}`
 
     try {
         const blobClient = containerClient.getBlobClient(blobName);
@@ -767,7 +780,7 @@ async function retrieveNotifEmails(key: string) {
     } catch(error) {
         return {
             jsonBody: {message: error.message},
-            status: status,
+            status: 500,
         }
     } 
 }
@@ -784,6 +797,24 @@ async function streamToString(readableStream) {
         readableStream.on("error", reject);
     });
 }
+
+
+function extractEmailsFromResponse(response: any): Set<string> {
+    const emailSet = new Set<string>();
+    if (response && response.status === 200 && response.jsonBody && response.jsonBody.message) {
+        try {
+            const parsed = JSON.parse(response.jsonBody.message);
+            if (parsed.email && Array.isArray(parsed.email)) {
+                parsed.email.forEach((e: string) => emailSet.add(e));
+            } else if (parsed.key?.email) {
+                emailSet.add(parsed.key.email);
+            }
+        } catch (e) {
+        }
+    }
+    return emailSet;
+}
+
 
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /* How this pseudo-smoketest works:
