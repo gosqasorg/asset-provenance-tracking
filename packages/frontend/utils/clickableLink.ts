@@ -21,8 +21,16 @@ export default function clickableLink(description: string)  {
     if (!description) {
         return;
     }
+
+    // Sanitize the description before processing
+    const cleanDescription = DOMPurify.sanitize(description, {
+        ALLOWED_TAGS: [], // Should be no tags and attrs, i think, user shouldnt be able to add things to the html
+        ALLOWED_ATTR: []
+        }
+    )
+
     // Split the description into words
-    let words = description.split(' ');
+    let words = cleanDescription.split(' ');
 
     const expression = '/((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z0-9\&\.\/\?\:@\-_=#])*';
     const regEx = new RegExp(expression);
@@ -31,7 +39,7 @@ export default function clickableLink(description: string)  {
     for (let i = 0; i < words.length; i++) {
         if (words[i].match(regEx)) { //Checks if there are links that start with https
             // Wrap the word with <a> tag
-            let userLink = `<a href="${words[i]}" target="_blank">${words[i]}</a>`;
+            let userLink = `<a href="${words[i]}" target="_blank" rel="noopener noreferrer">${words[i]}</a>`;
             words[i] = DOMPurify.sanitize(userLink, {
                 ALLOWED_TAGS: ['a'],
                 ALLOWED_ATTR: ['href', 'target', 'rel']
