@@ -31,7 +31,12 @@ export default function clickableLink(description: string)  {
     for (let i = 0; i < words.length; i++) {
         if (words[i].match(regEx)) { //Checks if there are links that start with https
             // Wrap the word with <a> tag
-            words[i] = `<a href="${words[i]}" target="_blank">${words[i]}</a>`;
+            let userLink = `<a href="${words[i]}" target="_blank">${words[i]}</a>`;
+            words[i] = DOMPurify.sanitize(userLink, {
+                ALLOWED_TAGS: ['a'],
+                ALLOWED_ATTR: ['href', 'target', 'rel']
+            })
+
         }
     }
 
@@ -41,5 +46,7 @@ export default function clickableLink(description: string)  {
     return new_description;
 }
 
-// TODO: getDOMPurify
-//  
+// TODO: import getDOMPurify
+//  apply sanitize
+//  rough test
+//  make some testcases?
