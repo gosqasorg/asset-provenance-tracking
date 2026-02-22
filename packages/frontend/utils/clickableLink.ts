@@ -23,11 +23,28 @@ export default function clickableLink(description: string)  {
     }
 
     // Sanitize the description before processing
-    const cleanDescription = DOMPurify.sanitize(description, {
-        ALLOWED_TAGS: [], // Should be no tags and attrs, i think, user shouldnt be able to add things to the html
-        ALLOWED_ATTR: []
-        }
-    )
+    // const cleanDescription = DOMPurify.sanitize(description, {
+    //     ALLOWED_TAGS: [], // Should be no tags and attrs, i think, user shouldnt be able to add things to the html
+    //     ALLOWED_ATTR: []
+    //     }
+    // )
+    // Split the description into words
+    // let words = cleanDescription.split(' ');
+    // === But what if user wants to have html written out as an actual description???
+
+
+    // Encode HTML entities 
+    // this should prevent xxs attacks, but still allow the users tp write out html as part of the description
+    const encodeHTML = (str: string) => {
+        return str
+        .replace(/&/g, '&amp')
+        .replace(/</g, '&lt')
+        .replace(/>/g, '&gt')
+        .replace(/"/g, '&quot')
+        .replace(/'/g, '&#039');
+    }
+
+    const cleanDescription = encodeHTML(description);
 
     // Split the description into words
     let words = cleanDescription.split(' ');
@@ -54,7 +71,12 @@ export default function clickableLink(description: string)  {
     return new_description;
 }
 
+// works: but does pick up some punctuation as links like <<script>alert(1)//<</script> is considered a link
+// this is becuase the regex isn't perfect, but it should be good for most cases? Might neeed to be improved in the future.
+
 // TODO: import getDOMPurify
 //  apply sanitize
 //  rough test
 //  make some testcases?
+
+// TODO: improve regex 
