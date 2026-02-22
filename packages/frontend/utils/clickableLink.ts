@@ -49,7 +49,8 @@ export default function clickableLink(description: string)  {
     // Split the description into words
     let words = cleanDescription.split(' ');
 
-    const expression = '/((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z0-9\&\.\/\?\:@\-_=#])*';
+    // const expression = '/((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z0-9\&\.\/\?\:@\-_=#])*';
+    const expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/;
     const regEx = new RegExp(expression);
     
     // Iterate over each word and check
