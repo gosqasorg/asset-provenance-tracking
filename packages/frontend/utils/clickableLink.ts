@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+import DOMPurify from 'dompurify';
+
 export default function clickableLink(description: string)  {
     if (!description) {
         return;
@@ -38,3 +41,5 @@ export default function clickableLink(description: string)  {
     return new_description;
 }
 
+// TODO: getDOMPurify
+//  

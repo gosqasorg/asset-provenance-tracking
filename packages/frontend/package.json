@@ -36,6 +36,7 @@
     "bootstrap": "^5.3.3",
     "bootstrap4-toggle": "^3.6.1",
     "bootstrap5-toggle": "^5.1.1",
+    "dompurify": "^3.3.1",
     "mitt": "^3.0.1",
     "nuxt": "^3.11.2",
     "nuxt-snackbar": "^1.1.2",

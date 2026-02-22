@@ -99,7 +99,7 @@ const recordHasParent = hasParent(provenance);
 
                 <div class="mb-3 rec">
                   <span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
-                </div>
+                </div> 
 
                 <section ref="section" id="priority-notices">
                   <ProvenancePriorityNotices :recordKey="_recordKey" :provenance="provenance" />
