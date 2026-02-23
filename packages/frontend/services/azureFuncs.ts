@@ -160,23 +160,25 @@ export async function fetchUrl(url: string, formData?: FormData) {
   }
 }
 
-// TODO: update to include attachments! (will value break cause not technically string?)
 export async function cacheRequest(formUrl: string, formData: FormData) {
   // Convert formData to string and store it
   let valuesToStore = [];
   valuesToStore.push(['formUrl', formUrl]);
 
-  // formData = [(provRecord: ...), (filename: ...), ...]
   for (const [key, value] of formData.entries()) {
+    // TODO: should we not store broken attachments at all, or leave this here to be fixed later?
+    // formData = [(provRecord: ...), (filename: ...), ...]
     valuesToStore.push([key, value]);
   }
 
-  // console.log("Storing... ")
-  // for (const item of valuesToStore) {
-  //   console.log(item)
-  // }
+  // Store the request at a unique key (gosqas_offline_cache_#), add 1 to the cache_counter
+  let cache_counter_string = localStorage.getItem('cache_counter');
+  if (cache_counter_string == null) {
+    cache_counter_string = '0';
+  }
+  let cache_counter = parseInt(cache_counter_string) + 1;
+  localStorage.setItem('cache_counter', cache_counter.toString());
 
-  localStorage.setItem('gosqas_offline_cache', JSON.stringify(valuesToStore));
-
-  // TODO: return true/false to indicate record was or was not cached? need error handling of some sort??
+  let request_name = 'gosqas_offline_cache_' + cache_counter;
+  localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
