@@ -52,7 +52,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     />
                 </div>
             </div>
-            <OfflineBanner></OfflineBanner>
+            <OfflineBanner :style="{color: 'white'}">You're Offline: To post your changes, reopen this window when you're online again. Don't clear your cookies
+                or close your browser, or your changes will be lost.
+            </OfflineBanner>
         </div>
  
         <div class="d-grid">
