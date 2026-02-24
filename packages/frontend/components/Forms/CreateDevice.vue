@@ -52,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     />
                 </div>
             </div>
-
+            <OfflineBanner></OfflineBanner>
         </div>
  
         <div class="d-grid">
@@ -78,7 +78,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
-
+import OfflineBanner from '../OfflineBanner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
