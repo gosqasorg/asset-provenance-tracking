@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cacheRequest, fetchUrl } from '~/services/azureFuncs';
+import { cacheRequest } from '~/services/azureFuncs';
 import * as z from 'zod';
 
 describe('Tests to see if requests can be cached', () => {
@@ -33,10 +33,7 @@ describe('Tests to see if requests can be cached', () => {
 
     // Convert returned request back to FormData (stored in localStorage as string)
     const formData2 = new FormData();
-    for (let i = 1; i < requestFromCache.length; i++) {
-      formData2.append(requestFromCache[i][0], requestFromCache[i][1]);
-    }
-
+    formData2.append('provenanceRecord', JSON.stringify(returnedFormData));
     expect(formData2).toStrictEqual(formData);
 
     // Validate that the formData has the correct format
@@ -76,6 +73,8 @@ describe('Tests to see if requests can be cached', () => {
       hasParent: false,
       isReportingKey: false
     };
+
+    // Store two records in localStorage and confirm that they were stored correctly
     const formData = new FormData();
     const formData2 = new FormData();
     formData.append('provenanceRecord', JSON.stringify(record));
@@ -84,7 +83,6 @@ describe('Tests to see if requests can be cached', () => {
     cacheRequest(formUrl, formData);
     cacheRequest(formUrl, formData2);
 
-    // Confirm that both requests were stored
     let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
     const returnedFormUrl = requestFromCache[0][1];
     const returnedFormData = JSON.parse(requestFromCache[1][1]);
@@ -101,9 +99,4 @@ describe('Tests to see if requests can be cached', () => {
     expect(returnedFormData.description).toEqual('description');
     expect(returnedFormData2.description).toEqual('slightly longer description');
   });
-
-  //  TODO FINAL: merge hieu's branch into this one or at least fix the file paths?
-  // (currently have tests in test/data rather than test, at least move manually on desktop)
-
-  // TODO: fix spacing to match original branch
 });

@@ -78,23 +78,12 @@ export async function postProvenance(deviceKey: string, record: any, attachments
 
   const baseUrl = useRuntimeConfig().public.baseUrl;
   const formData = new FormData();
-  console.log('string record ' + typeof JSON.stringify(record) + JSON.stringify(record));
-  console.log('original record: ' + typeof record + ' ' + record);
   formData.append('provenanceRecord', JSON.stringify(record));
-
   for (const blob of attachments) {
-    // TODO: need [object File] as string to store? (might need a file reader)
     formData.append(blob.name, blob);
   }
 
   const fullUrl = baseUrl + '/provenance/' + deviceKey;
-
-  // TODO: remove!
-  for (const [key, value] of formData.entries()) {
-    console.log(`Stored in FormData (postprov): ${key}: ${value}`);
-  }
-  cacheRequest(fullUrl, formData);
-
   try {
     let response = await fetchUrl(fullUrl, formData);
     return (await response.json()) as { record: string; attachments?: string[] };
@@ -126,7 +115,7 @@ export async function getStatistics() {
   return (await response.json()) as { record: string; timestamp: number }[];
 }
 
-export async function fetchUrl(url: string, formData?: FormData) {
+async function fetchUrl(url: string, formData?: FormData) {
   let response = undefined;
 
   for (let i = 1; i <= 3; i++) {
@@ -161,20 +150,20 @@ export async function fetchUrl(url: string, formData?: FormData) {
 }
 
 export async function cacheRequest(formUrl: string, formData: FormData) {
-  // Convert formData to string and store it
+  // Convert values to string and store them
   let valuesToStore = [];
   valuesToStore.push(['formUrl', formUrl]);
-
   valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-  // Store the request at a unique key (gosqas_offline_cache_#), add 1 to the cache_counter
-  let cache_counter_string = localStorage.getItem('cache_counter');
-  if (cache_counter_string == null) {
-    cache_counter_string = '0';
+  // Get cache_counter and add 1 to it
+  let current_request = localStorage.getItem('cache_counter');
+  if (current_request == null) {
+    current_request = '0';
   }
-  let cache_counter = parseInt(cache_counter_string) + 1;
+  let cache_counter = parseInt(current_request) + 1;
   localStorage.setItem('cache_counter', cache_counter.toString());
 
+  // Store the request at a unique key (gosqas_offline_cache_#)
   let request_name = 'gosqas_offline_cache_' + cache_counter;
   localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
