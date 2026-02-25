@@ -13,132 +13,173 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { validateKey } from "~/utils/keyFuncs";
+import { validateKey } from '~/utils/keyFuncs';
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
-    try {
-        if (!validateKey(deviceKey)) {
-            throw new Error("Bad key provided");
-        }
-        
-        const baseUrl = useRuntimeConfig().public.baseUrl;
-        const fullUrl = baseUrl + "/provenance/" + deviceKey;
-
-        try {
-            let response = await fetchUrl(fullUrl);
-            return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
-        } catch (error) {
-            throw error;
-        }
-    } catch (error) {
-        console.log(`Key not found: ${deviceKey}.`);
-        console.log(error);
-        throw error;
+  try {
+    if (!validateKey(deviceKey)) {
+      throw new Error('Bad key provided');
     }
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const fullUrl = baseUrl + '/provenance/' + deviceKey;
+
+    try {
+      let response = await fetchUrl(fullUrl);
+      return (await response.json()) as {
+        record: any;
+        attachments?: string[];
+        timestamp: number;
+      }[];
+    } catch (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.log(`Key not found: ${deviceKey}.`);
+    console.log(error);
+    throw error;
+  }
 }
 
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
-    try {
-        if (!validateKey(deviceKey)) {
-            throw new Error("Bad key provided.");
-        }
+  try {
+    if (!validateKey(deviceKey)) {
+      throw new Error('Bad key provided.');
+    }
 
-        const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-            method: "GET",
-        });
+    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+      method: 'GET'
+    });
 
-        const blob = await response.blob();
+    const blob = await response.blob();
 
-        // Check for the attachment name
-        let fileName = response.headers.get('Attachment-Name');
-        // If the header is not present, fetch the attachment name
-        if(!fileName) {
-            // Fetch the attachment name
-            const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
-                method: "GET",
-            });
-            fileName = await nameResponse.text();
-        }
-        return { blob, fileName };
-    } catch (error) {
-        console.error('Error occurred during getAttachment request:', error);
-        throw error; // re-throw the error if you want to handle it further up the call stack
-    }      
+    // Check for the attachment name
+    let fileName = response.headers.get('Attachment-Name');
+    // If the header is not present, fetch the attachment name
+    if (!fileName) {
+      // Fetch the attachment name
+      const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+        method: 'GET'
+      });
+      fileName = await nameResponse.text();
+    }
+    return { blob, fileName };
+  } catch (error) {
+    console.error('Error occurred during getAttachment request:', error);
+    throw error; // re-throw the error if you want to handle it further up the call stack
+  }
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
+
     if (!validateKey(deviceKey)) {
         throw new Error("Bad key provided.");
     }
 
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const formData = new FormData();
-    formData.append("provenanceRecord", JSON.stringify(record));
-    for (const blob of attachments) {
-        formData.append(blob.name, blob);
-    }
-    
-    const fullUrl = baseUrl + "/provenance/" + deviceKey;
-    try {
-        let response = await fetchUrl(fullUrl, formData);
-        return await response.json() as { record: string, attachments?: string[] };
-    } catch (error) {
-        throw error;
-    }
+    connectivityChecker();
+
+  const baseUrl = useRuntimeConfig().public.baseUrl;
+  const formData = new FormData();
+  formData.append('provenanceRecord', JSON.stringify(record));
+  for (const blob of attachments) {
+    formData.append(blob.name, blob);
+  }
+
+  const fullUrl = baseUrl + '/provenance/' + deviceKey;
+  try {
+    let response = await fetchUrl(fullUrl, formData);
+    return (await response.json()) as { record: string; attachments?: string[] };
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function postEmail(email: string) {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const formData = new FormData();
-    formData.append("email", email);
+  const baseUrl = useRuntimeConfig().public.baseUrl;
+  const formData = new FormData();
+  formData.append('email', email);
 
-                                            // backend urls are converted to all lowercase on deployment
-    const response = await fetch(`${baseUrl}/feedbackvolunteer`, {
-        method: 'POST',
-        body: formData,
-    });
-    if (response.status != 200) {
-        throw new Error('postEmail: Failed to save email address')
-    }
+  // backend urls are converted to all lowercase on deployment
+  const response = await fetch(`${baseUrl}/feedbackvolunteer`, {
+    method: 'POST',
+    body: formData
+  });
+  if (response.status != 200) {
+    throw new Error('postEmail: Failed to save email address');
+  }
 }
 
 export async function getStatistics() {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/statistics`, {
-        method: "GET",
-    });
-    return await response.json() as { record: string, timestamp: number }[];
+  const baseUrl = useRuntimeConfig().public.baseUrl;
+  const response = await fetch(`${baseUrl}/statistics`, {
+    method: 'GET'
+  });
+  return (await response.json()) as { record: string; timestamp: number }[];
 }
 
 async function fetchUrl(url: string, formData?: FormData) {
-    let response = undefined;
+  let response = undefined;
 
-    for (let i = 1; i <= 3; i++) {
-        try {
-            if (typeof formData !== 'undefined') {
-                response = await fetch(`${url}`, {
-                    method: "POST",
-                    body: formData,
-                });
-            } else {
-                response = await fetch(`${url}`, {
-                    method: "GET"
-                });
-            }
+  for (let i = 1; i <= 3; i++) {
+    try {
+      if (typeof formData !== 'undefined') {
+        response = await fetch(`${url}`, {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        response = await fetch(`${url}`, {
+          method: 'GET'
+        });
+      }
 
-            if (response !== undefined && response.status == 200) {
-                return response;
-            }
-        } catch (e) {
-            console.log("Fetch attempt failed: " + e);
-        }
+      if (response !== undefined && response.status == 200) {
+        return response;
+      }
+    } catch (e) {
+      console.log('Fetch attempt failed: ' + e);
+    }
+  }
+
+  if (response !== undefined && response.status !== 200) {
+    console.log(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    throw new Error(response.status + ' ' + response.statusText);
+  } else {
+    throw new Error(
+      `Could not connect to the server, check your internet connection and try again`
+    );
+  }
+}
+
+export async function offlineTestFetch(url? : string) : Promise<boolean> {
+    let result = true;
+
+    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+    // Given parameter can be bogus url to mock offlineness
+    if (url === undefined) {
+        url = useRuntimeConfig().public.frontendUrl;
     }
 
-    if (response !== undefined && response.status !== 200) {
-        console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
-        throw new Error(response.status + " " + response.statusText)
-    } else {
-        throw new Error(`Could not connect to the server, check your internet connection and try again`);
+    try {
+        let response = await fetch(url);
+        if (response.status !== 200) {
+            result = false;
+        } 
+    } catch (error) {
+        console.log("Fetch attempt failed: " + error);
+        result = false;
     }
+
+    return result
+
+}
+
+export async function connectivityChecker() {
+  // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
+  while (!(await offlineTestFetch())) {
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+
+  return;
 }
