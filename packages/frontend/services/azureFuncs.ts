@@ -72,9 +72,16 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
+<<<<<<< HEAD
   if (!validateKey(deviceKey)) {
     throw new Error('Bad key provided.');
   }
+=======
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
+    }
+    connectivityChecker()
+>>>>>>> 6446d7350 (new commit)
 
   connectivityChecker();
 
@@ -173,11 +180,41 @@ export async function offlineTestFetch(url?: string): Promise<boolean> {
   return result;
 }
 
+export async function offlineTestFetch(url? : string) : Promise<boolean> {
+    let result = true;
+
+    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+    // Given parameter can be bogus url to mock offlineness
+    if (url === undefined) {
+        url = useRuntimeConfig().public.frontendUrl;
+    }
+
+    try {
+        let response = await fetch(url);
+        if (response.status !== 200) {
+            result = false;
+        } 
+    } catch (error) {
+        console.log("Fetch attempt failed: " + error);
+        result = false;
+    }
+
+    return result
+
+}
+
 export async function connectivityChecker() {
+<<<<<<< HEAD
   // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
   while (!(await offlineTestFetch())) {
     await new Promise((r) => setTimeout(r, 5000));
   }
+=======
+    // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
+    while (! await offlineTestFetch()) {
+        await new Promise(r => setTimeout(r, 5000));
+    }
+>>>>>>> 6446d7350 (new commit)
 
   return;
 }
