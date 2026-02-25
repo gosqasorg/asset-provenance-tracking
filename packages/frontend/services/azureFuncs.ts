@@ -76,7 +76,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     if (!validateKey(deviceKey)) {
         throw new Error("Bad key provided.");
     }
-    
+
     connectivityChecker();
 
   const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -150,51 +150,6 @@ async function fetchUrl(url: string, formData?: FormData) {
       `Could not connect to the server, check your internet connection and try again`
     );
   }
-}
-
-export async function offlineTestFetch(url?: string): Promise<boolean> {
-  let result = true;
-
-  // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
-  // Given parameter can be bogus url to mock offlineness
-  if (url === undefined) {
-    url = 'https://www.google.com/';
-  }
-
-  try {
-    let response = await fetch(url);
-    if (response.status !== 200) {
-      result = false;
-    }
-  } catch (error) {
-    console.log('Fetch attempt failed: ' + error);
-    result = false;
-  }
-
-  return result;
-}
-
-export async function offlineTestFetch(url? : string) : Promise<boolean> {
-    let result = true;
-
-    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
-    // Given parameter can be bogus url to mock offlineness
-    if (url === undefined) {
-        url = useRuntimeConfig().public.frontendUrl;
-    }
-
-    try {
-        let response = await fetch(url);
-        if (response.status !== 200) {
-            result = false;
-        } 
-    } catch (error) {
-        console.log("Fetch attempt failed: " + error);
-        result = false;
-    }
-
-    return result
-
 }
 
 export async function offlineTestFetch(url? : string) : Promise<boolean> {
