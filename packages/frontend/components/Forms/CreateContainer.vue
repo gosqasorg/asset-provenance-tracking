@@ -90,6 +90,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { postProvenance, postEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
@@ -117,13 +118,26 @@ export default {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
-        onFileChange(e: Event) {
+        async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
+            if (!files || files.length === 0) return;
+
             const maxFileSize = 2097152;  // aka 2MB
 
-            if (files && files[0].size <= maxFileSize) {
+            let validFileSize = true;
+
+            for (const file of Array.from(files)) {
+                const validResults = await validateFileSize(file, maxFileSize);
+                if (!validResults.valid) {
+                    validFileSize = false;
+                    break;
+                }
+            }
+
+            if (validFileSize) {
+                // All files are valid, set this.pictures to the selected files
                 this.pictures = Array.from(files);
             } else {
                 this.$snackbar.add({
@@ -131,6 +145,7 @@ export default {
                     text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
                 })
                 target.value = '';
+                this.pictures = null;
             }
         },
         displayFields() {
@@ -214,13 +229,45 @@ export default {
                     };                
                 }
             };
+
+            if (this.createReportingKey) {
+                // Should be higher up?
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
+
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
+                    })
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
+                childrenDeviceList.push(reportingKey);
+                childrenDeviceName.push(this.name);
+            }
+
             try {
                 const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey,
+                    reportingKey: reportingKey, 
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
                     hasParent: false,
@@ -252,35 +299,7 @@ export default {
                 })
             }
 
-            if (this.createReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
-
-                try {
-                    await postProvenance(reportingKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
-                        tags: tag_set,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
-                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: 'Successfully created reporting key'
-                    })
-                } catch (error) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
-                };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
-            }
+            
         },
     }
 }

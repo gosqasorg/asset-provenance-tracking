@@ -1,6 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
+import { offlineTestFetch } from '~/services/azureFuncs'
 import { cacheRequest } from '~/services/azureFuncs';
 import * as z from 'zod';
+
+describe('Tests to see if user is online and offline', () => {
+    it('Test to see if user is online', async () => {
+        let result = await offlineTestFetch();
+        expect(result).toBe(true);
+    });
+
+    it('Test to see if user is offline', async () => {
+        let result = await offlineTestFetch('https://www.fakeurl.com');
+        expect(result).toBe(false);
+    });
+
+});
 
 describe('Tests to see if requests can be cached', () => {
     it('Test to see if returned data types are correct', async () => {
