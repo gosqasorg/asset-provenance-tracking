@@ -67,6 +67,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     @keyup.enter=""
                 />
             </div>
+            <OfflineBanner class="offline-banner">
+                You're Offline: To post your changes, reopen this window when you're online again. Don't clear your cookies
+                or close your browser, or your changes will be lost.
+            </OfflineBanner>
         </div>
 
         <div class="d-grid mt-3">
@@ -96,6 +100,7 @@ import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
+import OfflineBanner from '../OfflineBanner.vue';
 
 export default {
     data() {
@@ -384,6 +389,17 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .offline-banner {
+        background-color: #634a45;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: white;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -408,6 +424,17 @@ export default {
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  
         color: white;
+    }
+    .offline-banner {
+        background-color: #ecdae1;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: black;
     }
 }
 </style>

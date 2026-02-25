@@ -52,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     />
                 </div>
             </div>
-            <OfflineBanner :style="{color: 'white'}">You're Offline: To post your changes, reopen this window when you're online again. Don't clear your cookies
+            <OfflineBanner class="offline-banner" >You're Offline: To post your changes, reopen this window when you're online again. Don't clear your cookies
                 or close your browser, or your changes will be lost.
             </OfflineBanner>
         </div>
@@ -265,6 +265,17 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .offline-banner {
+        background-color: #634a45;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: white;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -285,6 +296,17 @@ export default {
     }
     #record-button:hover { 
         background-color: #322253;
+    }
+    .offline-banner {
+        background-color: #ecdae1;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: black;
     }
 }
 
