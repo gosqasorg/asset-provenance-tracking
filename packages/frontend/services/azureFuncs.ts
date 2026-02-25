@@ -72,18 +72,12 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
-<<<<<<< HEAD
-  if (!validateKey(deviceKey)) {
-    throw new Error('Bad key provided.');
-  }
-=======
+
     if (!validateKey(deviceKey)) {
         throw new Error("Bad key provided.");
     }
-    connectivityChecker()
->>>>>>> 6446d7350 (new commit)
 
-  connectivityChecker();
+    connectivityChecker();
 
   const baseUrl = useRuntimeConfig().public.baseUrl;
   const formData = new FormData();
