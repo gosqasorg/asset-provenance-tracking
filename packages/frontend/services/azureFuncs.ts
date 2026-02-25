@@ -15,7 +15,6 @@
 
 import { validateKey } from '~/utils/keyFuncs';
 
-// TODO: test
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
   try {
