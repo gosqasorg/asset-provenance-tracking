@@ -165,11 +165,7 @@ export async function cacheRequest(formUrl: string, formData: FormData) {
   let valuesToStore = [];
   valuesToStore.push(['formUrl', formUrl]);
 
-  for (const [key, value] of formData.entries()) {
-    // TODO: should we not store broken attachments at all, or leave this here to be fixed later?
-    // formData = [(provRecord: ...), (filename: ...), ...]
-    valuesToStore.push([key, value]);
-  }
+  valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
   // Store the request at a unique key (gosqas_offline_cache_#), add 1 to the cache_counter
   let cache_counter_string = localStorage.getItem('cache_counter');
