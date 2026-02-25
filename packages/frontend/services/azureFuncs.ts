@@ -76,8 +76,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     if (!validateKey(deviceKey)) {
         throw new Error("Bad key provided.");
     }
-    connectivityChecker()
-
+    
     connectivityChecker();
 
   const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -222,17 +221,10 @@ export async function offlineTestFetch(url? : string) : Promise<boolean> {
 }
 
 export async function connectivityChecker() {
-<<<<<<< HEAD
   // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
   while (!(await offlineTestFetch())) {
     await new Promise((r) => setTimeout(r, 5000));
   }
-=======
-    // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
-    while (! await offlineTestFetch()) {
-        await new Promise(r => setTimeout(r, 5000));
-    }
->>>>>>> 6446d7350 (new commit)
 
   return;
 }
