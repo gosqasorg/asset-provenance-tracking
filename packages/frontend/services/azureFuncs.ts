@@ -13,183 +13,256 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { validateKey } from "~/utils/keyFuncs";
+import { validateKey } from '~/utils/keyFuncs';
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
-    try {
-        if (!validateKey(deviceKey)) {
-            throw new Error("Bad key provided");
-        }
-        
-        const baseUrl = useRuntimeConfig().public.baseUrl;
-        const fullUrl = baseUrl + "/provenance/" + deviceKey;
-
-        try {
-            let response = await fetchUrl(fullUrl);
-            return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
-        } catch (error) {
-            throw error;
-        }
-    } catch (error) {
-        console.log(`Key not found: ${deviceKey}.`);
-        console.log(error);
-        throw error;
+  try {
+    if (!validateKey(deviceKey)) {
+      throw new Error('Bad key provided');
     }
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const fullUrl = baseUrl + '/provenance/' + deviceKey;
+
+    try {
+      let response = await fetchUrl(fullUrl);
+      return (await response.json()) as {
+        record: any;
+        attachments?: string[];
+        timestamp: number;
+      }[];
+    } catch (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.log(`Key not found: ${deviceKey}.`);
+    console.log(error);
+    throw error;
+  }
 }
 
 export async function getAttachment(baseUrl: string, deviceKey: string, attachmentID: string) {
-    try {
-        if (!validateKey(deviceKey)) {
-            throw new Error("Bad key provided.");
-        }
+  try {
+    if (!validateKey(deviceKey)) {
+      throw new Error('Bad key provided.');
+    }
 
-        const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-            method: "GET",
-        });
+    const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
+      method: 'GET'
+    });
 
-        const blob = await response.blob();
+    const blob = await response.blob();
 
-        // Check for the attachment name
-        let fileName = response.headers.get('Attachment-Name');
-        // If the header is not present, fetch the attachment name
-        if(!fileName) {
-            // Fetch the attachment name
-            const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
-                method: "GET",
-            });
-            fileName = await nameResponse.text();
-        }
-        return { blob, fileName };
-    } catch (error) {
-        console.error('Error occurred during getAttachment request:', error);
-        throw error; // re-throw the error if you want to handle it further up the call stack
-    }      
+    // Check for the attachment name
+    let fileName = response.headers.get('Attachment-Name');
+    // If the header is not present, fetch the attachment name
+    if (!fileName) {
+      // Fetch the attachment name
+      const nameResponse = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}/name`, {
+        method: 'GET'
+      });
+      fileName = await nameResponse.text();
+    }
+    return { blob, fileName };
+  } catch (error) {
+    console.error('Error occurred during getAttachment request:', error);
+    throw error; // re-throw the error if you want to handle it further up the call stack
+  }
 }
 
 export async function postProvenance(deviceKey: string, record: any, attachments: readonly File[]) {
-    if (!validateKey(deviceKey)) {
-        throw new Error("Bad key provided.");
-    }
+  if (!validateKey(deviceKey)) {
+    throw new Error('Bad key provided.');
+  }
 
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const formData = new FormData();
-    formData.append("provenanceRecord", JSON.stringify(record));
-    for (const blob of attachments) {
-        formData.append(blob.name, blob);
-    }
-    
-    const fullUrl = baseUrl + "/provenance/" + deviceKey;
-    try {
-        let response = await fetchUrl(fullUrl, formData);
-        return await response.json() as { record: string, attachments?: string[] };
-    } catch (error) {
-        throw error;
-    }
+  const baseUrl = useRuntimeConfig().public.baseUrl;
+  const formData = new FormData();
+  formData.append('provenanceRecord', JSON.stringify(record));
+  for (const blob of attachments) {
+    formData.append(blob.name, blob);
+  }
+
+  const fullUrl = baseUrl + '/provenance/' + deviceKey;
+
+  console.log('POST fetching... ' + fullUrl + ' ' + JSON.stringify(record));
+
+  try {
+    let response = await fetchUrl(fullUrl, formData);
+    console.log('POST getting... ' + JSON.stringify(await getProvenance(deviceKey)));
+    return (await response.json()) as { record: string; attachments?: string[] };
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function postEmail(email: string) {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const formData = new FormData();
-    formData.append("email", email);
+  const baseUrl = useRuntimeConfig().public.baseUrl;
+  const formData = new FormData();
+  formData.append('email', email);
 
-                                            // backend urls are converted to all lowercase on deployment
-    const response = await fetch(`${baseUrl}/feedbackvolunteer`, {
-        method: 'POST',
-        body: formData,
-    });
-    if (response.status != 200) {
-        throw new Error('postEmail: Failed to save email address')
-    }
+  // backend urls are converted to all lowercase on deployment
+  const response = await fetch(`${baseUrl}/feedbackvolunteer`, {
+    method: 'POST',
+    body: formData
+  });
+  if (response.status != 200) {
+    throw new Error('postEmail: Failed to save email address');
+  }
 }
 
 export async function getStatistics() {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/statistics`, {
-        method: "GET",
-    });
-    return await response.json() as { record: string, timestamp: number }[];
+  const baseUrl = useRuntimeConfig().public.baseUrl;
+  const response = await fetch(`${baseUrl}/statistics`, {
+    method: 'GET'
+  });
+  return (await response.json()) as { record: string; timestamp: number }[];
 }
 
 async function fetchUrl(url: string, formData?: FormData) {
-    let response = undefined;
+  let response = undefined;
+  console.log('fetchUrl got formData: ' + formData + ' ' + typeof formData);
 
-    for (let i = 1; i <= 3; i++) {
-        try {
-            if (typeof formData !== 'undefined') {
-                response = await fetch(`${url}`, {
-                    method: "POST",
-                    body: formData,
-                });
-            } else {
-                response = await fetch(`${url}`, {
-                    method: "GET"
-                });
-            }
+  for (let i = 1; i <= 3; i++) {
+    try {
+      // postProv: http://localhost:7071/api/provenance/HogwzUiPCiXZ4yeko6qLVP
+      // {"blobType":"deviceInitializer","deviceName":"test","description":"testing","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}
+      // emptyCache: http://localhost:7071/api/provenance/FfgJTZSsdz3LhVktasmT2M
+      // {"blobType":"deviceInitializer","deviceName":"name","description":"description","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}
+      if (typeof formData !== 'undefined') {
+        console.log('post ' + url + ' ' + formData?.get('provenanceRecord'));
+        response = await fetch(`${url}`, {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        response = await fetch(`${url}`, {
+          method: 'GET'
+        });
+      }
 
-            if (response !== undefined && response.status == 200) {
-                return response;
-            }
-        } catch (e) {
-            console.log("Fetch attempt failed: " + e);
-        }
+      if (response !== undefined && response.status == 200) {
+        return response;
+      }
+    } catch (e) {
+      console.log('Fetch attempt failed: ' + e);
     }
+  }
 
-    if (response !== undefined && response.status !== 200) {
-        console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
-        throw new Error(response.status + " " + response.statusText)
-    } else {
-        throw new Error(`Could not connect to the server, check your internet connection and try again`);
-    }
+  if (response !== undefined && response.status !== 200) {
+    console.log(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    throw new Error(response.status + ' ' + response.statusText);
+  } else {
+    throw new Error(
+      `Could not connect to the server, check your internet connection and try again`
+    );
+  }
 }
 
 export async function offlineTestFetch(url?: string): Promise<boolean> {
-    let result = true;
+  let result = true;
 
-    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
-    // Given parameter can be bogus url to mock offlineness
-    if (url === undefined) {
-        url = useRuntimeConfig().public.frontendUrl;
+  // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+  // Given parameter can be bogus url to mock offlineness
+  if (url === undefined) {
+    url = useRuntimeConfig().public.frontendUrl;
+  }
+
+  try {
+    let response = await fetch(url);
+    if (response.status !== 200) {
+      result = false;
     }
+  } catch (error) {
+    console.log('Fetch attempt failed: ' + error);
+    result = false;
+  }
 
-    try {
-        let response = await fetch(url);
-        if (response.status !== 200) {
-            result = false;
-        }
-    } catch (error) {
-        console.log("Fetch attempt failed: " + error);
-        result = false;
-    }
-
-    return result
-
+  return result;
 }
 
 export async function connectivityChecker() {
-    // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
-    while (!(await offlineTestFetch())) {
-        await new Promise((r) => setTimeout(r, 5000));
-    }
+  // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
+  while (!(await offlineTestFetch())) {
+    await new Promise((r) => setTimeout(r, 5000));
+  }
 
-    return;
+  return;
 }
 
 export async function cacheRequest(formUrl: string, formData: FormData) {
-    // Convert values to string and store them
-    let valuesToStore = [];
-    valuesToStore.push(['formUrl', formUrl]);
-    valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
+  // Convert values to string and store them
+  let valuesToStore = [];
+  valuesToStore.push(['formUrl', formUrl]);
+  valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get cache_counter and add 1 to it
-    let current_request = localStorage.getItem('cache_counter');
-    if (current_request == null) {
-        current_request = '0';
+  // Get cache_counter and add 1 to it
+  let current_request = localStorage.getItem('cache_counter');
+  if (current_request == null) {
+    current_request = '0';
+  }
+  let cache_counter = parseInt(current_request) + 1;
+  localStorage.setItem('cache_counter', cache_counter.toString());
+
+  // Store the request at a unique key (gosqas_offline_cache_#)
+  let request_name = 'gosqas_offline_cache_' + cache_counter;
+  localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+}
+
+export async function emptyCache() {
+  // Get the cache_counter
+  let string_counter = localStorage.getItem('cache_counter');
+  let remaining_requests = -1;
+  console.log('Cache Counter (should = 1) ' + string_counter);
+
+  if (string_counter != null) {
+    remaining_requests = parseInt(string_counter);
+  } else {
+    return 200; // counter doesn't exist so we haven't stored any records
+  }
+
+  remaining_requests = 1; // TODO: test plz remove
+
+  // While there's still items in the cache (cache_empty != 0 or null) try to create records
+  while (remaining_requests > 0) {
+    console.log('\nIN WHILE ' + remaining_requests);
+    try {
+      // Get the last request stored
+      let request_name = 'gosqas_offline_cache_' + remaining_requests;
+      let request = JSON.parse(localStorage.getItem(request_name));
+      let fullUrl = request[0][1];
+      let record = request[1][1];
+
+      const formData = new FormData();
+      formData.append('provenanceRecord', record);
+
+      // TODO: test hardcoding record string?
+      // formData.append('provenanceRecord', '{"blobType":"deviceInitializer","deviceName":"empty_test","description":"testing emptyCache","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}');
+
+      // console.log("request: " + request)
+      console.log('fetching... ' + fullUrl + ' record... ' + record + ' ' + typeof formData);
+      // console.log("parse/string... " + JSON.stringify(JSON.parse(request[1][1])))
+      // console.log("Record in formdata... " + formData.get("provenanceRecord"))
+
+      // Fulfill the request
+      let response = await fetchUrl(fullUrl, formData);
+      console.log('response..? ' + response.status);
+
+      // TODO: Remove request from the cache, make sure this only triggers on success (try should do that but confirm)
+      // TODO: Make sure counter is updated and request is removed
+      // Remove request from cache and update counter
+      remaining_requests -= 1;
+      localStorage.removeItem(request_name);
+      localStorage.setItem('cache_counter', remaining_requests.toString());
+    } catch (error) {
+      console.log('Record from localStorage failed to create: ' + error);
+      // throw error  // TODO: return error status code
+      return 404;
     }
-    let cache_counter = parseInt(current_request) + 1;
-    localStorage.setItem('cache_counter', cache_counter.toString());
+  }
 
-    // Store the request at a unique key (gosqas_offline_cache_#)
-    let request_name = 'gosqas_offline_cache_' + cache_counter;
-    localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+  console.log('\nOUT OF WHILE');
+
+  // Return 200 once out of while loop
+  return 200;
 }
