@@ -704,7 +704,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         const body = await request.json() as any;
         const email = body.email;
         const recordKey = body.recordKey;
-        const tags = body.tags;
+        const tags: string[] = [];
 
         if (!email || !recordKey){
             return {
@@ -713,11 +713,11 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
         }
 
-        console.log("Received signup for " + email)
-        return {
-            jsonBody: {message: "Success"},
-            status: 200
-        } 
+        await containerClient.createIfNotExists();
+        const response = await signupForNotifications(recordKey, email, tags);
+
+        console.log("Received signup for " + email);
+        return response;
         
     }catch(error){
         console.error(error.message);
@@ -726,7 +726,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             status: 500,
 
         }
-
     }
 }
 
@@ -746,30 +745,82 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: setup data
-    const datum = {
-        'key': {
-            'email': email,
-            'tags': tags
-        }
-    }    
-    const data = JSON.stringify(datum)
+    // const datum = {
+    //     'key': {
+    //         'email': email,
+    //         'tags': tags
+    //     }
+    // }    
+    // const datumJson = JSON.stringify(datum)
 
     // 2 Setup blob name & id
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
+    const blobName = `${type}/${deviceID}`
+
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) {
+        return { jsonBody: { message: "Ignored empty email" }, status: 200 };
+    }
+
+    // 3 Update blob content：read existing content, merge email list, write back
+    const exists = await blobClient.exists();
+
+    let existingEmails: string[] = [];
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            const emailsFromBlob = parsed?.email;
+            if (Array.isArray(emailsFromBlob)) {
+                existingEmails = emailsFromBlob.filter(email => {
+                    return typeof email === "string";
+                });
+            }
+        }
+    }
+
+    const emailSet = new Set(
+        existingEmails
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const sizeBeforeAdding = emailSet.size;
+    emailSet.add(normalized);
+
+    if (exists && emailSet.size === sizeBeforeAdding) {
+        return {
+        jsonBody: { message: "Success", name: blobName },
+        status: 200,
+        };
+    }
+
+    const payloadObj = { email: Array.from(emailSet), tags};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
 
     try {
         // Note: do not reformat; leave as commented
         let status = (await containerClient.uploadBlockBlob(
                         blobName,   // 1. Blob name
                         data,       // 2. body (can be a string)
-                        data.length // 3. length of body in bytes
+                        data.length, // 3. length of body in bytes (or Buffer.byteLength(data))
                         // 4. optional options
                         // nothing for now
-                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+                        // we need to set BlockBlobUploadOptions to set usage tier
+                        uploadOptions
         )).response._response.status
 
-        if (status < 300 || status >= 100) {
+        if (status < 300 && status >= 200) {
             return {
                 jsonBody: { message: "Success",
                             name: blobName }, 
@@ -781,9 +832,10 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
             throw Error('Failed to store email')
         }
     } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
         return {
-            jsonBody: {message: error.message},
-            status: status,
+            jsonBody: {message: msg},
+            status: 500,
         }
     }
 }
@@ -792,7 +844,7 @@ async function retrieveNotifEmails(key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
     const deviceID = await calculateDeviceID(key);
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
+    const blobName = `${type}/${deviceID}`
 
     try {
         const blobClient = containerClient.getBlobClient(blobName);
