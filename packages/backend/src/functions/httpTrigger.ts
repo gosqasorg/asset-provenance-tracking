@@ -12,6 +12,9 @@ import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
 //  * Azure Functions Core Tools: https://github.com/Azure/azure-functions-core-tools/blob/v4.x/README.md
 
+// More useful docs:
+// * https://learn.microsoft.com/en-us/javascript/api/@azure/functions/httpresponseinit?view=azure-node-latest
+
 // Once you've logged into Azure via 'az login' to an Azure account w/ PubInv permissions,
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
@@ -319,6 +322,33 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
 }
 
 
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isReportingKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
+    }
+}
+
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+
 /*=================  Endpoints  =====================*/
 
 /* ----- API Endpoints Section 1/2: Functions ----- */
@@ -517,32 +547,6 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
     }
 }
 
-export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),
-        description: z.string(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isReportingKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        console.log("Format of JSON provided was invalid.")
-        return false;
-    }
-}
-
-export function deduplicateKeys(keys: string[]): string[] {
-    return Array.from(new Set(keys))
-}
-
 // Annotate: Send new record's tags to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
@@ -599,10 +603,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 500
         }
     }
- }
+}
  
  // Recall: Pin and send new record entry to all children
- export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
 
     try {
@@ -657,7 +661,39 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 500
         }
     }
- }
+}
+
+
+import { sendEmail } from './sendEmail.js';
+
+
+export async function emailExperiment0(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const from: string = 'DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net'
+    const to: string = request.params.sendTo
+    const subject: string = 'This is a test of the Azure email system'
+    const body: string = 'Email body'
+    const displayName: string = from
+
+    try {
+        const emailResponse = await sendEmail(from, to, subject, body, displayName)
+        return {
+            status: 200,
+            jsonBody: emailResponse,
+        }
+    } catch(e) {
+        return {
+            status: 500
+        }
+    }
+
+    /* 
+    const emailResponse = await sendEmail(from, to, subject, body, displayName)
+
+    return { status: 200 }
+    */
+}
+
+
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
@@ -870,6 +906,12 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.get("emailExperiment0", {
+    authLevel: 'anonymous',
+    route: 'emailExperiment0/{sendTo}',
+    handler: emailExperiment0,
+})
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',

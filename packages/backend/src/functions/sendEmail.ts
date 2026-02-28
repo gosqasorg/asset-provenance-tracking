@@ -1,4 +1,5 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
+//https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/communication/communication-email/README.md
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 const emailClient = new EmailClient(connectionString);
@@ -15,7 +16,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
       senderAddress: from_address,
       content: {
         subject: subject,
-        plainText: plainText,
+        plainText: plainText,  // The body of the email
       },
       recipients: {
         to: [
