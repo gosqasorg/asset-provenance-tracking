@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     multiple />
             </div>
             <h5>Add Tags (optional)</h5>
-            <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags"
+            <ProvenanceTagInput id="provenanceTag" v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"
                 placeholder="Record Tag" />
             <div>
                 <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
@@ -164,15 +164,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false
         },
         async trackingForm() {
-            const annotateCheckBox = document.getElementById("annotate-all");
-            const recallCheckBox = document.getElementById("recall-all");
 
-            if (Object.is(annotateCheckBox, null) || Object.is(recallCheckBox, null)) {
+            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
-            } else if (recallCheckBox.checked == true) {
+            } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (annotateCheckBox.checked == true) {
+            } else if (this.annotateAll) {
                 this.annotatePopUp = true
             } else {
                 this.submitRecord()
