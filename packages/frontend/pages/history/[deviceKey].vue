@@ -83,7 +83,7 @@ const recordHasParent = hasParent(provenance);
             class="left-col">
 
             <!-- Offline Banner Top-->
-            <OfflineBanner class="offline-banner" style="align-items: center; display: flex">
+            <OfflineBanner v-if="displayOfflineBanner" class="offline-banner-top" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
                 <div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
@@ -204,6 +204,8 @@ const recordHasParent = hasParent(provenance);
 import { getProvenance } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
+import OfflineBanner from '~/components/OfflineBanner.vue';
+import { displayOfflineBanner } from '~/services/azureFuncs';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -689,7 +691,7 @@ a:visited {
     background-color: white;
     color: black;
   }
-  .offline-banner {
+  .offline-banner-top {
     background-color: #3e231c;
     border-color: #fe9c9e;
     border-width: 2px;
@@ -762,7 +764,7 @@ a:visited {
   .download-btn:hover {
     background-color: #e6f6ff !important;
   }
-  .offline-banner {
+  .offline-banner-top {
     background-color: #ffe3e2;
     border-color: #fa9e9f;
     border-width: 2px;
