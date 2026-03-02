@@ -15,6 +15,9 @@
 
 import { validateKey } from '~/utils/keyFuncs';
 
+// Global variable used to control the display of offline banner on create pages
+export var displayOfflineBanner = false;
+
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
   try {
@@ -165,10 +168,12 @@ export async function offlineTestFetch(url? : string) : Promise<boolean> {
         let response = await fetch(url);
         if (response.status !== 200) {
             result = false;
+            displayOfflineBanner = true;
         } 
     } catch (error) {
         console.log("Fetch attempt failed: " + error);
         result = false;
+        displayOfflineBanner = true;
     }
 
     return result
@@ -181,5 +186,7 @@ export async function connectivityChecker() {
     await new Promise((r) => setTimeout(r, 5000));
   }
 
+  displayOfflineBanner = false;
+  
   return;
 }

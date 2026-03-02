@@ -69,7 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <!-- Offline Banner -->
-            <OfflineBanner class="offline-banner" style="align-items: center; display: flex">
+            <OfflineBanner v-if="displayOfflineBanner" class="offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
                 <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies
