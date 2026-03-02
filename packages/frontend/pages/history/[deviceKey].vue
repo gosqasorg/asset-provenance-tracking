@@ -279,7 +279,9 @@ export default {
       hasReportingKey: false,
       childKeys: [] as string[],
       _recordKey: '',
-      valid: false
+      valid: false,
+      customText: '',
+      showTextInput: false
     };
   },
   async mounted() {
@@ -323,13 +325,13 @@ export default {
       const qrCodeComponent = this.$refs.qrcode_component as any;
       qrCodeComponent?.downloadQRCode();
     },
-    downloadQRCodeWithText() {
+    downloadQRCodeWithText(customText?: string) {
       const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.downloadQRCodeWithText();
+      qrCodeComponent?.downloadQRCodeWithText(customText);
     },
-    showWithText() {
+    showWithText(customText?: string) {
       const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.showWithText();
+      qrCodeComponent?.showWithText(customText);
     },
     resetToDefaultImage() {
       const qrCodeComponent = this.$refs.qrcode_component as any;
@@ -442,7 +444,16 @@ export default {
   transform: scale(0.775);
   margin: -20px;
   margin-left: -40px;
-  height: min-content;
+  height: 400px;
+  min-height: 400px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.qr-code-wrapper > * {
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .record-description {

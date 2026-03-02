@@ -76,10 +76,13 @@ export default {
     }
   },
   methods: {
-    showWithText() {
-      // Check if temp canvas already exists, if so, don't create another
+    showWithText(customText?: string) {
+      // Check if temp canvas already exists, if so, remove it to update with new text
+      // Was previous adding multiple lines of text
       const existingTempCanvas = document.getElementById('temp-canvas-with-text');
-      if (existingTempCanvas) return;
+      if (existingTempCanvas) {
+        existingTempCanvas.remove();
+      }
       // Get the QR code canvas
       const qrCanvas = this.$refs.qrCode.querySelector('canvas');
 
@@ -90,26 +93,32 @@ export default {
       finalCanvas.id = 'temp-canvas-with-text'; // get id of canvas to keep track of it
       const ctx = finalCanvas.getContext('2d');
 
-      // Set dimensions (add space for text)
-      const textHeight = 60;
+      // Set dimensions
+      const textHeight = 50;
+      const padding = 5; // Padding between text and QR code
+      const qrScale = 0.9; // Scale down QR code when text is shown
+      const scaledQrHeight = qrCanvas.height * qrScale;
+      const scaledQrWidth = qrCanvas.width * qrScale;
+
       finalCanvas.width = qrCanvas.width;
-      finalCanvas.height = qrCanvas.height + textHeight;
+      finalCanvas.height = textHeight + padding + scaledQrHeight;
 
       // Fill background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
       // Add text
-      let text = 'QR Text';
+      let text = customText || 'QR Text';
       let limitedText = text.substring(0, 32); // limit text to 32 characters
 
       ctx.fillStyle = '#000000';
-      ctx.font = 'bold 24px Arial, sans-serif';
+      ctx.font = 'bold 20px Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(limitedText, finalCanvas.width / 2, 40);
+      ctx.fillText(limitedText, finalCanvas.width / 2, 30);
 
-      // Draw the QR code below the text
-      ctx.drawImage(qrCanvas, 0, textHeight);
+      // Draws the QR code below the text with padding and scaled down
+      const qrX = (finalCanvas.width - scaledQrWidth) / 2; // Center horizontally
+      ctx.drawImage(qrCanvas, qrX, textHeight + padding, scaledQrWidth, scaledQrHeight);
 
       // Hide the original canvas
       qrCanvas.style.display = 'none';
@@ -137,7 +146,7 @@ export default {
         extension: 'png'
       });
     },
-    downloadQRCodeWithText() {
+    downloadQRCodeWithText(customText?: string) {
       setTimeout(() => {
         // Get the QR code canvas
         const qrCanvas = this.$refs.qrCode.querySelector('canvas');
@@ -146,31 +155,33 @@ export default {
         const finalCanvas = document.createElement('canvas');
         const ctx = finalCanvas.getContext('2d');
 
-        // Set dimensions (add space for text)
-        const textHeight = 60;
+        // Set dimensions
+        const textHeight = 50;
+        const padding = 5; // Padding between text and QR code
+        const qrScale = 0.9; // Scale down QR code when text is shown
+        const scaledQrHeight = qrCanvas.height * qrScale;
+        const scaledQrWidth = qrCanvas.width * qrScale;
+
         finalCanvas.width = qrCanvas.width;
-        finalCanvas.height = qrCanvas.height + textHeight;
+        finalCanvas.height = textHeight + padding + scaledQrHeight;
 
         // Fill background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
         // Add text
-        let text = 'QR Text';
+        let text = customText || 'QR Text';
         let limitedText = text.substring(0, 32); // limit text to 32 characters
 
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold 24px Arial, sans-serif';
+        ctx.font = 'bold 20px Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(limitedText, finalCanvas.width / 2, 40);
+        ctx.fillText(limitedText, finalCanvas.width / 2, 30);
 
-        // Draw the QR code below the text
-        ctx.drawImage(qrCanvas, 0, textHeight);
+        // Draws the QR code below the text with padding and scaled down
+        const qrX = (finalCanvas.width - scaledQrWidth) / 2; // Center horizontally
+        ctx.drawImage(qrCanvas, qrX, textHeight + padding, scaledQrWidth, scaledQrHeight);
 
-        qrCanvas.remove();
-
-        // Append the final canvas with text
-        this.$refs.qrCode.appendChild(finalCanvas);
         // Download the combined image
         finalCanvas.toBlob((blob) => {
           const url = URL.createObjectURL(blob);

@@ -172,13 +172,13 @@ export default {
       const qrCodeComponent = this.$refs.qrcode_component as any;
       qrCodeComponent?.downloadQRCode();
     },
-    downloadQRCodeWithText() {
+    downloadQRCodeWithText(customText?: string) {
       const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.downloadQRCodeWithText();
+      qrCodeComponent?.downloadQRCodeWithText(customText);
     },
-    showWithText() {
+    showWithText(customText?: string) {
       const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.showWithText();
+      qrCodeComponent?.showWithText(customText);
     },
     resetToDefaultImage() {
       const qrCodeComponent = this.$refs.qrcode_component as any;

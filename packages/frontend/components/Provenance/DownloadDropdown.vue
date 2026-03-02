@@ -70,13 +70,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <a @click="downloadQRImage()" class="drop-text item-link">Download Image</a>
         </li>
         <li class="dropdown-item" style="padding: 7px">
-          <a
-            @click="downloadQRImageWithText()"
-            class="drop-text item-link"
-            @mouseenter="showWithText"
-            @mouseleave="resetToDefault"
-            >Download Image with Text</a
-          >
+          <div class="text-input-wrapper">
+            <input
+              v-model="customText"
+              @input="handleTextInput"
+              @focus="showWithTextPreview"
+              @blur="resetToDefault"
+              type="text"
+              placeholder="QR Text"
+              maxlength="32"
+              class="custom-text-input"
+            />
+            <a
+              @click="downloadQRImageWithText()"
+              class="drop-text item-link download-link"
+              :class="{ disabled: !customText.trim() }"
+              >Download Image with Text</a
+            >
+          </div>
         </li>
       </ul>
     </div>
@@ -142,7 +153,9 @@ export default {
   data() {
     return {
       downloadDropdown: false,
-      dropdownVisible: false
+      dropdownVisible: false,
+      customText: '', // Custom text
+      previewTimeout: null // timeout for redrawing canvas with custom text
     };
   },
   methods: {
@@ -164,16 +177,38 @@ export default {
       this.downloadQRCodeMethod();
     },
     downloadQRImageWithText() {
-      this.downloadQRCodeWithTextMethod();
+      this.downloadQRCodeWithTextMethod(this.customText);
     },
     isNumeric(value: any) {
       return /^\d+$/.test(value);
     },
-    showWithText() {
-      this.showWithTextMethod();
-    },
     resetToDefault() {
+      if (document.activeElement?.classList.contains('custom-text-input')) {
+        return; // Don't reset while user is typing
+      }
       this.resetToDefaultMethod();
+    },
+    handleTextInput() {
+      // Delays updates to preview to avoid too many canvas redraws
+      // when handling text input
+      if (this.previewTimeout) {
+        clearTimeout(this.previewTimeout);
+      }
+
+      this.previewTimeout = setTimeout(() => {
+        if (this.customText.trim()) {
+          this.showWithTextMethod(this.customText);
+        } else {
+          this.resetToDefaultMethod();
+        }
+      }, 100);
+    },
+    showWithTextPreview() {
+      if (this.customText.trim()) {
+        this.showWithTextMethod(this.customText);
+      } else {
+        this.showWithTextMethod('QR Text');
+      }
     }
   }
 };
@@ -221,6 +256,17 @@ export default {
 
 .download-container {
   width: 100%;
+}
+
+.text-input-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Switches to mobile sizing */
