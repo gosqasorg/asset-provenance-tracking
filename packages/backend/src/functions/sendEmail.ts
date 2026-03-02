@@ -12,7 +12,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
   const POLLER_WAIT_TIME = 10
   try {
     const message = {
-      senderAddress: from_address,
+      senderAddress: from_address, 
       content: {
         subject: subject,
         plainText: plainText,

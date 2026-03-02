@@ -454,42 +454,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     };
 };
 
-export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try {
-        const tableUrl = accountName === "devstoreaccount1"
-            ? `http://127.0.0.1:10002/devstoreaccount1`
-            : `https://${accountName}.table.core.windows.net`;
-
-        let table = 'UserFeedbackEmails'
-        const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
-        await tableClient.createTable();  // Create if not exist, no error if it does
-
-        const formData = await request.formData();
-        let email; if (typeof (email = formData.get('email')) !== 'string') {
-            throw new Error('postEmail: Unexpected non-string value received')
-            return { status: 404 };
-        }
-
-        const entity = {
-            partitionKey: 'UserFeedbackVolunteers',
-            rowKey: email,
-        }
-
-        const response = await tableClient.createEntity(entity);
-        console.log(response)
-
-        console.log('postEmail: Added feedback volunteer contact info')
-        return {
-            status: 200,
-            body: "Created",
-            headers: { "Content-Type": "text/plain" }
-        }
-    } catch(error) {
-        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
-        // Deliberate lack of error message to client
-    }
-}
+// Moved Post Email To Email Verification Zone
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
@@ -659,95 +624,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
 
-export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try{
-        const body = await request.json() as any;
-        const email = body.email;
-        const recordKey = body.recordKey;
-        const tags = body.tags;
-
-        if (!email || !recordKey){
-            return {
-                jsonBody: {error: "Error: email and record key required"},
-                status: 400
-            }
-        }
-
-        console.log("Received signup for " + email)
-        return {
-            jsonBody: {message: "Success"},
-            status: 200
-        } 
-        
-    }catch(error){
-        console.error(error.message);
-        return {
-            jsonBody: {message: "Internal Server Error"},
-            status: 500,
-
-        }
-
-    }
-}
-
-async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
-    /*
-       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
-       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
-
-       Master docs here:
-       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-
-       * The BlockBlobUploadOptions Interface is where storage tier is set. 
-         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
-    */ 
-
-    // 0: setup id
-    const deviceID = await calculateDeviceID(deviceKey);
-
-    // 1: setup data
-    const datum = {
-        'key': {
-            'email': email,
-            'tags': tags
-        }
-    }    
-    const data = JSON.stringify(datum)
-
-    // 2 Setup blob name & id
-    const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
-
-    try {
-        // Note: do not reformat; leave as commented
-        let status = (await containerClient.uploadBlockBlob(
-                        blobName,   // 1. Blob name
-                        data,       // 2. body (can be a string)
-                        data.length // 3. length of body in bytes
-                        // 4. optional options
-                        // nothing for now
-                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
-        )).response._response.status
-
-        if (status < 300 || status >= 100) {
-            return {
-                jsonBody: { message: "Success",
-                            name: blobName }, 
-                status: 200
-            }
-            // TODO: have frontend display in snackbar for status 4xx
-            // This means nothing for now since we're not validating that what we're being handed is an email. 
-        } else {
-            throw Error('Failed to store email')
-        }
-    } catch(error) {
-        return {
-            jsonBody: {message: error.message},
-            status: status,
-        }
-    }
-}
-
 async function retrieveNotifEmails(key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
     const deviceID = await calculateDeviceID(key);
@@ -813,6 +689,140 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         return {
             jsonBody: {message: error.message},
             status: 500,
+        }
+    }
+}
+
+/* -----Email Verification Functions Zone ----- */
+export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let table = 'UserFeedbackEmails'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
+        const formData = await request.formData();
+        let email; if (typeof (email = formData.get('email')) !== 'string') {
+            throw new Error('postEmail: Unexpected non-string value received')
+            return { status: 404 };
+        }
+
+        const entity = {
+            partitionKey: 'UserFeedbackVolunteers',
+            rowKey: email,
+        }
+
+        const response = await tableClient.createEntity(entity);
+        console.log(response)
+
+        console.log('postEmail: Added feedback volunteer contact info')
+        return {
+            status: 200,
+            body: "Created",
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+        // Deliberate lack of error message to client
+    }
+}
+
+// TODO: flesh out postNotificationEmail into Send VerificationCode
+// need to gen a code
+// have a table to hold pending verifications (email, code, deviceKey, tags)
+export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        const body = await request.json() as any;
+        const email = body.email;
+        const recordKey = body.recordKey;
+        const tags = body.tags;
+
+        if (!email || !recordKey){
+            return {
+                jsonBody: {error: "Error: email and record key required"},
+                status: 400
+            }
+        }
+
+        console.log("Received signup for " + email)
+        return {
+            jsonBody: {message: "Success"},
+            status: 200
+        } 
+        
+    }catch(error){
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Server Error"},
+            status: 500,
+
+        }
+
+    }
+}
+
+// TODO: we need a verifyCode Function
+// parse email + code from body
+// setup TableClient for PendingVerifications
+
+async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
+    /*
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
+
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+       * The BlockBlobUploadOptions Interface is where storage tier is set. 
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    */ 
+
+    // 0: setup id
+    const deviceID = await calculateDeviceID(deviceKey);
+
+    // 1: setup data
+    const datum = {
+        'key': {
+            'email': email,
+            'tags': tags
+        }
+    }    
+    const data = JSON.stringify(datum)
+
+    // 2 Setup blob name & id
+    const type = 'notificationSignups'
+    const blobName = `${type}/${deviceID}/`
+
+    try {
+        // Note: do not reformat; leave as commented
+        let status = (await containerClient.uploadBlockBlob(
+                        blobName,   // 1. Blob name
+                        data,       // 2. body (can be a string)
+                        data.length // 3. length of body in bytes
+                        // 4. optional options
+                        // nothing for now
+                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+        )).response._response.status
+
+        if (status < 300 || status >= 100) {
+            return {
+                jsonBody: { message: "Success",
+                            name: blobName }, 
+                status: 200
+            }
+            // TODO: have frontend display in snackbar for status 4xx
+            // This means nothing for now since we're not validating that what we're being handed is an email. 
+        } else {
+            throw Error('Failed to store email')
+        }
+    } catch(error) {
+        return {
+            jsonBody: {message: error.message},
+            status: status,
         }
     }
 }
