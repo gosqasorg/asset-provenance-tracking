@@ -13,6 +13,8 @@ servers:
 paths:
   /getNewDeviceKey:
     get:
+      tags:
+        - GDT API
       summary: GET /getNewDeviceKey
       operationId: getNewDeviceKey
       responses:
@@ -24,6 +26,54 @@ paths:
                 type: object
         '404':
           description: Not Found
+  /createGroup:
+    post:
+      tags:
+        - GDT API
+      summary: Create a new group
+      description: This endpoint creates a group and returns a unique group URL.
+      operationId: createGroup
+      requestBody:
+        description: Group creation parameters
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - deviceName
+                - description
+              properties:
+                deviceName:
+                  type: string
+                  example: "Group Title"
+                description:
+                  type: string
+                  example: "Group Description"
+                number_of_children:
+                  type: integer
+                  example: 5
+      responses:
+        '200':
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groupUrl:
+                    type: string
+                    example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
+        '400':
+          description: Bad Request (referenced in your TODO)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid input parameters"
 
 
 
