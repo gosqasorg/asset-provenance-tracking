@@ -65,7 +65,7 @@ paths:
                     type: string
                     example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
         '400':
-          description: Bad Request (referenced in your TODO)
+          description: Bad Request
           content:
             application/json:
               schema:
