@@ -83,7 +83,7 @@ const recordHasParent = hasParent(provenance);
             class="left-col">
 
             <!-- Offline Banner Top-->
-            <OfflineBanner v-if="displayOfflineBanner" class="offline-banner-top" style="align-items: center; display: flex">
+            <OfflineBanner v-if="displayBanner" class="offline-banner-top" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
                 <div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
@@ -241,6 +241,16 @@ export default {
       _recordKey: "",
       valid: false
     }
+  },
+  computed: {
+    displayBanner() {
+        if (displayOfflineBanner === true) {
+            return true;
+        }
+        else{
+            return false;
+        }
+        },
   },
   async mounted() {
     try {
