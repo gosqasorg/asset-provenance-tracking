@@ -817,7 +817,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 // parse email + code from body
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfies
-export async function VerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         // get email and code
 
@@ -923,6 +923,12 @@ app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
+})
+
+app.post("postVerifyCode", {
+    authLevel: 'anonymous',
+    route: 'verifyCode',
+    handler: postVerifyCode
 })
 
 app.get("getProvenance", {

@@ -1,7 +1,20 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
-const emailClient = new EmailClient(connectionString);
+
+// Lazy init to avoid crash at module load if connection string is missing
+let emailClient: EmailClient | null = null;
+
+// Create EmailClient only when needed, not at import time
+function getEmailClient(): EmailClient {
+  if (!emailClient) {
+    if (!connectionString) {
+      throw new Error("COMMUNICATION_SERVICES_CONNECTION_STRING not configured");
+    }
+    emailClient = new EmailClient(connectionString);
+  }
+  return emailClient;
+}
 
 // Send an email using the Azure Communication Services Email SDK
 export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
@@ -12,7 +25,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
   const POLLER_WAIT_TIME = 10
   try {
     const message = {
-      senderAddress: from_address, 
+      senderAddress: from_address,
       content: {
         subject: subject,
         plainText: plainText,
@@ -28,7 +41,9 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     };
 
     console.log("Sending email...", message);
-    const poller = await emailClient.beginSend(message);
+    // Finally using emailClient - getting error because of initialization order
+    const client = getEmailClient();
+    const poller = await client.beginSend(message);
 
     if (!poller.getOperationState().isStarted) {
       throw "Poller was not started."
