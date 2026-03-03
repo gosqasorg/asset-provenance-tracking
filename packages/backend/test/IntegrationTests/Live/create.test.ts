@@ -491,7 +491,7 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 	
 	// Group Creation test with 2 child keys + annotation
-	it("Group Creation - Annotating Child Records", async () => {
+	it.skipIf(!process.env.COMMUNICATION_SERVICES_CONNECTION_STRING)("Group Creation - Annotating Child Records", async () => {
 
 		// Create new group and children keys
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
