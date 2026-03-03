@@ -736,6 +736,8 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 // have a table to hold pending verifications (email, code, deviceKey, tags)
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
+
+        // parse email, recordKey and tags from body
         const body = await request.json() as any;
         const email = body.email;
         const recordKey = body.recordKey;
@@ -749,6 +751,26 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         }
 
         console.log("Received signup for " + email)
+
+        // Pending Verifications Table (copied from postEmail - will refactor later)
+        // TODO: Refactor Table creation
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let table = 'PendingEmailVerifications'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
+        // generate code
+
+        // store email, code, rec and tags in table
+
+        // sendEmail() with the code attached
+
+        // Return Success (for now, but eventually we will want to return errors if email is malformed, etc)
+        // TODO: Flesh out error handling for invalid emails.
         return {
             jsonBody: {message: "Success"},
             status: 200
