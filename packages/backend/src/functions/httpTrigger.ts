@@ -735,6 +735,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 // TODO: flesh out postNotificationEmail into Send VerificationCode
 // need to gen a code
 // have a table to hold pending verifications (email, code, deviceKey, tags)
+// TODO: Look for exisiting implementations
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
 
@@ -815,7 +816,40 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 // TODO: we need a verifyCode Function
 // parse email + code from body
 // setup TableClient for PendingVerifications
+// on success should call signupForNotifications - cause email is now verfies
+export async function VerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        // get email and code
 
+        // get the pendingemailver table
+
+        // grab the entity by email - try catch ?
+
+        // check expiry - then check code
+
+        // return failure if any 
+
+        // on succes, delete pending entity email
+        // and call signupfornotifications (with verified users :))
+
+
+        return {
+            jsonBody: {message: "Success"},
+            status: 200
+        }
+
+    } catch(error) {
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Error"},
+            status: 500,
+        }
+    }
+} 
+
+
+
+// Not currently called anywhere...might be able to condense?
 async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
@@ -873,6 +907,9 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
         }
     }
 }
+
+
+// TODO: Make something like emailSignupTestEndpoint 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
