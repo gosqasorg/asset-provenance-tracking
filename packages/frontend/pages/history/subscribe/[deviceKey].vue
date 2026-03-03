@@ -17,18 +17,23 @@
         <!-- code input -->
         <!-- verify btn  -->
         <!-- resend code btn -->
-         <div v-else-if="step === 'code'">Code Verification</div>
+         <div v-else-if="step === 'code'">
+            <p style="color: azure;">Code Verification</p>
+        </div>
     
         
-
         <!-- TODO: part 3 success -->
         <!-- confirmation msg -->
-        <div v-else-if="step === 'success'">Success!</div>
+        <div v-else-if="step === 'success'">
+            <p style="color: azure;">Success!</p>
+        </div>
 
         <!-- Maybe no fail? security issue -->
 
         <!-- Temp Test Button to make sure state changes -->
         <button @click="nextStep('code')" v-if="step === 'email'">Next</button>
+        <button @click="nextStep('success')" v-if="step === 'code'">Next</button>
+        <button @click="nextStep('email')" v-if="step === 'success'">Next</button>
 
     </div>
 </template>

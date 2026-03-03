@@ -2,10 +2,10 @@ import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 
-// Lazy init to avoid crash at module load if connection string is missing
+// lazy init to avoid crash at module load if connection string is missing
 let emailClient: EmailClient | null = null;
 
-// Create EmailClient only when needed, not at import time
+// create EmailClient only when needed, not at import time
 function getEmailClient(): EmailClient {
   if (!emailClient) {
     if (!connectionString) {
@@ -16,7 +16,7 @@ function getEmailClient(): EmailClient {
   return emailClient;
 }
 
-// Send an email using the Azure Communication Services Email SDK
+// send an email using the Azure Communication Services Email SDK
 export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
   if (!from_address || !to_address || !subject || !plainText || !displayName) {
     throw "Missing required parameter(s).";
@@ -41,7 +41,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     };
 
     console.log("Sending email...", message);
-    // Finally using emailClient - getting error because of initialization order
+    // getting error because of initialization order
     const client = getEmailClient();
     const poller = await client.beginSend(message);
 
