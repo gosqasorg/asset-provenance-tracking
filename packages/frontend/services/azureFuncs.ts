@@ -81,8 +81,6 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
 
-    console.log("POST fetching... " + fullUrl + " " + JSON.stringify(record))
-
     try {
         let response = await fetchUrl(fullUrl, formData);
         console.log("POST getting... " + JSON.stringify(await getProvenance(deviceKey)));
@@ -120,12 +118,7 @@ async function fetchUrl(url: string, formData?: FormData) {
 
     for (let i = 1; i <= 3; i++) {
         try {
-            // postProv: http://localhost:7071/api/provenance/HogwzUiPCiXZ4yeko6qLVP
-            // {"blobType":"deviceInitializer","deviceName":"test","description":"testing","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}
-            // emptyCache: http://localhost:7071/api/provenance/FfgJTZSsdz3LhVktasmT2M
-            // {"blobType":"deviceInitializer","deviceName":"name","description":"description","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}
             if (typeof formData !== 'undefined') {
-                console.log("post " + url + " " + formData?.get("provenanceRecord"))
                 response = await fetch(`${url}`, {
                     method: "POST",
                     body: formData,
@@ -203,11 +196,10 @@ export async function cacheRequest(formUrl: string, formData: FormData) {
     localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
 
-export async function emptyCache() {
-    // Get the cache_counter
+export async function emptyCache(test?: boolean) {
+    // See how many requests are stored
     let string_counter = localStorage.getItem('cache_counter');
     let remaining_requests = -1
-    console.log("Cache Counter (should = 1) " + string_counter)
 
     if (string_counter != null) {
         remaining_requests = parseInt(string_counter)
@@ -215,11 +207,8 @@ export async function emptyCache() {
         return 200;  // counter doesn't exist so we haven't stored any records
     }
 
-    remaining_requests = 1 // TODO: test plz remove
-
     // While there's still items in the cache (cache_empty != 0 or null) try to create records
     while (remaining_requests > 0) {
-        console.log("\nIN WHILE " + remaining_requests)
         try {
             // Get the last request stored
             let request_name = 'gosqas_offline_cache_' + remaining_requests;
@@ -227,36 +216,40 @@ export async function emptyCache() {
             let fullUrl = request[0][1];
             let record = request[1][1];
 
-            const formData = new FormData();
-            formData.append('provenanceRecord', record);
+            // Post the request
+            // Note: Test file cannot use formData, so if it's a test use search parameters instead
+            if (test) {
+                const paramFormData = new URLSearchParams();
+                paramFormData.append("provenanceRecord", record);
 
-            // TODO: test hardcoding record string?
-            // formData.append('provenanceRecord', '{"blobType":"deviceInitializer","deviceName":"empty_test","description":"testing emptyCache","tags":[],"children_key":"","hasParent":false,"isReportingKey":false}');
+                const response = await fetch(`${fullUrl}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: paramFormData.toString(),
+                });
+                if (response.status != 200) { throw new Error(`Failed with error code ${response.status}`) }
+            } else {
+                // TODO: call this function from browser and make sure this case works! (then remove print statments)
+                const formData = new FormData();
+                formData.append('provenanceRecord', record);
 
-            // console.log("request: " + request)
-            console.log("fetching... " + fullUrl + " record... " + record + " " + typeof formData)
-            // console.log("parse/string... " + JSON.stringify(JSON.parse(request[1][1])))
-            // console.log("Record in formdata... " + formData.get("provenanceRecord"))
+                console.log("browser fetching... " + fullUrl + " record... " + record + " " + typeof formData)
 
-            // Fulfill the request
-            let response = await fetchUrl(fullUrl, formData)
-            console.log("response..? " + response.status)
+                // Fulfill the request
+                let response = await fetchUrl(fullUrl, formData)
+                console.log("response..? " + response.status)
+                if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
+            }
 
-            // TODO: Remove request from the cache, make sure this only triggers on success (try should do that but confirm)
-            // TODO: Make sure counter is updated and request is removed
             // Remove request from cache and update counter
             remaining_requests -= 1;
             localStorage.removeItem(request_name)
             localStorage.setItem('cache_counter', remaining_requests.toString());
         } catch (error) {
             console.log("Record from localStorage failed to create: " + error)
-            // throw error  // TODO: return error status code
             return 404;
         }
     }
 
-    console.log("\nOUT OF WHILE")
-
-    // Return 200 once out of while loop
     return 200;
 }
