@@ -163,6 +163,26 @@ export async function offlineTestFetch(url? : string) : Promise<boolean> {
     if (url === undefined) {
         url = useRuntimeConfig().public.frontendUrl;
     }
+  }
+
+  if (response !== undefined && response.status !== 200) {
+    console.log(`Failed to post provenance: ${response.status} ${response.statusText}`);
+    throw new Error(response.status + ' ' + response.statusText);
+  } else {
+    throw new Error(
+      `Could not connect to the server, check your internet connection and try again`
+    );
+  }
+}
+
+export async function offlineTestFetch(url? : string) : Promise<boolean> {
+    let result = true;
+
+    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+    // Given parameter can be bogus url to mock offlineness
+    if (url === undefined) {
+        url = useRuntimeConfig().public.frontendUrl;
+    }
 
     try {
         let response = await fetch(url);
@@ -174,6 +194,16 @@ export async function offlineTestFetch(url? : string) : Promise<boolean> {
         console.log("Fetch attempt failed: " + error);
         result = false;
         displayOfflineBanner = true;
+    }
+
+    try {
+        let response = await fetch(url);
+        if (response.status !== 200) {
+            result = false;
+        } 
+    } catch (error) {
+        console.log("Fetch attempt failed: " + error);
+        result = false;
     }
 
     return result
