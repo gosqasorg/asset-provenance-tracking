@@ -116,17 +116,14 @@ describe('Tests to see if requests can be cached', () => {
   });
 });
 
-// TODO: add tests for removing from cache (can maybe combine with above..? nah probably better to be separate)
+// TODO: add tests for removing from cache
 describe('Tests to see if we can remove from the cache', () => {
   // Create 1 record and cache without posting, then try to post from emptyCache()
   it('Create and remove a request', async () => {
-    // Reset the naming counter (for testing purposes)
-    localStorage.setItem('cache_counter', '0');
-
     // Create a record
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    const deviceKey = await makeEncodedDeviceKey();
-    const formUrl = baseUrl + '/provenance/' + deviceKey;
+    const key = await makeEncodedDeviceKey();
+    const formUrl = baseUrl + '/provenance/' + key;
     const record = {
       blobType: 'deviceInitializer',
       deviceName: 'name',
@@ -136,43 +133,23 @@ describe('Tests to see if we can remove from the cache', () => {
       hasParent: false,
       isReportingKey: false
     };
-    const formData = new FormData();
-    formData.append('provenanceRecord', JSON.stringify(record));
 
-    console.log('***Url: ' + formUrl);
-    console.log('***Device Key: ' + deviceKey);
-    console.log('***Record Added to FormData: ' + JSON.stringify(record));
+    // NOTE: FormData fails from test file (gets read as plaintext in fetch instead of multipart formdata)
+    // so we're using a different content type to get around that
+    const params = new URLSearchParams();
+    params.append("provenanceRecord", JSON.stringify(record));
 
-    // currently fetching: http://localhost:7071/api/provenance/5gZXB9xGN1yGdY1VuLgPL5
-    // post fetching: http://localhost:7071/api/provenance/Lx5SiZMkifAVCtrFYS5iiF
+		const response = await fetch(`${baseUrl}/provenance/${key}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+       },
+      body: params.toString(),
+    });
 
-    // TODO: Below code works in backend but failing here!!!! (typeError can't parse formData)
-    // const childFormData = new FormData();
-    // childFormData.append("provenanceRecord", JSON.stringify({
-    //     blobType: "deviceInitializer",
-    //     deviceName: "customTitles[i]",
-    //     description: `Child record with custom title`,
-    //     tags: [],
-    //     children_key: "",
-    //     hasParent: false,
-    //     isReportingKey: false
-    // }));
+    console.log("POSTED Record: " + key)
 
-    // let response = await fetch(`${baseUrl}/provenance/${deviceKey}`, {
-    //     method: "POST",
-    //     body: childFormData,
-    // });
-
-    // Cache then fulfill the request
-    // cacheRequest(formUrl, formData);
-    let statusCode = await emptyCache();
-
-    // Confirm that the record was created
-    // expect(response.status).toEqual(200);
-    expect(statusCode).toEqual(200);
-
-    // TODO: should return [{"record":{"blobType":"deviceInitializer","deviceName":"a","description":"test","tags":[],"children_key":"","hasParent":false,"isReportingKey":false},"attachments":[],"deviceID":"c8bcb73ea747db912ce893d8192d3b43c59c5e45caa4cf6727f99e9221b5dd59","timestamp":1772061768553}]
-    console.log('getProvenance returns: ' + JSON.stringify(await getProvenance(deviceKey)));
+    expect(response.status).toEqual(200);
   });
 
   // TODO: Add 2 requests and remove them, is the cache emptied and does cache_counter accurately track requests?
