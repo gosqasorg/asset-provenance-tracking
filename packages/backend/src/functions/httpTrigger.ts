@@ -7,6 +7,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { sendEmail } from './sendEmail.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -764,10 +765,34 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         // generate code
+        // salt ??= crypto.getRandomValues(new Uint8Array(16)); + clamp to 6 digits (ask vincent if prefferened amount)
+        const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
 
         // store email, code, rec and tags in table
+        // upsert incase of code resend
+        // include expiration for code (10 mins for now i think)
+        const codeExpiration = 10 * 60 * 1000;
+        const entity = {
+            partitionKey: 'PendingVerification',
+            rowKey: email,
+            code: code,
+            expiresAt: Date.now() + codeExpiration,
+            tags: tags.join(','),
+            recordKey: recordKey
+        };
+
+        tableClient.upsertEntity(entity);
 
         // sendEmail() with the code attached
+        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
+        // TODO: Ask Vincent for our domain name, gonna assume its gosqas.org based on the discord messages for now
+        await sendEmail(
+            "donotreply@gosqas.org",
+            email,
+            "GOSQAS Verification Code",
+            `Your verification code is: ${code}\nExpires in ${(codeExpiration / 10 / 1000)}.`,
+            "GOSQAS Notification"
+        )
 
         // Return Success (for now, but eventually we will want to return errors if email is malformed, etc)
         // TODO: Flesh out error handling for invalid emails.
