@@ -386,7 +386,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const retrieveNotifEmailResponse = await retrieveNotifEmails(request.params.deviceKey);
     const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
 
-    const from_address: string = "DoNotReply@5c235288-f7ff-4193-adaa-c4c934799e14.azurecomm.net";
+    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
     const subject: string = 'Tracking update'; 
     const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
     const displayName: string = from_address;
