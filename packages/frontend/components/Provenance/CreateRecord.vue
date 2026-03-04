@@ -66,8 +66,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <OfflineBanner v-if="displayBanner" class="offline-banner" style="align-items: center; display: flex">
             <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
             </div>
-            <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies
-                or close your browser, or your changes will be lost.
+            <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
             </div> 
         </OfflineBanner>
 
