@@ -83,7 +83,6 @@ export async function postProvenance(deviceKey: string, record: any, attachments
 
     try {
         let response = await fetchUrl(fullUrl, formData);
-        console.log("POST getting... " + JSON.stringify(await getProvenance(deviceKey)));
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
         throw error;
@@ -207,7 +206,7 @@ export async function emptyCache(test?: boolean) {
         return 200;  // counter doesn't exist so we haven't stored any records
     }
 
-    // While there's still items in the cache (cache_empty != 0 or null) try to create records
+    // While there's still items in the stash try to create records
     while (remaining_requests > 0) {
         try {
             // Get the last request stored
@@ -216,7 +215,7 @@ export async function emptyCache(test?: boolean) {
             let fullUrl = request[0][1];
             let record = request[1][1];
 
-            // Post the request
+            // Fulfill the request
             // Note: Test file cannot use formData, so if it's a test use search parameters instead
             if (test) {
                 const paramFormData = new URLSearchParams();
@@ -229,15 +228,10 @@ export async function emptyCache(test?: boolean) {
                 });
                 if (response.status != 200) { throw new Error(`Failed with error code ${response.status}`) }
             } else {
-                // TODO: call this function from browser and make sure this case works! (then remove print statments)
                 const formData = new FormData();
                 formData.append('provenanceRecord', record);
 
-                console.log("browser fetching... " + fullUrl + " record... " + record + " " + typeof formData)
-
-                // Fulfill the request
                 let response = await fetchUrl(fullUrl, formData)
-                console.log("response..? " + response.status)
                 if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
             }
 

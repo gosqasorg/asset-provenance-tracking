@@ -3,6 +3,24 @@ import { cacheRequest, emptyCache, offlineTestFetch, getProvenance } from '~/ser
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import * as z from 'zod';
 
+async function createRequest(key: string, name: string, description: string): Promise<[string, FormData]> {
+	const baseUrl = useRuntimeConfig().public.baseUrl;
+	const formUrl = baseUrl + '/provenance/' + key;
+	const record = {
+		blobType: 'deviceInitializer',
+		deviceName: name,
+		description: description,
+		tags: [],
+		children_key: '',
+		hasParent: false,
+		isReportingKey: false
+	};
+
+	const formData = new FormData();
+	formData.append("provenanceRecord", JSON.stringify(record));
+	return [formUrl, formData]
+}
+
 describe('Tests to see if user is online and offline', () => {
 	it('Test to see if user is online', async () => {
 		let result = await offlineTestFetch();
@@ -17,22 +35,10 @@ describe('Tests to see if user is online and offline', () => {
 
 describe('Tests to see if requests can be cached', () => {
 	it('Test to see if returned data types are correct', async () => {
-		const baseUrl = useRuntimeConfig().public.baseUrl;
-		const deviceKey = await makeEncodedDeviceKey();
-		const formUrl = baseUrl + '/provenance/' + deviceKey;
-		const record = {
-			blobType: 'deviceInitializer',
-			deviceName: 'name',
-			description: 'description',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-		const formData = new FormData();
-		formData.append('provenanceRecord', JSON.stringify(record));
+		const key = await makeEncodedDeviceKey();
+		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyCache()")
 
-		localStorage.setItem('cache_counter', "0")
+		localStorage.setItem('cache_counter', "0") // need to reset counter in case an earlier test fails
 		cacheRequest(formUrl, formData);
 		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
 
@@ -41,7 +47,7 @@ describe('Tests to see if requests can be cached', () => {
 		const returnedFormData = JSON.parse(requestFromCache[1][1]);
 		expect(typeof returnedFormUrl).toEqual(typeof formUrl);
 		expect(returnedFormUrl).toEqual(formUrl);
-		expect(returnedFormData).toStrictEqual(record);
+		expect(JSON.stringify(returnedFormData)).toStrictEqual(formData.get('provenanceRecord'));
 
 		// Convert returned request back to FormData (stored in localStorage as string)
 		const formData2 = new FormData();
@@ -66,49 +72,26 @@ describe('Tests to see if requests can be cached', () => {
 	});
 
 	it('Test to see if we can store multiple requests', async () => {
-		const baseUrl = useRuntimeConfig().public.baseUrl;
-		const deviceKey = await makeEncodedDeviceKey();
-		const formUrl = baseUrl + '/provenance/' + deviceKey;
-		const record = {
-			blobType: 'deviceInitializer',
-			deviceName: 'name',
-			description: 'description',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-		const record2 = {
-			blobType: 'deviceInitializer',
-			deviceName: 'name2',
-			description: 'slightly longer description',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-
-		// Store two records in localStorage and confirm that they were stored correctly
-		const formData = new FormData();
-		const formData2 = new FormData();
-		formData.append('provenanceRecord', JSON.stringify(record));
-		formData2.append('provenanceRecord', JSON.stringify(record2));
+		const key1 = await makeEncodedDeviceKey();
+		const key2 = await makeEncodedDeviceKey();
+		let [formUrl1, formData1] = await createRequest(key1, "name", "description")
+		let [formUrl2, formData2] = await createRequest(key2, "name2", "slightly longer description")
 
 		localStorage.setItem('cache_counter', "0")
-		cacheRequest(formUrl, formData);
-		cacheRequest(formUrl, formData2);
+		cacheRequest(formUrl1, formData1);
+		cacheRequest(formUrl2, formData2);
 
 		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
 		const returnedFormUrl = requestFromCache[0][1];
 		const returnedFormData = JSON.parse(requestFromCache[1][1]);
-		expect(returnedFormUrl).toEqual(formUrl);
-		expect(returnedFormData).toStrictEqual(record);
+		expect(returnedFormUrl).toEqual(formUrl1);
+		expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
 
 		let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_cache_2'));
 		const returnedFormUrl2 = requestFromCache2[0][1];
 		const returnedFormData2 = JSON.parse(requestFromCache2[1][1]);
-		expect(returnedFormUrl2).toEqual(formUrl);
-		expect(returnedFormData2).toStrictEqual(record2);
+		expect(returnedFormUrl2).toEqual(formUrl2);
+		expect(JSON.stringify(returnedFormData2)).toStrictEqual(formData2.get('provenanceRecord'));
 
 		// Check that the correct record was stored at each request
 		expect(returnedFormData.deviceName).toEqual('name');
@@ -124,24 +107,9 @@ describe('Tests to see if requests can be cached', () => {
 });
 
 describe('Tests to see if we can remove from the cache', () => {
-	// Create 1 record and store without posting, then try to post from emptyCache()
 	it('Create and remove a request', async () => {
-		const baseUrl = useRuntimeConfig().public.baseUrl;
 		const key = await makeEncodedDeviceKey();
-		const formUrl = baseUrl + '/provenance/' + key;
-		const record = {
-			blobType: 'deviceInitializer',
-			deviceName: 'Stored Record',
-			description: 'Test record stored in localStorage then created from emptyCache()',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-
-		// Store request in localStorage without posting it
-		const formData = new FormData();
-		formData.append("provenanceRecord", JSON.stringify(record));
+		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyCache()")
 
 		localStorage.setItem('cache_counter', "0")
 		cacheRequest(formUrl, formData);
@@ -162,38 +130,13 @@ describe('Tests to see if we can remove from the cache', () => {
 	});
 
 	it("Add and remove two requests", async () => {
-		const baseUrl = useRuntimeConfig().public.baseUrl;
 		const key1 = await makeEncodedDeviceKey();
 		const key2 = await makeEncodedDeviceKey();
-		const formUrl1 = baseUrl + '/provenance/' + key1;
-		const formUrl2 = baseUrl + '/provenance/' + key2;
-		const record = {
-			blobType: 'deviceInitializer',
-			deviceName: 'first stored record',
-			description: 'this is a test',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-		const record2 = {
-			blobType: 'deviceInitializer',
-			deviceName: 'second stored record',
-			description: 'this is the same test',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-
-		// Store two records in localStorage
-		const formData = new FormData();
-		const formData2 = new FormData();
-		formData.append('provenanceRecord', JSON.stringify(record));
-		formData2.append('provenanceRecord', JSON.stringify(record2));
+		let [formUrl1, formData1] = await createRequest(key1, "first stored record", "this is a test")
+		let [formUrl2, formData2] = await createRequest(key2, "second stored record", "this is the same test")
 
 		localStorage.setItem('cache_counter', "0")
-		cacheRequest(formUrl1, formData);
+		cacheRequest(formUrl1, formData1);
 		cacheRequest(formUrl2, formData2);
 
 		expect(localStorage.getItem('cache_counter')).toEqual("2")
@@ -232,22 +175,8 @@ describe('Tests to see if we can remove from the cache', () => {
 	});
 
 	it("Make sure record isn't removed from localStorage when post fails", async () => {
-		const baseUrl = useRuntimeConfig().public.baseUrl;
 		const key = await makeEncodedDeviceKey();
-		const formUrl = baseUrl + '/provenance/' + key;
-		const record = {
-			blobType: 'deviceInitializer',
-			deviceName: 'Failed Record',
-			description: 'A record that will fail to post',
-			tags: [],
-			children_key: '',
-			hasParent: false,
-			isReportingKey: false
-		};
-
-		// Store request in localStorage without posting it
-		const formData = new FormData();
-		formData.append("provenanceRecord", JSON.stringify(record));
+		let [formUrl, formData] = await createRequest(key, "Failed Record", "A record that will fail to post")
 
 		localStorage.setItem('cache_counter', "0")
 		cacheRequest(formUrl, formData);
@@ -261,9 +190,9 @@ describe('Tests to see if we can remove from the cache', () => {
 		const request = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
 		expect(request).not.toEqual(null);
 		expect(request[0][1]).toEqual(formUrl);
-		expect(request[1][1]).toStrictEqual(JSON.stringify(record));
+		expect(JSON.parse(request[1][1]).deviceName).toEqual('Failed Record');
+		expect(JSON.parse(request[1][1]).description).toEqual('A record that will fail to post');
+		expect(request[1][1]).toStrictEqual(formData.get('provenanceRecord'));
 		expect(localStorage.getItem('cache_counter')).toEqual("1");
 	});
-
-	// TODO: fix any broken formatting (and try to prevent formatting from breaking in future)
 });
