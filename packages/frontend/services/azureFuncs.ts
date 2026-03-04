@@ -176,16 +176,6 @@ export async function offlineTestFetch(url? : string) : Promise<boolean> {
         displayOfflineBanner = true;
     }
 
-    try {
-        let response = await fetch(url);
-        if (response.status !== 200) {
-            result = false;
-        } 
-    } catch (error) {
-        console.log("Fetch attempt failed: " + error);
-        result = false;
-    }
-
     return result
 
 }
