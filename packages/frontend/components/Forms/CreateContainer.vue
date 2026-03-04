@@ -59,7 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     
             <div v-if="isChecked">
                 <!-- TODO: API call function -->
-                <input
+                <input style="margin-bottom: 18px;"
                     type="text"
                     class="form-control"
                     v-model="textInput"
@@ -67,6 +67,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     @keyup.enter=""
                 />
             </div>
+
+            <!-- Offline Banner -->
+            <OfflineBanner v-if="displayBanner" class="offline-banner" style="align-items: center; display: flex">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+                </div>
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                </div> 
+            </OfflineBanner>
         </div>
 
         <div class="d-grid mt-3">
@@ -96,6 +104,8 @@ import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
+import OfflineBanner from '../OfflineBanner.vue';
+import { displayOfflineBanner } from '~/services/azureFuncs';
 
 export default {
     data() {
@@ -112,6 +122,15 @@ export default {
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
+        }
+    },
+    computed: {
+        displayBanner() {
+            if (displayOfflineBanner === true)
+                return true;
+            else{
+                return false;
+            }
         }
     },
     methods: {
@@ -384,6 +403,17 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .offline-banner {
+        background-color: #634a45;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: white;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -408,6 +438,17 @@ export default {
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  
         color: white;
+    }
+    .offline-banner {
+        background-color: #ecdae1;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: black;
     }
 }
 </style>
