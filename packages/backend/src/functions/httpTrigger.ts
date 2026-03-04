@@ -392,9 +392,13 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
         const displayName: string = from_address;
 
-        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-        for (const to_email of emailSet) {
-            await sendEmail(from_address, to_email, subject, email_body, displayName);
+        try {
+            const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+            for (const to_email of emailSet) {
+                await sendEmail(from_address, to_email, subject, email_body, displayName);
+            }
+        } catch (error) {
+            context.log("Error sending email: " + error);   
         }
     } else {
         context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
