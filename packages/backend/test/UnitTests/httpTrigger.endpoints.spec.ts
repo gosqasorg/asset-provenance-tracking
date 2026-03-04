@@ -63,6 +63,26 @@ vi.mock('node:crypto', () => ({
   },
 }));
 
+vi.mock('@azure/communication-email', () => {
+    const mockBeginSend = vi.fn().mockResolvedValue({
+        getOperationState: vi.fn().mockReturnValue({ isStarted: true }),
+        isDone: vi.fn().mockReturnValue(true),
+        poll: vi.fn(),
+        getResult: vi.fn().mockReturnValue({ status: 'Succeeded', id: 'test-id' })
+    });
+
+    return {
+        EmailClient: vi.fn().mockImplementation(() => {
+            return {
+                beginSend: mockBeginSend
+            };
+        }),
+        KnownEmailSendStatus: {
+            Succeeded: 'Succeeded'
+        }
+    };
+});
+
 
 function makeHttpRequest(overrides: any = {}) {
   return {
