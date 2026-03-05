@@ -28,7 +28,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with one child", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate device keys in parallel
+		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
 			fetch(`${baseUrl}/getNewDeviceKey`),
 			fetch(`${baseUrl}/getNewDeviceKey`)
@@ -36,7 +36,7 @@ describe("Group Creation Tests", () => {
 		const groupKey = await groupKeyRes.text();
 		const childKey = await childKeyRes.text();
 		
-		// Create child and group records in parallel
+		// Create child and group records
 		const childFormData = new FormData();
 		childFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
@@ -79,7 +79,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with multiple children", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate all device keys in parallel
+		// Generate all device keys 
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
 			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
@@ -89,7 +89,7 @@ describe("Group Creation Tests", () => {
 		const groupKey = keys[0];
 		const childKeys = keys.slice(1);
 		
-		// Create all child records in parallel
+		// Create all child records
 		const childCreationPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
@@ -132,7 +132,7 @@ describe("Group Creation Tests", () => {
 		
 		expect(groupResponse.ok).toBe(true);
 
-		// Verify records in parallel
+		// Verify records 
 		const verificationPromises = [
 			fetch(`${baseUrl}/provenance/${groupKey}`),
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
@@ -156,7 +156,7 @@ describe("Group Creation Tests", () => {
     it("should create a group record with a reporting key", async () => {
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate all device keys in parallel
+		// Generate all device keys 
 		const numChildKeys = 2;
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
@@ -223,7 +223,7 @@ describe("Group Creation Tests", () => {
 			expect(response.ok).toBe(true)
 		})
 		
-		// Verify all records in parallel
+		// Verify all records 
 		const verificationPromises = [
 			fetch(`${baseUrl}/provenance/${groupKey}`),
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
@@ -322,7 +322,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with all features", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate all device keys in parallel
+		// Generate all device keys 
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
 			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
@@ -333,7 +333,7 @@ describe("Group Creation Tests", () => {
         const groupKey = keys[0];
 		let childKeys = keys.slice(1);
 		
-		// Create all child records in parallel
+		// Create all child records 
 		const childCreationPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
@@ -376,7 +376,7 @@ describe("Group Creation Tests", () => {
 		
 		expect(groupResponse.ok).toBe(true);
 		
-		// Verify all records in parallel
+		// Verify all records 
 		const verificationPromises = [
 			fetch(`${baseUrl}/provenance/${groupKey}`),
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
@@ -521,7 +521,7 @@ describe("Group Creation Tests", () => {
 		let childFormData;
 		let childrenPromises;
 
-		// If annotation is selected, create child keys in parallel with tags
+		// If annotation is selected, create child keys  with tags
 		if (formDataObject.annotated){
 			childrenPromises = childKeys.map((key, i) => {
 				childFormData = new FormData();
@@ -593,7 +593,7 @@ describe("Group Creation Tests", () => {
 			expect(validateKey(key)).toBe(true);
 		});
 		
-		// Create child records with custom titles in parallel
+		// Create child records with custom titles 
 		const childrenPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
@@ -662,7 +662,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with one attachment", async () => {
     	const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
-    	//Generate device keys in parallel
+    	//Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${baseUrl}/getNewDeviceKey`),
         	fetch(`${baseUrl}/getNewDeviceKey`)
@@ -770,7 +770,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with multiple attachments", async() => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
-		// Generate device keys in parallel
+		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${baseUrl}/getNewDeviceKey`),
         	fetch(`${baseUrl}/getNewDeviceKey`)
@@ -851,7 +851,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with a PDF", async() => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
-		// Generate device keys in parallel
+		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${baseUrl}/getNewDeviceKey`),
         	fetch(`${baseUrl}/getNewDeviceKey`)

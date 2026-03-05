@@ -16,6 +16,9 @@ import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
 
+// Docs
+// https://learn.microsoft.com/en-us/javascript/api/@azure/functions/httpresponseinit?view=azure-node-latest
+
 /*=================  Setup  =================*/
 
 let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
@@ -869,7 +872,225 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+
+export type NotificationSignUp = {
+
+    noTagsMeansAllUpdates: string[];
+    [tags: string]: string[];
+
+}
+
+export function validateNotification(data: any) {
+
+    try {
+        const validationCheck: NotificationSignUp = data;
+        return true;
+    } catch(error) {
+        return false
+    }
+
+}
+
+async function notificationSignUpTags(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    let data;
+    try{
+        data = await request.json();
+    }
+    catch (error){
+        return {
+            status: 400,
+            body: 'Invalid JSON format'
+        }
+    }
+
+    if (!validateNotification(data)){
+        return {
+            status: 400,
+            body: 'Invalid email list'
+        }
+    }
+
+    return{
+        status: 200,
+        body: 'Signup data received and validated'
+    }
+}
+
+
+async function createChild(context: InvocationContext, tags: string[] = []) {
+    /* 
+    Note to self: Curious that since children are created before the group parent (implied by groups taking the 
+    list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
+    solve all cases. Then the db gets littered. How large an issue this is is tbd. This may happen, but be nothing
+    to worry about. Question for later: possible to see the "last accessed" date of blob in Azure? Is there an
+    access count? Can we enact a policy of "delete if not accessed since creation and it's been three years"?
+    */ 
+
+    try {
+        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const baseUrl = 'http://localhost:7071/api'
+        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
+        
+        // Create child and group records
+        const childFormData = new FormData();
+        childFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: "",
+            description: "",
+            tags: tags,
+            hasParent: true,
+            isReportingKey: false
+        }));
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/Response
+        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+            method: "POST",
+            body: childFormData,
+        });
+        const theJson = await theResponse.json()
+        const dataUrl = theResponse.url.split('/')
+        const theRecordKey = dataUrl[dataUrl.length - 1]
+        context.log(theRecordKey)
+        return theRecordKey
+    } catch(e) {
+        context.log('createChild Error: Failed to create child record')
+        return '';
+    }
+}
+
+async function createChildren(context, number_of_children, tags?) {
+    const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
+    let thisChild;
+    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, tags))) {
+            continue;
+        }
+
+        childrenKeys.push(thisChild)
+        if(childrenKeys.length == number_of_children) { 
+            break;
+        }
+    }
+
+    return childrenKeys; 
+}
+
+async function createGroup(context, name, description, n_children) {
+    const baseUrl = process.env['backend_url'];
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log(baseUrl)
+    context.log('--------------------')
+    const frontendUrl = 'http://localhost:3000'
+    const apiUrl = 'http://localhost:7071/api'
+
+    // Create children first
+    let childKeys = await createChildren(context, n_children)
+
+    const groupKey = await makeEncodedDeviceKey()
+    const groupFormData = new FormData();
+
+    groupFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        deviceName: name,
+        description: description,
+        children_key: childKeys,  // Note: this is what turns a record into a group
+        tags: [],            
+        hasParent: false,
+        isReportingKey: false
+    })); context.log(groupFormData)
+    
+    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const groupResponse = await fetch(createInitUrl, {
+        method: "POST",
+        body: groupFormData,
+    });
+
+    let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
+    context.log(groupUrlRecordPage)
+
+    return groupUrlRecordPage;
+}
+
+const GroupCreationOrderSchema = z.object({
+    deviceName: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).optional(),
+    number_of_children: z.number().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
+    create_reporting_key: z.boolean().optional(),
+    annotate: z.boolean().optional(),
+});
+
+export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        GroupCreationOrderSchema.parse(theRequest)
+        let title = theRequest['title']
+        let description = theRequest['description']
+        let n_children = theRequest['number_of_children']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        context.log(theGroupRecordPageUrl)
+
+        return {
+            status: 200,
+            jsonBody: { groupUrl: theGroupRecordPageUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create group: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+
+app.post("createGroup", {
+    authLevel: 'anonymous',
+    route: 'createGroup',
+    handler: createGroupHandler,
+})
+
+app.post("notificationSignUpTags", {
+    authLevel: 'anonymous',
+    route: 'notificationSignUpTags',
+    handler: notificationSignUpTags
+})
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',
