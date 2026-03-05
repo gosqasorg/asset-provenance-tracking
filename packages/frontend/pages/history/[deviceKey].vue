@@ -101,13 +101,18 @@ const recordHasParent = hasParent(provenance);
 
         <div class="col-md-10">
           <!-- Spied element -->
-          <div
-            data-mdb-scrollspy-init
-            data-spy="scroll"
-            data-mdb-target="#jump-to"
-            data-mdb-offset="0"
-            class="left-col"
-          >
+          <div data-mdb-scrollspy-init data-spy="scroll" data-mdb-target="#jump-to" data-mdb-offset="0"
+            class="left-col">
+
+            <!-- Offline Banner Top-->
+            <OfflineBanner v-if="displayBanner" class="offline-banner-top" style="align-items: center; display: flex">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+                </div>
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
+                  will not be posted until you revisit this page while online.
+                </div> 
+            </OfflineBanner>
+
             <section id="device-details" class="details-container">
               <div class="record-description">
                 <div class="my-4 text-iris fs-1">
@@ -250,6 +255,8 @@ const recordHasParent = hasParent(provenance);
 import { getProvenance } from '~/services/azureFuncs';
 import { ref } from 'vue';
 import KeyList from '~/components/KeyList.vue';
+import OfflineBanner from '~/components/OfflineBanner.vue';
+import { displayOfflineBanner } from '~/services/azureFuncs';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -283,6 +290,16 @@ export default {
       customText: '',
       showTextInput: false
     };
+  },
+  computed: {
+    displayBanner() {
+        if (displayOfflineBanner === true) {
+            return true;
+        }
+        else{
+            return false;
+        }
+        },
   },
   async mounted() {
     try {
@@ -757,6 +774,17 @@ a:visited {
     background-color: white;
     color: black;
   }
+  .offline-banner-top {
+    background-color: #3e231c;
+    border-color: #fe9c9e;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 0px;
+    font-size: 14px;
+    color: white;
+    }
 }
 
 /* Light mode version*/
@@ -819,5 +847,16 @@ a:visited {
   .download-btn:hover {
     background-color: #e6f6ff !important;
   }
+  .offline-banner-top {
+    background-color: #ffe3e2;
+    border-color: #fa9e9f;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 0px;
+    font-size: 14px;
+    color: black;
+    }
 }
 </style>
