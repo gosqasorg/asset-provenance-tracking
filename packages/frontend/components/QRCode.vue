@@ -26,6 +26,10 @@ export default {
         url: {
             type: String,
             required: true
+        },
+        recordkey: {
+            type: String,
+            required: true
         }
     },
     data() {
@@ -77,7 +81,7 @@ export default {
     methods: {
         downloadQRCode() {
             this.qrCodeStyling?.download({
-                name: 'vqr',
+                name: this.recordkey,
                 extension: 'png'
             });
         }

@@ -65,7 +65,7 @@ const recordHasParent = hasParent(provenance);
 
                     <!-- QR -->
                     <div class="col-sm-6 col-lg-3">
-                        <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+                        <QRCode :url="qrCodeUrl" recordKey="_recordKey" ref="qrcode_component" />
                     </div>
 
                     <div v-if="hasReportingKey"> Reporting Key:
