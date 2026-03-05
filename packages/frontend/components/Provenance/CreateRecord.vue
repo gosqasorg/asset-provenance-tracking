@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
    This component is a form. The form is used to create a new record that we will track the
    providence for.
    Resourses:
-   https://test-utils.vuejs.org/guide/essentials/forms
+   https://test-utils.fvuejs.org/guide/essentials/forms
 -->
 
 <template>
@@ -54,12 +54,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h5 class="text-iris p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
-            </h5>
-            <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
-            </h5>
+            <h4 class="text-iris p-1 mt-3" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
+                    Annotate all children
+            </h4>
+
+            <h4 class="text-iris p-1 mt-0" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
+                    Recall all children
+            </h4>
+
+            <h4 class="text-iris p-1 mt-0">
+                <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
+                    Receive email notifications for this record
+            </h4>
+
+            <div v-if="notify">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    placeholder="Email"
+                    @keyup.enter=""
+                />
+            </div>
+
         </div>
         
         <!-- Offline Banner Bottom-->
@@ -121,7 +140,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, postNotificationEmail } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -141,7 +160,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             annotateAll: false,
             recallAll: false,
             annotatePopUp: false,
-            recallPopUp: false
+            recallPopUp: false,
+            notify: false,
+            emailInput: ''
         }
     },
     props: {
@@ -344,7 +365,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
 
-                await postProvenance(this.recordKey, record, this.pictures || []);
+                const response =await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
@@ -352,6 +373,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     notifyChildren(this.recordKey, this.tags);
                 }
 
+                if (this.notify && this.emailInput) {
+                    const email = this.emailInput.trim(); //necessary to trim? 
+                    await postNotificationEmail(this.recordKey,email);
+                }
                 // Refresh CreateRecord component
                 this.refresh();
 

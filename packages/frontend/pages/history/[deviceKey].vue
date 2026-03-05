@@ -130,6 +130,14 @@ const recordHasParent = hasParent(provenance);
                 :height="66"
                 :width="48">
               </ProvenanceShareDropdown>
+
+              <EmailNotificationSignup
+                :recordKey="_recordKey"
+                :fontSize="20"
+                :height="66"
+                :width="48">
+              </EmailNotificationSignup>
+              
             </div>
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -414,8 +422,11 @@ export default {
 .buttons-container {
   margin-bottom: 20px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  /* flex-wrap: wrap;
+  justify-content: space-between; */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
 }
 
 .download-btn {
