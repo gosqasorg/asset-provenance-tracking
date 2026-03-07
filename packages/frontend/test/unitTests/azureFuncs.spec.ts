@@ -40,7 +40,7 @@ describe('Tests to see if requests can be cached', () => {
 
 		localStorage.setItem('cache_counter', "0") // need to reset counter in case an earlier test fails
 		cacheRequest(formUrl, formData);
-		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
+		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1') || '{}');
 
 		// Confirm that the datatypes are the same as they started
 		const returnedFormUrl = requestFromCache[0][1];
@@ -81,13 +81,13 @@ describe('Tests to see if requests can be cached', () => {
 		cacheRequest(formUrl1, formData1);
 		cacheRequest(formUrl2, formData2);
 
-		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
+		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1') || '{}');
 		const returnedFormUrl = requestFromCache[0][1];
 		const returnedFormData = JSON.parse(requestFromCache[1][1]);
 		expect(returnedFormUrl).toEqual(formUrl1);
 		expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
 
-		let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_cache_2'));
+		let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_cache_2') || '{}');
 		const returnedFormUrl2 = requestFromCache2[0][1];
 		const returnedFormData2 = JSON.parse(requestFromCache2[1][1]);
 		expect(returnedFormUrl2).toEqual(formUrl2);
@@ -127,6 +127,11 @@ describe('Tests to see if we can remove from the cache', () => {
 		expect(provenance).not.toEqual([])
 		expect(provenance[0].record.deviceName).toEqual("Stored Record")
 		expect(provenance[0].record.description).toEqual("Test record stored in localStorage then created from emptyCache()")
+
+		// Make sure the new key was stored to display to the frontend later
+		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
+		expect(existingKeys.length).toBe(1)
+		expect(existingKeys[0]).toEqual(formUrl.split("/")[formUrl.split("/").length - 1])
 	});
 
 	it("Add and remove two requests", async () => {
@@ -158,6 +163,12 @@ describe('Tests to see if we can remove from the cache', () => {
 		expect(provenance2).not.toEqual([])
 		expect(provenance2[0].record.deviceName).toEqual("second stored record")
 		expect(provenance2[0].record.description).toEqual("this is the same test")
+
+		// Make sure all three keys (including the one from the previous test) are stored
+		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
+		expect(existingKeys.length).toBe(3)
+		expect(existingKeys[2]).toEqual(formUrl1.split("/")[formUrl1.split("/").length - 1])
+		expect(existingKeys[1]).toEqual(formUrl2.split("/")[formUrl2.split("/").length - 1])
 	});
 
 	it("Try to emptyCache when nothing is cached", async () => {
@@ -183,16 +194,21 @@ describe('Tests to see if we can remove from the cache', () => {
 		expect(localStorage.getItem('cache_counter')).toEqual("1")
 
 		// Empty the cache using the non-test version (so it will fail to post)
+		console.log("Attempting a failed fetch to check error handling...")
 		let statusCode = await emptyCache();
 		expect(statusCode).toEqual(404);
 
 		// Make sure the record is still in the cache and the counter still = 1
-		const request = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
+		const request = JSON.parse(localStorage.getItem('gosqas_offline_cache_1') || '{}');
 		expect(request).not.toEqual(null);
 		expect(request[0][1]).toEqual(formUrl);
 		expect(JSON.parse(request[1][1]).deviceName).toEqual('Failed Record');
 		expect(JSON.parse(request[1][1]).description).toEqual('A record that will fail to post');
 		expect(request[1][1]).toStrictEqual(formData.get('provenanceRecord'));
 		expect(localStorage.getItem('cache_counter')).toEqual("1");
+
+		// Confirm failed key was not added to list of successful requests
+		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
+		expect(existingKeys.length).toBe(3)
 	});
 });

@@ -206,12 +206,11 @@ export async function emptyCache(test?: boolean) {
         return 200;  // counter doesn't exist so we haven't stored any records
     }
 
-    // While there's still items in the stash try to create records
     while (remaining_requests > 0) {
         try {
             // Get the last request stored
             let request_name = 'gosqas_offline_cache_' + remaining_requests;
-            let request = JSON.parse(localStorage.getItem(request_name));
+            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
             let fullUrl = request[0][1];
             let record = request[1][1];
 
@@ -234,6 +233,18 @@ export async function emptyCache(test?: boolean) {
                 let response = await fetchUrl(fullUrl, formData)
                 if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
             }
+
+            // Add created key to a list of successfully created keys to display later
+            let keysCreated = [];
+            let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
+            if (existingKeys) {
+                for (const key of existingKeys.split(",")) {
+                    keysCreated.push(key)
+                }
+            }
+            keysCreated.push(currentKey)
+            localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
 
             // Remove request from cache and update counter
             remaining_requests -= 1;
