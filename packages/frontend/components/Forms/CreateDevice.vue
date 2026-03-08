@@ -54,13 +54,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <!-- Offline Banner -->
-            <OfflineBanner v-if="displayBanner" class="offline-banner" style="align-items: center; display: flex">
+            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies
-                    or close your browser, or your changes will be lost.
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
                 </div> 
-            </OfflineBanner>
+            </Banner>
+
+            <!-- Back Online Banner -->
+            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+                <div style="margin-left: 10px;"><strong>You're back online!</strong> Click on the link to view the posted records >>Back Online Page Link Here<<
+                </div>
+            </Banner>
         </div>
  
         <div class="d-grid">
@@ -83,11 +88,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
-import OfflineBanner from '../OfflineBanner.vue';
-import { displayOfflineBanner } from '~/services/azureFuncs';
+import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
@@ -113,11 +117,20 @@ export default {
         isButtonDisabled() {
             return !this.isFormValid || this.isSubmitting;
         },
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
         displayBanner() {
             if (displayOfflineBanner === true) {
                 return true;
             }
             else{
+                return false;
+            }
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+            } else {
                 return false;
             }
         },
@@ -280,7 +293,7 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .offline-banner {
+    .banner {
         background-color: #634a45;
         border-color: #fe9c9e;
         border-width: 2px;
@@ -312,7 +325,7 @@ export default {
     #record-button:hover { 
         background-color: #322253;
     }
-    .offline-banner {
+    .banner {
         background-color: #ecdae1;
         border-color: #fe9c9e;
         border-width: 2px;
