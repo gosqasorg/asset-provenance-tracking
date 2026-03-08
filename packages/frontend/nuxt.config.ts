@@ -50,7 +50,7 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     static: true
   },
   scalar: {
-    url: '/openAPI-docs.json',
+    url: '/openAPI-docs-with-servers.json',
     darkMode: true,
     metaData: {
       title: 'GOSQAS API Documentation'

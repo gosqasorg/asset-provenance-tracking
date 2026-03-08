@@ -15,6 +15,9 @@
 
 import { validateKey } from "~/utils/keyFuncs";
 
+// Global variable used to control the display of offline banner on create pages
+export var displayOfflineBanner = false;
+
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
@@ -80,7 +83,6 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     }
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
-
     try {
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
@@ -144,7 +146,7 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
-export async function offlineTestFetch(url?: string): Promise<boolean> {
+export async function onlineTestFetch(url?: string): Promise<boolean> {
     let result = true;
 
     // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
@@ -157,10 +159,15 @@ export async function offlineTestFetch(url?: string): Promise<boolean> {
         let response = await fetch(url);
         if (response.status !== 200) {
             result = false;
-        }
+
+            displayOfflineBanner = true;
+        } 
+
+
     } catch (error) {
         console.log("Fetch attempt failed: " + error);
         result = false;
+        displayOfflineBanner = true;
     }
 
     return result
@@ -169,7 +176,7 @@ export async function offlineTestFetch(url?: string): Promise<boolean> {
 
 export async function connectivityChecker() {
     // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
-    while (!(await offlineTestFetch())) {
+    while (!(await onlineTestFetch())) {
         await new Promise((r) => setTimeout(r, 5000));
     }
 
