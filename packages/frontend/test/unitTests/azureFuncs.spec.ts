@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { cacheRequest, emptyCache, onlineTestFetch, getProvenance } from '~/services/azureFuncs';
+import { stashRequest, emptyStash, onlineTestFetch, getProvenance } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import * as z from 'zod';
 
+const baseUrl = "https://gosqasbe.azurewebsites.net/api/";
+
 async function createRequest(key: string, name: string, description: string): Promise<[string, FormData]> {
-	const baseUrl = useRuntimeConfig().public.baseUrl;
-	const formUrl = baseUrl + '/provenance/' + key;
+	const formUrl = baseUrl + 'provenance/' + key;
 	const record = {
 		blobType: 'deviceInitializer',
 		deviceName: name,
@@ -36,11 +37,11 @@ describe('Tests to see if user is online and offline', () => {
 describe('Tests to see if requests can be cached', () => {
 	it('Test to see if returned data types are correct', async () => {
 		const key = await makeEncodedDeviceKey();
-		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyCache()")
+		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyStash()")
 
-		localStorage.setItem('cache_counter', "0") // need to reset counter in case an earlier test fails
-		cacheRequest(formUrl, formData);
-		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1') || '{}');
+		localStorage.setItem('stash_counter', "0") // need to reset counter in case an earlier test fails
+		stashRequest(formUrl, formData);
+		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 
 		// Confirm that the datatypes are the same as they started
 		const returnedFormUrl = requestFromCache[0][1];
@@ -67,8 +68,8 @@ describe('Tests to see if requests can be cached', () => {
 		ValidFormData.parse(returnedFormData);
 
 		// Remove item from cache and reset naming counter
-		localStorage.removeItem('gosqas_offline_cache_1')
-		localStorage.setItem('cache_counter', '0');
+		localStorage.removeItem('gosqas_offline_stash_1')
+		localStorage.setItem('stash_counter', '0');
 	});
 
 	it('Test to see if we can store multiple requests', async () => {
@@ -77,17 +78,17 @@ describe('Tests to see if requests can be cached', () => {
 		let [formUrl1, formData1] = await createRequest(key1, "name", "description")
 		let [formUrl2, formData2] = await createRequest(key2, "name2", "slightly longer description")
 
-		localStorage.setItem('cache_counter', "0")
-		cacheRequest(formUrl1, formData1);
-		cacheRequest(formUrl2, formData2);
+		localStorage.setItem('stash_counter', "0")
+		stashRequest(formUrl1, formData1);
+		stashRequest(formUrl2, formData2);
 
-		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1') || '{}');
+		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 		const returnedFormUrl = requestFromCache[0][1];
 		const returnedFormData = JSON.parse(requestFromCache[1][1]);
 		expect(returnedFormUrl).toEqual(formUrl1);
 		expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
 
-		let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_cache_2') || '{}');
+		let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
 		const returnedFormUrl2 = requestFromCache2[0][1];
 		const returnedFormData2 = JSON.parse(requestFromCache2[1][1]);
 		expect(returnedFormUrl2).toEqual(formUrl2);
@@ -100,33 +101,33 @@ describe('Tests to see if requests can be cached', () => {
 		expect(returnedFormData2.description).toEqual('slightly longer description');
 
 		// Remove item from cache and reset naming counter
-		localStorage.removeItem('gosqas_offline_cache_1')
-		localStorage.removeItem('gosqas_offline_cache_2')
-		localStorage.setItem('cache_counter', '0');
+		localStorage.removeItem('gosqas_offline_stash_1')
+		localStorage.removeItem('gosqas_offline_stash_2')
+		localStorage.setItem('stash_counter', '0');
 	});
 });
 
 describe('Tests to see if we can remove from the cache', () => {
 	it('Create and remove a request', async () => {
 		const key = await makeEncodedDeviceKey();
-		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyCache()")
+		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyStash()")
 
-		localStorage.setItem('cache_counter', "0")
-		cacheRequest(formUrl, formData);
-		expect(localStorage.getItem('cache_counter')).toEqual("1")
+		localStorage.setItem('stash_counter', "0")
+		stashRequest(formUrl, formData);
+		expect(localStorage.getItem('stash_counter')).toEqual("1")
 
 		// Empty the cache and confirm it posted the new record
-		let statusCode = await emptyCache(true);
+		let statusCode = await emptyStash(true);
 		expect(statusCode).toEqual(200);
 
 		// Make sure the record was removed from the cache and the counter = 0
-		expect(localStorage.getItem('cache_counter')).toEqual("0")
-		expect(localStorage.getItem('gosqas_offline_cache_1')).toEqual(null)
+		expect(localStorage.getItem('stash_counter')).toEqual("0")
+		expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null)
 
-		const provenance = await getProvenance(key);
+		const provenance = await (await fetch(`${baseUrl}provenance/${key}`)).json();
 		expect(provenance).not.toEqual([])
 		expect(provenance[0].record.deviceName).toEqual("Stored Record")
-		expect(provenance[0].record.description).toEqual("Test record stored in localStorage then created from emptyCache()")
+		expect(provenance[0].record.description).toEqual("Test record stored in localStorage then created from emptyStash()")
 
 		// Make sure the new key was stored to display to the frontend later
 		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
@@ -140,26 +141,26 @@ describe('Tests to see if we can remove from the cache', () => {
 		let [formUrl1, formData1] = await createRequest(key1, "first stored record", "this is a test")
 		let [formUrl2, formData2] = await createRequest(key2, "second stored record", "this is the same test")
 
-		localStorage.setItem('cache_counter', "0")
-		cacheRequest(formUrl1, formData1);
-		cacheRequest(formUrl2, formData2);
+		localStorage.setItem('stash_counter', "0")
+		stashRequest(formUrl1, formData1);
+		stashRequest(formUrl2, formData2);
 
-		expect(localStorage.getItem('cache_counter')).toEqual("2")
+		expect(localStorage.getItem('stash_counter')).toEqual("2")
 
 		// Empty cache and confirm both records were posted
-		let statusCode = await emptyCache(true);
+		let statusCode = await emptyStash(true);
 		expect(statusCode).toEqual(200);
 
-		expect(localStorage.getItem('cache_counter')).toEqual("0")
-		expect(localStorage.getItem('gosqas_offline_cache_1')).toEqual(null)
-		expect(localStorage.getItem('gosqas_offline_cache_2')).toEqual(null)
+		expect(localStorage.getItem('stash_counter')).toEqual("0")
+		expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null)
+		expect(localStorage.getItem('gosqas_offline_stash_2')).toEqual(null)
 
-		const provenance1 = await getProvenance(key1);
+		const provenance1 = await (await fetch(`${baseUrl}provenance/${key1}`)).json();
 		expect(provenance1).not.toEqual([])
 		expect(provenance1[0].record.deviceName).toEqual("first stored record")
 		expect(provenance1[0].record.description).toEqual("this is a test")
 
-		const provenance2 = await getProvenance(key2);
+		const provenance2 = await (await fetch(`${baseUrl}provenance/${key2}`)).json();
 		expect(provenance2).not.toEqual([])
 		expect(provenance2[0].record.deviceName).toEqual("second stored record")
 		expect(provenance2[0].record.description).toEqual("this is the same test")
@@ -171,17 +172,17 @@ describe('Tests to see if we can remove from the cache', () => {
 		expect(existingKeys[1]).toEqual(formUrl2.split("/")[formUrl2.split("/").length - 1])
 	});
 
-	it("Try to emptyCache when nothing is cached", async () => {
-		// Should just return when cache_counter = 0
-		localStorage.setItem('cache_counter', "0")
-		expect(localStorage.getItem('cache_counter')).toEqual("0")
-		let statusCode = await emptyCache();
+	it("Try to emptyStash when nothing is cached", async () => {
+		// Should just return when stash_counter = 0
+		localStorage.setItem('stash_counter', "0")
+		expect(localStorage.getItem('stash_counter')).toEqual("0")
+		let statusCode = await emptyStash();
 		expect(statusCode).toEqual(200);
 
-		// Same thing should happen when cache_counter = null
-		localStorage.removeItem('cache_counter')
-		expect(localStorage.getItem('cache_counter')).toEqual(null)
-		statusCode = await emptyCache();
+		// Same thing should happen when stash_counter = null
+		localStorage.removeItem('stash_counter')
+		expect(localStorage.getItem('stash_counter')).toEqual(null)
+		statusCode = await emptyStash();
 		expect(statusCode).toEqual(200);
 	});
 
@@ -189,23 +190,23 @@ describe('Tests to see if we can remove from the cache', () => {
 		const key = await makeEncodedDeviceKey();
 		let [formUrl, formData] = await createRequest(key, "Failed Record", "A record that will fail to post")
 
-		localStorage.setItem('cache_counter', "0")
-		cacheRequest(formUrl, formData);
-		expect(localStorage.getItem('cache_counter')).toEqual("1")
+		localStorage.setItem('stash_counter', "0")
+		stashRequest(formUrl, formData);
+		expect(localStorage.getItem('stash_counter')).toEqual("1")
 
-		// Empty the cache using the non-test version (so it will fail to post)
+		// Empty the cache using the non-test version (so it will fail to post since formData cannot be posted from this file)
 		console.log("Attempting a failed fetch to check error handling...")
-		let statusCode = await emptyCache();
+		let statusCode = await emptyStash();
 		expect(statusCode).toEqual(404);
 
 		// Make sure the record is still in the cache and the counter still = 1
-		const request = JSON.parse(localStorage.getItem('gosqas_offline_cache_1') || '{}');
+		const request = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 		expect(request).not.toEqual(null);
 		expect(request[0][1]).toEqual(formUrl);
 		expect(JSON.parse(request[1][1]).deviceName).toEqual('Failed Record');
 		expect(JSON.parse(request[1][1]).description).toEqual('A record that will fail to post');
 		expect(request[1][1]).toStrictEqual(formData.get('provenanceRecord'));
-		expect(localStorage.getItem('cache_counter')).toEqual("1");
+		expect(localStorage.getItem('stash_counter')).toEqual("1");
 
 		// Confirm failed key was not added to list of successful requests
 		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")

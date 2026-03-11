@@ -183,28 +183,28 @@ export async function connectivityChecker() {
     return;
 }
 
-export async function cacheRequest(formUrl: string, formData: FormData) {
+export async function stashRequest(formUrl: string, formData: FormData) {
     // Convert values to string and store them
     let valuesToStore = [];
     valuesToStore.push(['formUrl', formUrl]);
     valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get cache_counter and add 1 to it
-    let current_request = localStorage.getItem('cache_counter');
+    // Get stash_counter and add 1 to it
+    let current_request = localStorage.getItem('stash_counter');
     if (current_request == null) {
         current_request = '0';
     }
-    let cache_counter = parseInt(current_request) + 1;
-    localStorage.setItem('cache_counter', cache_counter.toString());
+    let stash_counter = parseInt(current_request) + 1;
+    localStorage.setItem('stash_counter', stash_counter.toString());
 
-    // Store the request at a unique key (gosqas_offline_cache_#)
-    let request_name = 'gosqas_offline_cache_' + cache_counter;
+    // Store the request at a unique key (gosqas_offline_stash_#)
+    let request_name = 'gosqas_offline_stash_' + stash_counter;
     localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
 
-export async function emptyCache(test?: boolean) {
+export async function emptyStash(test?: boolean) {
     // See how many requests are stored
-    let string_counter = localStorage.getItem('cache_counter');
+    let string_counter = localStorage.getItem('stash_counter');
     let remaining_requests = -1
 
     if (string_counter != null) {
@@ -216,7 +216,7 @@ export async function emptyCache(test?: boolean) {
     while (remaining_requests > 0) {
         try {
             // Get the last request stored
-            let request_name = 'gosqas_offline_cache_' + remaining_requests;
+            let request_name = 'gosqas_offline_stash_' + remaining_requests;
             let request = JSON.parse(localStorage.getItem(request_name) || '{}');
             let fullUrl = request[0][1];
             let record = request[1][1];
@@ -253,10 +253,10 @@ export async function emptyCache(test?: boolean) {
             keysCreated.push(currentKey)
             localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
 
-            // Remove request from cache and update counter
+            // Remove request from stash and update counter
             remaining_requests -= 1;
             localStorage.removeItem(request_name)
-            localStorage.setItem('cache_counter', remaining_requests.toString());
+            localStorage.setItem('stash_counter', remaining_requests.toString());
         } catch (error) {
             console.log("Record from localStorage failed to create: " + error)
             return 404;
