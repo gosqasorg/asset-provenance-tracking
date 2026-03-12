@@ -34,18 +34,18 @@ describe('Tests to see if user is online and offline', () => {
 	});
 });
 
-describe('Tests to see if requests can be cached', () => {
+describe('Tests to see if requests can be stashed', () => {
 	it('Test to see if returned data types are correct', async () => {
 		const key = await makeEncodedDeviceKey();
 		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyStash()")
 
 		localStorage.setItem('stash_counter', "0") // need to reset counter in case an earlier test fails
 		stashRequest(formUrl, formData);
-		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+		let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 
 		// Confirm that the datatypes are the same as they started
-		const returnedFormUrl = requestFromCache[0][1];
-		const returnedFormData = JSON.parse(requestFromCache[1][1]);
+		const returnedFormUrl = requestFromStash[0][1];
+		const returnedFormData = JSON.parse(requestFromStash[1][1]);
 		expect(typeof returnedFormUrl).toEqual(typeof formUrl);
 		expect(returnedFormUrl).toEqual(formUrl);
 		expect(JSON.stringify(returnedFormData)).toStrictEqual(formData.get('provenanceRecord'));
@@ -67,7 +67,7 @@ describe('Tests to see if requests can be cached', () => {
 		});
 		ValidFormData.parse(returnedFormData);
 
-		// Remove item from cache and reset naming counter
+		// Remove item from stash and reset naming counter
 		localStorage.removeItem('gosqas_offline_stash_1')
 		localStorage.setItem('stash_counter', '0');
 	});
@@ -82,15 +82,15 @@ describe('Tests to see if requests can be cached', () => {
 		stashRequest(formUrl1, formData1);
 		stashRequest(formUrl2, formData2);
 
-		let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
-		const returnedFormUrl = requestFromCache[0][1];
-		const returnedFormData = JSON.parse(requestFromCache[1][1]);
+		let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+		const returnedFormUrl = requestFromStash[0][1];
+		const returnedFormData = JSON.parse(requestFromStash[1][1]);
 		expect(returnedFormUrl).toEqual(formUrl1);
 		expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
 
-		let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
-		const returnedFormUrl2 = requestFromCache2[0][1];
-		const returnedFormData2 = JSON.parse(requestFromCache2[1][1]);
+		let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
+		const returnedFormUrl2 = requestFromStash2[0][1];
+		const returnedFormData2 = JSON.parse(requestFromStash2[1][1]);
 		expect(returnedFormUrl2).toEqual(formUrl2);
 		expect(JSON.stringify(returnedFormData2)).toStrictEqual(formData2.get('provenanceRecord'));
 
@@ -100,14 +100,14 @@ describe('Tests to see if requests can be cached', () => {
 		expect(returnedFormData.description).toEqual('description');
 		expect(returnedFormData2.description).toEqual('slightly longer description');
 
-		// Remove item from cache and reset naming counter
+		// Remove item from stash and reset naming counter
 		localStorage.removeItem('gosqas_offline_stash_1')
 		localStorage.removeItem('gosqas_offline_stash_2')
 		localStorage.setItem('stash_counter', '0');
 	});
 });
 
-describe('Tests to see if we can remove from the cache', () => {
+describe('Tests to see if we can remove from the stash', () => {
 	it('Create and remove a request', async () => {
 		const key = await makeEncodedDeviceKey();
 		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyStash()")
@@ -116,11 +116,11 @@ describe('Tests to see if we can remove from the cache', () => {
 		stashRequest(formUrl, formData);
 		expect(localStorage.getItem('stash_counter')).toEqual("1")
 
-		// Empty the cache and confirm it posted the new record
+		// Empty the stash and confirm it posted the new record
 		let statusCode = await emptyStash(true);
 		expect(statusCode).toEqual(200);
 
-		// Make sure the record was removed from the cache and the counter = 0
+		// Make sure the record was removed from the stash and the counter = 0
 		expect(localStorage.getItem('stash_counter')).toEqual("0")
 		expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null)
 
@@ -147,7 +147,7 @@ describe('Tests to see if we can remove from the cache', () => {
 
 		expect(localStorage.getItem('stash_counter')).toEqual("2")
 
-		// Empty cache and confirm both records were posted
+		// Empty stash and confirm both records were posted
 		let statusCode = await emptyStash(true);
 		expect(statusCode).toEqual(200);
 
@@ -172,7 +172,7 @@ describe('Tests to see if we can remove from the cache', () => {
 		expect(existingKeys[1]).toEqual(formUrl2.split("/")[formUrl2.split("/").length - 1])
 	});
 
-	it("Try to emptyStash when nothing is cached", async () => {
+	it("Try to emptyStash when nothing is stashed", async () => {
 		// Should just return when stash_counter = 0
 		localStorage.setItem('stash_counter', "0")
 		expect(localStorage.getItem('stash_counter')).toEqual("0")
@@ -194,12 +194,12 @@ describe('Tests to see if we can remove from the cache', () => {
 		stashRequest(formUrl, formData);
 		expect(localStorage.getItem('stash_counter')).toEqual("1")
 
-		// Empty the cache using the non-test version (so it will fail to post since formData cannot be posted from this file)
+		// Empty the stash using the non-test version (so it will fail to post since formData cannot be posted from this file)
 		console.log("Attempting a failed fetch to check error handling...")
 		let statusCode = await emptyStash();
 		expect(statusCode).toEqual(404);
 
-		// Make sure the record is still in the cache and the counter still = 1
+		// Make sure the record is still in the stash and the counter still = 1
 		const request = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 		expect(request).not.toEqual(null);
 		expect(request[0][1]).toEqual(formUrl);
