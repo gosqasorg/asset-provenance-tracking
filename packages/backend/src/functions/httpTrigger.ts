@@ -385,24 +385,28 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(request.params.deviceKey);
     const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
-
-    if (process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
-        const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
-        const subject: string = 'Tracking update'; 
-        const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
-        const displayName: string = from_address;
-
-        try {
-            const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-            for (const to_email of emailSet) {
-                await sendEmail(from_address, to_email, subject, email_body, displayName);
-            }
-        } catch (error) {
-            context.log("Error sending email: " + error);   
-        }
-    } else {
-        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+    if (emailSet.size === 0) {
+        return { jsonBody: body ?? { converted: true}};
     }
+
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
+        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+        return { jsonBody: body ?? { converted: true}};
+    }
+
+    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
+    const subject: string = 'Tracking update'; 
+    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
+    const displayName: string = from_address;
+    try {
+        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+        for (const to_email of emailSet) {
+            await sendEmail(from_address, to_email, subject, email_body, displayName);
+        }
+    } catch (error) {
+        context.log("Error sending email: " + error);   
+    }
+    
     return { jsonBody: body ?? { converted: true}};
 }
 
@@ -726,13 +730,6 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: setup data
-    // const datum = {
-    //     'key': {
-    //         'email': email,
-    //         'tags': tags
-    //     }
-    // }    
-    // const datumJson = JSON.stringify(datum)
 
     // 2 Setup blob name & id
     const type = 'notificationSignups'
@@ -861,16 +858,18 @@ async function streamToString(readableStream) {
 
 function extractEmailsFromResponse(response: any): Set<string> {
     const emailSet = new Set<string>();
-    if (response && response.status === 200 && response.jsonBody && response.jsonBody.message) {
-        try {
-            const parsed = JSON.parse(response.jsonBody.message);
-            if (parsed.email && Array.isArray(parsed.email)) {
-                parsed.email.forEach((e: string) => emailSet.add(e));
-            } else if (parsed.key?.email) {
-                emailSet.add(parsed.key.email);
-            }
-        } catch (e) {
+    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
+        return emailSet;
+    }
+    try {
+        const parsed = JSON.parse(response.jsonBody.message);
+        if (parsed.email && Array.isArray(parsed.email)) {
+            parsed.email.forEach((e: string) => emailSet.add(e));
+        } else if (parsed.key?.email) {
+            emailSet.add(parsed.key.email);
         }
+    } catch (error) {
+        console.log("Fail to extract emails:", error.message)
     }
     return emailSet;
 }
