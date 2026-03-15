@@ -285,6 +285,9 @@ async mounted() {
         this.isCreating = false;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
+        setTimeout(() => {
+          this.isLoading = false;
+        }, 1000); // logs after 1 second
         console.log(error)
 	}
 },
