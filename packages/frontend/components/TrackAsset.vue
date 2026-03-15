@@ -17,85 +17,100 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     a record key to be tracked (Button now called View Record).
 -->
 
-
 <template>
-    <form @submit.prevent="submit">
-        <input type="text" id="input" v-model="deviceKey" placeholder="Record key" style="width: inputWidth;" required/>
-        <button
-                @click="trackingForm()"
-                id="viewRecordButton"
-                class="baseButton view-record-button"
-                style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 12px;
-                  margin: 0px;
-                  font-size: 16px;
-                "
-              >
-                View Record
-              </button>
-    </form>
+  <form @submit.prevent="submit">
+    <input
+      type="text"
+      id="input"
+      v-model="deviceKey"
+      placeholder="Record key"
+      style="width: inputWidth"
+      required
+    />
+    <button
+      @click="trackingForm()"
+      id="viewRecordButton"
+      class="baseButton view-record-button"
+      style="border-width: 2px; border-style: solid; padding: 12px; margin: 0px; font-size: 16px"
+    >
+      View Record
+    </button>
+  </form>
 </template>
 
 <script lang="ts">
+import { validateKey } from '~/utils/keyFuncs';
 
 export default {
-    props: {
-        inputWidth: { type: String, default: "100%" }
-    },
-    data() {
-        return {
-            deviceKey: ''
-        }
-    },
-    mounted() {
-        let inputField = document.getElementById("input") as HTMLDivElement;
-        inputField.style.width = this.inputWidth;
-    },
-    methods: {
-        async submit() {
-            // Get the record/device key from the end of an entered URL, or just use the entered key
-            var extractedDeviceKey = this.deviceKey.split("/").pop();
-            this.$router.push({ path: `/history/${extractedDeviceKey}` });
-        }
+  props: {
+    inputWidth: { type: String, default: '100%' }
+  },
+  data() {
+    return {
+      deviceKey: ''
+    };
+  },
+  mounted() {
+    let inputField = document.getElementById('input') as HTMLDivElement;
+    inputField.style.width = this.inputWidth;
+  },
+  methods: {
+    async submit() {
+      // Get the record/device key from the end of an entered URL, or just use the entered key
+      var extractedDeviceKey = this.deviceKey.split('/').pop();
+
+      // Validate key length to be exactly 22 characters
+      if (!validateKey(extractedDeviceKey)) {
+        const error = createError({
+          data: {
+            statusText: 'Record not found',
+            statusTextReason:
+              "We're sorry, the record you're looking for could not be found or does not exist. Please double-check the key you entered."
+          }
+        });
+        showError(error);
+        return;
+      }
+
+      this.$router.push({ path: `/history/${extractedDeviceKey}` });
     }
-}
+  }
+};
 </script>
 <style scoped>
 input {
-    border: 1px solid #CBD5E1;
-    border-radius: 6px;
-    line-height: 48px;
-    margin-right: 15px;
-    margin-top: 20px;
-    margin-bottom: 0px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  line-height: 48px;
+  margin-right: 15px;
+  margin-top: 20px;
+  margin-bottom: 0px;
 }
 #viewRecord {
-    margin-top: 20px !important;
+  margin-top: 20px !important;
 }
-input::placeholder{
-    padding-left: 5px;
+input::placeholder {
+  padding-left: 5px;
 }
 form {
-    width: 100%;
+  width: 100%;
 }
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #viewRecordButton {
-        background-color: #CCECFD;
-        color: #000000;
-        border-color: #CCECFD;
-        border-radius: 10px;
-    } 
+  #viewRecordButton {
+    background-color: #ccecfd;
+    color: #000000;
+    border-color: #ccecfd;
+    border-radius: 10px;
+  }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-    #viewRecordButton {
-      background-color: #4E3681;
-      color: #FFFFFF;  
-      border-color: #4E3681;
-      border-radius: 10px;
-    } 
+  #viewRecordButton {
+    background-color: #4e3681;
+    color: #ffffff;
+    border-color: #4e3681;
+    border-radius: 10px;
+  }
 }
 </style>
