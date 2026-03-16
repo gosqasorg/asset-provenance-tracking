@@ -822,10 +822,8 @@ async function createChildren(context, number_of_children, tags?) {
 
 async function createGroup(context, name, description, n_children) {
     const baseUrl = process.env['backend_url'];
-    //const frontendUrl = process.env['frontend_url'];
-    //const apiUrl = process.env['api_url'];
-    const frontendUrl = 'http://localhost:3000'
-    const apiUrl = 'http://localhost:7071/api'
+    const frontendUrl = process.env['frontend_url'];
+    const apiUrl = process.env['api_url'];
 
     // Create children first
     let childKeys = await createChildren(context, n_children)
