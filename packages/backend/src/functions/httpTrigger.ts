@@ -302,6 +302,24 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
+
+export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+
+    await containerClient.createIfNotExists();
+
+    const formData = await request.formData();
+    const provenanceRecord = formData.get("provenanceRecord");
+    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+    const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
+
+    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+    const timestamp = new Date().getTime();
+    const attachments = new Array<NamedBlob>();
+    for (const attach of formData.values()) {
         if (typeof attach === 'string') continue;
         console.log("attach type: " + typeof(attach))
         attachments.push({ blob: attach, name: attach.name });
@@ -804,14 +822,8 @@ async function createChildren(context, number_of_children, tags?) {
 
 async function createGroup(context, name, description, n_children) {
     const baseUrl = process.env['backend_url'];
-    context.log(baseUrl)
-    context.log(baseUrl)
-    context.log(baseUrl)
-    context.log(baseUrl)
-    context.log(baseUrl)
-    context.log(baseUrl)
-    context.log(baseUrl)
-    context.log('--------------------')
+    //const frontendUrl = process.env['frontend_url'];
+    //const apiUrl = process.env['api_url'];
     const frontendUrl = 'http://localhost:3000'
     const apiUrl = 'http://localhost:7071/api'
 
