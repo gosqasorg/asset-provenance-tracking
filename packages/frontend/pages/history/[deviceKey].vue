@@ -101,7 +101,7 @@ const recordHasParent = hasParent(provenance);
 			<div class="record-description">
 				<div class="my-4 text-iris fs-1">
 				<p class="text-bold mb-0 device-name">Asset History Records</p>
-				<h1 class="mt-1 mb-1">
+				<h1 class="mt-1 mb-1" style="word-break: break-word;">
 					{{ deviceRecord?.deviceName }}
 				</h1>
 				</div>
@@ -113,7 +113,7 @@ const recordHasParent = hasParent(provenance);
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
-				<span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
+				<span v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
 				</div>
 
 				<section ref="section" id="priority-notices">
