@@ -1024,14 +1024,118 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+// TODO: match parameters to createGroup? -- I think we're sent formData in a post request!
+export async function createRecord(context, name, description) {
+    // TODO: create a new record + post (see tests, don't hardcode urls see createGroup)
+    const baseUrl = process.env['backend_url'];  // TODO: localhost includes /prov, does dev.gosqas?
+    const deviceKey = await makeEncodedDeviceKey();
+
+    try {
+        const data = {
+            blobType: 'deviceInitializer',
+            deviceName: name,
+            description: description,
+            tags: [],
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        };
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(data));
+
+        // TODO: should post response also try 3 times here..? createChildren does try 3 times! group doesn't
+            // Could have a different func. for posting..?
+        const theResponse = await fetch(`${baseUrl}${deviceKey}`, {
+            method: "POST",
+            body: formData,
+        });
+
+        const theJson = await theResponse.json()
+        const dataUrl = theResponse.url.split('/')
+        const theRecordKey = dataUrl[dataUrl.length - 1]
+        // context.log(theRecordKey)
+        return theRecordKey
+
+    } catch (error) {
+        console.error('createRecord Error: Failed to create record' + error); 
+        return '';
+    }
+}
+
+const RecordCreationOrderSchema = z.object({
+    blobType: z.string().optional(),
+    deviceName: z.string(),
+    description: z.string(),
+    children_key: z.union([z.string(), z.array(z.string())]),
+    children_name: z.array(z.string()).optional(),
+    hasParent: z.boolean().optional(),
+    isReportingKey: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        RecordCreationOrderSchema.parse(theRequest)
+        let title = theRequest['title']
+        let description = theRequest['description']
+        let recordUrl = await createRecord(context, title, description)
+        context.log(recordUrl)
+
+        return {
+            status: 200,
+            jsonBody: { recordUrl: recordUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create record: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+// TODO: once function is complete create new test file and write tests!
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+app.post("createRecord", {
+    authLevel: 'anonymous',
+    route: 'createRecord',
+    handler: createRecordHandler
+})
 
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
-    handler: createGroupHandler,
+    handler: createGroupHandler
 })
 
 app.get("emailSignupTestEndpoint", {
