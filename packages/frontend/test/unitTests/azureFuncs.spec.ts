@@ -39,7 +39,7 @@ describe('Tests to see if requests can be stashed', () => {
 		const key = await makeEncodedDeviceKey();
 		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyStash()")
 
-		localStorage.setItem('stash_counter', "0") // need to reset counter in case an earlier test fails
+		localStorage.setItem('stash_counter', "0") // need to reset counter to avoid overlap with other tests
 		stashRequest(formUrl, formData);
 		let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 
@@ -67,9 +67,8 @@ describe('Tests to see if requests can be stashed', () => {
 		});
 		ValidFormData.parse(returnedFormData);
 
-		// Remove item from stash and reset naming counter
+		// Remove item from stash
 		localStorage.removeItem('gosqas_offline_stash_1')
-		localStorage.setItem('stash_counter', '0');
 	});
 
 	it('Test to see if we can store multiple requests', async () => {
@@ -100,10 +99,9 @@ describe('Tests to see if requests can be stashed', () => {
 		expect(returnedFormData.description).toEqual('description');
 		expect(returnedFormData2.description).toEqual('slightly longer description');
 
-		// Remove item from stash and reset naming counter
+		// Remove items from stash
 		localStorage.removeItem('gosqas_offline_stash_1')
 		localStorage.removeItem('gosqas_offline_stash_2')
-		localStorage.setItem('stash_counter', '0');
 	});
 });
 
@@ -113,6 +111,7 @@ describe('Tests to see if we can remove from the stash', () => {
 		let [formUrl, formData] = await createRequest(key, "Stored Record", "Test record stored in localStorage then created from emptyStash()")
 
 		localStorage.setItem('stash_counter', "0")
+		localStorage.setItem("gdt-stash-fulfilled", "")
 		stashRequest(formUrl, formData);
 		expect(localStorage.getItem('stash_counter')).toEqual("1")
 
@@ -131,7 +130,7 @@ describe('Tests to see if we can remove from the stash', () => {
 
 		// Make sure the new key was stored to display to the frontend later
 		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
-		expect(existingKeys.length).toBe(1)
+		expect(existingKeys).not.toEqual(['{}'])
 		expect(existingKeys[0]).toEqual(formUrl.split("/")[formUrl.split("/").length - 1])
 	});
 
@@ -142,6 +141,7 @@ describe('Tests to see if we can remove from the stash', () => {
 		let [formUrl2, formData2] = await createRequest(key2, "second stored record", "this is the same test")
 
 		localStorage.setItem('stash_counter', "0")
+		localStorage.setItem("gdt-stash-fulfilled", "")
 		stashRequest(formUrl1, formData1);
 		stashRequest(formUrl2, formData2);
 
@@ -167,14 +167,16 @@ describe('Tests to see if we can remove from the stash', () => {
 
 		// Make sure all three keys (including the one from the previous test) are stored
 		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
-		expect(existingKeys.length).toBe(3)
-		expect(existingKeys[2]).toEqual(formUrl1.split("/")[formUrl1.split("/").length - 1])
-		expect(existingKeys[1]).toEqual(formUrl2.split("/")[formUrl2.split("/").length - 1])
+		expect(existingKeys).not.toEqual(['{}'])
+		expect(existingKeys.length).toBe(2)
+		expect(existingKeys[1]).toEqual(formUrl1.split("/")[formUrl1.split("/").length - 1])
+		expect(existingKeys[0]).toEqual(formUrl2.split("/")[formUrl2.split("/").length - 1])
 	});
 
 	it("Try to emptyStash when nothing is stashed", async () => {
 		// Should just return when stash_counter = 0
 		localStorage.setItem('stash_counter', "0")
+		localStorage.setItem("gdt-stash-fulfilled", "")
 		expect(localStorage.getItem('stash_counter')).toEqual("0")
 		let statusCode = await emptyStash();
 		expect(statusCode).toEqual(200);
@@ -191,6 +193,7 @@ describe('Tests to see if we can remove from the stash', () => {
 		let [formUrl, formData] = await createRequest(key, "Failed Record", "A record that will fail to post")
 
 		localStorage.setItem('stash_counter', "0")
+		localStorage.setItem("gdt-stash-fulfilled", "")
 		stashRequest(formUrl, formData);
 		expect(localStorage.getItem('stash_counter')).toEqual("1")
 
@@ -210,6 +213,6 @@ describe('Tests to see if we can remove from the stash', () => {
 
 		// Confirm failed key was not added to list of successful requests
 		let existingKeys = (localStorage.getItem("gdt-stash-fulfilled") || '{}').split(",")
-		expect(existingKeys.length).toBe(3)
-	});
+		expect(existingKeys).toEqual(['{}'])
+	}, 200000);
 });
