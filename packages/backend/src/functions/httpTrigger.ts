@@ -1024,9 +1024,30 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+export async function testGetHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        return {
+            status: 200, 
+            body: "foobar",
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        console.error('no foobar:', error.message)
+        return {
+            status: 500,
+            body: "",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+app.get("testGet", {
+    authLevel: 'anonymous',
+    route: 'testRoute',
+    handler: testGetHandler
+})
 
 app.post("createGroup", {
     authLevel: 'anonymous',
