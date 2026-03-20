@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { stashRequest, emptyStash, onlineTestFetch, getProvenance } from '~/services/azureFuncs';
-import { makeEncodedDeviceKey } from '../../../packages/backend/utils/keyFuncs';
+import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
 import * as z from 'zod';
 
 const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
