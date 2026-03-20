@@ -1130,7 +1130,7 @@ describe("Record Creation Tests", () => {
 		}
 	}, 600000);
 
-	// The most basic possible test -- create a record
+	// Feature-complete test - Record Creation
 	it("(Smoketest) Create a record with everything: tags and attachments of diverse types and sizes.", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
@@ -1145,7 +1145,7 @@ describe("Record Creation Tests", () => {
 				blobType: 'deviceInitializer',
 				deviceName: "Create Record Test with everything",
 				description: "An API smoketest for creating a record with everything",
-				tags: {},
+				tags: ['complete', 'api', 'create', 'smoketest'],
 				children_key: '',
 				hasParent: false,
 				isReportingKey: false,
@@ -1175,6 +1175,8 @@ describe("Record Creation Tests", () => {
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
 			expect(responseString.record.deviceName).toBe('Create Record Test with everything');
 			expect(responseString.record.description).toBe('An API smoketest for creating a record with everything');
+			expect(responseString.record.tags.length).toBe(4);
+			expect(JSON.stringify(responseString.record.tags)).toBe('["complete","api","create","smoketest"]');
 			expect(responseString.record.children_key).toBe("");
 			expect(responseString.record.hasParent).toBe(false);
 			expect(responseString.record.isReportingKey).toBe(false);
