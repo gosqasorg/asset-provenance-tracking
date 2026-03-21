@@ -30,7 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
-                <input type="number" v-model="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" @change="displayFields" >
+                <input type="number" v-model.number="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" step="1" @input="enforceLimit" @change="displayFields" @keydown="blockInvalidNumberChars">
+                <span style="font-size: 1em; font-weight: normal; margin-left: 8px;">(Limit 500)</span>
             </h4>
 
 
@@ -149,6 +150,28 @@ export default {
         },
     },
     methods: {
+        blockInvalidNumberChars(e: KeyboardEvent) {
+            const invalidKeys = ['e', 'E', '+', '-', '.'];
+            if (invalidKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        },
+        enforceLimit() {
+            // To handle cases: empty user input or invalid input types such as the string 'abc' or '1+600'.
+            if (this.childrenKeys === null || this.childrenKeys === undefined || isNaN(this.childrenKeys)) {
+                this.childrenKeys = 0;
+                return;
+            }
+
+            if (this.childrenKeys > 500) {
+                this.childrenKeys = 500;
+            } else if (this.childrenKeys < 0) {
+                this.childrenKeys = 0;
+            } else {
+                this.childrenKeys = Math.floor(this.childrenKeys);
+            }
+        },
+
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
