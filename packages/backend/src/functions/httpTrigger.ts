@@ -7,6 +7,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { sendEmail } from './sendEmail.js';
+
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -738,11 +740,12 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
 
+        context.log("BRAGGGGGGGGG")
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
+        context.log('body:', body);
         const email = body.email;
         const recordKey = body.recordKey;
-        const tags = body.tags;
 
         if (!email || !recordKey){
             return {
@@ -751,7 +754,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
         }
 
-        console.log("Received signup for " + email)
+        context.log("Received signup for " + email)
 
         // Pending Verifications Table (copied from postEmail - will refactor later)
         // TODO: Refactor Table creation
@@ -777,21 +780,20 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             rowKey: email,
             code: code,
             expiresAt: Date.now() + codeExpiration,
-            tags: tags.join(','),
             recordKey: recordKey
         };
 
-        tableClient.upsertEntity(entity);
+        await tableClient.upsertEntity(entity);
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         // TODO: Ask Vincent for our domain name, gonna assume its gosqas.org based on the discord messages for now
-        const { sendEmail } = await import('./sendEmail.js');        
+        // const { sendEmail } = await import('./sendEmail.js');        
         await sendEmail(
-            "DoNotReply@5c235288-f7ff-4193-adaa-c4c934799e14.azurecomm.net",
+            "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
             email,
             "GOSQAS Verification Code",
-            `Your verification code is: ${code}\nExpires in ${(codeExpiration / 10 / 1000)}.`,
+            `Your verification code is: ${code}\nExpires in ${(codeExpiration / 60 / 1000)}.`,
             "GOSQAS Notification"
         )
 

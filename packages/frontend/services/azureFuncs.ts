@@ -152,6 +152,8 @@ export async function postNotificationEmail(email:string, recordKey: string) {
         body: JSON.stringify({ email, recordKey }),
     });
 
+    console.log('postNotificationEmail status:', response.status);
+
     if (response.status != 200) {
         throw new Error('postNotificationEmail: Failed to send verification code')
     }

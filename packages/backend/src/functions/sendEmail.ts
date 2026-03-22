@@ -1,22 +1,9 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
+const emailClient = new EmailClient(connectionString);
 
-// lazy init to avoid crash at module load if connection string is missing
-let emailClient: EmailClient | null = null;
-
-// create EmailClient only when needed, not at import time
-function getEmailClient(): EmailClient {
-  if (!emailClient) {
-    if (!connectionString) {
-      throw new Error("COMMUNICATION_SERVICES_CONNECTION_STRING not configured");
-    }
-    emailClient = new EmailClient(connectionString);
-  }
-  return emailClient;
-}
-
-// send an email using the Azure Communication Services Email SDK
+// Send an email using the Azure Communication Services Email SDK
 export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
   if (!from_address || !to_address || !subject || !plainText || !displayName) {
     throw "Missing required parameter(s).";
@@ -41,9 +28,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     };
 
     console.log("Sending email...", message);
-    // getting error because of initialization order
-    const client = getEmailClient();
-    const poller = await client.beginSend(message);
+    const poller = await emailClient.beginSend(message);
 
     if (!poller.getOperationState().isStarted) {
       throw "Poller was not started."
@@ -51,7 +36,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
 
     let timeElapsed = 0;
     while (!poller.isDone()) {
-      poller.poll();
+      await poller.poll();
 
       await new Promise(resolve => setTimeout(resolve, POLLER_WAIT_TIME * 1000));
       timeElapsed += 10;
@@ -75,4 +60,3 @@ export async function sendEmail(from_address: string, to_address: string, subjec
   }
 
 }
-
