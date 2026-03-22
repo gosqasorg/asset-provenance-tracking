@@ -1,15 +1,21 @@
 <template>
-    <!-- <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'> -->
     <div>
 
         <!-- TODO: part 1 email input -->
         
         <div v-if="step === 'email'">
-            <input type="email" placeholder="your@email.com" required/>
-            <!-- <input type="text" placeholder="tags" /> -->
             <!-- TODO: Add the usual tag input stuff later -->
-             <!-- submit btn -> sendCode() -->
-             <button>Send Code</button>
+            <h4 class="header">Stage 1: Submit Email</h4>
+            <input 
+                type="text" 
+                class="form-control" 
+                v-model="email" 
+                placeholder="your@email.com"
+            />
+            <button @click="sendCode" :disabled="isSubmitting">
+                Send Verification Code
+            </button>
+            <p v-if="error">{{ error }}</p>
         </div>
 
         <!-- TODO: part 2 - verify email -->
@@ -31,36 +37,56 @@
         <!-- Maybe no fail? security issue -->
 
         <!-- Temp Test Button to make sure state changes -->
-        <button @click="nextStep('code')" v-if="step === 'email'">Next</button>
+        <!-- <button @click="nextStep('code')" v-if="step === 'email'">Next</button>
         <button @click="nextStep('success')" v-if="step === 'code'">Next</button>
-        <button @click="nextStep('email')" v-if="step === 'success'">Next</button>
+        <button @click="nextStep('email')" v-if="step === 'success'">Next</button> -->
 
     </div>
 </template>
 
-<script setup lang="ts">
-    import { useRoute } from 'vue-router';
-    // import { hasParent } from '~/utils/descendantList';
-    import { ref } from 'vue';
-    const route = useRoute()
-    const recordKey = route.params.deviceKey as string;
+<script lang="ts">
+    import { postNotificationEmail } from '~/services/azureFuncs';
 
-
-
-    // TODO: verification states
-    type Step = 'email' | 'code' | 'success';
-
-    const step = ref<Step>('email');
-
-
-    // temp func to test step change
-    const nextStep = (next: Step) => {
-        step.value = next;
-    };    
-
-    // TODO: sendCode()
-    // POST to postNotificationEmail
-
+    export default {
+        data() {
+            return {
+                step: 'email' as 'email' | 'code' | 'success',
+                email: '',
+                error: null as string | null,
+                isSubmitting: false,
+            }
+        },
+        methods: {
+            async sendCode() {
+                if (!this.email) return;
+                this.isSubmitting = true;
+                this.error = null;
+                try {
+                    const deviceKey = this.$route.params.deviceKey as string;
+                    await postNotificationEmail(this.email, deviceKey);
+                    this.step = 'code';
+                } catch(error) {
+                    this.$snackbar.add({ 
+                        type: 'error', 
+                        text: `Failed to send code: ${error}` 
+                    });
+                } finally {
+                    this.isSubmitting = false;
+                }
+            }
+        }
+    }
+     
     // TODO: verifyCode()
     // POST to VerifyCode
 </script>
+
+<style scoped>
+
+.header {
+    color: whitesmoke;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+</style>
