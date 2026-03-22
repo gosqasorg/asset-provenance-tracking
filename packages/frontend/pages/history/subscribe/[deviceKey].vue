@@ -5,8 +5,8 @@
         <!-- TODO: part 1 email input -->
         
         <div v-if="step === 'email'">
-            <input type="email" placeholder="your@email.com"/>
-            <input type="text" placeholder="tags" />
+            <input type="email" placeholder="your@email.com" required/>
+            <!-- <input type="text" placeholder="tags" /> -->
             <!-- TODO: Add the usual tag input stuff later -->
              <!-- submit btn -> sendCode() -->
              <button>Send Code</button>

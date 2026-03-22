@@ -7,7 +7,6 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { sendEmail } from './sendEmail.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -787,8 +786,9 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         // TODO: Ask Vincent for our domain name, gonna assume its gosqas.org based on the discord messages for now
+        const { sendEmail } = await import('./sendEmail.js');        
         await sendEmail(
-            "donotreply@gosqas.org",
+            "DoNotReply@5c235288-f7ff-4193-adaa-c4c934799e14.azurecomm.net",
             email,
             "GOSQAS Verification Code",
             `Your verification code is: ${code}\nExpires in ${(codeExpiration / 10 / 1000)}.`,
