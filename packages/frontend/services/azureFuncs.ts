@@ -142,3 +142,17 @@ async function fetchUrl(url: string, formData?: FormData) {
         throw new Error(`Could not connect to the server, check your internet connection and try again`);
     }
 }
+
+// ======= EMAIL STUFF =============
+export async function postNotificationEmail(email:string, recordKey: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/notificationsubscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, recordKey }),
+    });
+
+    if (response.status != 200) {
+        throw new Error('postNotificationEmail: Failed to send verification code')
+    }
+}

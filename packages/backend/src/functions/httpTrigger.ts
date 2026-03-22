@@ -454,7 +454,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     };
 };
 
-// Moved Post Email To Email Verification Zone
+// ============ Moved Post Email To Email Verification Zone ======================
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
@@ -912,6 +912,14 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
 // TODO: Make something like emailSignupTestEndpoint 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+// ======== EMAIL STUFF =============/
+
+
+
+// ==================================/
+
+
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',
