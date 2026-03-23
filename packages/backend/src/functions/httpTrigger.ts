@@ -740,7 +740,6 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
 
-        context.log("BRAGGGGGGGGG")
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
         context.log('body:', body);
@@ -770,6 +769,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // generate code
         // salt ??= crypto.getRandomValues(new Uint8Array(16)); + clamp to 6 digits (ask vincent if prefferened amount)
         const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
+        const token = Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString('base64url');
 
         // store email, code, rec and tags in table
         // upsert incase of code resend
@@ -779,6 +779,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             partitionKey: 'PendingVerification',
             rowKey: email,
             code: code,
+            token: token,
             expiresAt: Date.now() + codeExpiration,
             recordKey: recordKey
         };
@@ -787,20 +788,24 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        // TODO: Ask Vincent for our domain name, gonna assume its gosqas.org based on the discord messages for now
-        // const { sendEmail } = await import('./sendEmail.js');        
+        // TODO: Change to gosqas.org for deployment;        
+        const frontendUrl = 'http://localhost:3000';
+        const verifyLink = `${frontendUrl}/history/subscribe/${recordKey}/verify?token=${token}&code=${code}`;
+        
         await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
             email,
             "GOSQAS Verification Code",
-            `Your verification code is: ${code}\nExpires in ${(codeExpiration / 60 / 1000)}.`,
+            `Your verification code is: ${code}\n\n
+            Or click this link to verify automatically:\n${verifyLink}\n\n
+            Expires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             "GOSQAS Notification"
         )
 
         // Return Success (for now, but eventually we will want to return errors if email is malformed, etc)
         // TODO: Flesh out error handling for invalid emails.
         return {
-            jsonBody: {message: "Success"},
+            jsonBody: {message: "Success", token: token },
             status: 200
         } 
         
@@ -809,10 +814,72 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
-
         }
 
     }
+}
+
+export async function getPendingVerification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const token = request.query.get('token');
+
+        if (!token) {
+            return {
+                jsonBody: { error: "Token required" },
+                status: 400
+            }
+        }
+
+    const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;
+
+    const credential = new AzureNamedKeyCredential(accountName, accountKey);
+    const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
+
+    // query by token since rowKey is email
+    const entities = tableClient.listEntities({
+        queryOptions: { filter: `token eq '${token}'` }
+    });
+
+    // get first match
+    let entity = null;
+    for await (const e of entities) {
+        entity = e;
+        break;
+    }
+
+    // not found
+    if (!entity) {
+        return {
+            jsonBody: { error: "Invalid or expired code" },
+            status: 404
+        }
+    }
+
+    // expired - delete and return 404
+    if (Date.now() > entity.expiresAt) {
+        await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
+        return {
+            jsonBody: { error: "Invalid or expired code" },
+            status: 404
+        }
+    }
+
+    // valid - return 200, don't expose code
+    return {
+        jsonBody: { message: "Valid" },
+        status: 200
+    }
+
+    } catch(error) {
+        console.error(error.message);
+        return {
+            jsonBody: { message: "Internal Error" },
+            status: 500
+        }
+    }
+
 }
 
 // TODO: we need a verifyCode Function
@@ -823,14 +890,12 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
     try {
         // get email and code
         const body = await request.json() as any;
-        const email = body.email;
+        const token = body.token;
         const code = body.code;
 
-        context.log("Code: " + code + " for email: " + email)
-
-        if (!email || !code) {
+        if (!token || !code) {
             return {
-                jsonBody: { error: "Email and code required" },
+                jsonBody: { error: "Token and code required" },
                 status: 400
             }
         }
@@ -846,19 +911,19 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         await tableClient.createTable();  // Create if not exist, no error if it does
 
 
-        // grab the entity by email - try catch ?
-        let entity;
-        try {
-            entity = await tableClient.getEntity('PendingVerification', email);
-        } catch {
-            return {
-                jsonBody: { error: "Invalid or expired code"},
-                status: 400
-            }
+        // query by token
+        const entities = tableClient.listEntities({
+            queryOptions: { filter: `token eq '${token}'` }
+        });
+
+        let entity = null;
+        for await (const e of entities) {
+            entity = e;
+            break;
         }
 
-        // check expiry - then check code
-        if (Date.now() > entity.expiresAt || entity.code !== code) {
+        // not found, expired, or wrong code - same generic msg
+        if (!entity || Date.now() > entity.expiresAt || entity.code !== code) {
             return {
                 jsonBody: { error: "Invalid or expired code" },
                 status: 400
@@ -868,8 +933,8 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // return failure if any 
         // on succes, delete pending entity email
         // and call signupfornotifications (with verified users :))
-        await tableClient.deleteEntity('PendingVerification', email);
-        await signupForNotifications(entity.recordKey as string, email);
+        await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
+        await signupForNotifications(entity.recordKey as string, entity.rowKey as string) // recordKey is deviceKey, rowKey is email;
 
         return {
             jsonBody: {message: "Success"},
@@ -969,6 +1034,12 @@ app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
+})
+
+app.get('getPendingVerification', {
+    authLevel: 'anonymous',
+    route: 'pendingVerification',
+    handler: getPendingVerification,
 })
 
 app.post("postVerifyCode", {

@@ -157,16 +157,29 @@ export async function postNotificationEmail(email:string, recordKey: string) {
     if (response.status != 200) {
         throw new Error('postNotificationEmail: Failed to send verification code')
     }
+
+    const data = await response.json();
+    return data.token as string;
 }
 
-export async function postVerifyCode(email: string, code: string) {
+export async function postVerifyCode(token: string, code: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/verifycode`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ token, code }),
     });
     if (response.status != 200) {
         throw new Error('postVerifyCode: Failed to verify code')
+    }
+}
+
+export async function getPendingVerification(token: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/pendingverification?token=${token}`, {
+        method: 'GET',
+    });
+    if (response.status != 200) {
+        throw new Error('getPendingVerfication: invalid or expired token')
     }
 }
