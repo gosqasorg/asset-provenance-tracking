@@ -20,13 +20,10 @@
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.6",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.1",
-    "prettier": "^3.6.2"
+    "lint-staged": "^16.2.1"
   },
   "lint-staged": {
     "**/*.{js,ts,vue,json,css,yml}": [
-      "prettier --write"
     ]
   }
 }
