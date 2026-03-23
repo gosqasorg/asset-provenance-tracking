@@ -826,6 +826,8 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const email = body.email;
         const code = body.code;
 
+        context.log("Code: " + code + " for email: " + email)
+
         if (!email || !code) {
             return {
                 jsonBody: { error: "Email and code required" },

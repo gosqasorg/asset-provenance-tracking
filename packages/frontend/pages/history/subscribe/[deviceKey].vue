@@ -24,34 +24,45 @@
         <!-- verify btn  -->
         <!-- resend code btn -->
          <div v-else-if="step === 'code'">
-            <p style="color: azure;">Code Verification</p>
+            <input 
+                type="text" 
+                class="form-control" 
+                v-model="email" 
+                disabled
+            />
+            <input 
+                type="tel" 
+                class="form-control" 
+                v-model="code" 
+                placeholder="123456" 
+                maxlength="6"
+            />
+            <button @click="verifyCode" :disabled="isSubmitting">
+                Verify
+            </button>
+            <a @click="sendCode">Resend code</a>
         </div>
     
         
         <!-- TODO: part 3 success -->
         <!-- confirmation msg -->
         <div v-else-if="step === 'success'">
-            <p style="color: azure;">Success!</p>
+            <h4 class="header">You're subscribed!</h4>
+            <p>Verification complete. You'll receive notifications for this record.</p>
         </div>
-
-        <!-- Maybe no fail? security issue -->
-
-        <!-- Temp Test Button to make sure state changes -->
-        <!-- <button @click="nextStep('code')" v-if="step === 'email'">Next</button>
-        <button @click="nextStep('success')" v-if="step === 'code'">Next</button>
-        <button @click="nextStep('email')" v-if="step === 'success'">Next</button> -->
 
     </div>
 </template>
 
 <script lang="ts">
-    import { postNotificationEmail } from '~/services/azureFuncs';
+    import { postNotificationEmail,  postVerifyCode } from '~/services/azureFuncs';
 
     export default {
         data() {
             return {
                 step: 'email' as 'email' | 'code' | 'success',
                 email: '',
+                code: '',
                 error: null as string | null,
                 isSubmitting: false,
             }
@@ -73,12 +84,27 @@
                 } finally {
                     this.isSubmitting = false;
                 }
+            },
+
+            async verifyCode() {
+                if (!this.code) return;
+                this.isSubmitting = true;
+                this.error = null;
+                try {
+                    await postVerifyCode(this.email, this.code);
+                    this.step = 'success';
+                } catch(error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Failed to verify code: ${error}`
+                    });
+                } finally {
+                    this.isSubmitting = false;
+                }
             }
         }
     }
      
-    // TODO: verifyCode()
-    // POST to VerifyCode
 </script>
 
 <style scoped>

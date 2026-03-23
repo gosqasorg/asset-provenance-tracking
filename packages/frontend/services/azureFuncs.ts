@@ -158,3 +158,15 @@ export async function postNotificationEmail(email:string, recordKey: string) {
         throw new Error('postNotificationEmail: Failed to send verification code')
     }
 }
+
+export async function postVerifyCode(email: string, code: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/verifycode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+    });
+    if (response.status != 200) {
+        throw new Error('postVerifyCode: Failed to verify code')
+    }
+}
