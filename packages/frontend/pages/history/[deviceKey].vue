@@ -21,14 +21,20 @@ their items.
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
-const route = useRoute()
+const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
 
-const provenance = await getProvenance(recordKey);
+// Catches the error when the key is invalid / not found and prevents it from not crashing
+//i.e., not sending the invalid url
+let provenance: any[] = [];
+try {
+	provenance = await getProvenance(recordKey);
+} catch (e) {
+	provenance = [];
+}
 
 const recordHasParent = hasParent(provenance);
-
 </script>
 
 <template>
@@ -189,21 +195,7 @@ const recordHasParent = hasParent(provenance);
 	</div>
 	</div>
 </div>
-<div v-else>
-	<h1 class="error-title">Invalid history key</h1>
-	<h2 class="error-subtitle">No record attached to this key</h2>
-	<p class="error-description">
-	We’re sorry, the record you’re looking for could not be found.
-	Please double-check your key. If you keep receiving this error,
-	email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-	</p>
-	<div class="error-buttons">
-	<!-- Go home button -->
-	<RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-	<!-- Email us button -->
-	<RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
-	</div>
-</div>
+<InvalidHistoryKey v-else></InvalidHistoryKey>
 </template>
 
 <script lang="ts">
@@ -211,6 +203,7 @@ import { getProvenance, displayOnlineBanner, displayOfflineBanner } from '~/serv
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
+import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -219,7 +212,6 @@ let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
-
 
 let headers = [
 { id: "device-details", name: "Record details" },
@@ -233,6 +225,7 @@ let headers = [
 export default {
 components: {
 	KeyList,
+	InvalidHistoryKey,
 },
 data() {
 	return {
@@ -287,6 +280,9 @@ async mounted() {
         this.isCreating = false;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
+        setTimeout(() => {
+          this.isLoading = false;
+        }, 1000); // logs after 1 second
         console.log(error)
 	}
 },
@@ -332,6 +328,11 @@ methods: {
             type: 'error',
             text: 'No provenance record found'
 		});
+		this.isLoading = false;
+		this.recordKeyFound = false;
+		this.hasReportingKey = false;
+		this.childKeys = [];
+		this.valid = false;
 		return;
 	}
 
@@ -389,7 +390,6 @@ methods: {
 	},
 }
 };
-
 </script>
 
 <style scoped>
