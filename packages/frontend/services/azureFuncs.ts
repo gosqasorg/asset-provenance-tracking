@@ -186,21 +186,21 @@ export async function connectivityChecker() {
     return;
 }
 
-export async function cacheRequest(formUrl: string, formData: FormData) {
+export async function stashRequest(formUrl: string, formData: FormData) {
     // Convert values to string and store them
     let valuesToStore = [];
     valuesToStore.push(['formUrl', formUrl]);
     valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get cache_counter and add 1 to it
-    let current_request = localStorage.getItem('cache_counter');
+    // Get stash_counter and add 1 to it
+    let current_request = localStorage.getItem('stash_counter');
     if (current_request == null) {
         current_request = '0';
     }
-    let cache_counter = parseInt(current_request) + 1;
-    localStorage.setItem('cache_counter', cache_counter.toString());
+    let stash_counter = parseInt(current_request) + 1;
+    localStorage.setItem('stash_counter', stash_counter.toString());
 
-    // Store the request at a unique key (gosqas_offline_cache_#)
-    let request_name = 'gosqas_offline_cache_' + cache_counter;
+    // Store the request at a unique key (gosqas_offline_stash_#)
+    let request_name = 'gosqas_offline_stash_' + stash_counter;
     localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
