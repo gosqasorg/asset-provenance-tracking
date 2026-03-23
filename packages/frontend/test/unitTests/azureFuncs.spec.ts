@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { onlineTestFetch } from '~/services/azureFuncs'
-import { cacheRequest } from '~/services/azureFuncs';
+import { stashRequest } from '~/services/azureFuncs';
 import * as z from 'zod';
 
 describe('Tests to see if user is online and offline', () => {
@@ -16,10 +16,10 @@ describe('Tests to see if user is online and offline', () => {
 
 });
 
-describe('Tests to see if requests can be cached', () => {
+describe('Tests to see if requests can be stashed', () => {
     it('Test to see if returned data types are correct', async () => {
         // Reset the naming counter (for testing purposes)
-        localStorage.setItem('cache_counter', '0');
+        localStorage.setItem('stash_counter', '0');
 
         const baseUrl = useRuntimeConfig().public.baseUrl;
         const deviceKey = await makeEncodedDeviceKey();
@@ -36,12 +36,12 @@ describe('Tests to see if requests can be cached', () => {
         const formData = new FormData();
         formData.append('provenanceRecord', JSON.stringify(record));
 
-        cacheRequest(formUrl, formData);
-        let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
+        stashRequest(formUrl, formData);
+        let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1'));
 
         // Confirm that the datatypes are the same as they started
-        const returnedFormUrl = requestFromCache[0][1];
-        const returnedFormData = JSON.parse(requestFromCache[1][1]);
+        const returnedFormUrl = requestFromStash[0][1];
+        const returnedFormData = JSON.parse(requestFromStash[1][1]);
         expect(typeof returnedFormUrl).toEqual(typeof formUrl);
         expect(returnedFormUrl).toEqual(formUrl);
 
@@ -64,7 +64,7 @@ describe('Tests to see if requests can be cached', () => {
     });
 
     it('Test to see if we can store multiple requests', async () => {
-        localStorage.setItem('cache_counter', '0');
+        localStorage.setItem('stash_counter', '0');
 
         const baseUrl = useRuntimeConfig().public.baseUrl;
         const deviceKey = await makeEncodedDeviceKey();
@@ -94,17 +94,17 @@ describe('Tests to see if requests can be cached', () => {
         formData.append('provenanceRecord', JSON.stringify(record));
         formData2.append('provenanceRecord', JSON.stringify(record2));
 
-        cacheRequest(formUrl, formData);
-        cacheRequest(formUrl, formData2);
+        stashRequest(formUrl, formData);
+        stashRequest(formUrl, formData2);
 
-        let requestFromCache = JSON.parse(localStorage.getItem('gosqas_offline_cache_1'));
-        const returnedFormUrl = requestFromCache[0][1];
-        const returnedFormData = JSON.parse(requestFromCache[1][1]);
+        let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1'));
+        const returnedFormUrl = requestFromStash[0][1];
+        const returnedFormData = JSON.parse(requestFromStash[1][1]);
         expect(returnedFormUrl).toEqual(formUrl);
 
-        let requestFromCache2 = JSON.parse(localStorage.getItem('gosqas_offline_cache_2'));
-        const returnedFormUrl2 = requestFromCache2[0][1];
-        const returnedFormData2 = JSON.parse(requestFromCache2[1][1]);
+        let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2'));
+        const returnedFormUrl2 = requestFromStash2[0][1];
+        const returnedFormData2 = JSON.parse(requestFromStash2[1][1]);
         expect(returnedFormUrl2).toEqual(formUrl);
 
         // Check that the correct record was stored at each request
