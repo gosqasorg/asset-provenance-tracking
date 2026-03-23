@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { stashRequest, emptyStash, onlineTestFetch, getProvenance } from '~/services/azureFuncs';
-import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
 import * as z from 'zod';
+import { describe, expect, it } from 'vitest';
+import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
+import { stashRequest, emptyStash, onlineTestFetch, getProvenance } from '~/services/azureFuncs';
 
 const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
 
@@ -39,6 +39,7 @@ describe('Tests to see if user is online and offline', () => {
 });
 
 describe('Tests to see if requests can be stashed', () => {
+<<<<<<< HEAD
   it('Test to see if returned data types are correct', async () => {
     const key = await makeEncodedDeviceKey();
     let [formUrl, formData] = await createRequest(
@@ -46,11 +47,17 @@ describe('Tests to see if requests can be stashed', () => {
       'Stored Record',
       'Test record stored in localStorage then created from emptyStash()'
     );
+=======
+    it('Test to see if returned data types are correct', async () => {
+        // Reset the naming counter (for testing purposes)
+        localStorage.setItem('stash_counter', '0');
+>>>>>>> main
 
     localStorage.setItem('stash_counter', '0'); // need to reset counter to avoid overlap with other tests
     stashRequest(formUrl, formData);
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 
+<<<<<<< HEAD
     // Confirm that the datatypes are the same as they started
     const returnedFormUrl = requestFromStash[0][1];
     const returnedFormData = JSON.parse(requestFromStash[1][1]);
@@ -62,6 +69,16 @@ describe('Tests to see if requests can be stashed', () => {
     const formData2 = new FormData();
     formData2.append('provenanceRecord', JSON.stringify(returnedFormData));
     expect(formData2).toStrictEqual(formData);
+=======
+        stashRequest(formUrl, formData);
+        let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1'));
+
+        // Confirm that the datatypes are the same as they started
+        const returnedFormUrl = requestFromStash[0][1];
+        const returnedFormData = JSON.parse(requestFromStash[1][1]);
+        expect(typeof returnedFormUrl).toEqual(typeof formUrl);
+        expect(returnedFormUrl).toEqual(formUrl);
+>>>>>>> main
 
     // Validate that the formData has the correct format
     const ValidFormData = z.object({
@@ -75,9 +92,14 @@ describe('Tests to see if requests can be stashed', () => {
     });
     ValidFormData.parse(returnedFormData);
 
+<<<<<<< HEAD
     // Remove item from stash
     localStorage.removeItem('gosqas_offline_stash_1');
   });
+=======
+    it('Test to see if we can store multiple requests', async () => {
+        localStorage.setItem('stash_counter', '0');
+>>>>>>> main
 
   it('Test to see if we can store multiple requests', async () => {
     const key1 = await makeEncodedDeviceKey();
@@ -89,6 +111,7 @@ describe('Tests to see if requests can be stashed', () => {
     stashRequest(formUrl1, formData1);
     stashRequest(formUrl2, formData2);
 
+<<<<<<< HEAD
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
     const returnedFormUrl = requestFromStash[0][1];
     const returnedFormData = JSON.parse(requestFromStash[1][1]);
@@ -106,6 +129,20 @@ describe('Tests to see if requests can be stashed', () => {
     expect(returnedFormData2.deviceName).toEqual('name2');
     expect(returnedFormData.description).toEqual('description');
     expect(returnedFormData2.description).toEqual('slightly longer description');
+=======
+        stashRequest(formUrl, formData);
+        stashRequest(formUrl, formData2);
+
+        let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1'));
+        const returnedFormUrl = requestFromStash[0][1];
+        const returnedFormData = JSON.parse(requestFromStash[1][1]);
+        expect(returnedFormUrl).toEqual(formUrl);
+
+        let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2'));
+        const returnedFormUrl2 = requestFromStash2[0][1];
+        const returnedFormData2 = JSON.parse(requestFromStash2[1][1]);
+        expect(returnedFormUrl2).toEqual(formUrl);
+>>>>>>> main
 
     // Remove items from stash
     localStorage.removeItem('gosqas_offline_stash_1');

@@ -18,6 +18,9 @@ import { validateKey } from "~/utils/keyFuncs";
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
 
+// Global variable used to control the display of online banner 
+export var displayOnlineBanner = false;
+
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
