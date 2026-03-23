@@ -822,18 +822,52 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         // get email and code
+        const body = await request.json() as any;
+        const email = body.email;
+        const code = body.code;
+
+        if (!email || !code) {
+            return {
+                jsonBody: { error: "Email and code required" },
+                status: 400
+            }
+        }
 
         // get the pendingemailver table
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let table = 'PendingEmailVerifications'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
 
         // grab the entity by email - try catch ?
+        let entity;
+        try {
+            entity = await tableClient.getEntity('PendingVerification', email);
+        } catch {
+            return {
+                jsonBody: { error: "Invalid or expired code"},
+                status: 400
+            }
+        }
 
         // check expiry - then check code
+        if (Date.now() > entity.expiresAt || entity.code !== code) {
+            return {
+                jsonBody: { error: "Invalid or expired code" },
+                status: 400
+            }
+        }
 
         // return failure if any 
-
         // on succes, delete pending entity email
         // and call signupfornotifications (with verified users :))
-
+        await tableClient.deleteEntity('PendingVerification', email);
+        await signupForNotifications(entity.recordKey as string, email);
 
         return {
             jsonBody: {message: "Success"},
