@@ -66,7 +66,7 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
       name: 'GOSQAS PWA',
       short_name: 'G PWA',
       theme_color: '#ffffff',
-      start_url: 'http://localhost:3000',
+      start_url: 'https://dev.gosqas.org/',
       display: 'standalone',
       icons: [
         {
