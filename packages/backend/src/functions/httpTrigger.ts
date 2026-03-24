@@ -359,6 +359,11 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
 
+    // Get lower bound for determining which records to send (currently sending records from the past two weeks)
+    // 1209600000 = 2 weeks in milliseconds
+    const d = new Date()
+    const twoWeeks = Date.now() - 1209600000;
+
     // Build up a JSON return value
     // NOTE: We seem to have to read the properties of the blob to get the
     // metadata.  There is a field called "metadata" on the blob itself
@@ -376,14 +381,10 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         // is enough. We would like to distinguish the additon of a device
         // from the addition of new provenance, I supoose.
         const id = findDeviceIdFromName(blob.name);
-        // We could do some sorting in this function, but that is more or less
-        // easily done by whomever is using this. So I think it better to just
-        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
-        // Eventually, this function may have to only look back X days or X hours,
-        // but until it gets unwieldy we can return everything.
-        // I think the proper way to test this is to build a test program that
-        // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
+        // If the record was created within the last two weeks, add it to the list of records to send to the frontend
+        if (+metadata.gdttimestamp > twoWeeks) {
+            records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
+        }
     }
 
     const contentType = "application/json";

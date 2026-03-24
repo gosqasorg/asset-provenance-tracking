@@ -250,20 +250,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         let x = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat']
         let y = [0, 0, 0, 0, 0, 0, 0]
 
-        // Get records created today
-        let recent = this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
-        )
-
         for (let i = 0; i <= today; i++) {
+          // Get records created today
+          let recent = this.myTimestampPairs.filter(
+            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
+          )
+          
           // Add the records we found to the current day, subtracting records we already counted
           y[today - i] = recent.length - counted
           counted = recent.length
           hours += 24
-
-          recent = this.myTimestampPairs.filter(
-            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
-          )
         }
 
         const chartData = [{
@@ -278,13 +274,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         return chartData
       },
 
-      // Get number of records created each hour of the past month to graph
+      // Get number of records created each hour of the past week to graph
       recordsPerHour() {
         const d = new Date()
         const now = Date.now()
         let currentHour = d.getHours()
         let minutes = d.getMinutes() / 60
-
         let counted = 0
 
         let x = ['1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00',
