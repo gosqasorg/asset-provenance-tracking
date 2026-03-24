@@ -426,7 +426,38 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+
+    await notifySubscribers(request.params.deviceKey, context);
+    
     return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribers(  deviceKey: string, context: InvocationContext): Promise<HttpResponseInit>{
+    // Notify users who subscribed to this record.
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
+    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    if (emailSet.size === 0) {
+        context.log("No subscribers found for this record.");
+        return;
+    }
+
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
+        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+        return;
+    }
+
+    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
+    const subject: string = 'Tracking update'; 
+    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
+    const displayName: string = from_address;
+    try {
+        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+        for (const to_email of emailSet) {
+            await sendEmail(from_address, to_email, subject, email_body, displayName);
+        }
+    } catch (error) {
+        context.log("Error sending email: " + error);   
+    }
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -749,13 +780,6 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: setup data
-    // const datum = {
-    //     'key': {
-    //         'email': email,
-    //         'tags': tags
-    //     }
-    // }    
-    // const datumJson = JSON.stringify(datum)
 
     // 2 Setup blob name & id
     const type = 'notificationSignups'
@@ -838,7 +862,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     } catch(error) {
         const msg = error instanceof Error ? error.message : String(error);
         return {
-            jsonBody: {message: msg},
+            jsonBody: {message: error.message},
             status: 500,
         }
     }
@@ -863,7 +887,7 @@ async function retrieveNotifEmails(key: string) {
     } catch(error) {
         return {
             jsonBody: {message: error.message},
-            status: status,
+            status: 500,
         }
     } 
 }
@@ -880,6 +904,26 @@ async function streamToString(readableStream) {
         readableStream.on("error", reject);
     });
 }
+
+
+function extractEmailsFromResponse(response: any): Set<string> {
+    const emailSet = new Set<string>();
+    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
+        return emailSet;
+    }
+    try {
+        const parsed = JSON.parse(response.jsonBody.message);
+        if (parsed.email && Array.isArray(parsed.email)) {
+            parsed.email.forEach((e: string) => emailSet.add(e));
+        } else if (parsed.key?.email) {
+            emailSet.add(parsed.key.email);
+        }
+    } catch (error) {
+        console.log("Fail to extract emails:", error.message)
+    }
+    return emailSet;
+}
+
 
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /* How this pseudo-smoketest works:

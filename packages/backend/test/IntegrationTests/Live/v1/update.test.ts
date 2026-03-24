@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeEncodedDeviceKey, validateKey } from '../../../src/utils/keyFuncs';
+import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 import { writeFile } from 'fs/promises';
 /* README: To add a test, add inside the global describe an additional it. For example:
