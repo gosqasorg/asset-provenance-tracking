@@ -1024,10 +1024,12 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
-// TODO: match parameters to createGroup? -- I think we're sent formData in a post request!
+// TODO: remove export after testing?
 export async function createRecord(context, name, description) {
     // TODO: create a new record + post (see tests, don't hardcode urls see createGroup)
-    const baseUrl = process.env['backend_url'];  // TODO: localhost includes /prov, does dev.gosqas?
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const apiUrl = process.env['api_url'];
     const deviceKey = await makeEncodedDeviceKey();
 
     try {
@@ -1049,12 +1051,17 @@ export async function createRecord(context, name, description) {
             method: "POST",
             body: formData,
         });
+        // TODO: should we post like this instead (this is how createGroup does it)?
+        // const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+        // const groupResponse = await fetch(createInitUrl, {
+        //     method: "POST",
+        //     body: groupFormData,
+        // });
 
-        const theJson = await theResponse.json()
-        const dataUrl = theResponse.url.split('/')
-        const theRecordKey = dataUrl[dataUrl.length - 1]
-        // context.log(theRecordKey)
-        return theRecordKey
+        let groupUrlRecordPage = `${frontendUrl}/record/${deviceKey}`
+        context.log(groupUrlRecordPage)
+
+        return groupUrlRecordPage;
 
     } catch (error) {
         console.error('createRecord Error: Failed to create record' + error); 
@@ -1121,11 +1128,10 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
-// TODO: once function is complete create new test file and write tests!
-
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+// TODO: need this to exist on dev
 app.post("createRecord", {
     authLevel: 'anonymous',
     route: 'createRecord',
