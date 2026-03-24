@@ -15,6 +15,20 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: [
+            'mixed-decls', 
+            'color-functions',
+            'global-builtin',
+            'import',
+          ],
+        },
+      },
+    },
+  },
   runtimeConfig: {
     // The private keys which are only available server-side
     // Keys within public are also exposed client-side
@@ -50,7 +64,7 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     static: true
   },
   scalar: {
-    url: '/openAPI-docs.json',
+    url: '/openAPI-docs-with-servers.json',
     darkMode: true,
     metaData: {
       title: 'GOSQAS API Documentation'

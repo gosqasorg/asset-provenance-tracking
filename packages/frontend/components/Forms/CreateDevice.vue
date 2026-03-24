@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">  
+            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500" @keydown.enter.prevent>  
             <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
@@ -34,12 +34,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
-                    <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                    <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
                 <div v-if="isChecked">
                     <!-- TODO: API call function -->
@@ -49,10 +49,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         v-model="textInput"
                         placeholder="Email"
                         @keyup.enter=""
+                        @keydown.enter.prevent
                     />
                 </div>
             </div>
 
+            <!-- Offline Banner -->
+            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+                </div>
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                </div> 
+            </Banner>
+
+            <!-- Back Online Banner -->
+            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+                <div style="margin-left: 10px;"><strong>You're back online!</strong> Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+                </div>
+            </Banner>
         </div>
  
         <div class="d-grid">
@@ -75,10 +89,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
-
+import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
@@ -103,7 +117,24 @@ export default {
         },
         isButtonDisabled() {
             return !this.isFormValid || this.isSubmitting;
-        }
+        },
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
+        displayBanner() {
+            if (displayOfflineBanner === true) {
+                return true;
+            }
+            else{
+                return false;
+            }
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+            } else {
+                return false;
+            }
+        },
     },
     methods: {
         handleUpdateTags(tags: string[]) {
@@ -263,6 +294,17 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .banner {
+        background-color: #634a45;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: white;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -283,6 +325,17 @@ export default {
     }
     #record-button:hover { 
         background-color: #322253;
+    }
+    .banner {
+        background-color: #ecdae1;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: black;
     }
 }
 
