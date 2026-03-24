@@ -382,16 +382,24 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+
+    await notifySubscribers(request.params.deviceKey, context);
+    
+    return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribers(  deviceKey: string, context: InvocationContext): Promise<HttpResponseInit>{
     // Notify users who subscribed to this record.
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(request.params.deviceKey);
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
     const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
     if (emailSet.size === 0) {
-        return { jsonBody: body ?? { converted: true}};
+        context.log("No subscribers found for this record.");
+        return;
     }
 
     if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
         context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
-        return { jsonBody: body ?? { converted: true}};
+        return;
     }
 
     const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
@@ -406,8 +414,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     } catch (error) {
         context.log("Error sending email: " + error);   
     }
-    
-    return { jsonBody: body ?? { converted: true}};
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
