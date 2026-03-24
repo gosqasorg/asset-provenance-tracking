@@ -1,4 +1,6 @@
-<!-- Idea: Add a resend code cooldown option -->
+<!-- TODO: Add a resend code cooldown option -->
+<!-- TODO: Add a code input cooldown -->
+
 
 <template>
     <div>
@@ -86,6 +88,7 @@ export default {
     },
 
     methods: {
+        // TODO: Implement invalid code input cooldown, first wait 30 seconds. increment until user has to wait 10 minutes between each invalid code
         async verifyCode() {
             if (!this.code) return;
             this.isSubmitting = true;
@@ -100,6 +103,8 @@ export default {
                 this.isSubmitting = false;
             }
         },
+        // TODO: Implement resend code cooldown, user can only resend code once every 5 minutes or so. Show countdown timer on resend button and disable it until cooldown is over. 
+        // Consider after a certain number of resends, require user to resubmit their email to get a new code?
         // using the current token, have the associated user recieve a new code and a new token?
         async resendCode() {
             try {
