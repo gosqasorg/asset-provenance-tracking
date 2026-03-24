@@ -696,6 +696,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 /* -----Email Verification Functions Zone ----- */
+
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const tableUrl = accountName === "devstoreaccount1"
@@ -925,7 +926,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 
         // return failure if any 
         // on succes, delete pending entity email
-        // and call signupfornotifications (with verified users :))
+        // and call signupfornotifications (with verified user email!! :))
         await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
         await signupForNotifications(entity.recordKey as string, entity.rowKey as string) // recordKey is deviceKey, rowKey is email;
 
@@ -1095,15 +1096,9 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
 }
 
 
-// TODO: Make something like emailSignupTestEndpoint 
-
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
 // ======== EMAIL STUFF =============/
-
-
-
-// ==================================/
 
 app.post('postResendCode', {
     authLevel: 'anonymous',
@@ -1134,6 +1129,8 @@ app.post("postVerifyCode", {
     route: 'verifyCode',
     handler: postVerifyCode
 })
+
+// ==================================/
 
 app.get("getProvenance", {
     authLevel: 'anonymous',

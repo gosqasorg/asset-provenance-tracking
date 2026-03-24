@@ -199,3 +199,9 @@ describe('PostNotificationEmail', () => {
         expect(response.status).toBe(200);
     });
 });
+
+// TODO: Add tests for new email endpoints
+// - postVerifyCode 
+// - postResendCode
+// - postNotificationEmail (should add more tests for edge cases and error handling)
+// - getPendingVerification 
