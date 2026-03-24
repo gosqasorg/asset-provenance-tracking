@@ -2,7 +2,7 @@
         
         <div>
             <!-- TODO: Add the usual tag input stuff later -->
-            <h4 class="header">Stage 1: Submit Email</h4>
+            <h4 class="header">Submit Email</h4>
             <input 
                 type="text" 
                 class="form-control" 
@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-    import { postNotificationEmail,  postVerifyCode } from '~/services/azureFuncs';
+    import { postNotificationEmail } from '~/services/azureFuncs';
 
     export default {
         data() {
@@ -31,6 +31,8 @@
         methods: {
             async sendCode() {
                 if (!this.email) return;
+
+                // TODO:Add some basic email validation here. 
                 this.isSubmitting = true;
                 this.error = null;
                 try {
@@ -58,5 +60,6 @@
     font-size: 24px;
     margin-bottom: 20px;
 }
+
 
 </style>

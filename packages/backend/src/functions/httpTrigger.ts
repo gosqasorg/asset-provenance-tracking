@@ -733,10 +733,8 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
-// TODO: flesh out postNotificationEmail into Send VerificationCode
 // need to gen a code
 // have a table to hold pending verifications (email, code, deviceKey, tags)
-// TODO: Look for exisiting implementations
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
 
@@ -796,14 +794,11 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
             email,
             "GOSQAS Verification Code",
-            `Your verification code is: ${code}\n\n
-            Or click this link to verify automatically:\n${verifyLink}\n\n
-            Expires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+            `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             "GOSQAS Notification"
         )
 
-        // Return Success (for now, but eventually we will want to return errors if email is malformed, etc)
-        // TODO: Flesh out error handling for invalid emails.
+        // Return Success (frontend checks for properly formed email)
         return {
             jsonBody: {message: "Success", token: token },
             status: 200
@@ -882,8 +877,6 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 
 }
 
-// TODO: we need a verifyCode Function
-// parse email + code from body
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfies
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -950,6 +943,96 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
     }
 } 
 
+// Additional helper function to resend code using the token instead of the email
+// keeping the email out of the url is better for privacy
+export async function postResendCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const body = await request.json() as any;   
+        const token = body.token;
+
+        if (!token) {
+            return {
+                jsonBody: {error: "Token required"},
+                status: 400
+            }
+        }
+
+        // get the pendingemailver table
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let table = 'PendingEmailVerifications'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+
+        // fild the old entity by token
+        const entities = tableClient.listEntities({
+            queryOptions: {filter: `token eq '${token}'`}
+        });
+
+        let entity = null;
+        for await (const e of entities) {
+            entity = e;
+            break;
+        }
+
+        // not found
+        if (!entity) {
+            return {
+                jsonBody: { error: "Invalid or expired code" },
+                status: 404 
+            }
+        }
+
+        // gen new code token
+        const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
+
+        // store email, code, rec and tags in table
+        // upsert incase of code resend
+        // include expiration for code (10 mins for now i think)
+        const codeExpiration = 10 * 60 * 1000;
+        const updatedEntity = {
+            partitionKey: 'PendingVerification',
+            rowKey: entity.rowKey as string,
+            code: code,
+            token: token,
+            expiresAt: Date.now() + codeExpiration,
+            recordKey: entity.recordKey as string
+        };
+
+        await tableClient.upsertEntity(updatedEntity);
+
+        // sendEmail() with the code attached
+        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
+        // TODO: Change to gosqas for deployment;        
+        const frontendUrl = 'http://localhost:3000';
+        const deviceKey = entity.recordKey as string;
+        const verifyLink = `${frontendUrl}/history/subscribe/${deviceKey}/verify?token=${token}&code=${code}`;
+        
+        await sendEmail(
+            "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
+            entity.rowKey as string,
+            "GOSQAS Verification Code",
+            `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+            "GOSQAS Notification"
+        )
+
+        // Return Success (for now, but eventually we will want to return errors if email is malformed, etc)
+        return {
+            jsonBody: {message: "Success" },
+            status: 200
+        } 
+        
+    } catch(error) {
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Server Error"},
+            status: 500,
+        }
+
+    }
+}
 
 
 // Not currently called anywhere...might be able to condense?
@@ -1022,7 +1105,11 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
 
 // ==================================/
 
-
+app.post('postResendCode', {
+    authLevel: 'anonymous',
+    route: 'resendCode',
+    handler: postResendCode,
+})
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',

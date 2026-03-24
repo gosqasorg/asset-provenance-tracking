@@ -183,3 +183,15 @@ export async function getPendingVerification(token: string) {
         throw new Error('getPendingVerfication: invalid or expired token')
     }
 }
+
+export async function postResendCode(token: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/resendcode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+    });
+    if (response.status !== 200) {
+        throw new Error('postResendCode: Failed to resend code')
+    }
+}

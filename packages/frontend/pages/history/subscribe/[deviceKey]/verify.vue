@@ -1,14 +1,16 @@
+<!-- Idea: Add a resend code cooldown option -->
+
 <template>
     <div>
         <!-- check state -->
         <div v-if="step === 'checking'">
-            <p class="header">Verifying...</p>
+            <p class="header">Verifying</p>
         </div>
 
         <!-- code input state -->
         <div v-else-if="step === 'code'">
             <h4 class="header">Enter Verification Code</h4>
-            <p>Enter the code sent to your email.</p>
+            <p class="subtext">Enter the code sent to your email.</p>
             <input
                 type="tel"
                 class="form-control"
@@ -20,20 +22,24 @@
                 Verify
             </button>
 
+            <button @click="resendCode">
+                Resend Code
+            </button>
+
             <p v-if="error">{{ error }}</p>
         </div>
 
         <!-- success -->
         <div v-else-if="step === 'success'">
             <h4 class="header">You're subscribed!</h4>
-            <p>verif complete. Blah blah blah</p>
+            <p class="subtext">verif complete. Blah blah blah</p>
             <button @click="goToRecord">Go to Record</button>
         </div>
 
         <!-- expired -->
         <div v-else-if="step === 'expired'">
             <h4 class="header">Code Expired</h4>
-            <p>ur verification code has expired, get new one</p>
+            <p class="subtext">ur verification code has expired, get new one</p>
             <button @click="goBack">Go Back</button>
         </div>
     </div>
@@ -41,7 +47,7 @@
 
 <script lang="ts">
 
-import { getPendingVerification, postVerifyCode } from '~/services/azureFuncs';
+import { getPendingVerification, postResendCode, postVerifyCode } from '~/services/azureFuncs';
 
 export default {
     data() {
@@ -94,16 +100,30 @@ export default {
                 this.isSubmitting = false;
             }
         },
+        // using the current token, have the associated user recieve a new code and a new token?
         async resendCode() {
-            // implement
+            try {
+                const deviceKey = this.$route.params.deviceKey as string;
+                const token = this.$route.query.token as string;
+                await postResendCode(token);
+                this.$snackbar.add({
+                    type: 'success',
+                    text: 'Code resent! Check your email.'
+                });
+            } catch(error) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Failed to resend code: ${error}`
+                });
+            }
         },
         goToRecord() {
-            // implement later
-            // goes to record
+            const deviceKey = this.$route.params.deviceKey as string;
+            this.$router.push(`/history/${deviceKey}`);
         },
         goBack() {
-            // implement later :)
-            // goes back to emial subscription page for this record
+            const deviceKey = this.$route.params.deviceKey as string;
+            this.$router.push(`/history/subscribe/${deviceKey}`);
         }
     }
 }
@@ -115,4 +135,10 @@ export default {
     font-size: 24px;
     margin-bottom: 20px;
 }
+
+.subtext {
+    color: whitesmoke;
+    font-size: 16px;
+}
+
 </style>
