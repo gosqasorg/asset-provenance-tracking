@@ -5,7 +5,7 @@ import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
-import { VERSION_INFO } from '../version.ts';
+import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 
 // To deploy this project from the command line, you need:
