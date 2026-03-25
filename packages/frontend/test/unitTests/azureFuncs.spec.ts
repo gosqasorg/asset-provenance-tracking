@@ -120,35 +120,35 @@ describe('Tests to see if we can remove from the stash', () => {
     } as Response);
 
     const key = await makeEncodedDeviceKey();
-    let [formUrl, formData] = await createRequest(
-      key,
-      'Stored Record',
-      'Test record stored in localStorage then created from emptyStash()'
-    );
+    let [formUrl, formData] = await createRequest(key, 'stored record', 'testing emptyStash');
 
-    localStorage.setItem('stash_counter', '0');
+    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
     localStorage.setItem('gdt-stash-fulfilled', '');
     stashRequest(formUrl, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
-    // Empty the stash and confirm it posted the new record
+    // Confirm records were stored
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    expect(requestFromStash).not.toEqual('{}');
+
+    // Empty the stash and confirm it ran successfully
     let statusCode = await emptyStash();
     expect(statusCode).toEqual(200);
 
-    // Make sure the record was removed from the stash and the counter = 0
+    // Make sure the record was removed from the stash and the new key was stored to display later
     expect(localStorage.getItem('stash_counter')).toEqual('0');
     expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
 
-    // Make sure the new key was stored to display to the frontend later
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
+    expect(existingKeys.length).toBe(1);
     expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
 
     // Remove mock
     fetchMock.mockRestore();
   });
 
-  it('Add and remove two requests', async () => {
+  it('Create and remove two requests', async () => {
     const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
       status: 200,
     } as Response);
@@ -156,23 +156,24 @@ describe('Tests to see if we can remove from the stash', () => {
     const key1 = await makeEncodedDeviceKey();
     const key2 = await makeEncodedDeviceKey();
     let [formUrl1, formData1] = await createRequest(key1, 'first stored record', 'this is a test');
-    let [formUrl2, formData2] = await createRequest(
-      key2,
-      'second stored record',
-      'this is the same test'
-    );
+    let [formUrl2, formData2] = await createRequest(key2, 'second stored record', 'this is the same test');
 
     localStorage.setItem('stash_counter', '0');
-    localStorage.setItem('gdt-stash-fulfilled', '');
     stashRequest(formUrl1, formData1);
     stashRequest(formUrl2, formData2);
-
     expect(localStorage.getItem('stash_counter')).toEqual('2');
 
-    // Empty stash and confirm both records were posted
+    // Confirm records were stored
+    let requestFromStash1 = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
+    expect(requestFromStash1).not.toEqual('{}');
+    expect(requestFromStash2).not.toEqual('{}');
+
+    // Empty the stash and confirm it ran successfully
     let statusCode = await emptyStash();
     expect(statusCode).toEqual(200);
 
+    // Confirm records were removed
     expect(localStorage.getItem('stash_counter')).toEqual('0');
     expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
     expect(localStorage.getItem('gosqas_offline_stash_2')).toEqual(null);
@@ -180,9 +181,9 @@ describe('Tests to see if we can remove from the stash', () => {
     // Make sure all three keys (including the one from the previous test) are stored
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(2);
-    expect(existingKeys[1]).toEqual(formUrl1.split('/')[formUrl1.split('/').length - 1]);
-    expect(existingKeys[0]).toEqual(formUrl2.split('/')[formUrl2.split('/').length - 1]);
+    expect(existingKeys.length).toBe(3);
+    expect(existingKeys[2]).toEqual(formUrl1.split('/')[formUrl1.split('/').length - 1]);
+    expect(existingKeys[1]).toEqual(formUrl2.split('/')[formUrl2.split('/').length - 1]);
 
     fetchMock.mockRestore();
   });
@@ -204,11 +205,7 @@ describe('Tests to see if we can remove from the stash', () => {
 
   it("Make sure record isn't removed from localStorage when post fails", async () => {
     const key = await makeEncodedDeviceKey();
-    let [formUrl, formData] = await createRequest(
-      key,
-      'Failed Record',
-      'A record that will fail to post'
-    );
+    let [formUrl, formData] = await createRequest(key, 'failed record', 'this should fail to post');
 
     localStorage.setItem('stash_counter', '0');
     localStorage.setItem('gdt-stash-fulfilled', '');
@@ -224,8 +221,8 @@ describe('Tests to see if we can remove from the stash', () => {
     const request = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
     expect(request).not.toEqual(null);
     expect(request[0][1]).toEqual(formUrl);
-    expect(JSON.parse(request[1][1]).deviceName).toEqual('Failed Record');
-    expect(JSON.parse(request[1][1]).description).toEqual('A record that will fail to post');
+    expect(JSON.parse(request[1][1]).deviceName).toEqual('failed record');
+    expect(JSON.parse(request[1][1]).description).toEqual('this should fail to post');
     expect(request[1][1]).toStrictEqual(formData.get('provenanceRecord'));
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
