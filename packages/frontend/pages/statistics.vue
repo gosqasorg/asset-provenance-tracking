@@ -147,6 +147,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         isLoading: true,
         // Raw array of { timestamp, deviceID } items from API
         myTimestampPairs: [],
+        myRecords: 0,
+        myDevices: 0,
 
         chartLayout: {
           title: {text: 'Record Entries Created This Week'},
@@ -181,34 +183,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       // Totals 
       // Total number of records fetched
       totalRecords() {
-        return this.myTimestampPairs.totalRecords
+        return this.myRecords;
       },
       // Total number of unique devices
       totalDevices() {
-        // TODO: do this in backend instead!
+        // TODO: test on dev!!
+        // TODO: time how long dev vs. local takes to run! update loading message to mention it might take a few minutes?
         // Remove duplicate device IDs
-        return new Set(this.myTimestampPairs.records.map(r => r.deviceID)).size
+        return this.myDevices;
       },
   
       //Provenance record counts in time windows 
       lastHourRecordCount() {
         const now = Date.now()
         // Filter records with timestamp within last 1 hour
-        return this.myTimestampPairs.records.filter(
+        return this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 1 * 60 * 60 * 1000
         ).length
       },
       last24hRecordCount() {
         const now = Date.now()
         // Filter records within last 24 hours
-        return this.myTimestampPairs.records.filter(
+        return this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
         ).length
       },
       last7DaysRecordCount() {
         const now = Date.now()
         // Filter records within last 7 days
-        return this.myTimestampPairs.records.filter(
+        return this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 7 * 24 * 60 * 60 * 1000
         ).length
       },
@@ -217,7 +220,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       lastHourDeviceCount() {
         const now = Date.now()
         // Get only recent records, then dedupe by deviceID
-        const recent = this.myTimestampPairs.records.filter(
+        const recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 1 * 60 * 60 * 1000
         )
         return new Set(recent.map(r => r.deviceID)).size
@@ -225,7 +228,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       last24hDeviceCount() {
         const now = Date.now()
-        const recent = this.myTimestampPairs.records.filter(
+        const recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
         )
 
@@ -234,7 +237,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       last7DaysDeviceCount() {
         const now = Date.now()
-        const recent = this.myTimestampPairs.records.filter(
+        const recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 7 * 24 * 60 * 60 * 1000
         )
         return new Set(recent.map(r => r.deviceID)).size
@@ -253,7 +256,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         for (let i = 0; i <= today; i++) {
           // Get records created today
-          let recent = this.myTimestampPairs.records.filter(
+          let recent = this.myTimestampPairs.filter(
             r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
           )
           
@@ -289,7 +292,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         for (let weekday = 1; weekday <= 7; weekday++) {
           for (let hour = 0; hour < 24; hour++) {
-            let hourly = this.myTimestampPairs.records.filter(
+            let hourly = this.myTimestampPairs.filter(
               // (1,2,3,... [the day] * (0-24 [hours ago] + 0-1 [minutes in the current hour])) * translate to milliseconds)
               r => now - Number(r.timestamp) <= weekday * (hour + minutes) * 60 * 60 * 1000
             )
@@ -332,13 +335,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     async mounted() {
       // On component mount, load data...
       const pairs = await this.fetchData()
-      console.log("ORIGINAL PAIRS " + pairs)
-      console.log("PAIRS " + pairs.records + JSON.stringify(pairs.records)) // works!
-      console.log("COUNT " + pairs.totalRecords) // this works!
 
       // sort newest-first by timestamp
       pairs.records.sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-      this.myTimestampPairs = pairs
+      this.myTimestampPairs = pairs.records
+      this.myRecords = pairs.totalRecords
+      this.myDevices = pairs.totalDevices
+
       // Hide loading state
       this.isLoading = false
     }

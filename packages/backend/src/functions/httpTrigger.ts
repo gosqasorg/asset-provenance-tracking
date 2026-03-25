@@ -392,9 +392,11 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 
     const contentType = "application/json";
 
+    // TODO: try commenting this out and then testing time against live again! comment out other code that relies on it
+    let totalDevices = new Set(records.map(r => r.deviceID)).size;  // TODO: any cheaper way to find unique records?
+
     return {
-        // TODO: return total records + total unique records for frontend to display
-        jsonBody: { records, totalRecords },
+        jsonBody: { records, totalRecords, totalDevices },
         headers: { "Content-Type": contentType },
     };
 };

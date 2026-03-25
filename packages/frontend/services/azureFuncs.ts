@@ -112,6 +112,7 @@ export async function getStatistics() {
     return await response.json() as { 
         records: { record: string, timestamp: number }[];
         totalRecords: number;
+        totalDevices: number;
     };
 }
 
