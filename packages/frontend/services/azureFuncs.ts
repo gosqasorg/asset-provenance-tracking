@@ -205,7 +205,7 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
 
-export async function emptyStash(test?: boolean) {
+export async function emptyStash() {
     // See how many requests are stored, if any
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
 
@@ -218,24 +218,10 @@ export async function emptyStash(test?: boolean) {
             let record = request[1][1];
 
             // Fulfill the request
-            // Note: Test file cannot use formData, so if it's a test use search parameters instead
-            if (test) {
-                const paramFormData = new URLSearchParams();
-                paramFormData.append("provenanceRecord", record);
-
-                const response = await fetch(`${fullUrl}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: paramFormData.toString(),
-                });
-                if (response.status != 200) { throw new Error(`Failed with error code ${response.status}`) }
-            } else {
-                const formData = new FormData();
-                formData.append('provenanceRecord', record);
-
-                let response = await fetchUrl(fullUrl, formData)
-                if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
-            }
+            const formData = new FormData();
+            formData.append('provenanceRecord', record);
+            let response = await fetchUrl(fullUrl, formData)
+            if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
 
             // Add created key to a list of successfully created keys to display later
             let keysCreated = [];
