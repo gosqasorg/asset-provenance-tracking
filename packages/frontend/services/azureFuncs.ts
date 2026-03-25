@@ -108,7 +108,11 @@ export async function getStatistics() {
     const response = await fetch(`${baseUrl}/statistics`, {
         method: "GET",
     });
-    return await response.json() as { record: string, timestamp: number }[];
+    
+    return await response.json() as { 
+        records: { record: string, timestamp: number }[];
+        totalRecords: number;
+    };
 }
 
 async function fetchUrl(url: string, formData?: FormData) {

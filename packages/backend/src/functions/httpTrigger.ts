@@ -363,6 +363,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     // 1209600000 = 2 weeks in milliseconds
     const d = new Date()
     const twoWeeks = Date.now() - 1209600000;
+    let totalRecords = 0;
 
     // Build up a JSON return value
     // NOTE: We seem to have to read the properties of the blob to get the
@@ -385,13 +386,16 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         if (+metadata.gdttimestamp > twoWeeks) {
             records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
         }
+
+        totalRecords++
     }
 
     const contentType = "application/json";
 
     return {
-        jsonBody: records,
-        headers: { "Content-Type": contentType }
+        // TODO: return total records + total unique records for frontend to display
+        jsonBody: { records, totalRecords },
+        headers: { "Content-Type": contentType },
     };
 };
 
