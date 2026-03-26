@@ -119,8 +119,9 @@ export async function getStatistics() {
 
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
+    const MAX_RETRIES = 3;
 
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= MAX_RETRIES; i++) {
         try {
             if (typeof formData !== 'undefined') {
                 response = await fetch(`${url}`, {
