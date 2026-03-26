@@ -363,7 +363,10 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     // 1209600000 = 2 weeks in milliseconds
     const d = new Date()
     const twoWeeks = Date.now() - 1209600000;
-    let totalRecords = 0;
+    var totalRecords = 0;
+    var totalDevices = 0;
+    var previousId = "";
+    var records = [];
 
     // Build up a JSON return value
     // NOTE: We seem to have to read the properties of the blob to get the
@@ -372,7 +375,6 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     // expensive, or if we could improve it. I insist we should not worry about
     // performance until we measure it to be a problem, but this is an "orang flag"--
     // some caution around this issue is warranted.
-    var records = [];
     for await (const blob of containerClient.listBlobsFlat()) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const props = await blobClient.getProperties();
@@ -382,18 +384,21 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         // is enough. We would like to distinguish the additon of a device
         // from the addition of new provenance, I supoose.
         const id = findDeviceIdFromName(blob.name);
+
         // If the record was created within the last two weeks, add it to the list of records to send to the frontend
         if (+metadata.gdttimestamp > twoWeeks) {
             records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
         }
 
+        // If it's unique, add it to the device count
+        if (previousId != id) {
+            totalDevices++
+        }
+        previousId = id
         totalRecords++
     }
 
     const contentType = "application/json";
-
-    // TODO: try commenting this out and then testing time against live again! comment out other code that relies on it
-    let totalDevices = new Set(records.map(r => r.deviceID)).size;  // TODO: any cheaper way to find unique records?
 
     return {
         jsonBody: { records, totalRecords, totalDevices },

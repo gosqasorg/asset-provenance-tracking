@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container py-4">
       <!-- Loading indicator while data is being fetched -->
       <div v-if="isLoading" class="text-center">
-        Loading statistics…
+        Loading statistics (this might take a few minutes)…
       </div>
   
       <!-- Once data is loaded, show all statistic cards -->
@@ -187,13 +187,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       },
       // Total number of unique devices
       totalDevices() {
-        // TODO: test on dev!!
-        // TODO: time how long dev vs. local takes to run! update loading message to mention it might take a few minutes?
         // Remove duplicate device IDs
         return this.myDevices;
       },
   
-      //Provenance record counts in time windows 
+      // Provenance record counts in time windows 
       lastHourRecordCount() {
         const now = Date.now()
         // Filter records with timestamp within last 1 hour
@@ -231,7 +229,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         const recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
         )
-
         return new Set(recent.map(r => r.deviceID)).size
       },
 
@@ -299,7 +296,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             // If a record was created within an hour, add it to the graph
             if (hourly.length - counted > 0) {
-              y[Math.abs(currentHour - hour) - 1] += hourly.length - counted
+              // Get time 'x' hours ago and add records to that time
+              let timeCreated = currentHour - hour
+              if (timeCreated <= 0) { timeCreated += 24; }
+              y[timeCreated - 1] += hourly.length - counted
               counted = hourly.length
             }
           }
@@ -334,9 +334,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
     async mounted() {
       // On component mount, load data...
+      console.log("loading statistics...")
       const pairs = await this.fetchData()
 
-      // sort newest-first by timestamp
+      // sort newest-first by timestamp (set to 0 if none exist)
+      if (!pairs.records) {
+        pairs.records = [[0, 0]]
+      }
       pairs.records.sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
       this.myTimestampPairs = pairs.records
       this.myRecords = pairs.totalRecords
