@@ -760,6 +760,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
 
+        // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
+
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
@@ -827,8 +829,10 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
         }
 
     const tableUrl = accountName === "devstoreaccount1"
-        ? `http://127.0.0.1:10002/devstoreaccount1`
-        : `https://${accountName}.table.core.windows.net`;
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
     const credential = new AzureNamedKeyCredential(accountName, accountKey);
     const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
@@ -838,14 +842,14 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
         queryOptions: { filter: `token eq '${token}'` }
     });
 
-    // get first match
+    // get first match 
     let entity = null;
     for await (const e of entities) {
         entity = e;
         break;
     }
 
-    // not found
+    // not found 
     if (!entity) {
         return {
             jsonBody: { error: "Invalid or expired code" },
@@ -875,7 +879,6 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
             status: 500
         }
     }
-
 }
 
 // setup TableClient for PendingVerifications
@@ -899,6 +902,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
 
+        // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
@@ -933,14 +937,13 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         return {
             jsonBody: {message: "Success"},
             status: 200
-        }
-
+        } 
     } catch(error) {
         console.error(error.message);
         return {
             jsonBody: {message: "Internal Error"},
             status: 500,
-        }
+        }  
     }
 } 
 
@@ -959,9 +962,11 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         }
 
         // get the pendingemailver table
-        const tableUrl = accountName === "devstoreaccount1"
-            ? `http://127.0.0.1:10002/devstoreaccount1`
-            : `https://${accountName}.table.core.windows.net`;
+        // const tableUrl = accountName === "devstoreaccount1"
+        //     ? `http://127.0.0.1:10002/devstoreaccount1`
+        //     : `https://${accountName}.table.core.windows.net`;
+
+        const tableUrl =  `https://gdtteststorage.table.core.windows.net`
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
