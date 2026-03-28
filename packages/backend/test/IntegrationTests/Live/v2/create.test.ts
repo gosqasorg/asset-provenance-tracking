@@ -24,9 +24,7 @@ describe("Group of tests", () => {
 describe("Group Creation Tests", () => {
     // Test reporting key functionality
     it("should create a group record with a reporting key", async () => {
-		// const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-		// createGroup is not on production yet; default localhost
-		const baseUrl = "http://localhost:7071/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		const groupPayload = {
 			deviceName: "group_record_with_reporting_key",
@@ -82,9 +80,7 @@ describe("Group Creation Tests", () => {
     }, 6000);
 
 	it("should create a group record with tags", async () => {
-		// const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-		// createGroup is not on production yet; default localhost
-		const baseUrl = "http://localhost:7071/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		const groupPayload = {
 			deviceName: "group_record_with_tags",
