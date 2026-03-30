@@ -2,21 +2,12 @@ name: On Push Backend
 
 on:
   push:
-    # branches:
-    #   - main
-    # paths:
-    #   - packages/backend/**
-    #   - .github/workflows/be_on_push.yml
-    #   - '!packages/frontend/**'
-    #   - '!.github/workflows/fe_on_push.yml'
+    branches:
+      - main
+
   pull_request:
-    # branches:
-    #   - main
-    # paths:
-    #   - packages/backend/**
-    #   - .github/workflows/be_on_push.yml
-    #   - '!packages/frontend/**'
-    #   - '!.github/workflows/fe_on_push.yml'
+    branches:
+      - main
       
 # Docs: https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=linux%2Cjavascript&pivots=method-manual
 
@@ -49,19 +40,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4.2.0
 
-    # - name: Check for File Changes
-    - uses: dorny/paths-filter@v3
-      id: changes
-      with:
-        filters: |
-          backend:
-            - 'packages/backend/**'
-
-      # run only if some file in 'backend' folder was changed
-    - if: steps.changes.outputs.backend == 'true'
-      run: echo "backend files changed, tests should run!"  # TODO: remove when done (should print false or nothing)
-    
-
     - uses: ./.github/actions/setup-backend
 
     # Note: warnings like the below are ok for now; the library doing the complaining
@@ -69,14 +47,11 @@ jobs:
     # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
     # Example: package to test mode - not all features are supported.
     - name: Run Backend Unit Tests
-      # if statement should stop skip this check, then skips the others that rely on this one!
-      if: steps.changes.outputs.backend == 'true'
       working-directory: packages/backend
       run: npm run unittest
 
   backend-build-and-deploy:
     runs-on: ubuntu-latest
-    # TODO: what happens if the previous test is skipped (do we need to check if here as well?)
     needs: backend-run-unit-tests
     steps:
     - name: Checkout
