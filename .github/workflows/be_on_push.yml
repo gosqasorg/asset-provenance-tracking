@@ -31,6 +31,7 @@ jobs:
           filters: |
             backend:
               - 'packages/backend/**'
+              - '.github/workflows/be_on_push.yml'
 
   backend-run-unit-tests:
     needs: detect-changes
