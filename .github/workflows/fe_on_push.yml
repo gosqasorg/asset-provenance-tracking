@@ -2,24 +2,23 @@ name: On Push Frontend
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - packages/frontend/**
-      - .github/workflows/fe_on_push.yml
-      - '!packages/backend/**'
-      - '!.github/workflows/be_on_push.yml'
+    # branches:
+    #   - main
+    
+    # paths:
+    #   - packages/frontend/**
+    #   - .github/workflows/fe_on_push.yml
+    #   - '!packages/backend/**'
+    #   - '!.github/workflows/be_on_push.yml'
   pull_request:
-    branches:
-      - main
-    paths:
-      - packages/frontend/**
-      - .github/workflows/fe_on_push.yml
-      - '!packages/backend/**'
-      - '!.github/workflows/be_on_push.yml'
-  # TODO: seem more complex so gonna try conditionals first
-  # merge_group:
-  #   types: [checks_requested]
+    # branches:
+    #   - main
+
+    # paths:
+    #   - packages/frontend/**
+    #   - .github/workflows/fe_on_push.yml
+    #   - '!packages/backend/**'
+    #   - '!.github/workflows/be_on_push.yml'
 
 jobs:
 #  note: job currently not working
@@ -34,26 +33,28 @@ jobs:
 # TODO: try and get github to ignore this file if no frontend files were changed
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - uses: actions/checkout@v4
+      # TODO: do we have the below configured?
+      # TODO: maybe move into action below..?
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # outputs true if files changed match ANY of the filters
           filters: |
             frontend:
-              - packages/frontend/**
-              - .github/workflows/fe_on_push.yml
-              - '!packages/backend/**'
-              - '!.github/workflows/be_on_push.yml'
+              - 'packages/frontend/**'
 
   frontend-deploy:
     needs: changes
     # if should skip AND return success, rather than waiting in pending
-    if: needs.changes.outputs.frontend == 'true'
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - run: echo ${{ needs.changes.outputs.frontend }}  # TODO: remove when done (should print false or nothing)
       - name: Use Node.js 18
         uses: actions/setup-node@v4.0.2
         with:
