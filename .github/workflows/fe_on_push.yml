@@ -17,6 +17,9 @@ on:
       - .github/workflows/fe_on_push.yml
       - '!packages/backend/**'
       - '!.github/workflows/be_on_push.yml'
+  # TODO: seem more complex so gonna try conditionals first
+  # merge_group:
+  #   types: [checks_requested]
 
 jobs:
 #  note: job currently not working
@@ -28,7 +31,27 @@ jobs:
 #      - name: Run frontend UI tests
 #        uses: ./.github/actions/frontend-ui-testing
 
+# TODO: try and get github to ignore this file if no frontend files were changed
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - packages/frontend/**
+              - .github/workflows/fe_on_push.yml
+              - '!packages/backend/**'
+              - '!.github/workflows/be_on_push.yml'
+
   frontend-deploy:
+    needs: changes
+    # if should skip AND return success, rather than waiting in pending
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Use Node.js 18
