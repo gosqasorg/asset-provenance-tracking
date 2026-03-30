@@ -52,6 +52,8 @@ jobs:
     # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
     # Example: package to test mode - not all features are supported.
     - name: Run Backend Unit Tests
+      # if statement should stop skip this check, then skips the others that rely on this one!
+      if: steps.changes.outputs.backend == 'true'
       working-directory: packages/backend
       run: npm run unittest
 

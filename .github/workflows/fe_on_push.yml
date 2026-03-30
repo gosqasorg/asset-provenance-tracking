@@ -2,17 +2,17 @@ name: On Push Frontend
 
 on:
   push:
-    # branches:
-    #   - main
-    
+    branches:
+      - main
+
     # paths:
     #   - packages/frontend/**
     #   - .github/workflows/fe_on_push.yml
     #   - '!packages/backend/**'
     #   - '!.github/workflows/be_on_push.yml'
   pull_request:
-    # branches:
-    #   - main
+    branches:
+      - main
 
     # paths:
     #   - packages/frontend/**
@@ -38,8 +38,7 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      # TODO: do we have the below configured?
-      # TODO: maybe move into action below..?
+      - uses: actions/checkout@v4.1.7
       - uses: dorny/paths-filter@v3
         id: filter
         with:
