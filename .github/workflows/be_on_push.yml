@@ -4,19 +4,10 @@ on:
   push:
     branches:
       - main
-    paths:
-      - packages/backend/**
-      - .github/workflows/be_on_push.yml
-      - '!packages/frontend/**'
-      - '!.github/workflows/fe_on_push.yml'
+
   pull_request:
     branches:
       - main
-    paths:
-      - packages/backend/**
-      - .github/workflows/be_on_push.yml
-      - '!packages/frontend/**'
-      - '!.github/workflows/fe_on_push.yml'
       
 # Docs: https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-github-actions?tabs=linux%2Cjavascript&pivots=method-manual
 
@@ -26,7 +17,25 @@ env:
   NODE_VERSION: '18.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'packages/backend/**'
+              - '.github/workflows/be_on_push.yml'
+
   backend-run-unit-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
