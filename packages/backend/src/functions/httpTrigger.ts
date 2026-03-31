@@ -959,23 +959,35 @@ async function createChild(context: InvocationContext, custom_title: string = ""
     }
 }
 
-async function createChildren(context, number_of_children, custom_child_titles?: string[], tags?) {
+async function createChildren(context, number_of_children, custom_child_titles, tags?) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     let custom_title;
-    // custom_child_titles.reverse()
+    let j = 1;
+    let parent_name;
+
+    if (typeof custom_child_titles === 'string' || custom_child_titles instanceof String) {
+        parent_name = custom_child_titles;
+    } else {
+        // custom_child_titles.reverse();
+        // parent_name = custom_child_titles;
+    }
+    
     for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if (custom_child_titles?.length > 0) {
-            custom_title = custom_child_titles.at(-1)
+        if (parent_name) {
+            custom_title = `${parent_name} #${j}`;
+        } else if (j <= custom_child_titles.length) {
+            custom_title = custom_child_titles.at(j-1);
         } else {
-            custom_title = ""
+            custom_title = "";
         }
 
         if(!(thisChild = await createChild(context, custom_title, tags))) {
             continue;
         }
 
-        custom_child_titles?.pop()
+        j++;
+        // custom_child_titles?.pop()
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
@@ -990,6 +1002,9 @@ async function createGroup(context, name, description, n_children, custom_child_
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
+    if (!Array.isArray(custom_child_titles)) {
+        custom_child_titles = name;
+    }
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles)
 
@@ -1023,7 +1038,7 @@ const GroupCreationOrderSchema = z.object({
     description: z.string(),
     tags: z.array(z.string()).optional(),
     number_of_children: z.number().optional(),
-    custom_record_titles: z.array(z.string()).optional(),
+    children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
 });
