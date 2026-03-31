@@ -1035,7 +1035,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let custom_child_titles = theRequest['custom_record_titles']
+        let custom_child_titles = theRequest['children_name']
         let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles)
         context.log(theGroupRecordPageUrl)
 
