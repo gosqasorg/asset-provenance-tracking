@@ -25,19 +25,54 @@ describe("Backend Record Creation Tests", () => {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
             description: "An integration test creating the most basic record",
-            tags: {},
+            tags: [],
             children_key: '',
             hasParent: false,
             isReportingKey: false,
         }
-        const formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(record) });
         expect(recordResponse.status).toBe(200)
 
-        let recordUrl = await recordResponse.json()  // works!
+        let recordUrl = await recordResponse.json()
         console.log("Created Basic Record (url): ", recordUrl.recordUrl)
+
+		try {
+			let getResponse = await fetch(recordUrl.recordUrl);
+			getResponse = await getResponse.json();
+			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
+
+			expect(JSON.stringify(getResponse)).not.toBe('[]');
+			expect(responseString.record.deviceName).toBe('Create Record Test');
+			expect(responseString.record.description).toBe('An integration test creating the most basic record');
+			expect(responseString.record.children_key).toBe("");
+            expect(responseString.record.tags).toEqual([]);
+			expect(responseString.record.hasParent).toBe(false);
+			expect(responseString.record.isReportingKey).toBe(false);
+
+		} catch(error) {
+			console.error('(Basic Create Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
+			throw error;
+		}
+    });
+
+    it("Create and Retrieve A Record with Tags", async () => {
+        const baseUrl = process.env['backend_url']?.slice(0, -11);
+        const record = {
+            blobType: 'deviceInitializer',
+            deviceName: "Create Record Test",
+            description: "An integration test creating a record with tags",
+            tags: ['tags_test', 'integration'],
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        }
+
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(record) });
+        expect(recordResponse.status).toBe(200)
+
+        let recordUrl = await recordResponse.json()
+        console.log("Created Record With Tags (url): ", recordUrl.recordUrl)
 
 		try {
 			let getResponse = await fetch(recordUrl.recordUrl);
@@ -48,19 +83,15 @@ describe("Backend Record Creation Tests", () => {
 
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
 			expect(responseString.record.deviceName).toBe('Create Record Test');
-			expect(responseString.record.description).toBe('An integration test creating the most basic record');
-			expect(responseString.record.children_key).toBe("");
+			expect(responseString.record.description).toBe('An integration test creating a record with tags');
+			expect(responseString.record.tags).toEqual(["tags_test", "integration"]);
 			expect(responseString.record.hasParent).toBe(false);
 			expect(responseString.record.isReportingKey).toBe(false);
 
 		} catch(error) {
-			console.error('(Create GET Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
+			console.error('(Create With Tags Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
 			throw error;
 		}
-    });
-
-    it("Create and Retrieve A Record with Tags", async () => {
-
     });
 
     it("Create and Retrieve A Record with Tags and Attachments", async () => {

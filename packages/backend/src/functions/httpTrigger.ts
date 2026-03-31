@@ -1024,7 +1024,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
-async function createRecord(context, name, description) {
+async function createRecord(context, name, description, tags) {
     // TODO: create a new record + post (see tests, don't hardcode urls see createGroup)
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
@@ -1036,7 +1036,7 @@ async function createRecord(context, name, description) {
             blobType: 'deviceInitializer',
             deviceName: name,
             description: description,
-            tags: [],
+            tags: tags,
             children_key: '',
             hasParent: false,
             isReportingKey: false,
@@ -1046,20 +1046,15 @@ async function createRecord(context, name, description) {
 
         // TODO: should post response also try 3 times here..? createChildren does try 3 times! group doesn't
             // Could have a different func. for posting..?
-        const theResponse = await fetch(`${baseUrl}${deviceKey}`, {
+        const createInitUrl = `${baseUrl}${deviceKey}`
+        const theResponse = await fetch(createInitUrl, {
             method: "POST",
             body: formData,
         });
-        // TODO: should we post like this instead (this is how createGroup does it)?
-        // const createInitUrl = `${apiUrl}/provenance/${groupKey}`
-        // const groupResponse = await fetch(createInitUrl, {
-        //     method: "POST",
-        //     body: groupFormData,
-        // });
 
         // let groupUrlRecordPage = `${frontendUrl}/record/${deviceKey}`
         context.log(`${baseUrl}${deviceKey}`)
-        return `${baseUrl}${deviceKey}`;
+        return createInitUrl;
 
     } catch (error) {
         console.log('createRecord Error: Failed to create record' + error); 
@@ -1078,27 +1073,17 @@ const RecordCreationOrderSchema = z.object({
     tags: z.array(z.string()).optional(),
 });
 
-// TODO: handler should put together and verify params to create a record together (only gets name/descr.) and then send to createRecord
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        const formData = await request.formData();
-        const provenanceRecord = formData.get("provenanceRecord");
-        if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-        const record = JSON5.parse(provenanceRecord);
-
-        context.error("form data " + JSON.stringify(record))
-        // let theRequest = await request.json()  // this line fails (even when printing it! need to get formdata see postProv)
-            // TODO: maybe send .json and then try this again? want to match group format as closely as possible
-
-        // TODO: schema failing (expected array received object!!! see your previous zod code?)
-        // RecordCreationOrderSchema.parse(record);  // fails
-        // Valid.parse(record);  // also fails....?
-        // TODO: replace schema in validateJSON with our new schema, does it still pass?
-        if (!validateJSON(record)) { return { status: 404 }; }; // works (why if just valid fails?)
-
-        let name = record.deviceName
-        let description = record.description
-        let recordUrl = await createRecord(context, name, description)
+        let theRequest = await request.json()
+        RecordCreationOrderSchema.parse(theRequest);
+        context.error(theRequest);  // todo: remove
+        context.error(theRequest['tags'])
+        let name = theRequest['deviceName']
+        let description = theRequest['description']
+        let tags = theRequest['tags']
+        let recordUrl = await createRecord(context, name, description, tags)
+        context.log(recordUrl)
 
         return {
             status: 200,
