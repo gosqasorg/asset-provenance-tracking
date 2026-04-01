@@ -24,7 +24,7 @@ export default defineNuxtConfig({
       }
     },
     server: {
-      allowedHosts: []
+      allowedHosts: ['chenopodiaceous-unlegalized-lilliana.ngrok-free.dev']
     }
   },
   runtimeConfig: {
@@ -62,11 +62,12 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     static: true
   },
   pwa: {
+    registerType: 'autoUpdate',
     manifest: {
       name: 'GOSQAS PWA',
       short_name: 'G PWA',
       theme_color: '#ffffff',
-      start_url: 'https://dev.gosqas.org/',
+      start_url: '/',
       display: 'standalone',
       icons: [
         {
@@ -82,11 +83,11 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
       ]
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,vue}'],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,vue,mjs}'],
       maximumFileSizeToCacheInBytes: 5 * 1024 ** 2
     },
     devOptions: {
-      enabled: true
+      enabled: false
     }
   },
   scalar: {
