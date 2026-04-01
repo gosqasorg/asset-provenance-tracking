@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateKey } from '../../../src/utils/keyFuncs';
+import { readFile } from 'fs/promises';
 
 // TODO: simple test where you create a record w/ createRecord, get it, and check that the parameters match
     // See existing live integration test for reference
@@ -30,8 +31,9 @@ describe("Backend Record Creation Tests", () => {
             hasParent: false,
             isReportingKey: false,
         }
+        const postValues = { "provenanceRecord": record, "attachment": [] }
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(record) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = await recordResponse.json()
@@ -67,8 +69,9 @@ describe("Backend Record Creation Tests", () => {
             hasParent: false,
             isReportingKey: false,
         }
+        const postValues = { "provenanceRecord": record, "attachment": [] }
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(record) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = await recordResponse.json()
@@ -76,8 +79,6 @@ describe("Backend Record Creation Tests", () => {
 
 		try {
 			let getResponse = await fetch(recordUrl.recordUrl);
-            console.log("GET RESPONSE")
-            console.log(getResponse)
 			getResponse = await getResponse.json();
 			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
 
@@ -95,6 +96,48 @@ describe("Backend Record Creation Tests", () => {
     });
 
     it("Create and Retrieve A Record with Tags and Attachments", async () => {
+        const baseUrl = process.env['backend_url']?.slice(0, -11);
+        const record = {
+            blobType: 'deviceInitializer',
+            deviceName: "Create Record Test",
+            description: "An integration test creating a record with tags and an attachment",
+            tags: ['attach_test'],
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        }
 
+        const buffer = await readFile('./test/attachments/a200.jpg');
+        console.log("buffer " + buffer)
+        const blob = new Blob([buffer], { type: 'image/jpeg' });
+
+        const postValues = { "provenanceRecord": record, "attachment": blob }
+        // TODO: since we're not making formData we need to figure out how to send attachment (json inside json..?)
+        // formData.append('kirby.png', blob);
+
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        expect(recordResponse.status).toBe(200)
+
+        let recordUrl = await recordResponse.json()
+        console.log("Created Record With Tags and Attachment (url): ", recordUrl.recordUrl)
+
+		try {
+			let getResponse = await fetch(recordUrl.recordUrl);
+            console.log("GET RESPONSE");  // todo: remove
+            console.log(getResponse)
+			getResponse = await getResponse.json();
+			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
+
+			expect(JSON.stringify(getResponse)).not.toBe('[]');
+			expect(responseString.record.deviceName).toBe('Create Record Test');
+			expect(responseString.record.description).toBe('An integration test creating a record with tags and an attachment');
+			expect(responseString.record.tags).toEqual(['attach_test']);
+			expect(responseString.record.hasParent).toBe(false);
+			expect(responseString.record.isReportingKey).toBe(false);
+
+		} catch(error) {
+			console.error('(Create With Attachment Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
+			throw error;
+		}
     });
 });

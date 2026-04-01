@@ -1024,7 +1024,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
-async function createRecord(context, name, description, tags) {
+async function createRecord(context, name, description, tags, attachments) {
     // TODO: create a new record + post (see tests, don't hardcode urls see createGroup)
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
@@ -1044,6 +1044,19 @@ async function createRecord(context, name, description, tags) {
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(data));
 
+        // TODO: passes but doesn't actually add attachment, keep in mind if there's no attachment
+        context.error(attachments)
+        formData.append(attachments.name, attachments);
+
+        // NOTE: below is how backend postProv does it
+        // const timestamp = new Date().getTime();
+        // const attachments = new Array<NamedBlob>();
+        // for (const attach of formData.values()) {
+        //     if (typeof attach === 'string') continue;
+        //     console.log("attach type: " + typeof(attach))
+        //     attachments.push({ blob: attach, name: attach.name });
+        // }
+
         // TODO: should post response also try 3 times here..? createChildren does try 3 times! group doesn't
             // Could have a different func. for posting..?
         const createInitUrl = `${baseUrl}${deviceKey}`
@@ -1057,7 +1070,7 @@ async function createRecord(context, name, description, tags) {
         return createInitUrl;
 
     } catch (error) {
-        console.log('createRecord Error: Failed to create record' + error); 
+        context.error('createRecord Error: Failed to create record' + error); 
         return '';
     }
 }
@@ -1076,13 +1089,14 @@ const RecordCreationOrderSchema = z.object({
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         let theRequest = await request.json()
-        RecordCreationOrderSchema.parse(theRequest);
         context.error(theRequest);  // todo: remove
-        context.error(theRequest['tags'])
-        let name = theRequest['deviceName']
-        let description = theRequest['description']
-        let tags = theRequest['tags']
-        let recordUrl = await createRecord(context, name, description, tags)
+        context.error(theRequest['provenanceRecord'])
+        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
+        let name = theRequest['provenanceRecord']['deviceName']
+        let description = theRequest['provenanceRecord']['description']
+        let tags = theRequest['provenanceRecord']['tags']
+        let attachment = theRequest['attachment']
+        let recordUrl = await createRecord(context, name, description, tags, attachment)
         context.log(recordUrl)
 
         return {
