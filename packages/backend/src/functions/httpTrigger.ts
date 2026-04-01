@@ -968,9 +968,6 @@ async function createChildren(context, number_of_children, custom_child_titles, 
 
     if (typeof custom_child_titles === 'string' || custom_child_titles instanceof String) {
         parent_name = custom_child_titles;
-    } else {
-        // custom_child_titles.reverse();
-        // parent_name = custom_child_titles;
     }
     
     for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
@@ -987,7 +984,6 @@ async function createChildren(context, number_of_children, custom_child_titles, 
         }
 
         j++;
-        // custom_child_titles?.pop()
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
