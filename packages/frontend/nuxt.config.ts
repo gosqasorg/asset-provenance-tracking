@@ -24,7 +24,7 @@ export default defineNuxtConfig({
       }
     },
     server: {
-      allowedHosts: ['chenopodiaceous-unlegalized-lilliana.ngrok-free.dev']
+      allowedHosts: []
     }
   },
   runtimeConfig: {
