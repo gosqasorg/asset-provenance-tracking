@@ -371,7 +371,7 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     }
     return count;
 }
-export async function postProvenanceMiddleware(body: FormData): Promise<Boolean> {
+export async function postProvenanceMiddleware(body): Promise<Boolean> {
     // This may seem simple but it is expected to grow
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
     var result = true
@@ -389,7 +389,6 @@ export async function postProvenanceMiddleware(body: FormData): Promise<Boolean>
     }
     return result
 }
-
 
 /*=================  Endpoints  =====================*/
 
