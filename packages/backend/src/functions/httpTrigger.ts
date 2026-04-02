@@ -971,7 +971,7 @@ async function createChildren(context, number_of_children, custom_child_titles, 
     }
     
     for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if (parent_name) {
+        if (parent_name) {  // determines if parent deviceName, custom titles, or a blank title to be used for child deviceName
             custom_title = `${parent_name} #${j}`;
         } else if (j <= custom_child_titles.length) {
             custom_title = custom_child_titles.at(j-1);
@@ -998,6 +998,8 @@ async function createGroup(context, name, description, n_children, custom_child_
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
+    // checks if custom_child_titles is an array. If not, parent deviceName is passed as custom_child_titles
+    // this is to facilitate groups with missing children_name keys to use parent deviceName and an incrementing number as child titles
     if (!Array.isArray(custom_child_titles)) {
         custom_child_titles = name;
     }
