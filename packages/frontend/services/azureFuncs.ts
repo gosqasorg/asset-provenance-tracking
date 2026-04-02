@@ -247,3 +247,26 @@ export async function emptyStash() {
 
     return 200;
 }
+
+export async function periodicChecker() {
+    // Return if a checker is already running
+    if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
+        console.log("Instance of periodicChecker is already running, returning")
+        return;
+    }
+    localStorage.setItem('gdt-awaiting-conectivity', "true");
+
+    let stash_empty = false;
+    let response = 404
+
+    // Wait for the user to come back online then empty the stash
+    while (!stash_empty) {
+        await connectivityChecker();
+        response = await emptyStash();
+        if (response == 200) {
+            stash_empty = true;
+        }
+    }
+
+    localStorage.setItem('gdt-awaiting-conectivity', "false");
+}
