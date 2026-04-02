@@ -92,7 +92,7 @@ describe("Group Creation v2 tests", () => {
             let currCase = testCases[i];
             let response;
 
-            // Creates group records based on whether or not test case contains children_name field"
+            // Creates group records based on whether or not test case contains children_name field
             if (currCase.length === 4) {
                 response = await fetch(`${baseUrl}/createGroup`, {
                     method: "POST",
@@ -114,29 +114,33 @@ describe("Group Creation v2 tests", () => {
                 });
             }
 
-            // Checks if fetch() response was sucessful (status in 200 - 299), then prepares to pull children
-            // last two test cases, 7 & 8, are meant to fail
+            // last two test cases, 7 & 8, are meant to fail during record creation
             if (i < testCases.length - 2){
+                // checks if fetch() response was sucessful (status in 200 - 299)
                 expect(response.ok).toBe(true);
                 
                 let url = (await response.json()).groupUrl;
                 console.log(`Custom title test case #${i}: ${url}`)
 
+                // retrieves and stores parent records and tests that parent deviceName matches test cases
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
                 let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
                 let parentRecord = prov[0].record
                 expect(parentRecord.deviceName).toBe(currCase[0])
                 groupParentRecords.push(parentRecord);
 
+                // stores child keys by group
                 let childKeys = parentRecord.children_key
                 groupedChildKeys.push(childKeys);
                 
+                // retrieves and stores custom child titles by group
                 let tempGroup = []
                 for (let j = 0; j < childKeys.length; j ++) {
                     let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
                     let childTitle = childProv[0].record.deviceName
                     tempGroup.push(childTitle)
 
+                    // tests that retrieved custom child titles match test cases based on existence, length, and contents of children_name key and parent deviceName
                     if (currCase.length === 4) {
                         if (j <= currCase[3].length - 1) {
                             expect(childTitle).toBe(currCase[3][j])
@@ -145,7 +149,6 @@ describe("Group Creation v2 tests", () => {
                         }
                     } else {
                         if (currCase[0] === "") {
-                            // console.log(currCase[1])
                             expect(childTitle).toBe("")
                         } else {
                             expect(childTitle).toBe(`${currCase[0]} #${j + 1}`)
@@ -157,10 +160,9 @@ describe("Group Creation v2 tests", () => {
                 expect(response.ok).toBe(false);
             }
         };
-
-        console.log("groupParentRecords: ", groupParentRecords)
-        console.log("groupedChildKeys: ", groupedChildKeys)
-        console.log("groupedChildTitles: ", groupedChildTitles)
+        // console.log("groupParentRecords: ", groupParentRecords)
+        // console.log("groupedChildKeys: ", groupedChildKeys)
+        // console.log("groupedChildTitles: ", groupedChildTitles)
 	});
 
 	// More tests
