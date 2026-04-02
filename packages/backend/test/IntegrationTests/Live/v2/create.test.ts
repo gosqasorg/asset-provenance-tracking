@@ -76,12 +76,23 @@ describe("Group Creation v2 tests", () => {
             },
             {
                 deviceName: "7th Test",
+                description: "1 child, 3 custom record titles",
+                number_of_children: 1,
+                children_name: ["a1", "b2", "c3"]
+            },
+            {
+                deviceName: "8th Test",
+                description: "no number_of_children key, 3 custom record titles",
+                children_name: ["a1", "b2", "c3"]
+            },
+            {
+                deviceName: "9th Test",
                 description: "non-array children_name value, will fail Zod validation",
                 number_of_children: 3,
                 children_name: "a"
             },
             {
-                deviceName: "8th Test",
+                deviceName: "10th Test",
                 description: "children_name array with unexpected number, will fail Zod validation",
                 number_of_children: 3,
                 children_name: ["a1", 9, "c3"]
@@ -98,7 +109,7 @@ describe("Group Creation v2 tests", () => {
                 body: JSON.stringify(currCase)
             });
 
-            // last two test cases, 7 & 8, are meant to fail during record creation
+            // last two test cases, 9 & 10, are meant to fail during record creation
             if (i < testCases.length - 2){
                 // checks if fetch() response was sucessful (status in 200 - 299)
                 expect(response.ok).toBe(true);
