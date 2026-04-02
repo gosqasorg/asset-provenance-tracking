@@ -371,18 +371,13 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     }
     return count;
 }
-export async function postProvenanceMiddleware(request: HttpRequest): Promise<Boolean> {
+export async function postProvenanceMiddleware(body: FormData): Promise<Boolean> {
+    // This may seem simple but it is expected to grow
+
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
     var result = false;
-
-    // extract request then compare it to sizeLimit. If it's over the limit, return false. Return true, if under the sizeLimit
-    var testBlob: string = await request.text()
     
-    // dev
-    console.log(testBlob)
-
-    var testBlobLength = testBlob.length
-    if (testBlobLength < sizeLimit) {
+    if (JSON.stringify(body).length < sizeLimit) {
         return result = true
     } 
 
@@ -432,7 +427,6 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    if (!postProvenanceMiddleware(request)) {return {status: 304 }; }
 
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
