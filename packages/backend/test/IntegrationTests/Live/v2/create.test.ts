@@ -24,7 +24,7 @@ describe("Group of tests", () => {
 describe("Group Creation v2 tests", () => {
     // Tests group child custom titles
 	it("Custom Record Titles", async () => {
-		const baseUrl = "http://localhost:7071/api";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const groupParentRecords = []
         const groupedChildKeys = []
         const groupedChildTitles = []
