@@ -35,84 +35,68 @@ describe("Group Creation v2 tests", () => {
         // number_of_children,
         // children_name ]
         const testCases = [
-            [
-                "0th Test",
-                "1 custom record title",
-                1,
-                ["a1"]
-            ],
-            [
-                "1st Test",
-                "3 custom record titles",
-                3,
-                ["a1", "b2", "c3"]
-            ],
-            [
-                "2nd Test",
-                "3 children, 1 custom record title, 2 records without custom title",
-                3,
-                ["a1"]
-            ],
-            [
-                "3rd Test",
-                "3 children, empty children_name array",
-                3,
-                []
-            ],
-            [
-                "4th Test",
-                "4 children, no children_name array",
-                4
-            ],
-            [
-                "",
-                "5th Test: completely empty parent deviceName string, no children_name array",
-                5
-            ],
-            [
-                " ",
-                "6th Test: single space as parent deviceName string, no children_name array",
-                6
-            ],
-            [
-                "7th Test",
-                "non-array children_name value, will fail Zod validation",
-                3,
-                "a"
-            ],
-            [
-                "8th Test",
-                "children_name array with unexpected number, will fail Zod validation",
-                3,
-                ["a1", 9, "c3"]
-            ]
+            {
+                deviceName: "0th Test",
+                description: "1 custom record title",
+                number_of_children: 1,
+                children_name: ["a1"]
+            },
+            {
+                deviceName: "1st Test",
+                description: "3 custom record titles",
+                number_of_children: 3,
+                children_name: ["a1", "b2", "c3"]
+            },
+            {
+                deviceName: "2nd Test",
+                description: "3 children, 1 custom record title, 2 records without custom title",
+                number_of_children: 3,
+                children_name: ["a1"]
+            },
+            {
+                deviceName: "3rd Test",
+                description: "3 children, empty children_name array",
+                number_of_children: 3,
+                children_name: []
+            },
+            {
+                deviceName: "4th Test",
+                description: "4 children, no children_name array",
+                number_of_children: 4
+            },
+            {
+                deviceName: "",
+                description: "5th Test: completely empty parent deviceName string, no children_name array",
+                number_of_children: 5
+            },
+            {
+                deviceName: " ",
+                description: "6th Test: single space as parent deviceName string, no children_name array",
+                number_of_children: 6
+            },
+            {
+                deviceName: "7th Test",
+                description: "non-array children_name value, will fail Zod validation",
+                number_of_children: 3,
+                children_name: "a"
+            },
+            {
+                deviceName: "8th Test",
+                description: "children_name array with unexpected number, will fail Zod validation",
+                number_of_children: 3,
+                children_name: ["a1", 9, "c3"]
+            }
         ]
         
         for (let i = 0; i < testCases.length; i++) {
             let currCase = testCases[i];
             let response;
 
-            // Creates group records based on whether or not test case contains children_name field
-            if (currCase.length === 4) {
-                response = await fetch(`${baseUrl}/createGroup`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        deviceName: currCase[0],
-                        description: currCase[1],
-                        number_of_children: currCase[2],
-                        children_name: currCase[3]
-                    })
-                });
-            } else {
-                response = await fetch(`${baseUrl}/createGroup`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        deviceName: currCase[0],
-                        description: currCase[1],
-                        number_of_children: currCase[2]
-                    })
-                });
-            }
+            // creates group records as found in above in testCases
+            response = await fetch(`${baseUrl}/createGroup`, {
+                method: "POST",
+                body: JSON.stringify(currCase)
+            });
 
             // last two test cases, 7 & 8, are meant to fail during record creation
             if (i < testCases.length - 2){
@@ -126,7 +110,7 @@ describe("Group Creation v2 tests", () => {
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
                 let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
                 let parentRecord = prov[0].record
-                expect(parentRecord.deviceName).toBe(currCase[0])
+                expect(parentRecord.deviceName).toBe(currCase.deviceName)
                 groupParentRecords.push(parentRecord);
 
                 // stores child keys by group
@@ -135,23 +119,23 @@ describe("Group Creation v2 tests", () => {
                 
                 // retrieves and stores custom child titles by group
                 let tempGroup = []
-                for (let j = 0; j < childKeys.length; j ++) {
+                for (let j = 0; j < currCase.number_of_children; j ++) {
                     let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
                     let childTitle = childProv[0].record.deviceName
                     tempGroup.push(childTitle)
 
                     // tests that retrieved custom child titles match test cases based on existence, length, and contents of children_name key and parent deviceName
-                    if (currCase.length === 4) {
-                        if (j <= currCase[3].length - 1) {
-                            expect(childTitle).toBe(currCase[3][j])
+                    if (currCase.children_name) {
+                        if (j <= currCase.children_name.length - 1) {
+                            expect(childTitle).toBe(currCase.children_name[j])
                         } else {
                             expect(childTitle).toBe("")
                         }
                     } else {
-                        if (currCase[0] === "") {
+                        if (currCase.deviceName === "") {
                             expect(childTitle).toBe("")
                         } else {
-                            expect(childTitle).toBe(`${currCase[0]} #${j + 1}`)
+                            expect(childTitle).toBe(`${currCase.deviceName} #${j + 1}`)
                         }
                     };
                 }
