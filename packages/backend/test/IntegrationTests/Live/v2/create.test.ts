@@ -22,22 +22,14 @@ describe("Group of tests", () => {
 */
 
 describe("Group Creation v2 tests", () => {
-	// it("Brief description that this tests foo", () => {
-	// 	var val = do_thing();
-	// 	expect(val).toBe(0);
-	// });
-
-	// it("Brief description that this tests bar", () => {
-	// 	// structured similar to above
-	// });
-
+    // Tests group child custom titles
 	it("Custom Record Titles", async () => {
 		const baseUrl = "http://localhost:7071/api";
         const groupParentRecords = []
         const groupedChildKeys = []
         const groupedChildTitles = []
 
-        // Test cases are built as follows, note the children_name key can be left out or an empty array used as a value:
+        // Test cases are structured as follows, note the children_name key can be left out, an empty array used as a value, or less than number_of_children:
         // [ deviceName,
         // description,
         // number_of_children,
@@ -97,41 +89,43 @@ describe("Group Creation v2 tests", () => {
         ]
         
         for (let i = 0; i < testCases.length; i++) {
-            let testCase;
+            let currCase = testCases[i];
+            let response;
 
             // Creates group records based on whether or not test case contains children_name field"
-            if (testCases[i].length === 4) {
-                testCase = await fetch(`${baseUrl}/createGroup`, {
+            if (currCase.length === 4) {
+                response = await fetch(`${baseUrl}/createGroup`, {
                     method: "POST",
                     body: JSON.stringify({
-                        deviceName: testCases[i][0],
-                        description: testCases[i][1],
-                        number_of_children: testCases[i][2],
-                        children_name: testCases[i][3]
+                        deviceName: currCase[0],
+                        description: currCase[1],
+                        number_of_children: currCase[2],
+                        children_name: currCase[3]
                     })
                 });
             } else {
-                testCase = await fetch(`${baseUrl}/createGroup`, {
+                response = await fetch(`${baseUrl}/createGroup`, {
                     method: "POST",
                     body: JSON.stringify({
-                        deviceName: testCases[i][0],
-                        description: testCases[i][1],
-                        number_of_children: testCases[i][2]
+                        deviceName: currCase[0],
+                        description: currCase[1],
+                        number_of_children: currCase[2]
                     })
                 });
             }
 
             // Checks if fetch() response was sucessful (status in 200 - 299), then prepares to pull children
-            // test case 7 & 8 are meant to fail
-            if (i < 7){
-                expect(testCase.ok).toBe(true);
+            // last two test cases, 7 & 8, are meant to fail
+            if (i < testCases.length - 2){
+                expect(response.ok).toBe(true);
                 
-                let url = (await testCase.json()).groupUrl;
+                let url = (await response.json()).groupUrl;
                 console.log(`Custom title test case #${i}: ${url}`)
 
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
                 let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
                 let parentRecord = prov[0].record
+                expect(parentRecord.deviceName).toBe(currCase[0])
                 groupParentRecords.push(parentRecord);
 
                 let childKeys = parentRecord.children_key
@@ -140,42 +134,30 @@ describe("Group Creation v2 tests", () => {
                 let tempGroup = []
                 for (let j = 0; j < childKeys.length; j ++) {
                     let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
-                    tempGroup.push(childProv[0].record.deviceName)
+                    let childTitle = childProv[0].record.deviceName
+                    tempGroup.push(childTitle)
+
+                    if (currCase.length === 4) {
+                        if (j <= currCase[3].length - 1) {
+                            expect(childTitle).toBe(currCase[3][j])
+                        } else {
+                            expect(childTitle).toBe("")
+                        }
+                    } else {
+                        if (currCase[0] === "") {
+                            // console.log(currCase[1])
+                            expect(childTitle).toBe("")
+                        } else {
+                            expect(childTitle).toBe(`${currCase[0]} #${j + 1}`)
+                        }
+                    };
                 }
                 groupedChildTitles.push(tempGroup)
             } else { 
-                expect(testCase.ok).toBe(false);
+                expect(response.ok).toBe(false);
             }
         };
 
-        // const response = await fetch(`${baseUrl}/createGroup`, {
-        //     method: "POST",
-        //     body: JSON.stringify({
-        //         deviceName: "Group Title",
-        //         description: "Group Description",
-        //         number_of_children: 3,
-        //         children_name: customTitles
-        //     })
-        // });
-
-        // let url = (await response.json()).groupUrl;
-        // let key = url.substring(url.lastIndexOf('/') + 1);
-        // let prov = await (await fetch(`${baseUrl}/provenance/${key}`)).json();
-
-        // // TODO: delete below
-        // console.log("int test:", url);
-        // console.log("resp:", response);
-        // console.log(response.ok);
-        // console.log(response.body);
-        // console.log(response.status);
-        // console.log(response.headers);
-        // // console.log(await response.text())
-        // console.log(url);
-        // console.log(key);
-
-        // console.log(prov[0].record);
-        // console.log(prov[0].record.children_key[0])
-        // console.log(await (await fetch(`${baseUrl}/provenance/${prov[0].record.children_key[0]}`)).json())
         console.log("groupParentRecords: ", groupParentRecords)
         console.log("groupedChildKeys: ", groupedChildKeys)
         console.log("groupedChildTitles: ", groupedChildTitles)
