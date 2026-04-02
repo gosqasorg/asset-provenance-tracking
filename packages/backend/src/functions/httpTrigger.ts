@@ -371,6 +371,24 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     }
     return count;
 }
+export async function postProvenanceMiddleware(request: HttpRequest): Promise<Boolean> {
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+    var result = false;
+
+    // extract request then compare it to sizeLimit. If it's over the limit, return false. Return true, if under the sizeLimit
+    var testBlob: string = await request.text()
+    
+    // dev
+    console.log(testBlob)
+
+    var testBlobLength = testBlob.length
+    if (testBlobLength < sizeLimit) {
+        return result = true
+    } 
+
+    return result
+}
+
 
 /*=================  Endpoints  =====================*/
 
@@ -413,14 +431,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
 }
-export async function postProvenanceMiddleware(request: HttpRequest): Promise<Boolean> {
-    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
-    var result = false;
-
-    return result
-}
-
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    if (!postProvenanceMiddleware(request)) {return {status: 304 }; }
 
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -434,7 +446,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
     if (!validateJSON(record)) { return { status: 404 }; }
-    //if (!validateBlobSize(record)) { return { status: 304 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
