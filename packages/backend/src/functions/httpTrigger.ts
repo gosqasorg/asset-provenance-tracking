@@ -35,6 +35,7 @@ const baseUrl = accountName === "devstoreaccount1"
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
+const MAX_ATTACHMENTS_LIMIT = 1000;
 
 /*==============  Utils Section  ============*/
 
@@ -347,6 +348,29 @@ export function postGetProvenanceMiddleware(body): Boolean {
     return result
 }
 
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+    let count = 0;
+
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        
+        try {
+            const { data } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            const prov = JSON.parse(json) as { attachments?: string[] };
+            
+            if (Array.isArray(prov.attachments)) {
+                count += prov.attachments.length;
+                if (count >= limit) {
+                    return count; 
+                }
+            }
+        } catch {
+            continue;
+        }
+    }
+    return count;
+}
 
 /*=================  Endpoints  =====================*/
 
@@ -413,6 +437,14 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         if (typeof attach === 'string') continue;
         console.log("attach type: " + typeof(attach))
         attachments.push({ blob: attach, name: attach.name });
+    }
+
+    if (attachments.length > 0) {
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+            return { status: 304 };
+        }
     }
 
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
