@@ -373,14 +373,20 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 }
 export async function postProvenanceMiddleware(body: FormData): Promise<Boolean> {
     // This may seem simple but it is expected to grow
-
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
-    var result = false;
-    
-    if (JSON.stringify(body).length < sizeLimit) {
-        return result = true
-    } 
+    var result = true
 
+    // For when getProvenance gets called and all records entries of one key summed up
+    if (typeof body === 'number') {
+        if (body > sizeLimit) {
+            result = false
+        } 
+    // For postProvenance
+    } else if (body instanceof FormData) {
+        if (JSON.stringify(body).length > sizeLimit) {
+            result = false
+        } 
+    }
     return result
 }
 
@@ -403,6 +409,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+    let totalBlobSize = 0;
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         
         // Retrieve readableStreamBody, send to streamToString for string conversion, 
