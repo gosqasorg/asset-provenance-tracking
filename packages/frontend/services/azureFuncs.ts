@@ -205,3 +205,45 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     let request_name = 'gosqas_offline_stash_' + stash_counter;
     localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
+
+export async function emptyStash() {
+    // See how many requests are stored, if any
+    let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+
+    for (stash_counter; stash_counter > 0; stash_counter--) {
+        try {
+            // Get the last request stored
+            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+            let fullUrl = request[0][1];
+            let record = request[1][1];
+
+            // Fulfill the request
+            const formData = new FormData();
+            formData.append('provenanceRecord', record);
+            let response = await fetchUrl(fullUrl, formData)
+            if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
+
+            // Add created key to a list of successfully created keys to display later
+            let keysCreated = [];
+            let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
+            if (existingKeys) {
+                for (const key of existingKeys.split(",")) {
+                    keysCreated.push(key)
+                }
+            }
+            keysCreated.push(currentKey)
+            localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
+
+            // Remove request from stash and update counter
+            localStorage.removeItem(request_name)
+            localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+        } catch (error) {
+            console.log("Record from localStorage failed to create: " + error)
+            return 404;
+        }
+    }
+
+    return 200;
+}

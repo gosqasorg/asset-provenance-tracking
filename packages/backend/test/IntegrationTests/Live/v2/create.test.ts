@@ -147,7 +147,7 @@ describe("Group Creation v2 tests", () => {
         // console.log("groupParentRecords: ", groupParentRecords)
         // console.log("groupedChildKeys: ", groupedChildKeys)
         // console.log("groupedChildTitles: ", groupedChildTitles)
-	});
+	}, 60000);
 
 	// More tests
-})
+});
