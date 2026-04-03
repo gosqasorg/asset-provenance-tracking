@@ -121,26 +121,28 @@ describe("Group Creation v2 tests", () => {
 
                 // retrieves and stores parent records and tests that parent deviceName matches test cases
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
-                let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+                let y = await fetch(`${baseUrl}/provenance/${parentKey}`)
+                let prov = await y.json();
                 let parentRecord = prov[0].record
                 expect(parentRecord.deviceName).toBe(currCase.deviceName)
                 groupParentRecords.push(parentRecord);
 
                 // stores child keys by group
                 let childKeys = parentRecord.children_key
-                console.log(childKeys)
+                console.log("childKeys: ", childKeys)
                 groupedChildKeys.push(childKeys);
                 
                 // retrieves and stores custom child titles by group
                 let tempGroup = []
-                console.log(currCase)
+                console.log("currCase: ", currCase)
                 console.log(currCase.number_of_children)
                 console.log(0 < currCase.number_of_children)
                 for (let j = 0; j < currCase.number_of_children; j ++) {
                     let x = await fetch(`${baseUrl}/provenance/${childKeys[j]}`)
+                    console.log("x: ", x)
                     let childProv = await x.json();
                     let childTitle = childProv[0].record.deviceName
-                    console.log(x, childProv, childTitle)
+                    // console.log(childProv, childTitle)
                     tempGroup.push(childTitle)
 
                     // tests that retrieved custom child titles match test cases based on existence, length, and contents of children_name key and parent deviceName
