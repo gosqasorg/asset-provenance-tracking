@@ -24,6 +24,8 @@ describe("Group of tests", () => {
 describe("Group Creation v2 tests", () => {
     // Tests group child custom titles
 	it("Custom Record Titles", async () => {
+        // "https://gosqasbe.azurewebsites.net/api"
+        // "http://localhost:7071/api"
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const groupParentRecords = []
         const groupedChildKeys = []
@@ -126,13 +128,19 @@ describe("Group Creation v2 tests", () => {
 
                 // stores child keys by group
                 let childKeys = parentRecord.children_key
+                console.log(childKeys)
                 groupedChildKeys.push(childKeys);
                 
                 // retrieves and stores custom child titles by group
                 let tempGroup = []
+                console.log(currCase)
+                console.log(currCase.number_of_children)
+                console.log(0 < currCase.number_of_children)
                 for (let j = 0; j < currCase.number_of_children; j ++) {
-                    let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
+                    let x = await fetch(`${baseUrl}/provenance/${childKeys[j]}`)
+                    let childProv = await x.json();
                     let childTitle = childProv[0].record.deviceName
+                    console.log(x, childProv, childTitle)
                     tempGroup.push(childTitle)
 
                     // tests that retrieved custom child titles match test cases based on existence, length, and contents of children_name key and parent deviceName
@@ -151,7 +159,8 @@ describe("Group Creation v2 tests", () => {
                     };
                 }
                 groupedChildTitles.push(tempGroup)
-            } else { 
+            } else {
+                console.log(currCase) 
                 expect(response.ok).toBe(false);
             }
         };
