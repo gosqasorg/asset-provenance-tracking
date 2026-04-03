@@ -207,6 +207,8 @@ export async function cacheRequest(formUrl: string, formData: FormData) {
   // Store the request at a unique key (gosqas_offline_cache_#)
   let request_name = 'gosqas_offline_cache_' + cache_counter;
   localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+}
+
 export async function stashRequest(formUrl: string, formData: FormData) {
     // Convert values to string and store them
     let valuesToStore = [];
