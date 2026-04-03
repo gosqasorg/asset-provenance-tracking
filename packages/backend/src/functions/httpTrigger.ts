@@ -999,6 +999,7 @@ async function createChildren(context, number_of_children, custom_child_titles, 
     let j = 1;
     let parent_name;
 
+    // let child_titles_list = []
     if (typeof custom_child_titles === 'string' || custom_child_titles instanceof String) {
         parent_name = custom_child_titles;
     }
