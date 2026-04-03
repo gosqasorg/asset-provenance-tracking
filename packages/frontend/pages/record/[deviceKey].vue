@@ -147,7 +147,7 @@ export default {
         },
         downloadQRCode() {
             const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode()
+            qrCodeComponent?.downloadQRCode(this._recordKey);
         },
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
