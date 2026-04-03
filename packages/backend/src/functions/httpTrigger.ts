@@ -371,24 +371,6 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     }
     return count;
 }
-export async function postProvenanceMiddleware(body): Promise<Boolean> {
-    // This may seem simple but it is expected to grow
-    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
-    var result = true
-
-    // For when getProvenance gets called and all records entries of one key summed up
-    if (typeof body === 'number') {
-        if (body > sizeLimit) {
-            result = false
-        } 
-    // For postProvenance
-    } else if (body instanceof FormData) {
-        if (JSON.stringify(body).length > sizeLimit) {
-            result = false
-        } 
-    }
-    return result
-}
 
 /*=================  Endpoints  =====================*/
 
@@ -432,6 +414,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
 }
+
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const deviceKey = decodeKey(request.params.deviceKey);
