@@ -126,7 +126,8 @@ const recordHasParent = hasParent(provenance);
                 :recordKey="_recordKey"
                 :fontSize="20"
                 :height="66"
-                :width="48">
+                :width="48"
+                style="width: 48%;">
               </EmailNotificationSignup>
               
             </div>
@@ -174,11 +175,6 @@ const recordHasParent = hasParent(provenance);
 
           </div>
         </div>
-        <!-- TODO: Uncomment when  functionality is ready:
-              <div>
-                <ProvenanceNotificationSignUpModal/>
-              </div>   -->
-
       </div>
     </div>
   </div>
@@ -401,11 +397,15 @@ export default {
 .buttons-container {
   margin-bottom: 20px;
   display: flex;
-  /* flex-wrap: wrap;
-  justify-content: space-between; */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  justify-content: space-between;
   align-items: stretch;
+  gap: 16px;
+}
+
+.buttons-container > :deep(.notify-btn) {
+  margin-left: 0 !important;
+  margin-top: 20px;
+  width: 48% !important;
 }
 
 .download-btn {

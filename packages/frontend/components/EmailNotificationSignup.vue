@@ -1,6 +1,5 @@
 <template>
-  <div class="buttons-container" :style="containerStyles">
-    <button class="btn notify-btn device-btn" :style="btnStyles" @click="openDialog">
+    <button class="btn px-3 notify-btn device-btn" :style="btnStyles" @click="openDialog">
       Get email notifications
     </button>
 
@@ -31,20 +30,18 @@
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script lang="ts">
-// TODO: revisit colors!!! 
-// TODO: size of emeail text box
+
+
 import { postNotificationEmail } from '~/services/azureFuncs';
 
 export default {
   props: {
     recordKey: { type: String, required: true },
     fontSize: { type: [String, Number], default: () => '20px' },
-    height: { type: [String, Number], default: () => '66px' },
-    width: { type: [String, Number], default: () => 48 }
+    height: { type: [String, Number], default: () => '66px' }
   },
   data() {
     return {
@@ -57,18 +54,12 @@ export default {
     btnStyles() {
       return { fontSize: this._fontSize, height: this._height }
     },
-    containerStyles() {
-      return { width: this._width }
-    },
     _fontSize() {
       return /^\d+$/.test(String(this.fontSize)) ? this.fontSize + 'px' : this.fontSize
     },
     _height() {
       return /^\d+$/.test(String(this.height)) ? this.height + 'px' : this.height
     },
-    _width() {
-      return /^\d+$/.test(String(this.width)) ? this.width + '%' : this.width
-    }
   },
   methods: {
     openDialog() { this.showDialog = true },
@@ -100,28 +91,20 @@ export default {
 </script>
 
 <style scoped>
-.buttons-container {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
 
 .notify-btn {
-  padding: 18px 22px;
-  font-size: 20px;
   border-radius: 10px;
   margin-right: 0;
+  margin-left: 30px;
   height: 66px;
-  width: 100%;
+  margin-top: 20px;
 }
 
 @media (max-width: 991px) {
-  .buttons-container {
-    width: 100% !important;
-  }
-
-  .device-btn {
-    width: 100%;
-    margin-right: 0;
+  .notify-btn {
+    margin: 0;
+    width: auto;
+    display: inline-flex;
   }
 }
 

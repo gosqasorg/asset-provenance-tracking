@@ -62,7 +62,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     type="email"
                     class="form-control"
                     v-model="emailInput"
-                    placeholder="Email"
+                    required placeholder="Email"
                     @keyup.enter=""
                 />
                 </div>
@@ -253,7 +253,7 @@ export default {
                         await postEmail(this.textInput);
                 }
     
-                //Repeated logic from lines 184-194 of CreateDevice.vue
+                //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();
                     await postNotificationEmail(deviceKey,email);

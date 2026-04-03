@@ -54,17 +54,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h4 class="text-iris p-1 mt-3" v-if="isGroup">
+            <h4 class="p-1 mt-3" v-if="isGroup">
                 <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
                     Annotate all children
             </h4>
 
-            <h4 class="text-iris p-1 mt-0" v-if="isGroup">
+            <h4 class="p-1 mt-0" v-if="isGroup">
                 <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
                     Recall all children
             </h4>
 
-            <h4 class="text-iris p-1 mt-0">
+            <h4 class="p-1 mt-0">
                 <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
                     Receive email notifications for this record
             </h4>
@@ -340,7 +340,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
 
                 if (this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); //necessary to trim? 
+                    const email = this.emailInput.trim(); 
                     await postNotificationEmail(this.recordKey,email);
                 }
                 // Refresh CreateRecord component
@@ -489,6 +489,10 @@ input[type=checkbox] {
         color: #FFFFFF;
     }
 
+    h4 {
+        color: #FFFFFF;
+    }
+
     .record-button {
         background-color: #CCECFD;
         color: black;
@@ -523,6 +527,10 @@ input[type=checkbox] {
     }
 
     h5 {
+        color: #4E3681;
+    }
+
+    h4 {
         color: #4E3681;
     }
 

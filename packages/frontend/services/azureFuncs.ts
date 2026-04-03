@@ -108,10 +108,11 @@ export async function postEmail(email: string) {
 
 
 export async function postNotificationEmail(deviceKey: string, email: string, tags: string[] = []) {
+    //TODO: implement tags
+
     if (!validateKey(deviceKey)) {
         throw new Error("Bad key provided.");
     }
-    //TODO: 
     if (!email || typeof email !== 'string') {
         throw new Error("Bad email provided.");
     }
@@ -121,7 +122,7 @@ export async function postNotificationEmail(deviceKey: string, email: string, ta
     const payload = {
         email: email,
         recordKey: deviceKey,  // bckend expects 'recordKey'?
-        tags: tags             // Optional ..?
+        tags: tags             
     };
 
     //match backend json format 

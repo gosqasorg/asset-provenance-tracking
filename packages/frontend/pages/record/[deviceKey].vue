@@ -61,6 +61,7 @@ const recordHasParent = hasParent(provenance);
                         <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
                         <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
+                        <EmailNotificationSignup :recordKey="_recordKey" :fontSize="18" :height="61" :width="48"></EmailNotificationSignup>
                     </div>
 
                     <!-- QR -->
@@ -244,6 +245,14 @@ export default {
     flex-wrap: wrap;
 }
 
+.buttons-container :deep(.notify-btn) {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    margin-left: 30px !important;
+    margin-right: 0 !important;
+}
+
 .error-container {
   text-align: center;
   margin: 70px auto;
@@ -349,6 +358,10 @@ export default {
     .container-md {
         margin-top: 0px !important;
         box-sizing: border-box;
+    }
+
+    .buttons-container :deep(.notify-btn) {
+        width: 100%;
     }
 }
 

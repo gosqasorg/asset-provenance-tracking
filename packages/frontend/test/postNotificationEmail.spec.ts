@@ -1,7 +1,6 @@
 
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-//TODO: take out validate key 
-//TODO: get rid of Husky 
+
 
 import { postNotificationEmail } from '~/services/azureFuncs';
 
