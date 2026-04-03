@@ -322,6 +322,32 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+export function postGetProvenanceMiddleware(body): Boolean {
+
+    // This may seem simple but it is expected to grow
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+    var result = true
+
+    // For creation of one record through postProvenance
+    if (body instanceof FormData) {
+        if (JSON.stringify(body).length > sizeLimit) {
+            result = false
+        } 
+    } else {
+        // When getProvenance gets called by a record already created, 
+        // count the total number of bytes in the string and compare to sizeLimit
+        let stringSize = '';
+        for (const byte in body) {
+            stringSize += byte;
+        }
+        if (stringSize.length > sizeLimit) {
+            result = false
+        } 
+    }
+
+    return result
+}
+
 async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
     let count = 0;
 
@@ -346,7 +372,6 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     return count;
 }
 
-
 /*=================  Endpoints  =====================*/
 
 /* ----- API Endpoints Section 1/2: Functions ----- */
@@ -365,7 +390,20 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+    let totalBlobSize = 0;
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        
+        // Retrieve readableStreamBody, send to streamToString for string conversion, 
+        // then have postgetProvenanceMiddleware function check the string size against the size limit
+        const blobCLientForStream = containerClient.getBlobClient(blob.name);
+        const downloadResponse = await blobCLientForStream.download();
+        if (!downloadResponse.errorCode && downloadResponse.readableStreamBody) {
+            const downloaded = await streamToString(downloadResponse.readableStreamBody)
+            if (downloaded) {
+                if (!postGetProvenanceMiddleware(downloaded)) { return { status: 304 }; }
+            }
+        }
+
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
@@ -377,8 +415,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
-
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -386,6 +424,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    if (!postGetProvenanceMiddleware(formData)) {return {status: 304 }; }
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
