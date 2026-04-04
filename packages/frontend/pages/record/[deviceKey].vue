@@ -243,14 +243,35 @@ export default {
     margin-bottom: 10px;
     display: flex;
     flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.view-history, .download-qr {
+    flex: 1 1 300px;
+    margin-right: 0;
+    margin-top: 20px;
+}
+
+.buttons-container :deep(.buttons-container) {
+    flex: 1 1 300px;
+    width: 100% !important;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+
+.buttons-container :deep(.share-btn) {
+    width: 100%;
 }
 
 .buttons-container :deep(.notify-btn) {
+    flex: 1 1 300px;
     text-align: center;
     justify-content: center;
     align-items: center;
-    margin-left: 30px !important;
+    margin-left: 0 !important;
     margin-right: 0 !important;
+    margin-top: 20px;
 }
 
 .error-container {
