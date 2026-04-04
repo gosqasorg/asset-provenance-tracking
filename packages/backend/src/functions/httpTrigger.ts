@@ -951,7 +951,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, tags: string[] = []) {
+async function createChild(context: InvocationContext, custom_title: string = "", tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -961,15 +961,15 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     */ 
 
     try {
-        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const baseUrl = 'http://localhost:7071/api'
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // const baseUrl = 'http://localhost:7071/api'
         const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
-            deviceName: "",
+            deviceName: custom_title,
             description: "",
             tags: tags,
             hasParent: true,
@@ -992,14 +992,32 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     }
 }
 
-async function createChildren(context, number_of_children, tags?) {
+async function createChildren(context, number_of_children, custom_child_titles, tags?) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, tags))) {
+    let custom_title;
+    let j = 1;
+    let parent_name;
+
+    // let child_titles_list = []
+    if (typeof custom_child_titles === 'string' || custom_child_titles instanceof String) {
+        parent_name = custom_child_titles;
+    }
+    
+    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if (parent_name) {  // determines if parent deviceName, custom titles, or a blank title to be used for child deviceName
+            custom_title = `${parent_name} #${j}`;
+        } else if (j <= custom_child_titles.length) {
+            custom_title = custom_child_titles.at(j-1);
+        } else {
+            custom_title = "";
+        }
+
+        if(!(thisChild = await createChild(context, custom_title, tags))) {
             continue;
         }
 
+        j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
@@ -1009,13 +1027,18 @@ async function createChildren(context, number_of_children, tags?) {
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
+    // checks if custom_child_titles is an array. If not, parent deviceName is passed as custom_child_titles
+    // this is to facilitate groups with missing children_name keys to use parent deviceName and an incrementing number as child titles
+    if (!Array.isArray(custom_child_titles)) {
+        custom_child_titles = name;
+    }
     // Create children first
-    let childKeys = await createChildren(context, n_children)
+    let childKeys = await createChildren(context, n_children, custom_child_titles)
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1047,7 +1070,7 @@ const GroupCreationOrderSchema = z.object({
     description: z.string(),
     tags: z.array(z.string()).optional(),
     number_of_children: z.number().optional(),
-    custom_record_titles: z.array(z.string()).optional(),
+    children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
 });
@@ -1056,10 +1079,11 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     try{
         let theRequest = await request.json()
         GroupCreationOrderSchema.parse(theRequest)
-        let title = theRequest['title']
+        let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        let custom_child_titles = theRequest['children_name']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles)
         context.log(theGroupRecordPageUrl)
 
         return {
