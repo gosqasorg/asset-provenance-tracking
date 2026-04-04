@@ -1004,7 +1004,7 @@ async function createChildren(context, number_of_children, custom_child_titles, 
         parent_name = custom_child_titles;
     }
     
-    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
         if (parent_name) {  // determines if parent deviceName, custom titles, or a blank title to be used for child deviceName
             custom_title = `${parent_name} #${j}`;
         } else if (j <= custom_child_titles.length) {
@@ -1018,6 +1018,7 @@ async function createChildren(context, number_of_children, custom_child_titles, 
         }
 
         j++;
+        context.log("http, thisChild: ", thisChild)
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
@@ -1027,7 +1028,7 @@ async function createChildren(context, number_of_children, custom_child_titles, 
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children, custom_child_titles) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
