@@ -961,8 +961,8 @@ async function createChild(context: InvocationContext, custom_title: string = ""
     */ 
 
     try {
-        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const baseUrl = 'http://localhost:7071/api'
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // const baseUrl = 'http://localhost:7071/api'
         const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
