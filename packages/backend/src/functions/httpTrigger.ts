@@ -1018,7 +1018,6 @@ async function createChildren(context, number_of_children, custom_child_titles, 
         }
 
         j++;
-        context.log("http, thisChild: ", thisChild)
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
