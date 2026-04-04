@@ -16,6 +16,9 @@ import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
 
+// Docs
+// https://learn.microsoft.com/en-us/javascript/api/@azure/functions/httpresponseinit?view=azure-node-latest
+
 /*=================  Setup  =================*/
 
 let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
@@ -32,6 +35,7 @@ const baseUrl = accountName === "devstoreaccount1"
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
+const MAX_ATTACHMENTS_LIMIT = 1000;
 
 /*==============  Utils Section  ============*/
 
@@ -51,6 +55,8 @@ interface NamedBlob {
     name?: string,
     blob: Blob,
 }
+
+const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -158,10 +164,58 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     return blobID;
 }
 
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; }> {
+async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> {
 
     const attachmentIDs = new Array<string>();
+    const oversizedAttachments = new Array<string>();
     for (const attach of attachments) {
+        if (typeof attach === 'string') continue;
+        // Count attachment bytes in chunks until MAX_ATTACHMENT_SIZE is reached
+        let byteCount = 0;
+        const reader = attach.blob.stream().getReader(); // Get a reader for the blob stream
+        try{
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break; // Exit loop when reading is complete
+                byteCount += value.length; // Increment byte count
+                if (byteCount > MAX_ATTACHMENT_SIZE) {
+                    const fileName = attach.name ?? "Unknown";
+                    oversizedAttachments.push(fileName);
+                    // Log the oversized attachment
+                    console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+                    //Stop reading further
+                    try {
+                        await reader.cancel();
+                    } catch (ignoreError) {
+                        // Ignore cancel errors
+                    }
+                    break;
+                }
+
+            }
+            reader.releaseLock(); // Release the lock on the reader after reading is successful + completed
+        } catch (error) {
+            try{
+                reader.releaseLock(); // Release the lock on the reader
+            } catch (e) {
+                // Do nothing since the lock is already released
+            }
+            if (error.statusCode === 400) {
+                byteCount = 0;
+                attach.blob = null as any; // Set the blob to null to help garbage collection
+                const fileName = attach.name ?? "Unknown";
+                oversizedAttachments.push(fileName);
+                console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+            }
+            throw error; // Throw other errors
+        }
+    }
+
+    // If ANY attachment is oversized, return early without uploading anything
+    if (oversizedAttachments.length > 0) {
+        return {record: '',attachments: [],oversizedAttachments: oversizedAttachments};
+    }
+    for (const attach of attachments) {    // Upload all attachments if they pass the size check
         if (typeof attach === 'string') continue;
         const data = await attach.blob.arrayBuffer()
         const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
@@ -172,7 +226,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
-    return { record: recordID, attachments };
+    return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
 async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
@@ -268,6 +322,30 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+    let count = 0;
+
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        
+        try {
+            const { data } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            const prov = JSON.parse(json) as { attachments?: string[] };
+            
+            if (Array.isArray(prov.attachments)) {
+                count += prov.attachments.length;
+                if (count >= limit) {
+                    return count; 
+                }
+            }
+        } catch {
+            continue;
+        }
+    }
+    return count;
+}
+
 
 /*=================  Endpoints  =====================*/
 
@@ -299,6 +377,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
+
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -321,8 +400,57 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         attachments.push({ blob: attach, name: attach.name });
     }
 
+    if (attachments.length > 0) {
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+            return { status: 304 };
+        }
+    }
+
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    if (body.oversizedAttachments) {
+        return {
+            status: 400,
+            jsonBody: {
+                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                oversizedAttachments: body.oversizedAttachments,
+                attachments: body.attachments
+            }
+        }
+    }
+
+    await notifySubscribers(request.params.deviceKey, context);
+    
     return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribers(  deviceKey: string, context: InvocationContext): Promise<HttpResponseInit>{
+    // Notify users who subscribed to this record.
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
+    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    if (emailSet.size === 0) {
+        context.log("No subscribers found for this record.");
+        return;
+    }
+
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
+        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+        return;
+    }
+
+    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
+    const subject: string = 'Tracking update'; 
+    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
+    const displayName: string = from_address;
+    try {
+        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+        for (const to_email of emailSet) {
+            await sendEmail(from_address, to_email, subject, email_body, displayName);
+        }
+    } catch (error) {
+        context.log("Error sending email: " + error);   
+    }
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -604,7 +732,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         const body = await request.json() as any;
         const email = body.email;
         const recordKey = body.recordKey;
-        const tags = body.tags;
+        const tags: string[] = [];
 
         if (!email || !recordKey){
             return {
@@ -613,11 +741,11 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
         }
 
-        console.log("Received signup for " + email)
-        return {
-            jsonBody: {message: "Success"},
-            status: 200
-        } 
+        await containerClient.createIfNotExists();
+        const response = await signupForNotifications(recordKey, email, tags);
+
+        console.log("Received signup for " + email);
+        return response;
         
     }catch(error){
         console.error(error.message);
@@ -626,7 +754,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             status: 500,
 
         }
-
     }
 }
 
@@ -646,30 +773,75 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: setup data
-    const datum = {
-        'key': {
-            'email': email,
-            'tags': tags
-        }
-    }    
-    const data = JSON.stringify(datum)
 
     // 2 Setup blob name & id
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
+    const blobName = `${type}/${deviceID}`
+
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) {
+        return { jsonBody: { message: "Ignored empty email" }, status: 200 };
+    }
+
+    // 3 Update blob content：read existing content, merge email list, write back
+    const exists = await blobClient.exists();
+
+    let existingEmails: string[] = [];
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            const emailsFromBlob = parsed?.email;
+            if (Array.isArray(emailsFromBlob)) {
+                existingEmails = emailsFromBlob.filter(email => {
+                    return typeof email === "string";
+                });
+            }
+        }
+    }
+
+    const emailSet = new Set(
+        existingEmails
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const sizeBeforeAdding = emailSet.size;
+    emailSet.add(normalized);
+
+    if (exists && emailSet.size === sizeBeforeAdding) {
+        return {
+        jsonBody: { message: "Success", name: blobName },
+        status: 200,
+        };
+    }
+
+    const payloadObj = { email: Array.from(emailSet), tags};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
 
     try {
         // Note: do not reformat; leave as commented
         let status = (await containerClient.uploadBlockBlob(
                         blobName,   // 1. Blob name
                         data,       // 2. body (can be a string)
-                        data.length // 3. length of body in bytes
+                        data.length, // 3. length of body in bytes (or Buffer.byteLength(data))
                         // 4. optional options
                         // nothing for now
-                        // TODO: we need to set BlockBlobUploadOptions to set usage tier
+                        // we need to set BlockBlobUploadOptions to set usage tier
+                        uploadOptions
         )).response._response.status
 
-        if (status < 300 || status >= 100) {
+        if (status < 300 && status >= 200) {
             return {
                 jsonBody: { message: "Success",
                             name: blobName }, 
@@ -681,9 +853,10 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
             throw Error('Failed to store email')
         }
     } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
         return {
             jsonBody: {message: error.message},
-            status: status,
+            status: 500,
         }
     }
 }
@@ -692,7 +865,7 @@ async function retrieveNotifEmails(key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
     const deviceID = await calculateDeviceID(key);
     const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
+    const blobName = `${type}/${deviceID}`
 
     try {
         const blobClient = containerClient.getBlobClient(blobName);
@@ -707,7 +880,7 @@ async function retrieveNotifEmails(key: string) {
     } catch(error) {
         return {
             jsonBody: {message: error.message},
-            status: status,
+            status: 500,
         }
     } 
 }
@@ -724,6 +897,26 @@ async function streamToString(readableStream) {
         readableStream.on("error", reject);
     });
 }
+
+
+function extractEmailsFromResponse(response: any): Set<string> {
+    const emailSet = new Set<string>();
+    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
+        return emailSet;
+    }
+    try {
+        const parsed = JSON.parse(response.jsonBody.message);
+        if (parsed.email && Array.isArray(parsed.email)) {
+            parsed.email.forEach((e: string) => emailSet.add(e));
+        } else if (parsed.key?.email) {
+            emailSet.add(parsed.key.email);
+        }
+    } catch (error) {
+        console.log("Fail to extract emails:", error.message)
+    }
+    return emailSet;
+}
+
 
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /* How this pseudo-smoketest works:
@@ -757,7 +950,166 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+
+async function createChild(context: InvocationContext, tags: string[] = []) {
+    /* 
+    Note to self: Curious that since children are created before the group parent (implied by groups taking the 
+    list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
+    solve all cases. Then the db gets littered. How large an issue this is is tbd. This may happen, but be nothing
+    to worry about. Question for later: possible to see the "last accessed" date of blob in Azure? Is there an
+    access count? Can we enact a policy of "delete if not accessed since creation and it's been three years"?
+    */ 
+
+    try {
+        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const baseUrl = 'http://localhost:7071/api'
+        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
+        
+        // Create child and group records
+        const childFormData = new FormData();
+        childFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: "",
+            description: "",
+            tags: tags,
+            hasParent: true,
+            isReportingKey: false
+        }));
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/Response
+        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+            method: "POST",
+            body: childFormData,
+        });
+        const theJson = await theResponse.json()
+        const dataUrl = theResponse.url.split('/')
+        const theRecordKey = dataUrl[dataUrl.length - 1]
+        context.log(theRecordKey)
+        return theRecordKey
+    } catch(e) {
+        context.log('createChild Error: Failed to create child record')
+        return '';
+    }
+}
+
+async function createChildren(context, number_of_children, tags?) {
+    const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
+    let thisChild;
+    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, tags))) {
+            continue;
+        }
+
+        childrenKeys.push(thisChild)
+        if(childrenKeys.length == number_of_children) { 
+            break;
+        }
+    }
+
+    return childrenKeys; 
+}
+
+async function createGroup(context, name, description, n_children) {
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const apiUrl = process.env['api_url'];
+
+    // Create children first
+    let childKeys = await createChildren(context, n_children)
+
+    const groupKey = await makeEncodedDeviceKey()
+    const groupFormData = new FormData();
+
+    groupFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        deviceName: name,
+        description: description,
+        children_key: childKeys,  // Note: this is what turns a record into a group
+        tags: [],            
+        hasParent: false,
+        isReportingKey: false
+    })); context.log(groupFormData)
+    
+    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const groupResponse = await fetch(createInitUrl, {
+        method: "POST",
+        body: groupFormData,
+    });
+
+    let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
+    context.log(groupUrlRecordPage)
+
+    return groupUrlRecordPage;
+}
+
+const GroupCreationOrderSchema = z.object({
+    deviceName: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).optional(),
+    number_of_children: z.number().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
+    create_reporting_key: z.boolean().optional(),
+    annotate: z.boolean().optional(),
+});
+
+export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        GroupCreationOrderSchema.parse(theRequest)
+        let title = theRequest['title']
+        let description = theRequest['description']
+        let n_children = theRequest['number_of_children']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        context.log(theGroupRecordPageUrl)
+
+        return {
+            status: 200,
+            jsonBody: { groupUrl: theGroupRecordPageUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create group: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+
+app.post("createGroup", {
+    authLevel: 'anonymous',
+    route: 'createGroup',
+    handler: createGroupHandler,
+})
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',

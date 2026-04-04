@@ -36,7 +36,7 @@ const recordHasParent = hasParent(provenance);
                         <div class="record-description">
                             <div class="my-4 fs-1">
                                 <p class="h text-bold mb-0">Asset History Records</p>
-                                <h1 class="mt-1 mb-1">
+                                <h1 class="mt-1 mb-1" style="word-break: break-word;">
                                     {{ deviceRecord?.deviceName }}
                                 </h1>
                             </div>
@@ -48,7 +48,7 @@ const recordHasParent = hasParent(provenance);
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
                             <div class="mb-3">
-                                <span style="word-wrap: break-word;" id="desc" v-html="clickableLink(deviceRecord?.description)"></span>
+                                <span id="desc" v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
                             </div>
                         </div>
 
@@ -161,6 +161,7 @@ export default {
             this._recordKey = route.params.deviceKey as string;
             const response = await getProvenance(this._recordKey);
             deviceRecord = response[response.length - 1].record;
+            console.log("device record: ", deviceRecord);
             this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
             // We will remove the reportingKey, because although it is a child,
             // we have already rendered it.
@@ -223,7 +224,6 @@ export default {
 
 .record-description {
     margin-right: 15px;
-    max-width: 60%;
 }
 
 .qr-code-wrapper {

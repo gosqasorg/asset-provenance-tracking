@@ -9,14 +9,20 @@ vi.mock('@azure/storage-blob', () => {
     async getProperties() {
       return { metadata: { gdtsalt: '0102030405060708090a0b0c0d0e0f10', gdttimestamp: '123', gdtcontenttype: 'application/octet-stream', gdtname: '' } };
     }
-    async downloadToBuffer() { return new Uint8Array(16); }
+    async downloadToBuffer() {  
+      const json = JSON.stringify({ email: ["old@email.com"], tags: [] });
+      return Buffer.from(json, "utf8");
+    }
     async exists() { return true; }
   }
 
   class MockContainerClient {
     async exists() { return true; }
     async createIfNotExists() { return true; }
-    async uploadBlockBlob() { return true; }
+    async uploadBlockBlob() { 
+      return { response: { _response: { status: 200 } } };
+    }
+    
     listBlobsFlat(opts?: any) {
       let called = false;
       return {
@@ -56,6 +62,26 @@ vi.mock('node:crypto', () => ({
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
   },
 }));
+
+vi.mock('@azure/communication-email', () => {
+    const mockBeginSend = vi.fn().mockResolvedValue({
+        getOperationState: vi.fn().mockReturnValue({ isStarted: true }),
+        isDone: vi.fn().mockReturnValue(true),
+        poll: vi.fn(),
+        getResult: vi.fn().mockReturnValue({ status: 'Succeeded', id: 'test-id' })
+    });
+
+    return {
+        EmailClient: vi.fn().mockImplementation(() => {
+            return {
+                beginSend: mockBeginSend
+            };
+        }),
+        KnownEmailSendStatus: {
+            Succeeded: 'Succeeded'
+        }
+    };
+});
 
 
 function makeHttpRequest(overrides: any = {}) {
@@ -182,7 +208,7 @@ describe('PostNotificationEmail', () => {
             async json(){
                return {
                 email:"example@email.com",
-                recordKey:"123",
+                recordKey:"5LAtuNjm3iuAR3ohpjTMy7",
                 tags: ['foo@bar.org']
                }
             }

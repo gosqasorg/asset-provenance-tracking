@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { makeEncodedDeviceKey, validateKey } from '../../../src/utils/keyFuncs';
+import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 
 /* README: To add a test, add inside the global describe an additional it. For example:
@@ -28,7 +28,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with one child", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate device keys in parallel
+		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
 			fetch(`${baseUrl}/getNewDeviceKey`),
 			fetch(`${baseUrl}/getNewDeviceKey`)
@@ -36,7 +36,7 @@ describe("Group Creation Tests", () => {
 		const groupKey = await groupKeyRes.text();
 		const childKey = await childKeyRes.text();
 		
-		// Create child and group records in parallel
+		// Create child and group records
 		const childFormData = new FormData();
 		childFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
@@ -79,7 +79,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with multiple children", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate all device keys in parallel
+		// Generate all device keys 
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
 			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
@@ -89,7 +89,7 @@ describe("Group Creation Tests", () => {
 		const groupKey = keys[0];
 		const childKeys = keys.slice(1);
 		
-		// Create all child records in parallel
+		// Create all child records
 		const childCreationPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
@@ -132,7 +132,7 @@ describe("Group Creation Tests", () => {
 		
 		expect(groupResponse.ok).toBe(true);
 
-		// Verify records in parallel
+		// Verify records 
 		const verificationPromises = [
 			fetch(`${baseUrl}/provenance/${groupKey}`),
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
@@ -156,7 +156,7 @@ describe("Group Creation Tests", () => {
     it("should create a group record with a reporting key", async () => {
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate all device keys in parallel
+		// Generate all device keys 
 		const numChildKeys = 2;
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
@@ -223,7 +223,7 @@ describe("Group Creation Tests", () => {
 			expect(response.ok).toBe(true)
 		})
 		
-		// Verify all records in parallel
+		// Verify all records 
 		const verificationPromises = [
 			fetch(`${baseUrl}/provenance/${groupKey}`),
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
@@ -292,6 +292,7 @@ describe("Group Creation Tests", () => {
 			method: "POST",
 			body: annotateFormData,
 		});
+        console.log(annotateResponse)
 		expect(annotateUpdateResponse.ok).toBe(true);
 		expect(annotateResponse.ok).toBe(true);
 
@@ -321,7 +322,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with all features", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
-		// Generate all device keys in parallel
+		// Generate all device keys 
 		const keyPromises = [
 			fetch(`${baseUrl}/getNewDeviceKey`),
 			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
@@ -332,7 +333,7 @@ describe("Group Creation Tests", () => {
         const groupKey = keys[0];
 		let childKeys = keys.slice(1);
 		
-		// Create all child records in parallel
+		// Create all child records 
 		const childCreationPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
@@ -375,7 +376,7 @@ describe("Group Creation Tests", () => {
 		
 		expect(groupResponse.ok).toBe(true);
 		
-		// Verify all records in parallel
+		// Verify all records 
 		const verificationPromises = [
 			fetch(`${baseUrl}/provenance/${groupKey}`),
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
@@ -520,7 +521,7 @@ describe("Group Creation Tests", () => {
 		let childFormData;
 		let childrenPromises;
 
-		// If annotation is selected, create child keys in parallel with tags
+		// If annotation is selected, create child keys  with tags
 		if (formDataObject.annotated){
 			childrenPromises = childKeys.map((key, i) => {
 				childFormData = new FormData();
@@ -567,7 +568,7 @@ describe("Group Creation Tests", () => {
 	}, 6000); 
 	// Test for custom titles
 	it("should create a group with two children having custom titles", async () => {
-		const baseUrl = "https://gdtprodbackend.azurewebsites.net/api/provenance/";
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		// Generate device keys 
 		const groupKey = await makeEncodedDeviceKey();
@@ -592,7 +593,7 @@ describe("Group Creation Tests", () => {
 			expect(validateKey(key)).toBe(true);
 		});
 		
-		// Create child records with custom titles in parallel
+		// Create child records with custom titles 
 		const childrenPromises = childKeys.map((key, i) => {
 			const childFormData = new FormData();
 			childFormData.append("provenanceRecord", JSON.stringify({
@@ -605,7 +606,7 @@ describe("Group Creation Tests", () => {
 				isReportingKey: false
 			}));
 			
-			return fetch(`${baseUrl}${key}`, {
+			return fetch(`${baseUrl}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -629,7 +630,7 @@ describe("Group Creation Tests", () => {
 			isReportingKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}${groupKey}`, {
+		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -638,7 +639,7 @@ describe("Group Creation Tests", () => {
 		
 		// Verify custom titles are present in all child keys
 		const verificationPromises = childKeys.map(key => 
-			fetch(`${baseUrl}${key}`)
+			fetch(`${baseUrl}/provenance/${key}`)
 		);
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -661,7 +662,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with one attachment", async () => {
     	const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
-    	//Generate device keys in parallel
+    	//Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${baseUrl}/getNewDeviceKey`),
         	fetch(`${baseUrl}/getNewDeviceKey`)
@@ -769,7 +770,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with multiple attachments", async() => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
-		// Generate device keys in parallel
+		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${baseUrl}/getNewDeviceKey`),
         	fetch(`${baseUrl}/getNewDeviceKey`)
@@ -850,7 +851,7 @@ describe("Group Creation Tests", () => {
 	it("should create a group record with a PDF", async() => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api"
 
-		// Generate device keys in parallel
+		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${baseUrl}/getNewDeviceKey`),
         	fetch(`${baseUrl}/getNewDeviceKey`)
@@ -969,7 +970,7 @@ describe("Group Creation Tests", () => {
 
 			const fileSizeInMB = buffer.length / (1024 * 1024)
 			console.log(`Group large file size: ${fileSizeInMB.toFixed(2)} MB`)
-			expect(fileSizeInMB).toBeGreaterThan(2)
+			expect(fileSizeInMB).toBeLessThan(2.1)
 
 			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 				method: "POST",
@@ -1071,14 +1072,14 @@ describe("Group Creation Tests", () => {
 });
 
 describe("Record Creation Tests", () => {
-	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+	const baseUrl = 'https://gosqasbe.azurewebsites.net/api'
 
 	// The most basic possible test -- create a record
 	it("(Smoketest) Create the most basic record", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(1st Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}${deviceKey}`
+		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
@@ -1139,7 +1140,7 @@ describe("Record Creation Tests", () => {
 	it("(Smoketest) Create a record with tags and attachments", async() => {
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(3rd Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}${deviceKey}`
+		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
