@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form @submit.prevent="submit">
         <input type="text" id="input" v-model="deviceKey" placeholder="Record key" style="width: inputWidth;" required/>
         <button
-                @click="trackingForm()"
+                
                 id="viewRecordButton"
                 class="baseButton view-record-button"
                 style="

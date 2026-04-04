@@ -15,6 +15,12 @@
 
 import { validateKey } from "~/utils/keyFuncs";
 
+// Global variable used to control the display of offline banner on create pages
+export var displayOfflineBanner = false;
+
+// Global variable used to control the display of online banner 
+export var displayOnlineBanner = false;
+
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
@@ -161,8 +167,9 @@ export async function getStatistics() {
 
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
+    const MAX_RETRIES = 3;
 
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= MAX_RETRIES; i++) {
         try {
             if (typeof formData !== 'undefined') {
                 response = await fetch(`${url}`, {
@@ -189,4 +196,102 @@ async function fetchUrl(url: string, formData?: FormData) {
     } else {
         throw new Error(`Could not connect to the server, check your internet connection and try again`);
     }
+}
+
+export async function onlineTestFetch(url?: string): Promise<boolean> {
+    let result = true;
+
+    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+    // Given parameter can be bogus url to mock offlineness
+    if (url === undefined) {
+        url = useRuntimeConfig().public.frontendUrl;
+    }
+
+    try {
+        let response = await fetch(url);
+        if (response.status !== 200) {
+            result = false;
+
+            displayOfflineBanner = true;
+        } 
+
+
+    } catch (error) {
+        console.log("Fetch attempt failed: " + error);
+        result = false;
+        displayOfflineBanner = true;
+    }
+
+    return result
+
+}
+
+export async function connectivityChecker() {
+    // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
+    while (!(await onlineTestFetch())) {
+        await new Promise((r) => setTimeout(r, 5000));
+    }
+
+    return;
+}
+
+export async function stashRequest(formUrl: string, formData: FormData) {
+    // Convert values to string and store them
+    let valuesToStore = [];
+    valuesToStore.push(['formUrl', formUrl]);
+    valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
+
+    // Get stash_counter and add 1 to it
+    let current_request = localStorage.getItem('stash_counter');
+    if (current_request == null) {
+        current_request = '0';
+    }
+    let stash_counter = parseInt(current_request) + 1;
+    localStorage.setItem('stash_counter', stash_counter.toString());
+
+    // Store the request at a unique key (gosqas_offline_stash_#)
+    let request_name = 'gosqas_offline_stash_' + stash_counter;
+    localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+}
+
+export async function emptyStash() {
+    // See how many requests are stored, if any
+    let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+
+    for (stash_counter; stash_counter > 0; stash_counter--) {
+        try {
+            // Get the last request stored
+            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+            let fullUrl = request[0][1];
+            let record = request[1][1];
+
+            // Fulfill the request
+            const formData = new FormData();
+            formData.append('provenanceRecord', record);
+            let response = await fetchUrl(fullUrl, formData)
+            if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
+
+            // Add created key to a list of successfully created keys to display later
+            let keysCreated = [];
+            let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
+            if (existingKeys) {
+                for (const key of existingKeys.split(",")) {
+                    keysCreated.push(key)
+                }
+            }
+            keysCreated.push(currentKey)
+            localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
+
+            // Remove request from stash and update counter
+            localStorage.removeItem(request_name)
+            localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+        } catch (error) {
+            console.log("Record from localStorage failed to create: " + error)
+            return 404;
+        }
+    }
+
+    return 200;
 }

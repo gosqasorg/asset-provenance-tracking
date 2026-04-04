@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h4 class="mt-1 mb-3">Create New Group</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
+            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500" @keydown.enter.prevent>
             <textarea id="container-description" v-model="description" placeholder="Group Description" maxlength="5000" rows="3"></textarea>
 
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
@@ -26,11 +26,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
-                <input type="number" v-model="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" @change="displayFields" >
+                <input type="number" v-model.number="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" step="1" @input="enforceLimit" @change="displayFields" @keydown="blockInvalidNumberChars">
+                <span style="font-size: 1em; font-weight: normal; margin-left: 8px;">(Limit 500)</span>
             </h4>
 
 
@@ -69,19 +70,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Volunteer Feedback Email --> 
             <h4 class="p-1 my-0">
-                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
+                <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
             <div v-if="isChecked">
                 <!-- TODO: API call function -->
-                <input
+                <input style="margin-bottom: 18px;"
                     type="text"
                     class="form-control"
                     v-model="textInput"
                     placeholder="Email"
                     @keyup.enter=""
+                    @keydown.enter.prevent
                 />
             </div>
+
+            <!-- Offline Banner -->
+            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+                </div>
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                </div> 
+            </Banner>
+
+            <!-- Back Online Banner -->
+            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+                <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+                </div>
+            </Banner>
+
         </div>
 
         <div class="d-grid mt-3">
@@ -103,13 +120,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
+import Banner from '../Banner.vue';
 
 export default {
     data() {
@@ -130,17 +149,70 @@ export default {
             fieldSet: [{id: '', customName:''}],
         }
     },
+    computed: {
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
+        displayBanner() {
+            if (displayOfflineBanner === true) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+        } else {
+            return false;
+        }
+        },
+    },
     methods: {
+        blockInvalidNumberChars(e: KeyboardEvent) {
+            const invalidKeys = ['e', 'E', '+', '-', '.'];
+            if (invalidKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        },
+        enforceLimit() {
+            // To handle cases: empty user input or invalid input types such as the string 'abc' or '1+600'.
+            if (this.childrenKeys === null || this.childrenKeys === undefined || isNaN(this.childrenKeys)) {
+                this.childrenKeys = 0;
+                return;
+            }
+
+            if (this.childrenKeys > 500) {
+                this.childrenKeys = 500;
+            } else if (this.childrenKeys < 0) {
+                this.childrenKeys = 0;
+            } else {
+                this.childrenKeys = Math.floor(this.childrenKeys);
+            }
+        },
+
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
-        onFileChange(e: Event) {
+        async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
+            if (!files || files.length === 0) return;
+
             const maxFileSize = 2097152;  // aka 2MB
 
-            if (files && files[0].size <= maxFileSize) {
+            let validFileSize = true;
+
+            for (const file of Array.from(files)) {
+                const validResults = await validateFileSize(file, maxFileSize);
+                if (!validResults.valid) {
+                    validFileSize = false;
+                    break;
+                }
+            }
+
+            if (validFileSize) {
+                // All files are valid, set this.pictures to the selected files
                 this.pictures = Array.from(files);
             } else {
                 this.$snackbar.add({
@@ -148,6 +220,7 @@ export default {
                     text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
                 })
                 target.value = '';
+                this.pictures = null;
             }
         },
         displayFields() {
@@ -231,13 +304,45 @@ export default {
                     };                
                 }
             };
+
+            if (this.createReportingKey) {
+                // Should be higher up?
+                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                let tag_set = (this.tags).concat(['reportingkey']);
+
+                try {
+                    await postProvenance(reportingKey, {
+                        blobType: 'deviceInitializer',
+                        deviceName: this.name,
+                        // Is this a proper description? Should it say "reporting key" or something?
+                        description: this.description,
+                        tags: tag_set,
+                        children_key: '',
+                        hasParent: true,
+                        isReportingKey: true,
+                    }, this.pictures || [])
+                    
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully created reporting key'
+                    })
+                } catch (error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating reporting key: ${error}`
+                    })
+                };
+                childrenDeviceList.push(reportingKey);
+                childrenDeviceName.push(this.name);
+            }
+
             try {
                 const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey,
+                    reportingKey: reportingKey, 
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
                     hasParent: false,
@@ -277,35 +382,7 @@ export default {
                 })
             }
 
-            if (this.createReportingKey) {
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
-
-                try {
-                    await postProvenance(reportingKey, {
-                        blobType: 'deviceInitializer',
-                        deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
-                        tags: tag_set,
-                        children_key: '',
-                        hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
-                    
-                    this.$snackbar.add({
-                        type: 'success',
-                        text: 'Successfully created reporting key'
-                    })
-                } catch (error) {
-                    this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
-                };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(name);
-            }
+            
         },
     }
 }
@@ -390,6 +467,17 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .banner {
+        background-color: #634a45;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: white;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -414,6 +502,17 @@ export default {
     input[type="file"]::file-selector-button {
         background-color: #4E3681;  
         color: white;
+    }
+    .banner {
+        background-color: #ecdae1;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: black;
     }
 }
 </style>

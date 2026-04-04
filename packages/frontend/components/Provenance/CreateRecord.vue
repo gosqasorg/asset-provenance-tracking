@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     multiple />
             </div>
             <h5>Add Tags (optional)</h5>
-            <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags"
+            <ProvenanceTagInput id="provenanceTag" v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"
                 placeholder="Record Tag" />
             <div>
                 <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
@@ -80,6 +80,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
         </div>
+        
+        <!-- Offline Banner Bottom-->
+        <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+            </div>
+            <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+            </div> 
+        </Banner>
+
+        <!-- Back Online Banner -->
+        <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+            <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+            </div>
+        </Banner>
+
         <div class="d-grid mt-3" id="submit-button">
             <button class="mb-0 record-button" type="submit" style="
                   border-width: 2px;
@@ -131,10 +146,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, postNotificationEmail } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
+ import { validateFileSize } from '~/utils/fileSizeValidation';
+ import Banner from '../Banner.vue';
 
  export default {
     data() {
@@ -175,6 +192,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // The Boolean constructor returns false for "" and true for []
             return Boolean(this.deviceRecord?.children_key);
         },
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
+        displayBanner() {
+            if (displayOfflineBanner === true) {
+                return true;
+            } else {
+                return false;
+            }
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+            } else {
+                return false;
+            }
+        },
     },
     methods: {
         closePopUpA() {
@@ -184,15 +217,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false
         },
         async trackingForm() {
-            const annotateCheckBox = document.getElementById("annotate-all");
-            const recallCheckBox = document.getElementById("recall-all");
 
-            if (Object.is(annotateCheckBox, null) || Object.is(recallCheckBox, null)) {
+            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
-            } else if (recallCheckBox.checked == true) {
+            } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (annotateCheckBox.checked == true) {
+            } else if (this.annotateAll) {
                 this.annotatePopUp = true
             } else {
                 this.submitRecord()
@@ -201,13 +232,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
-        onFileChange(e: Event) {
+        async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
+            if (!files || files.length === 0) return;
+
             const maxFileSize = 2097152;
 
-            if (files && files[0].size <= maxFileSize) {
+            let validFileSize = true;
+
+            for (const file of Array.from(files)) {
+                const validResults = await validateFileSize(file, maxFileSize);
+                if (!validResults.valid) {
+                    validFileSize = false;
+                    break;
+                }
+            }
+
+            if (validFileSize) {
+                // All files are valid, set this.pictures to the selected files
                 this.pictures = Array.from(files);
             } else {
                 this.$snackbar.add({
@@ -215,6 +259,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
                 })
                 target.value = '';
+                this.pictures = null;
             }
         },
         refresh() {
@@ -518,6 +563,17 @@ input[type=checkbox] {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .banner {
+        background-color: #634a45;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: white;
+    }
 }
 
 /* Light mode version*/
@@ -546,6 +602,17 @@ input[type=checkbox] {
     }
     .record-button:hover { 
         background-color: #322253;
+    }
+    .banner {
+        background-color: #ecdae1;
+        border-color: #fe9c9e;
+        border-width: 2px;
+        border-style: solid;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 0px;
+        font-size: 14px;
+        color: black;
     }
 }
 </style>

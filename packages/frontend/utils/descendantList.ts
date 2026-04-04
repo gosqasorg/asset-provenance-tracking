@@ -155,14 +155,14 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
         // records[0].record.hasParent = true;
 
         // Inform child it has been added to a group
-        const response2 = postProvenance(childKey, {
+        const response2 = await postProvenance(childKey, {
             blobType: 'deviceRecord',
             description:  "Added to group",
             hasParent: true,
         }, attachments || []);
 
         // Add child to group
-        const response = postProvenance(groupKey, {
+        const response = await postProvenance(groupKey, {
             blobType: 'deviceRecord',
             description:  "Child added to group",
             children_key: [`${childKey}`],
@@ -197,7 +197,7 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
 
                     keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
-                    postProvenance(key, {
+                    await postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: "Annotated by admin",
                         children_key: '',
@@ -237,7 +237,7 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
 
                     keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
-                    postProvenance(key, {
+                    await postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: description,
                         children_key: '',
