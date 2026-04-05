@@ -24,8 +24,7 @@ describe("Group of tests", () => {
 
 describe("Group Creation v2 tests", () => {
     it("should create a group record with multiple attachments (one image, one PDF file), with multiple children", async () => {
-    // const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-    const baseUrl = "http://localhost:7071/api";
+    const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
     const payload = {
         deviceName: "group_record_with_attachments",
