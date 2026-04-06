@@ -951,7 +951,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, custom_title: string = "", tags: string[] = []) {
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -992,28 +992,13 @@ async function createChild(context: InvocationContext, custom_title: string = ""
     }
 }
 
-async function createChildren(context, number_of_children, custom_child_titles, tags?) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], tags?) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    let custom_title;
-    let j = 1;
-    let parent_name;
-
-    // let child_titles_list = []
-    if (typeof custom_child_titles === 'string' || custom_child_titles instanceof String) {
-        parent_name = custom_child_titles;
-    }
+    let j = 0;
     
     for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if (parent_name) {  // determines if parent deviceName, custom titles, or a blank title to be used for child deviceName
-            custom_title = `${parent_name} #${j}`;
-        } else if (j <= custom_child_titles.length) {
-            custom_title = custom_child_titles.at(j-1);
-        } else {
-            custom_title = "";
-        }
-
-        if(!(thisChild = await createChild(context, custom_title, tags))) {
+        if(!(thisChild = await createChild(context, custom_child_titles[j], tags))) {
             continue;
         }
 
@@ -1027,16 +1012,25 @@ async function createChildren(context, number_of_children, custom_child_titles, 
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[]) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
-    // checks if custom_child_titles is an array. If not, parent deviceName is passed as custom_child_titles
-    // this is to facilitate groups with missing children_name keys to use parent deviceName and an incrementing number as child titles
+    // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
-        custom_child_titles = name;
-    }
+        custom_child_titles = []
+        for (let i = 0; i < n_children; i++) {
+                custom_child_titles.push(`${name} #${i + 1}`)
+        }
+    };
+
+    let customLen = custom_child_titles.length
+    if (n_children > customLen) {
+        for (let i = 0; i < n_children - customLen; i++) {
+            custom_child_titles.push("")
+        }
+    };
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles)
 
@@ -1047,7 +1041,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
+        number_of_children: n_children,
         children_key: childKeys,  // Note: this is what turns a record into a group
+        children_name: custom_child_titles,
         tags: [],            
         hasParent: false,
         isReportingKey: false
