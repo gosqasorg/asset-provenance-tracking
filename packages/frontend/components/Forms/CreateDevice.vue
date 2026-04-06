@@ -36,18 +36,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
+            <!-- Subscribe to notifications -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
+                        Receive email notifications for this record
+                </h4>
+
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+            </div>
+
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
                     <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
                 <div v-if="isChecked">
-                    <!-- TODO: API call function -->
                     <input
                         type="text"
                         class="form-control"
                         v-model="textInput"
-                        placeholder="Email"
+                        required placeholder="Email"
                         @keyup.enter=""
                         @keydown.enter.prevent
                     />
@@ -89,13 +106,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
+//TODO: add const for max limit of notification subscriptions
 export default {
     data() {
         return {
@@ -108,6 +126,8 @@ export default {
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
+            notify: false,     // email notification checkbox
+            emailInput: '',
         }
     },
     computed: {
@@ -191,6 +211,14 @@ export default {
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
+                }
+                
+                // on successful record creation, subscribe user to notifs if they've opted in
+                if (response && this.notify && this.emailInput) {
+                    const email = this.emailInput.trim(); 
+                    await postNotificationEmail(deviceKey,email);
+                } else if (!response && this.notify && this.emailInput) {
+                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 this.$snackbar.add({
