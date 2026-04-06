@@ -143,6 +143,7 @@ describe("Group Creation v2 tests", () => {
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
                 let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
                 let parentRecord = prov[0].record
+                // console.log(parentRecord)
                 expect(parentRecord.deviceName).toBe(currCase.deviceName)
                 groupParentRecords.push(parentRecord);
 
@@ -165,11 +166,7 @@ describe("Group Creation v2 tests", () => {
                             expect(childTitle).toBe("")
                         }
                     } else {
-                        if (currCase.deviceName === "") {
-                            expect(childTitle).toBe("")
-                        } else {
-                            expect(childTitle).toBe(`${currCase.deviceName} #${j + 1}`)
-                        }
+                        expect(childTitle).toBe(`${currCase.deviceName} #${j + 1}`)
                     };
                 }
                 groupedChildTitles.push(tempGroup)
