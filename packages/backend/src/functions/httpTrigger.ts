@@ -962,11 +962,11 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         }
 
         // get the pendingemailver table
-        // const tableUrl = accountName === "devstoreaccount1"
-        //     ? `http://127.0.0.1:10002/devstoreaccount1`
-        //     : `https://${accountName}.table.core.windows.net`;
+        const tableUrl = accountName === "devstoreaccount1"
+             ? `http://127.0.0.1:10002/devstoreaccount1`
+             : `https://${accountName}.table.core.windows.net`;
 
-        const tableUrl =  `https://gdtteststorage.table.core.windows.net`
+        //const tableUrl =  `https://gdtteststorage.table.core.windows.net`
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
