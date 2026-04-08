@@ -103,6 +103,13 @@ const recordHasParent = hasParent(provenance);
 				</div>
 			</Banner>
 
+			<!-- TODO: Link to offline history page (needs actual v-if, same as offline banner) -->
+			 	<!-- NOTE: maybe this banner could instead replace the offline banner above the create form! probably would have to reword one or both -->
+			<Banner v-if="true" class="banner" style="align-items: center; display: flex">
+				<div style="margin-left: 10px;"><strong>You're offline:</strong>  To add to provenance records while offline go to our <RouterLink @click.prevent="emitHistoryCreate" to="/history/offline">offline creation page</RouterLink>
+				</div>
+			</Banner>
+
 			<section id="device-details" class="details-container">
 			<div class="record-description">
 				<div class="my-4 text-iris fs-1">
@@ -235,7 +242,7 @@ data() {
         hasReportingKey: false,
         childKeys: [] as string[],
         _recordKey: "",
-        valid: false
+        valid: false,
 	}
 },
 computed: {
@@ -297,6 +304,12 @@ beforeDestroy() {
 	});
 },
 methods: {
+	emitHistoryCreate() {
+		this.$router.push({
+			path: '/history/offline',
+			query: { key: this._recordKey }
+		})
+	},
 	downloadQRCode() {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
