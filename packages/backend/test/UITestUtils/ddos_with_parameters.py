@@ -47,6 +47,8 @@ def make_fake_records(count):
 
         """Fill in fake name and description"""
         time.sleep(1)
+
+        """Uncomment the following two lines to add a 800ms delay for the create record button to render, preventing possible item not found error"""
         #WebDriverWait(browser, 800).until(expected_conditions.presence_of_element_located(
         #    (By.CSS_SELECTOR, '#create_record > form:nth-child(1) > div:nth-child(2) > input:nth-child(2)')))
         browser.find_element('css selector', '#record-form > div:nth-child(2) > input:nth-child(1)').send_keys('Hieu ' + str(counter))
