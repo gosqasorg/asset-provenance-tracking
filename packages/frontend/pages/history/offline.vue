@@ -19,13 +19,12 @@ their items while offline.
 -->
 
 <template>
-<!-- TODO: add if loading and/OR isCreating? I'd recommend only one..? might mess up code though (probably loading since that's what gdt.vue uses) -->
-    <!-- ISCREATING COMES FROM THE createRecord COMPONENT, SO IF WE DON'T USE THAT THEN DON'T USE CREATE RECORD! -->
-    <!-- What happens if the page/record key can't load? -->
-<div>
+<div v-if="isCreating">
+	<p class="text-center pb-5 pt-5">Creating record(s)...</p>
+</div>
+<div v-else>
     <div class="deviceKey-history">
     <div class="row pt-3 pb-6 mx-4">
-        <!-- TODO: want offline/back online banners here?? -->
         <!-- Offline Banner Top-->
         <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
             <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
@@ -45,39 +44,22 @@ their items while offline.
         <section id="device-details" class="details-container">
         <div class="record-description">
             <div class="my-4 text-iris fs-1">
-                <!-- TODO: say offline here or elsewhere? add a description explaining this page (you're offline but can add to the feed here?) -->
             <p class="text-bold mb-0 device-name">Asset History Records</p>
             <h1 class="mt-1 mb-1" style="word-break: break-word;">
                 Offline Creation Page
             </h1>
             </div>
+            <div class="mb-3 rec">
+                <span style="word-break: break-word;">This page allows you to add new record entries to existing keys while offline. Create entries here and they will be stored until you are back online, at which point they will be created automatically.</span>
+            </div>
         </div>
         </section>
-
-        <!-- TODO: do we want share button..? Would probably need to modify so maybe as a future issue -->
-        <!-- <ProvenanceShareDropdown 
-            :deviceName="deviceRecord.deviceName" 
-            :description="deviceRecord.description"
-            :fontSize="20"
-            :height="66"
-            :width="48">
-        </ProvenanceShareDropdown> -->
     </div>
-        <!-- TODO: componenent reqiures record object and record key for adding to a group/child, only have recordKey though -->
-            <!-- We REALLY WANT TO USE THE COMPONENT, there's a lot of error handling and styling that would be too messy to repeat here -->
-                <!-- Could have a custom form here (duplicate code BUT lets us just hardcode post and let it get figured out once online) -->
-                    <!-- Would have to note for offline to check for adding to group/adding children -->
-            <!-- Move deviceRecord def. getProv call to inside the CreateRecord component so this page wouldn't need a get call? -->
-            <!-- NOTE: to add to an existing record just postProv to groupKey with new record -->
-        
-        <!-- TODO: we're hard-coding because the component needs record details to function (needs to know if it's a group etc.) and we might not
-         even have the key here -->
         <!-- Form to create a history record -->
         <section id="create-record">
-        <form enctype="multipart/form-data" class='record-form mb-4' @submit.prevent="trackingForm">
+        <form enctype="multipart/form-data" class='record-form mb-4' @submit.prevent="submitRecord">
             <h5>Create New Record Entry</h5>
             <div>
-                <!-- TODO: if query param has key then put it here! -->
                 <input type="text" class="form-control" v-model="recordKey" required placeholder="Record Key" maxlength="500" @keydown.enter.prevent>  
                 <textarea id="provenance-description" v-model="description"
                     placeholder="Description" maxlength="5000" rows="3"></textarea>
@@ -95,13 +77,6 @@ their items while offline.
                     <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
                     </span>
                 </div>
-                
-                <h5 class="text-iris p-1 mt-3">
-                    <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
-                </h5>
-                <h5 class="text-iris p-1 mt-0">
-                    <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
-                </h5>
             </div>
 
             <div class="d-grid mt-3" id="submit-button">
@@ -120,69 +95,24 @@ their items while offline.
             </div>
         </form>
         </section>
-        <div class="popup" v-if="recallPopUp">
-            <div class="popup-inner recall-popup">
-                <h2 class="text-iris">Recall all children</h2>
-                <p>You've selected "Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
-
-                <div>
-                    <!-- Cancels the record creation (close pop up) -->
-                    <button-component @click="closePopUpR()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
-                        borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
-
-                    <!-- Continues the record creation (call submit function) -->
-                    <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
-                </div>
-
-            </div>
-        </div>
-        <div class="popup" v-if="annotatePopUp">
-            <div class="popup-inner">
-                <h2 class="text-iris">Annotate all children</h2>
-                <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
-
-                <div>
-                    <!-- Cancels the record creation (close pop up) -->
-                    <button-component @click="closePopUpA()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
-                        borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
-
-                    <!-- Continues the record creation (call submit function) -->
-                    <button-component class="learn-more confirmBtn" id="continueBtn" buttonText="Create entry" @click="submitRecord()"></button-component>
-                </div>
-
-            </div>
-        </div>
     </div>
 </div>
 </template>
 
 <script lang="ts">
-// TODO: remove unused
 import { postProvenance, displayOfflineBanner, displayOnlineBanner } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
-import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
-import { validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 
 export default {
 data() {
 	return {
         isCreating: false,
-        isLoading: true,
         description: "",
-
-        // TODO: merge these? remove and have as another issue?
-        groupKey: "",
-        newChildKeys: [] as string[],
-        childKeyText: "",
 
         recordKey: "",
         pictures: [] as File[] | null,
         tags: [] as string[],
-        annotateAll: false,
-        recallAll: false,
-        annotatePopUp: false,
-        recallPopUp: false
 	}
 },
 computed: {
@@ -205,46 +135,24 @@ computed: {
 },
 async mounted() {
 	try {
-        // TODO: route param no longer has deviceKey! Could we send it when redirecting..? -- but if we redirect from banner then we could redirect from a page without a key!
-        // (but don't want to force user off the page [what if they're working on a record?]! Want them to choose, maybe click link in the offline banner?)
-            // NEW offline banner that is only for history/record pages, lets you come to this page to add to them (click link)
-            // QR could simply redirect here if there's no service
-            // WHAT if we just go to the page (not redirect, so there's no key? It'd break the form too)
-
-        // TODO FINAL? Get the key from redirect, make new form with key section (that redirect optionally fills)
         const route = useRoute();
-        // NOTE: it's the same page but includes key query in url, not sure if that's okay/will still work on the PWA
+        // TODO NOTE: it's the same page but includes key query in url, not sure if that's okay/will still work on the PWA (make a note to test w/ PWA when merged?)
         this.recordKey = route.query.key as string;
         
 
         EventBus.on('feedRefresh', this.refreshFeed);
-        EventBus.on('isCreating', () => {
-            if (!this.isCreating) {
-            this.isCreating = true;
-            return;
-            }
-            this.isCreating = false;
-        });
 
         await this.refreshFeed();
         
 	} catch (error) {
         this.isCreating = false;
         setTimeout(() => {
-          this.isLoading = false;
         }, 1000); // logs after 1 second
         console.log(error)
 	}
 },
 beforeDestroy() {
 	EventBus.off('feedRefresh', this.refreshFeed);
-	EventBus.off('isCreating', () => {
-	if (!this.isCreating) {
-		this.isCreating = true;
-		return;
-	}
-	this.isCreating = false;
-	});
 },
 methods: {
 	async refreshFeed() {
@@ -258,27 +166,7 @@ methods: {
         }
 
         this.isCreating = false;
-        this.isLoading = false;
 	},
-    closePopUpA() {
-        this.annotatePopUp = false
-    },
-    closePopUpR() {
-        this.recallPopUp = false
-    },
-    async trackingForm() {
-
-        if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
-            // Check for null (in case this is a child node)
-            this.submitRecord()
-        } else if (this.recallAll) {
-            this.recallPopUp = true
-        } else if (this.annotateAll) {
-            this.annotatePopUp = true
-        } else {
-            this.submitRecord()
-        }
-    },
     handleUpdateTags(tags: string[]) {
         this.tags = tags;
     },
@@ -316,62 +204,49 @@ methods: {
             this.description = '';
             this.pictures = null;
             this.tags = [];
-            this.groupKey = '';
-            this.newChildKeys = [];
         },
         async submitRecord() {
-            // TODO: notify this page to go to loading screen
-            // Emit an event to notify the history/[deviceKey].vue page to display loading screen
-            EventBus.emit('isCreating');
-
-            // TODO: need to add group keys/child record key support here
-            // TODO: does our current process handle this? NO! Need new issue for this! and probably for annotate/recall
-            
-            if (this.recallAll) {
-                this.tags.push("recall");
-            } else if (this.annotateAll) {
-                this.tags.push("annotate");
+            // Display loading screen
+            if (!this.isCreating) {
+                this.isCreating = true;
+            } else {
+                this.isCreating = false;
             }
-
+            
             // Append the record to the records.
             try {
                 const record = {
                     blobType: 'deviceRecord',
                     description: this.description,
                     tags: this.tags,
-                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+                    children_key: '',
                 };
 
-                // TODO: modify this to use recordKey from input!
                 await postProvenance(this.recordKey, record, this.pictures || []);
-
-                // TODO: call recall/annotate on this record if tagged (new issue?)
 
                 // Refresh CreateRecord component
                 this.refresh();
-
-                // TODO: loading/creating screens, should help with below issue
-                // TODO: refresh this whole page OR clear past stuff (descr, tags, annotate/recall)
-                // EventBus.emit('feedRefresh');
-                // this.$router.go(0);  // works BUT loses success pop-up
-                this.$snackbar.add({
-                    type: 'success',
-                    text: 'Successfully created the record'
-                })
+                this.refreshFeed();
 
             } catch (error) {
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating record: ${error}`
                 });
+                this.isCreating = false;
             }
         }
 }
 };
 </script>
 
-<!-- TODO: add basic styling to match other create pages (look at history page) -->
+<!-- TODO: move styling to reusable folder (see notes) -->
 <style scoped>
+#create-record {
+    margin-top: 30px;
+    padding: 0px 30px;
+}
+
 form {
     border-radius: 6px;
     display: block;

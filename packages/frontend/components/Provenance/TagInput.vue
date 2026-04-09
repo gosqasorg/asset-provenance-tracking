@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <template>
-  <div class="container">
+  <div>
     <ul class="ulTagsList"><input ref="inputField" type="text" class="tagInp form-control" placeholder="Record Tag" @input="updateTags" :value="editableValue" /></ul>
 
     <!-- UI Toolkit (for x icon on tags) -->
@@ -204,11 +204,6 @@ export default {
     border-radius: 15px;
     font-size: 14px;
     border: none;
-  }
-
-  .container {
-    background-color: transparent;
-    padding: 0px;
   }
 
   input:focus {

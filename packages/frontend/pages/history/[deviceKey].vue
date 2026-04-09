@@ -103,10 +103,10 @@ const recordHasParent = hasParent(provenance);
 				</div>
 			</Banner>
 
-			<!-- TODO: Link to offline history page (needs actual v-if, same as offline banner) -->
-			 	<!-- NOTE: maybe this banner could instead replace the offline banner above the create form! probably would have to reword one or both -->
-			<Banner v-if="true" class="banner" style="align-items: center; display: flex">
-				<div style="margin-left: 10px;"><strong>You're offline:</strong>  To add to provenance records while offline go to our <RouterLink @click.prevent="emitHistoryCreate" to="/history/offline">offline creation page</RouterLink>
+			<Banner v-if="displayBanner" class="banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong>  To add to provenance records while offline go to our <RouterLink @click.prevent="emitHistoryCreate" to="/history/offline">offline creation page</RouterLink>.
 				</div>
 			</Banner>
 
