@@ -27,12 +27,14 @@
     "sass-loader": "^14.2.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^2.1.1"
   },
   "dependencies": {
     "@coreui/coreui": "^5.0.2",
     "@scalar/nuxt": "^0.5.20",
     "@urlpack/base58": "^2.0.0",
+    "@vite-pwa/nuxt": "^1.1.1",
     "bootstrap": "^5.3.3",
     "bootstrap4-toggle": "^3.6.1",
     "bootstrap5-toggle": "^5.1.1",
@@ -44,6 +46,9 @@
     "swagger-ui-dist": "^5.32.0",
     "vue": "^3.4.27",
     "vue-router": "^4.3.2",
-    "vue3-scroll-spy": "^1.0.8"
+    "vue3-scroll-spy": "^1.0.8",
+    "workbox-core": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0"
   }
 }
