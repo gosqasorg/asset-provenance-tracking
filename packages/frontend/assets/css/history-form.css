@@ -147,6 +147,10 @@ input[type=checkbox] {
         color: #FFFFFF;
     }
 
+    h4 {
+        color: #FFFFFF;
+    }
+
     h1,
     .device-name {
         color: #CCECFD;
@@ -191,7 +195,8 @@ input[type=checkbox] {
         background-color: #E6F6FF;
     }
 
-    h5 {
+    h5,
+    h4 {
         color: #4E3681;
     }
 
