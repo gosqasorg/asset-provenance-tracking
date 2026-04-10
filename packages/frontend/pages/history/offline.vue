@@ -25,21 +25,6 @@ their items while offline.
 <div v-else>
     <div class="deviceKey-history">
     <div class="row pt-3 pb-6 mx-4">
-        <!-- Offline Banner Top-->
-        <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
-            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
-            </div>
-            <div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
-            will not be posted until you revisit this page while online.
-            </div> 
-        </Banner>
-
-        <!-- Back Online Banner -->
-        <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-            <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
-            </div>
-        </Banner>
-
         <!-- Display record key -->
         <section id="device-details" class="details-container">
         <div class="record-description">
@@ -63,8 +48,6 @@ their items while offline.
                 <input type="text" class="form-control" v-model="recordKey" required placeholder="Record Key" maxlength="500" @keydown.enter.prevent>  
                 <textarea id="provenance-description" v-model="description"
                     placeholder="Description" maxlength="5000" rows="3"></textarea>
-                <!-- <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey"
-                        placeholder="Group or Group Record Keys (optional, separated with a comma)" /> -->
                 <div>
                     <h5>Image (optional)</h5>
                     <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment"
@@ -78,6 +61,21 @@ their items while offline.
                     </span>
                 </div>
             </div>
+
+            <!-- Offline Banner Bottom-->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+                </div>
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                </div> 
+            </Banner>
+
+            <!-- Back Online Banner -->
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+                <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+                </div>
+            </Banner>
 
             <div class="d-grid mt-3" id="submit-button">
                 <button class="mb-0 record-button" type="submit" style="
@@ -170,71 +168,71 @@ methods: {
         this.tags = tags;
     },
     async onFileChange(e: Event) {
-            const target = e.target as HTMLInputElement;
-            const files = target.files;
+        const target = e.target as HTMLInputElement;
+        const files = target.files;
 
-            if (!files || files.length === 0) return;
+        if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;
+        const maxFileSize = 2097152;
 
-            let validFileSize = true;
+        let validFileSize = true;
 
-            for (const file of Array.from(files)) {
-                const validResults = await validateFileSize(file, maxFileSize);
-                if (!validResults.valid) {
-                    validFileSize = false;
-                    break;
-                }
-            }
-
-            if (validFileSize) {
-                // All files are valid, set this.pictures to the selected files
-                this.pictures = Array.from(files);
-            } else {
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
-                })
-                target.value = '';
-                this.pictures = null;
-            }
-        },
-        refresh() {
-            this.description = '';
-            this.pictures = null;
-            this.tags = [];
-        },
-        async submitRecord() {
-            // Display loading screen
-            if (!this.isCreating) {
-                this.isCreating = true;
-            } else {
-                this.isCreating = false;
-            }
-            
-            // Append the record to the records.
-            try {
-                const record = {
-                    blobType: 'deviceRecord',
-                    description: this.description,
-                    tags: this.tags,
-                    children_key: '',
-                };
-
-                await postProvenance(this.recordKey, record, this.pictures || []);
-
-                // Refresh CreateRecord component
-                this.refresh();
-                this.refreshFeed();
-
-            } catch (error) {
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating record: ${error}`
-                });
-                this.isCreating = false;
+        for (const file of Array.from(files)) {
+            const validResults = await validateFileSize(file, maxFileSize);
+            if (!validResults.valid) {
+                validFileSize = false;
+                break;
             }
         }
+
+        if (validFileSize) {
+            // All files are valid, set this.pictures to the selected files
+            this.pictures = Array.from(files);
+        } else {
+            this.$snackbar.add({
+                type: 'error',
+                text: `File is too large, please choose a file less than ${maxFileSize / 1048576}MB in size`
+            })
+            target.value = '';
+            this.pictures = null;
+        }
+    },
+    refresh() {
+        this.description = '';
+        this.pictures = null;
+        this.tags = [];
+    },
+    async submitRecord() {
+        // Display loading screen
+        if (!this.isCreating) {
+            this.isCreating = true;
+        } else {
+            this.isCreating = false;
+        }
+        
+        // Append the record to the records.
+        try {
+            const record = {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: '',
+            };
+
+            await postProvenance(this.recordKey, record, this.pictures || []);
+
+            // Refresh CreateRecord component
+            this.refresh();
+            this.refreshFeed();
+
+        } catch (error) {
+            this.$snackbar.add({
+                type: 'error',
+                text: `Error creating record: ${error}`
+            });
+            this.isCreating = false;
+        }
+    }
 }
 };
 </script>

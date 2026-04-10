@@ -63,15 +63,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
         
         <!-- Offline Banner Bottom-->
-        <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
-            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+        <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px; color: #fe9c9e;">&#9888;
             </div>
             <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
             </div> 
         </Banner>
 
         <!-- Back Online Banner -->
-        <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+        <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+            <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
             <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
             </div>
         </Banner>

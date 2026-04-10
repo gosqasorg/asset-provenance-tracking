@@ -143,8 +143,13 @@ input[type=checkbox] {
         background-color: #4B4D47;
     }
 
-    h5 {
+    h5, span {
         color: #FFFFFF;
+    }
+
+    h1,
+    .device-name {
+        color: #CCECFD;
     }
 
     .record-button {
@@ -166,22 +171,17 @@ input[type=checkbox] {
     input[type="file"]::-webkit-file-upload-button:hover {
         background-color: #0056b3;
     }
+
     .record-button:hover { 
         background-color: #e6f6ff;
     }
+
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
+
+    .banner-link {
+        color: #CCECFD;
     }
 }
 
@@ -205,18 +205,12 @@ input[type=checkbox] {
         background-color: #4E3681;
         color: white;
     }
+
     .record-button:hover { 
         background-color: #322253;
     }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
+
+    .banner-link {
+        color: #4E3681;
     }
 }

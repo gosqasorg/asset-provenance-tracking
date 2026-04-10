@@ -89,7 +89,7 @@ const recordHasParent = hasParent(provenance);
 			class="left-col">
 
 			<!-- Offline Banner Top-->
-			<Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+			<Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
 				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
 				</div>
 				<div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
@@ -97,16 +97,18 @@ const recordHasParent = hasParent(provenance);
 				</div> 
 			</Banner>
 
-			<!-- Back Online Banner -->
-			<Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-				<div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+			<!-- Banner to Offline History Create Page -->
+			<Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">offline creation page</RouterLink>.
 				</div>
 			</Banner>
 
-			<Banner v-if="displayBanner" class="banner" style="margin-top: 10px; align-items: center; display: flex">
-				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
-				</div>
-				<div style="margin-left: 10px;"><strong>You're offline:</strong>  To add to provenance records while offline go to our <RouterLink @click.prevent="emitHistoryCreate" to="/history/offline">offline creation page</RouterLink>.
+			<!-- Back Online Banner -->
+			<Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+				<img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+				<div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
 				</div>
 			</Banner>
 
@@ -253,7 +255,7 @@ computed: {
 		} else {
 			return false;
 		}
-		},
+	},
     // Controls the visibility of online banner based on global variable displayOnlineBanner
     onlineBannerToggle() {
         if (displayOnlineBanner === true) {
@@ -304,7 +306,7 @@ beforeDestroy() {
 	});
 },
 methods: {
-	emitHistoryCreate() {
+	sendRecordKey() {
 		this.$router.push({
 			path: '/history/offline',
 			query: { key: this._recordKey }
@@ -726,17 +728,10 @@ h1 {
 	background-color: white;
 	color: black;
 }
-.banner {
-	background-color: #3e231c;
-	border-color: #fe9c9e;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: white;
-	}
+
+.banner-link {
+	color: #CCECFD;
+}
 }
 
 /* Light mode version*/
@@ -799,16 +794,9 @@ h1 {
 .download-btn:hover {
 	background-color: #e6f6ff !important;
 }
-.banner {
-	background-color: #ffe3e2;
-	border-color: #fa9e9f;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: black;
-	}
+
+.banner-link {
+	color: #4E3681;
+}
 }
 </style>
