@@ -15,16 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-import DOMPurify from 'dompurify';
-import { JSDOM } from 'jsdom';
-
-// DOMPurify requires a DOM - using jsdom so we can run this in Node for tests
-// should only be used if there is no actual broswer window
-const window = typeof globalThis.window !== 'undefined' 
-    ? globalThis.window
-    : new JSDOM('').window;
-
-const purify = DOMPurify(window);
+import DOMPurify from 'isomorphic-dompurify';
 
 export default function clickableLink(description: string)  {
     if (!description) {
@@ -55,7 +46,7 @@ export default function clickableLink(description: string)  {
         if (words[i].match(regEx)) { //Checks if there are links that start with https
             // Wrap the word with <a> tag
             let userLink = `<a href="${words[i]}" target="_blank" rel="noopener noreferrer">${words[i]}</a>`;
-            words[i] = purify.sanitize(userLink, {
+            words[i] = DOMPurify.sanitize(userLink, {
                 ALLOWED_TAGS: ['a'],
                 ALLOWED_ATTR: ['href', 'target', 'rel']
             })
