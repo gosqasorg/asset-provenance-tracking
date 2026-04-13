@@ -53,6 +53,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
 
+            <!-- Notification Subscription -->
+            <h4 class="p-1">
+                <input v-model="subscribeChecked" type="checkbox" class="form-check-input"/> Subscribe to notifications for this record
+            </h4>
+
+            <div v-if="subscribeChecked">
+                <input
+                    type="text"
+                    class="form-control"
+                    v-model="subscribeEmail"
+                    placeholder="Email"
+                />
+            </div>
+
         </div>
  
         <div class="d-grid">
@@ -75,7 +89,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 
@@ -94,6 +108,8 @@ export default {
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
+            subscribeChecked: false,
+            subscribeEmail: '',
         }
     },
     computed: {
@@ -160,6 +176,21 @@ export default {
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
+                }
+
+                if (response && this.subscribeChecked && this.subscribeEmail) {
+                    try {
+                        await postNotificationEmail(this.subscribeEmail, deviceKey, this.tags);
+                        this.$snackbar.add({
+                            type: 'success',
+                            text: 'Check your email to verify your notification subscription.'
+                        });
+                    } catch (error) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Failed to send verification email: ${error}`
+                        });
+                    }
                 }
 
                 this.$snackbar.add({

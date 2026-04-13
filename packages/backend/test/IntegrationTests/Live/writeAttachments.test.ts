@@ -267,7 +267,7 @@ describe("Creating records with attachments", () => {
 
             // File size check 
             const fileSizeInMB = buffer.length / (1024 * 1024);
-            console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
+            console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`); 
             expect(fileSizeInMB).toBeGreaterThan(2); 
 
             const postResponse = await fetch(fullUrl, {

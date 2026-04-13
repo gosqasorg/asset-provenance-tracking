@@ -744,6 +744,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         context.log('body:', body);
         const email = body.email;
         const recordKey = body.recordKey;
+        const tags = body.tags ?? [];
 
         if (!email || !recordKey){
             return {
@@ -782,7 +783,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             code: code,
             token: token,
             expiresAt: Date.now() + codeExpiration,
-            recordKey: recordKey
+            recordKey: recordKey,
+            tags: JSON.stringify(tags),
         };
 
         await tableClient.upsertEntity(entity);
@@ -932,7 +934,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // on succes, delete pending entity email
         // and call signupfornotifications (with verified user email!! :))
         await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
-        await signupForNotifications(entity.recordKey as string, entity.rowKey as string) // recordKey is deviceKey, rowKey is email;
+        await signupForNotifications(entity.recordKey as string, entity.rowKey as string, JSON.parse(entity.tags as string ?? '[]')) // recordKey is deviceKey, rowKey is email;
 
         return {
             jsonBody: {message: "Success"},
@@ -1004,7 +1006,8 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             code: code,
             token: token,
             expiresAt: Date.now() + codeExpiration,
-            recordKey: entity.recordKey as string
+            recordKey: entity.recordKey as string,
+            tags: entity.tags as string ?? '[]'
         };
 
         await tableClient.upsertEntity(updatedEntity);

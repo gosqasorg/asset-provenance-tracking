@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as httpTrigger from '../../src/functions/httpTrigger';
+import { TableClient } from '@azure/data-tables';
+import { sendEmail } from '../../src/functions/sendEmail.js';
 
 
 // Minimal Azure SDK mocks
@@ -56,6 +58,22 @@ vi.mock('node:crypto', () => ({
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
   },
 }));
+
+// https://learn.microsoft.com/en-us/azure/developer/javascript/sdk/test-sdk-integration?tabs=test-with-node-testrunner
+vi.mock('@azure/data-tables', () => ({
+    TableClient: vi.fn().mockImplementation(() => ({
+        createTable: vi.fn().mockResolvedValue(undefined),
+        upsertEntity: vi.fn().mockResolvedValue(undefined),
+        listEntities: vi.fn().mockReturnValue((async function* () {})()),
+        deleteEntity: vi.fn().mockResolvedValue(undefined),
+    })),
+    AzureNamedKeyCredential: vi.fn().mockImplementation(() => ({})),
+}));
+
+vi.mock('../../src/functions/sendEmail.js', () => ({
+    sendEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 
 
 function makeHttpRequest(overrides: any = {}) {
@@ -183,7 +201,7 @@ describe('PostNotificationEmail', () => {
                return {
                 email:"example@email.com",
                 recordKey:"123",
-                tags: ['foo@bar.org']
+                tags: ['complete']
                }
             }
         
@@ -200,8 +218,194 @@ describe('PostNotificationEmail', () => {
     });
 });
 
-// TODO: Add tests for new email endpoints
-// - postVerifyCode 
-// - postResendCode
-// - postNotificationEmail (should add more tests for edge cases and error handling)
-// - getPendingVerification 
+// helper funcs for email subscrip tests
+function makeMockTableInstance() {
+    // makes the plain obj with the mocked methods
+    return {
+        createTable: vi.fn().mockResolvedValue(undefined),
+        upsertEntity: vi.fn().mockResolvedValue(undefined),
+        listEntities: vi.fn().mockReturnValue((async function* () {})()),
+        deleteEntity: vi.fn().mockResolvedValue(undefined),
+    };
+}
+
+function makeValidEntity(overrides: Record<string, unknown> = {}) {
+    return {
+        partitionKey: 'PendingVerification',
+        rowKey: 'test@example.com',
+        code: '123456',
+        token: 'validtoken',
+        expiresAt: Date.now() + 600_000,
+        recordKey: 'somedevicekey',
+        tags: '[]',
+        ...overrides,
+    };
+}
+
+function makeQueryRequest(params: Record<string, string>) {
+    return {
+        query: { get: (token: string) => params[token] ?? null },
+    } as any;
+}
+
+// postNotificationEmail tests
+describe('postNotificationEmail - validation', () => {
+    let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    // all need a table mock and email mock since the function does both
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(sendEmail).mockResolvedValue(undefined);
+    });
+
+    // missing email
+    it('returns 400 when email is missing', async () => {
+        const req = { json: async () => ({ recordKey: 'key123', tags: [] }) } as any;
+        const res = await httpTrigger.postNotificationEmail(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+    // missing recordKey
+    it('returns 400 when recordKey is missing', async () => {
+        const req = { json: async () => ({ email: 'user@example.com', tags: [] }) } as any;
+        const res = await httpTrigger.postNotificationEmail(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+    // valid request
+    it('returns 200 when all required fields are present', async () => {
+        const email = 'user@example.com';
+        const recordKey = 'key123';
+        const tags = ['tag1'];
+        const req = { json: async () => ({ email, recordKey, tags }) } as any;
+
+        const res = await httpTrigger.postNotificationEmail(req, ctx);
+        expect(res.status).toBe(200);
+
+    });
+});
+
+// postVerifyCode tests
+describe('postVerifyCode', () => {
+    let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    // all tests need a table mock
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+    });
+
+    // no token or code
+    it('returns 400 when token or code are missing', async () => {
+        const req = { json: async () => ({}) } as any;
+        const res = await httpTrigger.postVerifyCode(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+    // no matching entity
+    it('returns 400 when no matching entity found', async () => {
+        const req = { json: async () => ({ token: 'abc', code: '123456' }) } as any;
+        const res = await httpTrigger.postVerifyCode(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+    // expired code
+    it('returns 400 when code is expired', async () => {
+        const entity = makeValidEntity({ expiresAt: Date.now() - 1000 });
+        mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
+        
+        const req = { json: async () => ({ token: entity.token, code: entity.code }) } as any;
+        const res = await httpTrigger.postVerifyCode(req, ctx);
+        
+        expect(res.status).toBe(400);
+    });
+
+    // incorrect code
+    it('returns 400 when code is wrong', async () => {
+        const entity = makeValidEntity({ code: '999999' });
+        mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
+        
+        const req = { json: async () => ({ token: entity.token, code: '111111' }) } as any;
+        const res = await httpTrigger.postVerifyCode(req, ctx);
+        
+        expect(res.status).toBe(400);
+    });
+});
+
+// getPendingVerification tests
+describe('getPendingVerification', () => {
+    let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+    });
+
+    // missing token
+    it('returns 400 when token query param is missing', async () => {
+        const req = makeQueryRequest({});
+        const res = await httpTrigger.getPendingVerification(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+    // no token found
+    it('returns 404 when token is not found', async () => {
+        const req = makeQueryRequest({ token: 'unknowntoken' });
+        const res = await httpTrigger.getPendingVerification(req, ctx);
+        expect(res.status).toBe(404);
+    });
+
+    // should delete entity when expired token / code
+    it('returns 404 and deletes entity when token is expired', async () => {
+        const entity = makeValidEntity({ expiresAt: Date.now() - 1000 });
+        mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
+        const req = makeQueryRequest({ token: entity.token });
+
+        const res = await httpTrigger.getPendingVerification(req, ctx);
+
+        expect(res.status).toBe(404);
+        expect(mockTable.deleteEntity).toHaveBeenCalledWith('PendingVerification', entity.rowKey);
+    });
+
+    // valid token
+    it('returns 200 for a valid non-expired token', async () => {
+        const entity = makeValidEntity();
+        mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
+        const req = makeQueryRequest({ token: entity.token });
+
+        const res = await httpTrigger.getPendingVerification(req, ctx);
+
+        expect(res.status).toBe(200);
+    });
+});
+
+// postResendCode tests
+describe('postResendCode', () => {
+    let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(sendEmail).mockResolvedValue(undefined);
+    });
+
+    // missing token
+    it('returns 400 when token is missing', async () => {
+        const req = { json: async () => ({}) } as any;
+        const res = await httpTrigger.postResendCode(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+    // invalid token
+    it('returns 404 when token is not found', async () => {
+        const req = { json: async () => ({ token: 'unknowntoken' }) } as any;
+        const res = await httpTrigger.postResendCode(req, ctx);
+        expect(res.status).toBe(404);
+    });
+
+});

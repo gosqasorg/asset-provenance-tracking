@@ -161,7 +161,14 @@ const recordHasParent = hasParent(provenance);
                 <CsvFile :recordKey="_recordKey"></CsvFile>
               </div>
               
-              <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+                <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+
+                <div>
+                  <!-- TEMPORARY: subscribe button for functionality; -->
+                  <RouterLink :to="`/history/subscribe/${_recordKey}`" class="btn download-btn">
+                    Subscribe to Notifications
+                  </RouterLink>
+                </div>
             </section>
 
           </div>

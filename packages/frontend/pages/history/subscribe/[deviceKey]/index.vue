@@ -11,10 +11,13 @@
                 v-model="email" 
                 placeholder="your@email.com"
             />
+            <ProvenanceTagInput @updateTags="tags = $event" />
             <button @click="sendCode" :disabled="isSubmitting">
                 Send Verification Code
             </button>
-            <p v-if="error">{{ error }}</p>
+            <button @click="$router.push(`/history/${$route.params.deviceKey}`)">
+                Go Back to Record
+            </button>
         </div>
         
 </template>
@@ -26,20 +29,28 @@
         data() {
             return {
                 email: '',
+                tags: [] as string[],
                 error: null as string | null,
                 isSubmitting: false,
             }
         },
         methods: {
             async sendCode() {
-                if (!this.email) return;
 
-                // TODO:Add some basic email validation here. 
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
+                if (!this.email || !emailRegex.test(this.email)) {
+                    this.$snackbar.add({ 
+                        type: 'error', 
+                        text: `Invalid Email` 
+                    });
+                   return; 
+                } 
+
                 this.isSubmitting = true;
                 this.error = null;
                 try {
                     const deviceKey = this.$route.params.deviceKey as string;
-                    const token = await postNotificationEmail(this.email, deviceKey);
+                    const token = await postNotificationEmail(this.email, deviceKey, this.tags);
                     this.$router.push(`/history/subscribe/${deviceKey}/verify?token=${token}`);
                 } catch(error) {
                     this.$snackbar.add({ 
