@@ -1025,11 +1025,11 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 }
 
 async function createRecord(context, name, description, tags, attachments) {
-    // TODO: create a new record + post (see tests, don't hardcode urls see createGroup)
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
     const deviceKey = await makeEncodedDeviceKey();
+    const decodedDeviceKey = decodeKey(deviceKey);
 
     try {
         const data = {
@@ -1044,30 +1044,28 @@ async function createRecord(context, name, description, tags, attachments) {
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(data));
 
-        // TODO: passes but doesn't actually add attachment, keep in mind if there's no attachment
-        context.error(attachments)
-        formData.append(attachments.name, attachments);
+        await containerClient.createIfNotExists();
 
-        // NOTE: below is how backend postProv does it
-        // const timestamp = new Date().getTime();
-        // const attachments = new Array<NamedBlob>();
-        // for (const attach of formData.values()) {
-        //     if (typeof attach === 'string') continue;
-        //     console.log("attach type: " + typeof(attach))
-        //     attachments.push({ blob: attach, name: attach.name });
-        // }
+        // post record and attachments
+        const provenanceRecord = formData.get("provenanceRecord");
+        if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+        const record = JSON5.parse(provenanceRecord);
+        if (!validateJSON(record)) { return { status: 404 }; }
 
-        // TODO: should post response also try 3 times here..? createChildren does try 3 times! group doesn't
-            // Could have a different func. for posting..?
-        const createInitUrl = `${baseUrl}${deviceKey}`
-        const theResponse = await fetch(createInitUrl, {
-            method: "POST",
-            body: formData,
-        });
+        const timestamp = new Date().getTime();
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, record, attachments);
+        if (body.oversizedAttachments) {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
 
-        // let groupUrlRecordPage = `${frontendUrl}/record/${deviceKey}`
-        context.log(`${baseUrl}${deviceKey}`)
-        return createInitUrl;
+        return `${baseUrl}${deviceKey}`;
 
     } catch (error) {
         context.error('createRecord Error: Failed to create record' + error); 
@@ -1089,14 +1087,30 @@ const RecordCreationOrderSchema = z.object({
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         let theRequest = await request.json()
-        context.error(theRequest);  // todo: remove
-        context.error(theRequest['provenanceRecord'])
+        context.error(theRequest);  // todo: remove (and other error messages outside of errors)
+
         RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
-        let name = theRequest['provenanceRecord']['deviceName']
-        let description = theRequest['provenanceRecord']['description']
-        let tags = theRequest['provenanceRecord']['tags']
-        let attachment = theRequest['attachment']
-        let recordUrl = await createRecord(context, name, description, tags, attachment)
+        let name = theRequest['provenanceRecord']['deviceName'];
+        let description = theRequest['provenanceRecord']['description'];
+        let tags = theRequest['provenanceRecord']['tags'];
+        let attachment = theRequest['attachment'];
+
+        // create file blob and add to the array if attachment exists
+        const attachments = new Array<NamedBlob>();
+        if (attachment != "") {
+            let bufferAttachment = Buffer.from(attachment, "base64");
+            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
+            if (typeof blob !== 'string') {
+                console.log("attach type: " + typeof(blob))
+                // TODO: frontend gets name from [] of target.files, backend tests hard-codes (add str filename to input? but then why not just use formdata)
+                attachments.push({ blob: blob, name: 'kirby.png' });
+            }
+        }
+
+        context.error("ATTACHMENT 1!")
+        context.error(attachment)
+
+        let recordUrl = await createRecord(context, name, description, tags, attachments)
         context.log(recordUrl)
 
         return {

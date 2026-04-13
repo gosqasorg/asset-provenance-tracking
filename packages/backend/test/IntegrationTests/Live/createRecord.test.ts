@@ -1,27 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { validateKey } from '../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 
-// TODO: simple test where you create a record w/ createRecord, get it, and check that the parameters match
-    // See existing live integration test for reference
-    // create.test.ts line 1074
-
-// NOTE: this is how we're theoretically calling group creation! Model record creation similarly? SEE ISSUE #797!!!
-    // https://github.com/gosqasorg/asset-provenance-tracking/issues/797
-    // ALSO SEE microtest.spec.ts!
-// const group_parent_id = fetch(`${baseUrl}/group/create/`, { method: "POST", body: spec });
-
 describe("Backend Record Creation Tests", () => {
-    // TODO: MASTER LIST
+    // TODO: FINAL CHECKS
         // Compare closer to group to make sure everything looks right!
-        // We need to know what all the potential backend_urls are and if they all have prov! -- YES, AND DEV HAS API_URL!! prod doesn't
-            // local.settings.json defines local urls (MAYBE azure defines dev/live? DO THEY HAVE api_url??? settings -> env vars)
 
     it("Create and Retrieve A Basic Record", async () => {
-        // TODO: this works for localhost to remove 'provenance/' but I'm not sure if other backend_urls have that
-        // TODO: REPLACE BASEURL WITH API_URL, that one doesn't have /provenance!!! (confirm this exists on dev/live)
+        // TODO: replace baseUrl w/ process.env['api_url'] once it exists in production (do this for all tests)
+                // prod: none -- want https://gdtprodbackend.azurewebsites.net/api
+                // dev: https://gosqasbe.azurewebsites.net/api
+                // local: http://localhost:7071/api (local.settings.json)
         const baseUrl = process.env['backend_url']?.slice(0, -11);
-        console.log("baseurl " + baseUrl)
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
@@ -41,8 +30,8 @@ describe("Backend Record Creation Tests", () => {
 
 		try {
 			let getResponse = await fetch(recordUrl.recordUrl);
-			getResponse = await getResponse.json();
-			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
+			getResponse = (await getResponse.json())[0];
+			let responseString = JSON.parse(JSON.stringify(getResponse));
 
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
 			expect(responseString.record.deviceName).toBe('Create Record Test');
@@ -79,8 +68,8 @@ describe("Backend Record Creation Tests", () => {
 
 		try {
 			let getResponse = await fetch(recordUrl.recordUrl);
-			getResponse = await getResponse.json();
-			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
+			getResponse = (await getResponse.json())[0];
+			let responseString = JSON.parse(JSON.stringify(getResponse));
 
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
 			expect(responseString.record.deviceName).toBe('Create Record Test');
@@ -107,26 +96,21 @@ describe("Backend Record Creation Tests", () => {
             isReportingKey: false,
         }
 
+        // read the file and convert it to base64 string
         const buffer = await readFile('./test/attachments/a200.jpg');
-        console.log("buffer " + buffer)
-        const blob = new Blob([buffer], { type: 'image/jpeg' });
+        let base64string = buffer.toString("base64");
 
-        const postValues = { "provenanceRecord": record, "attachment": blob }
-        // TODO: since we're not making formData we need to figure out how to send attachment (json inside json..?)
-        // formData.append('kirby.png', blob);
-
+        const postValues = { "provenanceRecord": record, "attachment": base64string }
         const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
-        expect(recordResponse.status).toBe(200)
+        expect(recordResponse.status).toBe(200);
 
         let recordUrl = await recordResponse.json()
         console.log("Created Record With Tags and Attachment (url): ", recordUrl.recordUrl)
 
 		try {
 			let getResponse = await fetch(recordUrl.recordUrl);
-            console.log("GET RESPONSE");  // todo: remove
-            console.log(getResponse)
-			getResponse = await getResponse.json();
-			let responseString = JSON.parse(JSON.stringify(getResponse[0]));
+			getResponse = (await getResponse.json())[0];
+			let responseString = JSON.parse(JSON.stringify(getResponse));
 
 			expect(JSON.stringify(getResponse)).not.toBe('[]');
 			expect(responseString.record.deviceName).toBe('Create Record Test');
@@ -134,6 +118,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.tags).toEqual(['attach_test']);
 			expect(responseString.record.hasParent).toBe(false);
 			expect(responseString.record.isReportingKey).toBe(false);
+            expect(responseString.attachments.length).toBe(1)
 
 		} catch(error) {
 			console.error('(Create With Attachment Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
