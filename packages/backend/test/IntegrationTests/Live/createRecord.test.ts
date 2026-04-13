@@ -2,12 +2,9 @@ import { describe, it, expect } from "vitest";
 import { readFile } from 'fs/promises';
 
 describe("Backend Record Creation Tests", () => {
-    // TODO: FINAL CHECKS
-        // Compare closer to group to make sure everything looks right!
-
     it("Create and Retrieve A Basic Record", async () => {
         // TODO: replace baseUrl w/ process.env['api_url'] once it exists in production (do this for all tests)
-                // prod: none -- want https://gdtprodbackend.azurewebsites.net/api
+                // prod: none --> want https://gdtprodbackend.azurewebsites.net/api
                 // dev: https://gosqasbe.azurewebsites.net/api
                 // local: http://localhost:7071/api (local.settings.json)
         const baseUrl = process.env['backend_url']?.slice(0, -11);
@@ -25,11 +22,12 @@ describe("Backend Record Creation Tests", () => {
         const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
         expect(recordResponse.status).toBe(200)
 
-        let recordUrl = await recordResponse.json()
+        let recordUrl = (await recordResponse.json()).recordUrl;
+        let deviceKey = recordUrl.substr(recordUrl.length - 22);
         console.log("Created Basic Record (url): ", recordUrl.recordUrl)
 
 		try {
-			let getResponse = await fetch(recordUrl.recordUrl);
+			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 
@@ -63,11 +61,12 @@ describe("Backend Record Creation Tests", () => {
         const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
         expect(recordResponse.status).toBe(200)
 
-        let recordUrl = await recordResponse.json()
+        let recordUrl = (await recordResponse.json()).recordUrl;
+        let deviceKey = recordUrl.substr(recordUrl.length - 22);
         console.log("Created Record With Tags (url): ", recordUrl.recordUrl)
 
 		try {
-			let getResponse = await fetch(recordUrl.recordUrl);
+			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 
@@ -99,16 +98,21 @@ describe("Backend Record Creation Tests", () => {
         // read the file and convert it to base64 string
         const buffer = await readFile('./test/attachments/a200.jpg');
         let base64string = buffer.toString("base64");
+        const attachment = {
+            name: "kirby.jpg",
+            file: base64string
+        }
 
-        const postValues = { "provenanceRecord": record, "attachment": base64string }
+        const postValues = { "provenanceRecord": record, "attachment": attachment }
         const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
         expect(recordResponse.status).toBe(200);
 
-        let recordUrl = await recordResponse.json()
-        console.log("Created Record With Tags and Attachment (url): ", recordUrl.recordUrl)
+        let recordUrl = (await recordResponse.json()).recordUrl;
+        let deviceKey = recordUrl.substr(recordUrl.length - 22);
+        console.log("Created Record With Tags and Attachment (url): ", recordUrl)
 
 		try {
-			let getResponse = await fetch(recordUrl.recordUrl);
+			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 

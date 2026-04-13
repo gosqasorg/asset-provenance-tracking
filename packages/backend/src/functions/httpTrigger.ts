@@ -1026,8 +1026,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 
 async function createRecord(context, name, description, tags, attachments) {
     const baseUrl = process.env['backend_url'];
-    const frontendUrl = process.env['frontend_url'];
-    const apiUrl = process.env['api_url'];
+    const frontendUrl = process.env['frontend_url'];  // todo: try returning frontend url instead like group..? (tests use backend, return key?)
     const deviceKey = await makeEncodedDeviceKey();
     const decodedDeviceKey = decodeKey(deviceKey);
 
@@ -1041,19 +1040,11 @@ async function createRecord(context, name, description, tags, attachments) {
             hasParent: false,
             isReportingKey: false,
         };
-        const formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(data));
 
+        // use uploadProvenance to post the record and any attachments
         await containerClient.createIfNotExists();
-
-        // post record and attachments
-        const provenanceRecord = formData.get("provenanceRecord");
-        if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-        const record = JSON5.parse(provenanceRecord);
-        if (!validateJSON(record)) { return { status: 404 }; }
-
         const timestamp = new Date().getTime();
-        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, record, attachments);
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
         if (body.oversizedAttachments) {
             return {
                 status: 400,
@@ -1065,7 +1056,7 @@ async function createRecord(context, name, description, tags, attachments) {
             }
         }
 
-        return `${baseUrl}${deviceKey}`;
+        return `${frontendUrl}/record/${deviceKey}`;
 
     } catch (error) {
         context.error('createRecord Error: Failed to create record' + error); 
@@ -1087,32 +1078,27 @@ const RecordCreationOrderSchema = z.object({
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         let theRequest = await request.json()
-        context.error(theRequest);  // todo: remove (and other error messages outside of errors)
-
         RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
         let name = theRequest['provenanceRecord']['deviceName'];
         let description = theRequest['provenanceRecord']['description'];
         let tags = theRequest['provenanceRecord']['tags'];
         let attachment = theRequest['attachment'];
 
-        // create file blob and add to the array if attachment exists
+        // if there's an attachment create a blob to add to the record
         const attachments = new Array<NamedBlob>();
         if (attachment != "") {
-            let bufferAttachment = Buffer.from(attachment, "base64");
+            attachment = theRequest['attachment']['file'];
+            let attachmentName = theRequest['attachment']['name'];
+            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
             const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
             if (typeof blob !== 'string') {
                 console.log("attach type: " + typeof(blob))
-                // TODO: frontend gets name from [] of target.files, backend tests hard-codes (add str filename to input? but then why not just use formdata)
-                attachments.push({ blob: blob, name: 'kirby.png' });
+                attachments.push({ blob: blob, name: attachmentName });
             }
         }
 
-        context.error("ATTACHMENT 1!")
-        context.error(attachment)
-
         let recordUrl = await createRecord(context, name, description, tags, attachments)
         context.log(recordUrl)
-
         return {
             status: 200,
             jsonBody: { recordUrl: recordUrl },
