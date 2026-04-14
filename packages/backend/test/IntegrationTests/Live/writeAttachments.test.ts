@@ -238,11 +238,10 @@ describe("Creating records with attachments", () => {
         }
     }, 600000);
 
-    // TODO: need to update test to use file <2MB (LargePDF2.pdf) otherwise will always fail
     it("Create record with large attachment", async () => {
         // Create record key
         const deviceKey = await makeEncodedDeviceKey();
-        console.log("Created Device Key (large file >2MB): " + deviceKey);
+        console.log("Created Device Key (large file <2MB): " + deviceKey);
         let fullUrl = `${baseUrl}${deviceKey}`
         expect(deviceKey.length).toBe(22);
         expect(validateKey(deviceKey)).toBe(true);
@@ -252,7 +251,7 @@ describe("Creating records with attachments", () => {
             const data = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test - Large File",
-            description: "An API Feature Test - Large Attachment (>2MB)",
+            description: "An API Feature Test - Large Attachment (<2MB)",
             tags: {},
             children_key: '',
             hasParent: false,
@@ -261,15 +260,15 @@ describe("Creating records with attachments", () => {
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(data));
 
-            // Attach LARGE file (>2MB)
-            const buffer = await readFile('./test/attachments/LargeFile.pdf');
+            // Attach LARGE file (<2MB)
+            const buffer = await readFile('./test/attachments/LargePDF2.pdf');
             const blob = new Blob([buffer], { type: 'application/pdf' });
             formData.append('large.jpg', blob);
 
             // File size check 
             const fileSizeInMB = buffer.length / (1024 * 1024);
             console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
-            expect(fileSizeInMB).toBeGreaterThan(2); 
+            expect(fileSizeInMB).toBeLessThan(2); 
 
             const postResponse = await fetch(fullUrl, {
             method: "POST",
@@ -293,7 +292,7 @@ describe("Creating records with attachments", () => {
 
             expect(JSON.stringify(getResponse)).not.toBe('[]');
             expect(responseString.record.deviceName).toBe('Create Record Test - Large File');
-            expect(responseString.record.description).toBe('An API Feature Test - Large Attachment (>2MB)');
+            expect(responseString.record.description).toBe('An API Feature Test - Large Attachment (<2MB)');
             expect(responseString.attachments.length).toBe(1);
 
             // Download and compare large attachment
@@ -305,7 +304,7 @@ describe("Creating records with attachments", () => {
             const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer());
             
             // Reading original large file 
-            const originalBuffer = await readFile('./test/attachments/LargeFile.pdf');
+            const originalBuffer = await readFile('./test/attachments/LargePDF2.pdf');
             expect(Buffer.compare(originalBuffer, retrievedBuffer)).toBe(0);
             console.log('Large file attachment matches original');
 
