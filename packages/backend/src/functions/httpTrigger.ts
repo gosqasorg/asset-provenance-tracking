@@ -1101,14 +1101,133 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+async function createRecord(context, name, description, tags, attachments) {
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const deviceKey = await makeEncodedDeviceKey();
+    const decodedDeviceKey = decodeKey(deviceKey);
+
+    try {
+        const data = {
+            blobType: 'deviceInitializer',
+            deviceName: name,
+            description: description,
+            tags: tags,
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        };
+
+        // use uploadProvenance to post the record and any attachments
+        await containerClient.createIfNotExists();
+        const timestamp = new Date().getTime();
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
+        if (body.oversizedAttachments) {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
+
+        return `${frontendUrl}/record/${deviceKey}`;
+
+    } catch (error) {
+        context.error('createRecord Error: Failed to create record' + error); 
+        return '';
+    }
+}
+
+const RecordCreationOrderSchema = z.object({
+    blobType: z.string().optional(),
+    deviceName: z.string(),
+    description: z.string(),
+    children_key: z.union([z.string(), z.array(z.string())]),
+    children_name: z.array(z.string()).optional(),
+    hasParent: z.boolean().optional(),
+    isReportingKey: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
+        let name = theRequest['provenanceRecord']['deviceName'];
+        let description = theRequest['provenanceRecord']['description'];
+        let tags = theRequest['provenanceRecord']['tags'];
+        let attachment = theRequest['attachment'];
+
+        // if there's an attachment create a blob to add to the record
+        const attachments = new Array<NamedBlob>();
+        if (attachment != "") {
+            attachment = theRequest['attachment']['file'];
+            let attachmentName = theRequest['attachment']['name'];
+            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
+            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
+            if (typeof blob !== 'string') {
+                console.log("attach type: " + typeof(blob))
+                attachments.push({ blob: blob, name: attachmentName });
+            }
+        }
+
+        let recordUrl = await createRecord(context, name, description, tags, attachments)
+        context.log(recordUrl)
+        return {
+            status: 200,
+            jsonBody: { recordUrl: recordUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create record: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+app.post("createRecord", {
+    authLevel: 'anonymous',
+    route: 'createRecord',
+    handler: createRecordHandler
+})
 
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
-    handler: createGroupHandler,
+    handler: createGroupHandler
 })
 
 app.get("emailSignupTestEndpoint", {
