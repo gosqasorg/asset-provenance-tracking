@@ -1103,7 +1103,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 
 async function createRecord(context, name, description, tags, attachments) {
     const baseUrl = process.env['backend_url'];
-    const frontendUrl = process.env['frontend_url'];  // todo: try returning frontend url instead like group..? (tests use backend, return key?)
+    const frontendUrl = process.env['frontend_url'];
     const deviceKey = await makeEncodedDeviceKey();
     const decodedDeviceKey = decodeKey(deviceKey);
 
@@ -1218,7 +1218,6 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
-// TODO: need this to exist on dev/live
 app.post("createRecord", {
     authLevel: 'anonymous',
     route: 'createRecord',

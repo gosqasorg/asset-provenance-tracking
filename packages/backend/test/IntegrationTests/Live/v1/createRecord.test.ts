@@ -3,12 +3,7 @@ import { readFile } from 'fs/promises';
 
 describe("Backend Record Creation Tests", () => {
     it("Create and Retrieve A Basic Record", async () => {
-        // TODO: replace baseUrl w/ process.env['api_url'] once it exists in production (do this for all tests)
-                // prod: none --> want https://gdtprodbackend.azurewebsites.net/api
-                // dev: https://gosqasbe.azurewebsites.net/api
-                // local: http://localhost:7071/api (local.settings.json)
-        const baseUrl = process.env['backend_url']?.slice(0, -11);
-        console.log("baseUrl ", baseUrl);
+        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
@@ -21,6 +16,7 @@ describe("Backend Record Creation Tests", () => {
         const postValues = { "provenanceRecord": record, "attachment": [] }
 
         const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        console.log("RECORDRESP", recordResponse)
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -47,7 +43,7 @@ describe("Backend Record Creation Tests", () => {
     });
 
     it("Create and Retrieve A Record with Tags", async () => {
-        const baseUrl = process.env['backend_url']?.slice(0, -11);
+        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
@@ -85,7 +81,7 @@ describe("Backend Record Creation Tests", () => {
     });
 
     it("Create and Retrieve A Record with Tags and Attachments", async () => {
-        const baseUrl = process.env['backend_url']?.slice(0, -11);
+        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
