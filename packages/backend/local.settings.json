@@ -13,7 +13,8 @@
     "api_url":"http://localhost:7071/api",
     "directory_id":"2cdccd46-d3ed-4eeb-ab6d-3c580f10014d",
     "app_registration_id":"11825a45-727c-489a-bf19-4a7ea72894a7",
-    "secret_value":"UrF8Q~mZchNHMKDf1hYlh0Jp4P3cFItvOoZEScSK"
+    "secret_value":"UrF8Q~mZchNHMKDf1hYlh0Jp4P3cFItvOoZEScSK",
+    "workspace_id": "f26c73b7-a547-497e-a33f-6f8f0b125fe3"
   },
   "Host": {
     "CORS": "*"

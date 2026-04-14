@@ -17,7 +17,7 @@ const tokenResponse = await fetch(
 );
 
 const { access_token: token } = await tokenResponse.json();
-const workspaceId = "f26c73b7-a547-497e-a33f-6f8f0b125fe3";
+const workspaceId = process.env["workspace_id"];
 
 async function runQuery(label: string, query: string): Promise<void> {
     const result = await fetch(

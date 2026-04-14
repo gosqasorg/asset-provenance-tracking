@@ -15,7 +15,6 @@ response = requests.post(
 )
 
 token = response.json()["access_token"]
-workspace_id = "f26c73b7-a547-497e-a33f-6f8f0b125fe3"
 
 def run_query(label, query):
     result = requests.post(
