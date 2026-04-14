@@ -29,11 +29,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 placeholder="Description" maxlength="5000" rows="3"></textarea>
             <div v-if="isGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
-                    placeholder="Group Record Keys (optional, separated with a comma)" />
+                    placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
             <div v-else>
                 <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey"
-                    placeholder="Group Key (optional)" />
+                    placeholder="Add to Group (key, optional)" />
             </div>
 
             <div>
