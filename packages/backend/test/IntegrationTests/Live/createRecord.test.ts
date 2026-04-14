@@ -8,6 +8,7 @@ describe("Backend Record Creation Tests", () => {
                 // dev: https://gosqasbe.azurewebsites.net/api
                 // local: http://localhost:7071/api (local.settings.json)
         const baseUrl = process.env['backend_url']?.slice(0, -11);
+        console.log("baseUrl ", baseUrl);
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
