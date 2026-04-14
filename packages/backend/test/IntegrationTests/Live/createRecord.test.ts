@@ -125,6 +125,18 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.isReportingKey).toBe(false);
             expect(responseString.attachments.length).toBe(1)
 
+            // Download attachment and confirm it matches original file
+            const attachmentHash = responseString.attachments[0];
+            const downloadUrl = `${baseUrl}attachment/${deviceKey}/${attachmentHash}`;
+            console.log('Downloading file from:', downloadUrl);
+            const downloadResponse = await fetch(downloadUrl);
+            expect(downloadResponse.ok).toBe(true);
+            const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer());
+            
+            // Reading original large file 
+            const originalBuffer = await readFile('./test/attachments/a200.jpg');
+            expect(Buffer.compare(originalBuffer, retrievedBuffer)).toBe(0);
+
 		} catch(error) {
 			console.error('(Create With Attachment Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
 			throw error;
