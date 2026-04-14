@@ -238,6 +238,7 @@ describe("Creating records with attachments", () => {
         }
     }, 600000);
 
+    // TODO: need to update test to use file <2MB (LargePDF2.pdf) otherwise will always fail
     it("Create record with large attachment", async () => {
         // Create record key
         const deviceKey = await makeEncodedDeviceKey();
