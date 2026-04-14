@@ -109,6 +109,54 @@ export async function postEmail(email: string) {
     }
 }
 
+//TODO: update function call parameters in createDevice.vue, createContainer.vue, and test/postNotificationEmail.spec.ts
+//TODO: find file with field for already created record
+
+
+export async function postNotificationEmail(deviceKey: string, email: string, tags: string[] = []) {
+    //TODO: implement tags
+
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
+    }
+    if (!email || typeof email !== 'string') {
+        throw new Error("Bad email provided.");
+    }
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    
+    const payload = {
+        email: email,
+        recordKey: deviceKey,  // bckend expects 'recordKey'?
+        tags: tags             
+    };
+
+    //match backend json format 
+    const response = await fetch(`${baseUrl}/notificationSubscription`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (response.status !== 200) {
+        let errorMessage = 'postNotificationEmail: Failed to save email';
+        //Identify specific error message so we can see more than just 'failed to save' and know what went wrong.
+        try {
+            const responseData = await response.json();
+            if (responseData.error) {
+                errorMessage = `postNotificationEmail: ${responseData.error}`;
+            } else if (responseData.message) {
+                errorMessage = `postNotificationEmail: ${responseData.message}`;
+            }
+        } catch (e) {
+            errorMessage = `postNotificationEmail: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+    }
+}
+
 export async function getStatistics() {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/statistics`, {
@@ -119,8 +167,9 @@ export async function getStatistics() {
 
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
+    const MAX_RETRIES = 3;
 
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= MAX_RETRIES; i++) {
         try {
             if (typeof formData !== 'undefined') {
                 response = await fetch(`${url}`, {
@@ -186,21 +235,86 @@ export async function connectivityChecker() {
     return;
 }
 
-export async function cacheRequest(formUrl: string, formData: FormData) {
+export async function stashRequest(formUrl: string, formData: FormData) {
     // Convert values to string and store them
     let valuesToStore = [];
     valuesToStore.push(['formUrl', formUrl]);
     valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get cache_counter and add 1 to it
-    let current_request = localStorage.getItem('cache_counter');
+    // Get stash_counter and add 1 to it
+    let current_request = localStorage.getItem('stash_counter');
     if (current_request == null) {
         current_request = '0';
     }
-    let cache_counter = parseInt(current_request) + 1;
-    localStorage.setItem('cache_counter', cache_counter.toString());
+    let stash_counter = parseInt(current_request) + 1;
+    localStorage.setItem('stash_counter', stash_counter.toString());
 
-    // Store the request at a unique key (gosqas_offline_cache_#)
-    let request_name = 'gosqas_offline_cache_' + cache_counter;
+    // Store the request at a unique key (gosqas_offline_stash_#)
+    let request_name = 'gosqas_offline_stash_' + stash_counter;
     localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+}
+
+export async function emptyStash() {
+    // See how many requests are stored, if any
+    let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+
+    for (stash_counter; stash_counter > 0; stash_counter--) {
+        try {
+            // Get the last request stored
+            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+            let fullUrl = request[0][1];
+            let record = request[1][1];
+
+            // Fulfill the request
+            const formData = new FormData();
+            formData.append('provenanceRecord', record);
+            let response = await fetchUrl(fullUrl, formData)
+            if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
+
+            // Add created key to a list of successfully created keys to display later
+            let keysCreated = [];
+            let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
+            if (existingKeys) {
+                for (const key of existingKeys.split(",")) {
+                    keysCreated.push(key)
+                }
+            }
+            keysCreated.push(currentKey)
+            localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
+
+            // Remove request from stash and update counter
+            localStorage.removeItem(request_name)
+            localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+        } catch (error) {
+            console.log("Record from localStorage failed to create: " + error)
+            return 404;
+        }
+    }
+
+    return 200;
+}
+
+export async function periodicChecker() {
+    // Return if a checker is already running
+    if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
+        console.log("Instance of periodicChecker is already running, returning")
+        return;
+    }
+    localStorage.setItem('gdt-awaiting-conectivity', "true");
+
+    let stash_empty = false;
+    let response = 404
+
+    // Wait for the user to come back online then empty the stash
+    while (!stash_empty) {
+        await connectivityChecker();
+        response = await emptyStash();
+        if (response == 200) {
+            stash_empty = true;
+        }
+    }
+
+    localStorage.setItem('gdt-awaiting-conectivity', "false");
 }
