@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container py-4">
       <!-- Loading indicator while data is being fetched -->
       <div v-if="isLoading" class="text-center">
-        Loading statistics…
+        Loading statistics (this might take a few minutes)…
       </div>
   
       <!-- Once data is loaded, show all statistic cards -->
@@ -116,6 +116,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </div>
             </div>
           </div>
+          <!-- Graph of records created this week -->
+          <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
+            <Plotly :data="recordsPerDay" :layout="chartLayout" />
+          </div>
+
+          <!-- Graph of times records were created this week -->
+          <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
+            <Plotly :data="recordsPerHour" :layout="chartLayout2" />
+          </div>
         </div>
       </div>
     </div>
@@ -123,16 +132,50 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
   <script>
   import { getStatistics } from '~/services/azureFuncs'
+  import PlotlyChart from '../components/Plotly.vue'
   
   export default {
     name: 'Statistics',
+
+    components: {
+      PlotlyChart
+    },
   
     data() {
       return {
         // Controls loading spinner
         isLoading: true,
         // Raw array of { timestamp, deviceID } items from API
-        myTimestampPairs: []
+        myTimestampPairs: [],
+        myRecords: 0,
+        myDevices: 0,
+
+        chartLayout: {
+          title: {text: 'Record Entries Created This Week'},
+          xaxis: {
+            title: {text: 'Day Created',
+                    type : 'category'}
+          },
+          yaxis: {
+            title: {text: 'Number of Records Created'},
+            tickmode: 'auto',
+            nticks: 10,
+            rangemode: 'tozero'
+          }
+        },
+
+        chartLayout2: {
+          title: {text: 'Record Entries Created Per Hour (Last 7 Days)'},
+          xaxis: {
+            title: {text: 'Hour Created'}
+          },
+          yaxis: {
+            title: {text: 'Number of Records Created'},
+            tickmode: 'auto',
+            nticks: 10,
+            rangemode: 'tozero'
+          }
+        }
       }
     },
   
@@ -140,15 +183,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       // Totals 
       // Total number of records fetched
       totalRecords() {
-        return this.myTimestampPairs.length
+        return this.myRecords;
       },
       // Total number of unique devices
       totalDevices() {
         // Remove duplicate device IDs
-        return new Set(this.myTimestampPairs.map(r => r.deviceID)).size
+        return this.myDevices;
       },
   
-      //Provenance record counts in time windows 
+      // Provenance record counts in time windows 
       lastHourRecordCount() {
         const now = Date.now()
         // Filter records with timestamp within last 1 hour
@@ -180,6 +223,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         )
         return new Set(recent.map(r => r.deviceID)).size
       },
+
       last24hDeviceCount() {
         const now = Date.now()
         const recent = this.myTimestampPairs.filter(
@@ -187,12 +231,91 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         )
         return new Set(recent.map(r => r.deviceID)).size
       },
+
       last7DaysDeviceCount() {
         const now = Date.now()
         const recent = this.myTimestampPairs.filter(
           r => now - Number(r.timestamp) <= 7 * 24 * 60 * 60 * 1000
         )
         return new Set(recent.map(r => r.deviceID)).size
+      },
+
+      // Get number of records created each day of the past week to graph
+      recordsPerDay() {
+        const d = new Date()
+        const now = Date.now()
+        let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
+        let hours = d.getHours() + (d.getMinutes() / 60)
+        let counted = 0
+
+        let x = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat']
+        let y = [0, 0, 0, 0, 0, 0, 0]
+
+        for (let i = 0; i <= today; i++) {
+          // Get records created today
+          let recent = this.myTimestampPairs.filter(
+            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
+          )
+          
+          // Add the records we found to the current day, subtracting records we already counted
+          y[today - i] = recent.length - counted
+          counted = recent.length
+          hours += 24
+        }
+
+        const chartData = [{
+          x: x,
+          y: y,
+          type: 'scatter',
+          marker: {
+            color: '#4e3681'
+          }
+        }]
+
+        return chartData
+      },
+
+      // Get number of records created each hour of the past week to graph
+      recordsPerHour() {
+        const d = new Date()
+        const now = Date.now()
+        let currentHour = d.getHours()
+        let minutes = d.getMinutes() / 60
+        let counted = 0
+
+        let x = ['1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00',
+                '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00']
+        let y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        for (let weekday = 1; weekday <= 7; weekday++) {
+          for (let hour = 0; hour < 24; hour++) {
+            let hourly = this.myTimestampPairs.filter(
+              // (1,2,3,... [the day] * (0-24 [hours ago] + 0-1 [minutes in the current hour])) * translate to milliseconds)
+              r => now - Number(r.timestamp) <= weekday * (hour + minutes) * 60 * 60 * 1000
+            )
+
+            // If a record was created within an hour, add it to the graph
+            if (hourly.length - counted > 0) {
+              // Get time 'x' hours ago and add records to that time
+              let timeCreated = currentHour - hour
+              if (timeCreated <= 0) { timeCreated += 24; }
+              y[timeCreated - 1] += hourly.length - counted
+              counted = hourly.length
+            }
+          }
+
+        }
+
+        const chartData = [{
+          x: x,
+          y: y,
+          type: 'bar',
+          marker: {
+            color: '#4e3681'
+          }
+        }]
+
+        return chartData
       }
     },
   
@@ -211,10 +334,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
     async mounted() {
       // On component mount, load data...
+      console.log("loading statistics...")
       const pairs = await this.fetchData()
-      // sort newest-first by timestamp
-      pairs.sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-      this.myTimestampPairs = pairs
+
+      // sort newest-first by timestamp (set to 0 if none exist)
+      if (!pairs.records) {
+        pairs.records = [[0, 0]]
+      }
+      pairs.records.sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
+      this.myTimestampPairs = pairs.records
+      this.myRecords = pairs.totalRecords
+      this.myDevices = pairs.totalDevices
+
       // Hide loading state
       this.isLoading = false
     }
