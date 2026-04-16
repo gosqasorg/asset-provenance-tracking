@@ -1,6 +1,12 @@
 {
   "routes": [
     {
+      "route": "/*",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://unicons.iconscout.com https://cdnjs.cloudflare.com; font-src 'self' https://unicons.iconscout.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.vimeocdn.com; connect-src 'self' http://localhost:7071 https://api.loganalytics.io https://login.microsoftonline.com https://*.githubassets.com; frame-src https://player.vimeo.com/; object-src 'none';"
+      }
+    },
+    {
       "route": "/index.html",
       "redirect": "/"
     }

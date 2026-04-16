@@ -4,6 +4,7 @@ dist/
 .DS_Store
 coverage/
 .azurite/
+azurite_data
 *.env
 *.ignore
 *.sw*
