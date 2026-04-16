@@ -22,6 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="data-privacy-container">
+    <video ref="video" autoplay muted playsinline></video>
+    <canvas ref="canvas"></canvas>
+    <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+
         <h1>Data & Privacy</h1>
         <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
@@ -50,6 +54,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import Learn_more from '~/layouts/learn_more.vue';
+import jsQR from 'jsqr';
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+
+const video = ref()
+const canvas = ref()
+export default {
+
+methods: {
+    qrCameraOffline () {
+
+        try {
+            navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}}).then((stream) => {
+                video.value.srcObject = stream;
+                video.value.play()
+            })
+
+
+            if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) {
+                canvas.value.width = video.value.videoWidth;
+                canvas.value.height = video.value.videoHeight;
+
+                const ctx = canvas.value.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.value.width, canvas.value.height);
+                const imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+                const qrdata = jsQR(imageData.data, imageData.width, imageData.heigth);
+            }
+        } 
+        catch (error) {
+            alert(error);
+        }
+
+
+        }
+            }
+        }
+
+
+
+
 </script>
 
 <style scoped>
