@@ -10,19 +10,17 @@ from selenium.webdriver.firefox.options import Options
 from multiprocessing import Process
 
 """Run file on command line with first argument = # of requests, second argument = # of bots, third optional argument = ip switch on"""
-
-"""e.g. When in the terminal, go to the directory containing python file, type in: python dos_dev_gosqas_with_parameters.py 5 5 on"""
+"""e.g. When in the terminal, go to the directory containing python the file, type in: python ddos_with_parameters.py 5 5 on"""
 """This will run python bot script with 5 requests total, 5 bots, and IP switch on"""
 """Third argument can be blank and the script will run in single IP mode"""
 
+"""For IP-Switch feature to work, input AWS access key and secret below, can sign up for free through AWS"""
 browser2 = ApiGateway(site="https://dev.gosqas.org/",
                       access_key_id='',
                       access_key_secret='')
 
 if len(sys.argv) == 4:
     browser2.start()
-else:
-    pass
 
 def make_fake_records(count):
     counter = 0
@@ -62,7 +60,7 @@ def make_fake_records(count):
         """Submit the record and close the browser"""
         submit = browser.find_element('xpath' ,'//*[@id="record-button"]')
         browser.execute_script('arguments[0].click();', submit)
-        WebDriverWait(browser, 600).until(expected_conditions.presence_of_element_located((By.XPATH, '/html/body/section/div/article/div/div[2]/div')))
+        #WebDriverWait(browser, 600).until(expected_conditions.presence_of_element_located((By.XPATH, '/html/body/section/div/article/div/div[2]/div')))
         print('Fake record #' + str(counter) + ' created from Bot #:' + str(count))
         time.sleep(1)
         browser.close()
