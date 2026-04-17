@@ -951,7 +951,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, tags: string[] = []) {
+async function createChild(context: InvocationContext, tags: string[] = [], isReportingKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -973,7 +973,7 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
             description: "",
             tags: tags,
             hasParent: true,
-            isReportingKey: false
+            isReportingKey: isReportingKey
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
@@ -992,7 +992,7 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     }
 }
 
-async function createChildren(context, number_of_children, tags?) {
+async function createChildren(context, number_of_children, hasReportingKey, tags) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
@@ -1002,6 +1002,13 @@ async function createChildren(context, number_of_children, tags?) {
 
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
+            if(hasReportingKey){
+                const reportingTags = [...tags, "reportingkey"]
+                if(!(thisChild = await createChild(context, reportingTags, true))) {
+                    continue;
+                }
+                childrenKeys.push(thisChild)
+            }
             break;
         }
     }
@@ -1009,23 +1016,29 @@ async function createChildren(context, number_of_children, tags?) {
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children) {
+async function createGroup(context, name, description, n_children, hasReportingKey, tags) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
     // Create children first
-    let childKeys = await createChildren(context, n_children)
+    let childKeys = await createChildren(context, n_children, hasReportingKey, tags)
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
+
+    let reporting_key = '';
+    if(hasReportingKey){
+        reporting_key = childKeys.at(-1);
+    }
 
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
         children_key: childKeys,  // Note: this is what turns a record into a group
-        tags: [],            
+        ...(reporting_key ? { reportingKey: reporting_key } : {}), // only gets added if reporting key is present
+        tags: tags,            
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
@@ -1046,7 +1059,9 @@ const GroupCreationOrderSchema = z.object({
     deviceName: z.string(),
     description: z.string(),
     tags: z.array(z.string()).optional(),
+    reportingKey: z.string().optional(),
     number_of_children: z.number().optional(),
+    hasReportingKey: z.boolean().optional(),
     custom_record_titles: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
@@ -1059,7 +1074,9 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['title']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        let hasReportingKey = theRequest['hasReportingKey']
+        let tags = theRequest['tags']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, hasReportingKey, tags)
         context.log(theGroupRecordPageUrl)
 
         return {
