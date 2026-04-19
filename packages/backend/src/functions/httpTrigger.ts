@@ -607,6 +607,15 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
+    const rateLimitHit = await rateLimit('getVersionLimitReached');
+    if (rateLimitHit) {
+        return {
+            status: 429,
+            body: "Error 429 Too Many Requests",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+
     return { 
         jsonBody: VERSION_INFO,
         headers: { "Content-Type": "application/json" }
@@ -614,6 +623,15 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 }
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('getKeyLimitReached');
+    if (rateLimitHit) {
+        return {
+            status: 429,
+            body: "Error 429 Too Many Requests",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+
     try{
         const key = await makeEncodedDeviceKey();
         return {
