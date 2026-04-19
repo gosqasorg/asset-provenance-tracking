@@ -32,8 +32,8 @@ export async function getProvenance(deviceKey: string) {
         const fullUrl = baseUrl + "/provenance/" + deviceKey;
 
         try {
-            let response = await fetchUrl(fullUrl);
-            return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
+            let response = await (await fetchUrl(fullUrl)).json();
+            return response as { record: any, attachments?: string[], timestamp: number }[];
         } catch (error) {
             throw error;
         }

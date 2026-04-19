@@ -64,7 +64,26 @@ function findDeviceIdFromName(blobName: string): string {
     return blobName.split("/", 4)[1];
 }
 
-function isEmpty(str) {
+async function rateLimit(rowKey: string): Promise<boolean> {
+    // If we're receiving too many requests throw an error
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, 'RateLimiterFlags', credential, { allowInsecureConnection: true })
+        await tableClient.createTable();
+
+        // Tables should always exist but worse case just skip the check
+        const response = await tableClient.getEntity('RateLimitHit', rowKey);
+        return <boolean>response.limitReached;
+    } catch (e) {
+        return undefined
+    }
+}
+
+export function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
@@ -352,6 +371,14 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 /* ----- API Endpoints Section 1/2: Functions ----- */
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('getProvLimitReached');
+    if (rateLimitHit) {
+        return { 
+            status: 429,
+            jsonBody: { error: "429 Too Many Requests" }
+        };
+    }
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -379,6 +406,11 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('postProvLimitReached');
+    if (rateLimitHit) {
+        return { status: 429 }
+    }
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -484,6 +516,14 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('getStatsLimitReached');
+    if (rateLimitHit) {
+        return {
+            status: 429,
+            jsonBody: { error: "429 Too Many Requests" },
+        }
+    }
+
     const containerExists = await containerClient.exists();
     if (!containerExists) { return { jsonBody: [] }; }
 
@@ -523,6 +563,11 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 };
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('postEmailLimitReached');
+    if (rateLimitHit) {
+        throw new Error('postEmail: Error 429 Too Many Requests');
+    }
+
     try {
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1`
@@ -728,6 +773,14 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
  }
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('postNotifEmailLimitReached');
+    if (rateLimitHit) {
+        return {
+            status: 429,
+            jsonBody: { message: "429 Too Many Requests" },
+        }
+    }
+
     try{
         const body = await request.json() as any;
         const email = body.email;

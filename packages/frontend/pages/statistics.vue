@@ -200,7 +200,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       // Fetches data from your existing API function
       async fetchData() {
         try {
-          return await getStatistics()
+          let stats = await getStatistics()
+          if (stats.error) {
+            throw new Error (stats.error)
+          }
+          return stats
         } catch (error) {
           // Show error via your snackbar utility
           this.$snackbar.add({ type: 'error', text: `Error: ${error}` })
