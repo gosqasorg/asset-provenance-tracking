@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="data-privacy-container">
-    <video ref="video" autoplay muted playsinline></video>
-    <canvas ref="canvas"></canvas>
+    <video ref="video" preload="auto" autoplay playsinline></video>
+    <canvas ref="canvas" ></canvas>
     <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
 
         <h1>Data & Privacy</h1>
@@ -53,12 +53,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-import Learn_more from '~/layouts/learn_more.vue';
 import jsQR from 'jsqr';
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const video = ref()
 const canvas = ref()
+let qrdata = null
 export default {
 
 methods: {
@@ -67,26 +67,45 @@ methods: {
         try {
             navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}}).then((stream) => {
                 video.value.srcObject = stream;
-                video.value.play()
+                video.value.load();
+                video.value.addEventListener('loadedmetadata', () => {
+                    video.value.play()
+                    console.log('Played after loadedmetaata');
+                    console.log('READYSTATE: ' + video.value.readyState)
+                    var ctx = canvas.value.getContext('2d');
+                    console.log('TEST1')
+                    ctx.value.width = video.value.width;
+                    console.log('TEST2')
+                    ctx.value.height = video.value.height;
+                    ctx.drawImage(video, 0, 0, ctx.value.width, ctx.value.height);
+                    var image = ctx.getImageData(0, 0, ctx.value.width, ctx.value.height);
+
+                    if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) {
+                        console.log('READYSTATE READY')
+                    }
+                })
+
+                console.log('Video SUCCESS');
+                console.log(video.value.readyState)
+                
+                requestAnimationFrame(this.tick);
+                if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) {
+                    console.log('readyState has NOTHING')
+                }
+
+                   //qrdata = jsQR(image.data, image.width, image.heigth);
+            
             })
-
-
-            if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) {
-                canvas.value.width = video.value.videoWidth;
-                canvas.value.height = video.value.videoHeight;
-
-                const ctx = canvas.value.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.value.width, canvas.value.height);
-                const imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
-                const qrdata = jsQR(imageData.data, imageData.width, imageData.heigth);
-            }
         } 
         catch (error) {
             alert(error);
         }
-
-
-        }
+        },
+    tick () {
+        if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) [
+            console.log('VIDEO READY')
+        ]
+    }
             }
         }
 
