@@ -84,7 +84,7 @@ async function rateLimit(rowKey: string): Promise<boolean> {
     }
 }
 
-export function isEmpty(str) {
+function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 

@@ -1,7 +1,6 @@
-import { app, InvocationContext, Timer } from '@azure/functions';
+import { InvocationContext, Timer } from '@azure/functions';
 import { ClientSecretCredential } from '@azure/identity';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
-import { isEmpty } from './httpTrigger.js'
 
 let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
     throw new Error('Env vars not set')
@@ -17,6 +16,10 @@ const POST_PROV_LIMIT = 500;
 const EMAIL_LIMIT = 100;
 const EMAIL_NOTIF_LIMIT = 100;
 const GET_STATS = 50;
+
+function isEmpty(str) {
+    return (!str || str.length === 0 );
+}
 
 export async function rateLimiterHandler(myTimer: Timer, context: InvocationContext): Promise<void> {
     context.log('Rate Limiter function started.');
