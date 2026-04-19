@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
     <div class="container-fluid" id="data-privacy-container">
     <video ref="video" preload="auto" autoplay playsinline></video>
-    <canvas ref="canvas" ></canvas>
+    <canvas ref="canvas" hidden ></canvas>
     <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
 
         <h1>Data & Privacy</h1>
@@ -54,53 +54,73 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import jsQR from 'jsqr';
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 
 const video = ref()
 const canvas = ref()
 let qrdata = null
+
 export default {
 
 methods: {
     qrCameraOffline () {
-
+        // Constraints of video screen to fit on most mobile devices
+        const constraints = {
+            video: {
+                width: {ideal: 1280},
+                height: {ideal: 720},
+                facingMode: "environment",
+                aspectRatio: {ideal: 1.777777778}
+            }
+        }
         try {
-            navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}}).then((stream) => {
+            // Get user permission to use camera then display camera view once readyState is 4 or 'loadedmetadata'
+            navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
                 video.value.srcObject = stream;
                 video.value.load();
                 video.value.addEventListener('loadedmetadata', () => {
                     video.value.play()
-                    console.log('Played after loadedmetaata');
-                    console.log('READYSTATE: ' + video.value.readyState)
-                    var ctx = canvas.value.getContext('2d');
-                    console.log('TEST1')
- 
-                    canvas.value.width = video.value.videoWidth;
-                    canvas.value.height = video.value.videoHeight;
-
-                    try {
-                        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
-                        console.log('TEST2')
-                    } catch (err) {
-                        console.log(err)
-                    }
-                    var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
-                    console.log('TEST3')
-                    console.log(imageData)
+                    requestAnimationFrame(this.tick)
                 })
-        
-                   //qrdata = jsQR(image.data, image.width, image.heigth);
-            
             })
         } 
         catch (error) {
             alert(error);
         }
         },
+    tick () {
+        // Draw video elements onto canvas to get image data
+        canvas.value.width = video.value.videoWidth;
+        canvas.value.height = video.value.videoHeight; 
+        var ctx = canvas.value.getContext('2d');
+        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
+        var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+
+        // Parse ImageData using jsQR to extract deviceKey
+        qrdata = jsQR(imageData.data, imageData.width, imageData.height);
+        var toRegEx = qrdata?.data;
+
+        // Use RegEx to extract the deviceKey to display to user
+        if (toRegEx) {
+            var deviceKey = toRegEx.match('([^/]*)$');
+            alert(deviceKey[1]);
+
+            // Close the video stream when done
+            const stream = video.value.srcObject;
+            if(stream){
+                const tracks = stream.getTracks();
+
+                tracks.forEach((track) => {
+                    track.stop()
+                })
+            video.value.srcObject = null
             }
         }
-
-
+        // Loop to keep scanning for qr code
+        requestAnimationFrame(this.tick);
+            }
+        }
+        }
 
 
 </script>
