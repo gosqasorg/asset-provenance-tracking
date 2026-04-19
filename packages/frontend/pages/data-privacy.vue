@@ -74,25 +74,21 @@ methods: {
                     console.log('READYSTATE: ' + video.value.readyState)
                     var ctx = canvas.value.getContext('2d');
                     console.log('TEST1')
-                    ctx.value.width = video.value.width;
-                    console.log('TEST2')
-                    ctx.value.height = video.value.height;
-                    ctx.drawImage(video, 0, 0, ctx.value.width, ctx.value.height);
-                    var image = ctx.getImageData(0, 0, ctx.value.width, ctx.value.height);
+ 
+                    canvas.value.width = video.value.videoWidth;
+                    canvas.value.height = video.value.videoHeight;
 
-                    if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) {
-                        console.log('READYSTATE READY')
+                    try {
+                        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
+                        console.log('TEST2')
+                    } catch (err) {
+                        console.log(err)
                     }
+                    var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+                    console.log('TEST3')
+                    console.log(imageData)
                 })
-
-                console.log('Video SUCCESS');
-                console.log(video.value.readyState)
-                
-                requestAnimationFrame(this.tick);
-                if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) {
-                    console.log('readyState has NOTHING')
-                }
-
+        
                    //qrdata = jsQR(image.data, image.width, image.heigth);
             
             })
@@ -101,11 +97,6 @@ methods: {
             alert(error);
         }
         },
-    tick () {
-        if (video.value.readyState === video.value.HAVE_ENOUGH_DATA) [
-            console.log('VIDEO READY')
-        ]
-    }
             }
         }
 
