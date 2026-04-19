@@ -7,6 +7,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { rateLimiterHandler } from './rateLimiterHandler.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -1240,4 +1241,10 @@ app.post('recallChildren', {
     authLevel: 'anonymous',
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
+})
+
+const TIMEDELTA = 5;  // call rateLimiter every TIMEDELTA minutes
+app.timer('rateLimiter', {
+    schedule: `0 */${TIMEDELTA} * * * *`,
+    handler: rateLimiterHandler,
 })

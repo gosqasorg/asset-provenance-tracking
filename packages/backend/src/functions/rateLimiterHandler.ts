@@ -19,7 +19,7 @@ const EMAIL_NOTIF_LIMIT = 100;
 const GET_STATS = 50;
 
 export async function rateLimiterHandler(myTimer: Timer, context: InvocationContext): Promise<void> {
-    context.log('Rate Limit Timer function processed the request.');
+    context.log('Rate Limiter function started.');
 
     const functions = ['getProvenance', 'postProvenance', 'postEmail', 'postNotificationEmail', 'getStatistics']
     const functionLimits = [GET_PROV_LIMIT, POST_PROV_LIMIT, EMAIL_LIMIT, EMAIL_NOTIF_LIMIT, GET_STATS];
@@ -27,7 +27,6 @@ export async function rateLimiterHandler(myTimer: Timer, context: InvocationCont
     let functionCounts = [0, 0, 0, 0, 0, 0, 0]
 
     try {
-        // TODO: these don't exist on dev yet, and don't have default local values (so will fail locally)
         const directory_id = process.env['AZURE_TENANT_ID'];
         const client_id = process.env['AZURE_CLIENT_ID'];
         const client_secret = process.env['AZURE_CLIENT_SECRET'];
@@ -84,10 +83,6 @@ export async function rateLimiterHandler(myTimer: Timer, context: InvocationCont
     } catch (error) {
         context.error("Rate Limiter: Failed to update flags: " + error);
     }
-}
 
-// Periodically check number of API calls using a timer trigger function
-app.timer('rateLimiter', {
-    schedule: `0 */${TIMEDELTA} * * * *`,
-    handler: rateLimiterHandler,
-});
+    context.log('Rate Limiter function complete.');
+}
