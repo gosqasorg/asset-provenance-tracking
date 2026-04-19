@@ -52,7 +52,7 @@ export async function rateLimiterHandler(myTimer: Timer, context: InvocationCont
         context.error("Rate Limiter: Failed to get counts: " + error);
     }
 
-    // Update flags based on # of calls
+    // Update flags based on # of calls in timedelta
     try {    
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1`
