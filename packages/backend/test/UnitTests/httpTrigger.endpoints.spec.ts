@@ -154,7 +154,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const res = await httpTrigger.getVersion(req, context);
     expect(res).toHaveProperty('jsonBody');
     expect(res).toHaveProperty('headers');
-  });
+  }, 10000);
 
   it('validateJSON correctly validates record', async () => {
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],

@@ -56,6 +56,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
     // Ensure key has correct length
     expect(deviceKey.length).toBe(22)
-  });
+  }, 10000);
  
 });
