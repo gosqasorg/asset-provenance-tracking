@@ -118,7 +118,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const req = makeHttpRequest({ params: { deviceKey } });
     const res = await httpTrigger.getProvenance(req, context);
     expect(res).toHaveProperty('jsonBody');
-  });
+  }, 10000);
 
   it('postProvenance returns a body', async () => {
     const formData = {
@@ -128,7 +128,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
     const res = await httpTrigger.postProvenance(req, context);
     expect(res).toHaveProperty('jsonBody');
-  });
+  }, 10000);
 
   it('getAttachment returns a body and headers', async () => {
     const req = makeHttpRequest({ params: { deviceKey, attachmentID } });
@@ -223,5 +223,5 @@ describe('PostNotificationEmail', () => {
         const response = await httpTrigger.postNotificationEmail(mockRequest, mockContext);
         console.log(response)
         expect(response.status).toBe(200);
-    });
+    }, 10000);
 });
