@@ -18,6 +18,8 @@ const EMAIL_NOTIF_LIMIT = 100;
 const GET_STATS_LIMIT = 50;
 const NEW_KEY_LIMIT = 1000;
 const GET_VERSION_LIMIT = 50;
+const UPGRADE_PROV_LIMIT = 50;
+const EMAIL_TEST_LIMIT = 50;
 
 function isEmpty(str) {
     return (!str || str.length === 0 );
@@ -26,10 +28,10 @@ function isEmpty(str) {
 export async function rateLimiterHandler(myTimer: Timer, context: InvocationContext): Promise<void> {
     context.log('Rate Limiter function started.');
 
-    const functions = ['getProvenance', 'postProvenance', 'postEmail', 'postNotificationEmail', 'getStatistics', 'getNewDeviceKey', 'getVersion']
-    const functionLimits = [GET_PROV_LIMIT, POST_PROV_LIMIT, EMAIL_LIMIT, EMAIL_NOTIF_LIMIT, GET_STATS_LIMIT, NEW_KEY_LIMIT, GET_VERSION_LIMIT];
-    const functionTables = ['getProvLimitReached', 'postProvLimitReached', 'postEmailLimitReached', 'postNotifEmailLimitReached', 'getStatsLimitReached', 'getKeyLimitReached', 'getVersionLimitReached']
-    let functionCounts = [0, 0, 0, 0, 0, 0, 0];
+    const functions = ['getProvenance', 'postProvenance', 'postEmail', 'postNotificationEmail', 'getStatistics', 'getNewDeviceKey', 'getVersion', 'upgradeProvenance', 'emailSignupTestEndpoint']
+    const functionLimits = [GET_PROV_LIMIT, POST_PROV_LIMIT, EMAIL_LIMIT, EMAIL_NOTIF_LIMIT, GET_STATS_LIMIT, NEW_KEY_LIMIT, GET_VERSION_LIMIT, UPGRADE_PROV_LIMIT, EMAIL_TEST_LIMIT];
+    const functionTables = ['getProvLimitReached', 'postProvLimitReached', 'postEmailLimitReached', 'postNotifEmailLimitReached', 'getStatsLimitReached', 'getKeyLimitReached', 'getVersionLimitReached', 'upgradeProvLimitReached', 'emailTestLimitReached']
+    let functionCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     try {
         const directory_id = process.env['AZURE_TENANT_ID'];

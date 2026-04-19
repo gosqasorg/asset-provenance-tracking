@@ -487,6 +487,15 @@ async function notifySubscribers(  deviceKey: string, context: InvocationContext
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('upgradeProvLimitReached');
+    if (rateLimitHit) {
+        return { 
+            status: 429,
+            body: "Error 429 Too Many Requests",
+            headers: { "Content-Type": "text/plain" }
+        };
+    }
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const body = await convertLegacyProvenance(containerClient, deviceKey);
     return { jsonBody: body ?? { "already-converted": true} };
@@ -996,6 +1005,15 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
        2. Get it back out
        3. Hand both responses back
      */
+
+    const rateLimitHit = await rateLimit('emailTestLimitReached');
+    if (rateLimitHit) {
+        return { 
+            status: 429,
+            body: "Error 429 Too Many Requests",
+            headers: { "Content-Type": "text/plain" }
+        };
+    }
 
     try {
         const key = await makeEncodedDeviceKey()
