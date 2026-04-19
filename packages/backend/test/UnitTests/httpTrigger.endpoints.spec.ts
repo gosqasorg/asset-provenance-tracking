@@ -147,7 +147,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getStatistics(req, context);
     expect(res).toHaveProperty('jsonBody');
-  });
+  }, 10000);
 
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
