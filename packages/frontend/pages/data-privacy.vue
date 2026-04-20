@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container-fluid" id="data-privacy-container">
     <video ref="video" preload="auto" autoplay playsinline></video>
     <canvas ref="canvas" hidden ></canvas>
+    <p>Key from scanned QR: {{qrKey}}</p>
     <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
 
         <h1>Data & Privacy</h1>
@@ -58,6 +59,7 @@ import { ref } from 'vue'
 
 const video = ref()
 const canvas = ref()
+var qrKey = ref()
 let qrdata = null
 
 export default {
@@ -103,7 +105,8 @@ methods: {
         // Use RegEx to extract the deviceKey to display to user
         if (toRegEx) {
             var deviceKey = toRegEx.match('([^/]*)$');
-            alert(deviceKey[1]);
+            qrKey.value = deviceKey[1];
+            alert('QR Code Scanned');
 
             // Close the video stream when done
             const stream = video.value.srcObject;
