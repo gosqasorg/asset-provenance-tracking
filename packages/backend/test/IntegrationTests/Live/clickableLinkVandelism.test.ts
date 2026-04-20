@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import clickableLink from "../../../../frontend/utils/clickableLink";
 import { makeEncodedDeviceKey, validateKey } from "../../../src/utils/keyFuncs";
-import { readFile } from 'fs/promises';
 
 const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
 let timeout = 30000;
@@ -52,7 +51,7 @@ async function fetchDescription (deviceKey: string): Promise<string> {
     let responseString = JSON.parse(JSON.stringify(data[data.length - 1]));
     return responseString.record.description;
 }
-
+ 
 
 
 describe('clickableLink: Vandalism Integration Tests', () => {
@@ -83,7 +82,6 @@ describe('clickableLink: Vandalism Integration Tests', () => {
         }
     }, timeout);
 
-    // <script> tags should be entity-encoded, not executed
     it('Script tag injected in description is entity-encoded', async () => {
         const payload = "<script>alert('xss')</script> Innocent description";
 
@@ -100,7 +98,6 @@ describe('clickableLink: Vandalism Integration Tests', () => {
         expect(html).toContain('&gt');
     }, timeout);
 
-    // <img onerror> is a common XSS vector - should be entity-encoded
     it('Img onerror XSS payload in description is entity-encoded', async () => {
         const payload = '<img src=x onerror=alert(1)> Normal text';
 
@@ -115,7 +112,6 @@ describe('clickableLink: Vandalism Integration Tests', () => {
         expect(html).toContain('&lt');
     }, timeout);
 
-    // <style> tags can hide content or exfiltrate data - should be entity-encoded
     it('Style tag with CSS injection is entity-encoded', async () => {
         const payload = '<style>body { display: none; }</style>';
 
@@ -149,7 +145,6 @@ describe('clickableLink: Vandalism Integration Tests', () => {
         }
     }, timeout);
 
-    // " gets encoded to &quot before URL wrapping, so onmouseover can't break out of the href
     it('Quote injection in URL does not produce an executable onmouseover attribute', async () => {
         const payload = 'https://evil.com" onmouseover="alert(1)';
 
@@ -166,7 +161,6 @@ describe('clickableLink: Vandalism Integration Tests', () => {
         }
     }, timeout);
 
-    // Safe url and a script tag in the same description - url should be linked, tag should be encoded
     it('Script tag alongside a valid URL: url is linked, tag is encoded', async () => {
         const payload = "Check out https://gosqas.org <script>alert('xss')</script>";
 
