@@ -1069,6 +1069,8 @@ describe("Group Creation Tests", () => {
 
 	}, 60000);
 
+	
+
 });
 
 describe("Record Creation Tests", () => {
@@ -1193,4 +1195,15 @@ describe("Record Creation Tests", () => {
 			throw error;
 		}
 	}, 600000);
+
+	it("should return a 404 error when attempting to reach an API endpoint that doesn't exist", async () => {
+		const localUrl = "http://localhost:7071/api";
+
+		const failedProv = await fetch(`${localUrl}/provenance/garbageProv`);
+		console.log("Prov: ", failedProv)
+
+		const failedEndpoint = await fetch(`${localUrl}/garbageEndpoint`);
+		console.log("Endpoint: ", failedEndpoint)
+		
+	}, 60000);
 });
