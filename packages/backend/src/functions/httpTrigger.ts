@@ -1143,6 +1143,15 @@ const GroupCreationOrderSchema = z.object({
 });
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const rateLimitHit = await rateLimit('createGroupLimitReached');
+    if (rateLimitHit) {
+        return {
+            status: 429,
+            jsonBody: { data: "429 Too Many Requests" },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+    
     try{
         let theRequest = await request.json()
         GroupCreationOrderSchema.parse(theRequest)
