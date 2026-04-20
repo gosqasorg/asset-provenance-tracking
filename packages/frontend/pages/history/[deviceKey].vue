@@ -28,13 +28,13 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 // Catches the error when the key is invalid / not found and prevents it from not crashing
 //i.e., not sending the invalid url
 let provenance: any[] = [];
+let recordHasParent = false;
 try {
 	provenance = await getProvenance(recordKey);
+	recordHasParent = hasParent(provenance);
 } catch (e) {
 	provenance = [];
 }
-
-const recordHasParent = hasParent(provenance);
 </script>
 
 <template>
@@ -290,6 +290,10 @@ async mounted() {
           this.isLoading = false;
         }, 1000); // logs after 1 second
         console.log(error)
+		this.$snackbar.add({
+            type: 'error',
+            text: <string>error
+		});
 	}
 },
 beforeDestroy() {
