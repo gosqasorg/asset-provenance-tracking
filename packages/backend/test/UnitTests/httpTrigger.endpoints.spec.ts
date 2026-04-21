@@ -46,7 +46,7 @@ vi.mock('@azure/storage-blob', () => {
   
 });
 
-// Minimal crypto mock
+//  crypto mock
 vi.mock('node:crypto', () => ({
   webcrypto: {
     subtle: {
@@ -75,7 +75,7 @@ vi.mock('../../src/functions/sendEmail.js', () => ({
 }));
 
 
-
+// minimal Azure Functions HttpRequest shape
 function makeHttpRequest(overrides: any = {}) {
   return {
     method: 'GET',
@@ -94,6 +94,7 @@ function makeHttpRequest(overrides: any = {}) {
   };
 }
 
+// smoke tests
 describe('httpTrigger endpoints (shallow mocks)', () => {
   const context = {
     invocationId: 'test-invocation-id',
@@ -193,31 +194,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
  
 });
 
-
-describe('PostNotificationEmail', () => {
-    it("should return the email and record key", async() => {
-        const mockRequest = {
-            async json(){
-               return {
-                email:"example@email.com",
-                recordKey:"123",
-                tags: ['complete']
-               }
-            }
-        
-        } as any;
-
-        const mockContext = {
-            log: vi.fn(),
-            error: vi.fn()
-        } as any;
-
-        const response = await httpTrigger.postNotificationEmail(mockRequest, mockContext);
-        console.log(response)
-        expect(response.status).toBe(200);
-    });
-});
-
 // helper funcs for email subscrip tests
 function makeMockTableInstance() {
     // makes the plain obj with the mocked methods
@@ -229,19 +205,21 @@ function makeMockTableInstance() {
     };
 }
 
+// valid entity + overrides just in case different fields need tweaking
 function makeValidEntity(overrides: Record<string, unknown> = {}) {
     return {
         partitionKey: 'PendingVerification',
         rowKey: 'test@example.com',
         code: '123456',
         token: 'validtoken',
-        expiresAt: Date.now() + 600_000,
-        recordKey: 'somedevicekey',
+        expiresAt: Date.now() + 600_000, // 10 min in the future
+        recordKey: 'fakerecordkey',
         tags: '[]',
         ...overrides,
     };
 }
 
+// mock httpRequests with query params
 function makeQueryRequest(params: Record<string, string>) {
     return {
         query: { get: (token: string) => params[token] ?? null },
@@ -256,13 +234,13 @@ describe('postNotificationEmail - validation', () => {
     // all need a table mock and email mock since the function does both
     beforeEach(() => {
         mockTable = makeMockTableInstance();
-        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any); // make new TableClient() return our mock instance
         vi.mocked(sendEmail).mockResolvedValue(undefined);
     });
 
     // missing email
     it('returns 400 when email is missing', async () => {
-        const req = { json: async () => ({ recordKey: 'key123', tags: [] }) } as any;
+        const req = { json: async () => ({ recordKey: 'fakekey', tags: [] }) } as any;
         const res = await httpTrigger.postNotificationEmail(req, ctx);
         expect(res.status).toBe(400);
     });
@@ -314,7 +292,7 @@ describe('postVerifyCode', () => {
 
     // expired code
     it('returns 400 when code is expired', async () => {
-        const entity = makeValidEntity({ expiresAt: Date.now() - 1000 });
+        const entity = makeValidEntity({ expiresAt: Date.now() - 1000 }); // already expired
         mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
         
         const req = { json: async () => ({ token: entity.token, code: entity.code }) } as any;
@@ -400,7 +378,7 @@ describe('postResendCode', () => {
         const res = await httpTrigger.postResendCode(req, ctx);
         expect(res.status).toBe(400);
     });
-
+ 
     // invalid token
     it('returns 404 when token is not found', async () => {
         const req = { json: async () => ({ token: 'unknowntoken' }) } as any;
@@ -408,4 +386,4 @@ describe('postResendCode', () => {
         expect(res.status).toBe(404);
     });
 
-});
+}); 

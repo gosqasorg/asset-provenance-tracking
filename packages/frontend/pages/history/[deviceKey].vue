@@ -111,17 +111,24 @@ const recordHasParent = hasParent(provenance);
               </div>
             </section>
 
-            <div class="buttons-container">
+            <div class="action-buttons">
+              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+
               <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-              <ProvenanceShareDropdown 
-                :deviceName="deviceRecord.deviceName" 
-                :description="deviceRecord.description"
-                :fontSize="20"
-                :height="66"
-                :width="48">
-              </ProvenanceShareDropdown>
+                <ProvenanceShareDropdown
+                  :deviceName="deviceRecord.deviceName"
+                  :description="deviceRecord.description"
+                  :fontSize="20"
+                  :height="66"
+                  :width="33"
+                  >
+                </ProvenanceShareDropdown>
             </div>
+
+            <!-- Email notifications modal -->
+            <ModalsEmailNotification />
+
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
             </section>
@@ -397,16 +404,17 @@ export default {
   justify-content: space-between;
 }
 
-.buttons-container {
+.action-buttons {
   margin-bottom: 20px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  gap: 12px;
 }
 
+.notif-btn,
 .download-btn {
+  flex: 1 1 0;
   margin-top: 20px;
-  width: 48% !important;
 }
 
 .btn-primary {
@@ -444,9 +452,11 @@ export default {
 }
 
 /* Wrap buttons once screen gets below a certain size */
-@media (max-width: 991px) {
-  .download-btn {
-    width: 100% !important;
+@media (max-width: 1140px) {
+  .notif-btn,
+  .download-btn
+  {
+    flex: 1 1 100%;
   }
 }
 
@@ -577,6 +587,7 @@ a:visited {
 }
 
 .btn {
+  box-sizing: border-box;
   height: 66px;
   padding: 18px 22px;
   /*     margin: 5px;*/
@@ -666,6 +677,12 @@ a:visited {
     color: white;
   }
 
+  .notif-btn {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
+    color: white;
+  }
+
   .share-btn {
     background-color: #1E2019;
     border: 2px solid #FFFFFF;
@@ -673,6 +690,11 @@ a:visited {
   }
 
   .download-btn:hover {
+    background-color: white;
+    color: black;
+  }
+
+  .notif-btn:hover {
     background-color: white;
     color: black;
   }
@@ -747,6 +769,16 @@ a:visited {
   }
 
   .download-btn:hover {
+    background-color: #e6f6ff !important;
+  }
+
+  .notif-btn {
+    background-color: #CCECFD;
+    border: #CCECFD;
+    color: black;
+  }
+
+  .notif-btn:hover {
     background-color: #e6f6ff !important;
   }
 }

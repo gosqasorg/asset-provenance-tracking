@@ -202,7 +202,7 @@ export default {
 }
 
 /* Switches to mobile sizing */
-@media (max-width: 991px) {
+@media (max-width: 1140px) {
     .share-container {
         width: 100%;
     }
