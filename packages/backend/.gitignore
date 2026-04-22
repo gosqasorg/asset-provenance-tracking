@@ -50,6 +50,3 @@ __azurite_db*__.json
 
 # Test coverage
 coverage/
-
-# Dev only: if you see this, delete it
-foobar.deleteme
