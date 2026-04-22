@@ -9,8 +9,8 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "legacy": "node packages/legacy/dist/app.js",
-    "test": "(cd packages/frontend && npm run coverage); (cd packages/backend && npm run coverage);",
-    "prepare": "husky"
+    "test": "(cd packages/frontend && npm run coverage); (cd packages/backend && npm run coverage);"
+    "setup": "cp packages/backend/local.settings.json.template packages/backend/local.settings.json"
   },
   "workspaces": [
     "packages/legacy"
