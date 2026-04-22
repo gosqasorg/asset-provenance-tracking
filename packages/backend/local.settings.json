@@ -11,7 +11,8 @@
     "backend_url":"http://localhost:7071/api/provenance/",
     "frontend_url":"http://localhost:3000",
     "api_url":"http://localhost:7071/api",
-    "secret_value":"secret"
+    "secret_value":"secret",
+    "2nd_secret_delete":"test"
   },
   "Host": {
     "CORS": "*"
