@@ -10,7 +10,7 @@
   "scripts": {
     "legacy": "node packages/legacy/dist/app.js",
     "test": "(cd packages/frontend && npm run coverage); (cd packages/backend && npm run coverage);",
-    "prepare": "husky"
+    "setup": "git update-index --assume-unchanged packages/backend/local.settings.json",
   },
   "workspaces": [
     "packages/legacy"
