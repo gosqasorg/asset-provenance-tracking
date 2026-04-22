@@ -10,7 +10,8 @@
     "COMMUNICATION_SERVICES_CONNECTION_STRING":"",
     "backend_url":"http://localhost:7071/api/provenance/",
     "frontend_url":"http://localhost:3000",
-    "api_url":"http://localhost:7071/api"
+    "api_url":"http://localhost:7071/api",
+    "secret_value":"secret"
   },
   "Host": {
     "CORS": "*"
