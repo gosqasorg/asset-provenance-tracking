@@ -9,8 +9,7 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "legacy": "node packages/legacy/dist/app.js",
-    "test": "(cd packages/frontend && npm run coverage); (cd packages/backend && npm run coverage);",
-    "setup": "git update-index --assume-unchanged packages/backend/local.settings.json"
+    "test": "(cd packages/frontend && npm run coverage); (cd packages/backend && npm run coverage);"
   },
   "workspaces": [
     "packages/legacy"
