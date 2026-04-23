@@ -53,23 +53,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
-            <!-- Sign up for email notifications-->
-            <h4 class="p-1 my-0">
-                <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
-            </h4>
-
-            <div v-if="notify">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    required placeholder="Email"
-                    @keyup.enter=""
-                />
-                </div>
-
             <!-- Volunteer Feedback Email --> 
-            <h4 class="p-1 my-0">
+            <h4 class="p-1">
                 <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
@@ -86,15 +71,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <!-- Offline Banner -->
-            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
                 <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
                 </div> 
             </Banner>
 
+            <!-- Banner to Offline History Create Page -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
+
             <!-- Back Online Banner -->
-            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
                 </div>
             </Banner>
@@ -120,7 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -140,8 +134,6 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
-            notify: false,          //sign up for email notifs vals
-            emailInput: '',
             isChecked: false,
             textInput: '',
             customized: false,
@@ -357,14 +349,6 @@ export default {
                 if (response && this.isChecked && this.textInput) {
                         await postEmail(this.textInput);
                 }
-    
-                //Repeated logic from lines 171-177 in CreateDevice.vue
-                if (response && this.notify && this.emailInput) {
-                    const email = this.emailInput.trim();
-                    await postNotificationEmail(deviceKey,email);
-                } else if (!response && this.notify && this.emailInput) {
-                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
-                }
 
                 // Navigate to the new group page
                 const failure = await this.$router.push({ path: `/record/${deviceKey}` });
@@ -467,16 +451,8 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
+    .banner-link {
+        color: #CCECFD;
     }
 }
 /* Light mode version*/
@@ -503,16 +479,8 @@ export default {
         background-color: #4E3681;  
         color: white;
     }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
+    .banner-link {
+        color: #4E3681;
     }
 }
 </style>

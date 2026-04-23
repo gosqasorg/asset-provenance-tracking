@@ -89,7 +89,7 @@ const recordHasParent = hasParent(provenance);
 			class="left-col">
 
 			<!-- Offline Banner Top-->
-			<Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+			<Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
 				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
 				</div>
 				<div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
@@ -97,8 +97,17 @@ const recordHasParent = hasParent(provenance);
 				</div> 
 			</Banner>
 
+			<!-- Banner to Offline History Create Page -->
+			<Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
+
 			<!-- Back Online Banner -->
-			<Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+			<Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+				<img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
 				<div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
 				</div>
 			</Banner>
@@ -135,32 +144,26 @@ const recordHasParent = hasParent(provenance);
 			<div class="buttons-container">
 			<button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-              <ProvenanceShareDropdown 
-                :deviceName="deviceRecord.deviceName" 
-                :description="deviceRecord.description"
-                :fontSize="20"
-                :height="66">
-              </ProvenanceShareDropdown>
-
-              <EmailNotificationSignup
-                :recordKey="_recordKey"
-                :fontSize="20"
-                :height="66">
-              </EmailNotificationSignup>
-              
-            </div>
-            <section id="recalled">
-              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
-            </section>
-            <section id="recent">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
-            </section>
-            <section id="device-creation">
-              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-            </section>
-            <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-            </section>
+			<ProvenanceShareDropdown 
+				:deviceName="deviceRecord.deviceName" 
+				:description="deviceRecord.description"
+				:fontSize="20"
+				:height="66"
+				:width="48">
+			</ProvenanceShareDropdown>
+			</div>
+			<section id="recalled">
+			<ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+			</section>
+			<section id="recent">
+			<ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
+			</section>
+			<section id="device-creation">
+			<ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+			</section>
+			<section id="create-record">
+			<ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+			</section>
 
 			<section id="child-keys">
 			<a class="btn mb-4 user-manual btn-secondary" id="user-manual-btn" href="../user_manual.pdf"
@@ -241,7 +244,7 @@ data() {
         hasReportingKey: false,
         childKeys: [] as string[],
         _recordKey: "",
-        valid: false
+        valid: false,
 	}
 },
 computed: {
@@ -252,7 +255,7 @@ computed: {
 		} else {
 			return false;
 		}
-		},
+	},
     // Controls the visibility of online banner based on global variable displayOnlineBanner
     onlineBannerToggle() {
         if (displayOnlineBanner === true) {
@@ -303,6 +306,12 @@ beforeDestroy() {
 	});
 },
 methods: {
+	sendRecordKey() {
+		this.$router.push({
+			path: '/history/offline',
+			query: { key: this._recordKey }
+		})
+	},
 	downloadQRCode() {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
@@ -430,37 +439,15 @@ methods: {
 }
 
 .buttons-container {
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.buttons-container > :deep(.notify-btn) {
-  margin-left: 0 !important;
-  margin-top: 0 !important;
-  flex: 1 1 300px;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-}
-
-.buttons-container :deep(.buttons-container) {
-    flex: 1 1 300px !important;
-    width: 100% !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-.buttons-container :deep(.share-btn) {
-    width: 100%;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .download-btn {
-  margin-top: 0;
-  flex: 1 1 300px;
+    margin-top: 20px;
+    width: 48% !important;
 }
 
 .btn-primary {
@@ -741,17 +728,10 @@ h1 {
 	background-color: white;
 	color: black;
 }
-.banner {
-	background-color: #3e231c;
-	border-color: #fe9c9e;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: white;
-	}
+
+.banner-link {
+	color: #CCECFD;
+}
 }
 
 /* Light mode version*/
@@ -814,16 +794,9 @@ h1 {
 .download-btn:hover {
 	background-color: #e6f6ff !important;
 }
-.banner {
-	background-color: #ffe3e2;
-	border-color: #fa9e9f;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: black;
-	}
+
+.banner-link {
+	color: #4E3681;
+}
 }
 </style>
