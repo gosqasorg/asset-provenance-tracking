@@ -129,3 +129,7 @@ Azure Static Web Apps CLI docs: https://azure.github.io/static-web-apps-cli/
 > npx @azure/static-web-apps-cli login --no-use-keychain
 > npx @azure/static-web-apps-cli deploy .output/public/ --api-location .output/server/ --no-use-keychain --env production
 ```
+
+## Content Security Policy, alert to Developers
+
+Content Security Policy could prevent developers to use external tools from different websites, so if that tool is not working add it to the CSP at staticwebapp.config.json.

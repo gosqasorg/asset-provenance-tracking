@@ -22,6 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="data-privacy-container">
+
+    <!-- TODO: move this to the offline history page once it exists -->
+    <!-- <video ref="video" preload="auto" autoplay playsinline></video>
+    <canvas ref="canvas" hidden ></canvas>
+    <p>Key from scanned QR: {{qrKey}}</p>
+    <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" /> -->
+
         <h1>Data & Privacy</h1>
         <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
@@ -49,7 +56,78 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-import Learn_more from '~/layouts/learn_more.vue';
+import jsQR from 'jsqr';
+import { ref } from 'vue'
+
+const video = ref()
+const canvas = ref()
+var qrKey = ref()
+let qrdata = null
+
+export default {
+
+methods: {
+    qrCameraOffline () {
+        // Constraints of video screen to fit on most mobile devices
+        const constraints = {
+            video: {
+                width: {ideal: 1280},
+                height: {ideal: 720},
+                facingMode: "environment",
+                aspectRatio: {ideal: 1.777777778}
+            }
+        }
+        try {
+            // Get user permission to use camera then display camera view once readyState is 4 or 'loadedmetadata'
+            navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+                video.value.srcObject = stream;
+                video.value.load();
+                video.value.addEventListener('loadedmetadata', () => {
+                    video.value.play()
+                    requestAnimationFrame(this.tick)
+                })
+            })
+        } 
+        catch (error) {
+            alert(error);
+        }
+        },
+    tick () {
+        // Draw video elements onto canvas to get image data
+        canvas.value.width = video.value.videoWidth;
+        canvas.value.height = video.value.videoHeight; 
+        var ctx = canvas.value.getContext('2d');
+        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
+        var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+
+        // Parse ImageData using jsQR to extract deviceKey
+        qrdata = jsQR(imageData.data, imageData.width, imageData.height);
+        var toRegEx = qrdata?.data;
+
+        // Use RegEx to extract the deviceKey to display to user
+        if (toRegEx) {
+            var deviceKey = toRegEx.match('([^/]*)$');
+            qrKey.value = deviceKey[1];
+            alert('QR Code Scanned');
+
+            // Close the video stream when done
+            const stream = video.value.srcObject;
+            if(stream){
+                const tracks = stream.getTracks();
+
+                tracks.forEach((track) => {
+                    track.stop()
+                })
+            video.value.srcObject = null
+            }
+        }
+        // Loop to keep scanning for qr code
+        requestAnimationFrame(this.tick);
+            }
+        }
+        }
+
+
 </script>
 
 <style scoped>
