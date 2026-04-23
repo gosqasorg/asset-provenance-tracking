@@ -22,10 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="data-privacy-container">
-    <video ref="video" preload="auto" autoplay playsinline></video>
+
+    <!-- TODO: move this to the offline history page once it exists -->
+    <!-- <video ref="video" preload="auto" autoplay playsinline></video>
     <canvas ref="canvas" hidden ></canvas>
     <p>Key from scanned QR: {{qrKey}}</p>
-    <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+    <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" /> -->
 
         <h1>Data & Privacy</h1>
         <div class="row"> <p>
