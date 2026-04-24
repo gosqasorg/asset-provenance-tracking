@@ -332,6 +332,7 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
             return 200;
         } else {
             await stashRequest(formUrl, formData);
+            // Intentionally left unawaited
             periodicChecker();
             return 202;
         }
