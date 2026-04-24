@@ -83,17 +83,24 @@ export function fromHex(hex: string): Uint8Array {
 
 export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
     const $key = bs58.decode(key);
-    switch ($key.length) {
+
+    var buffer = new ArrayBuffer($key.length);
+    var theKey = new Uint8Array(buffer);
+    for (var i=0, keyLen=key.length; i<keyLen; i++) {
+        theKey[i] = key.charCodeAt(i);
+    }
+
+    switch (theKey.length) {
         case 16:
         case 24:
         case 32:
-            return $key
+            return theKey
         default:
-            throw new Error(`Invalid Key Length ${$key.length}`);
+            throw new Error(`Invalid Key Length ${theKey.length}`);
     }
 }
 
-export async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
+export async function calculateDeviceID(key: Uint8Array<ArrayBuffer>): Promise<string> {
     // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
