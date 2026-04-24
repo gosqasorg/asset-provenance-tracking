@@ -100,7 +100,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
     }
 }
 
-export async function calculateDeviceID(key: Uint8Array<ArrayBuffer>): Promise<string> {
+export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>): Promise<string> {
     // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
@@ -131,7 +131,7 @@ export async function encrypt(key: Uint8Array<ArrayBuffer>, data: NodeJS.BufferS
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
 
-export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
+export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array<ArrayBuffer>, encryptedData: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ["decrypt"]);
     const result = await crypto.subtle.decrypt({ name: "AES-CBC", iv: salt }, $key, encryptedData);
     return new Uint8Array(result);
@@ -139,8 +139,8 @@ export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array, en
 
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey);
-    const { salt, encryptedData } = await encrypt(deviceKey, data);
+    const deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
     const blobID = toHex(await sha256(encryptedData));
 
     let blobName;
@@ -153,16 +153,16 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     }
 
     const { encryptedData: encryptedName } = fileName
-        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
+        ? await encrypt(deviceKey as Uint8Array<ArrayBuffer>, new TextEncoder().encode(fileName), salt as Uint8Array<ArrayBuffer>)
         : { encryptedData: undefined };
 
     await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
-            gdtsalt: toHex(salt),
+            gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
             gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName) : ""
+            gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
