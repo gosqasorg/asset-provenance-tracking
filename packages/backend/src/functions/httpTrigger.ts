@@ -73,7 +73,7 @@ async function sha256(data: NodeJS.BufferSource) {
     return new Uint8Array(buffer);
 }
 
-export function toHex(data: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>): string {
+export function toHex(data: Uint8Array<ArrayBuffer>): string {
     return Buffer.from(data).toString("hex");
 }
 
