@@ -82,19 +82,13 @@ export function fromHex(hex: string): Uint8Array {
 }
 
 export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
-    const $key = bs58.decode(key);
-
-    var buffer = new ArrayBuffer($key.length);
-    var theKey = new Uint8Array(buffer);
-    for (var i=0, keyLen=key.length; i<keyLen; i++) {
-        theKey[i] = key.charCodeAt(i);
-    }
+    const theKey = bs58.decode(key);
 
     switch (theKey.length) {
         case 16:
         case 24:
         case 32:
-            return theKey
+            return theKey as Uint8Array<ArrayBuffer>
         default:
             throw new Error(`Invalid Key Length ${theKey.length}`);
     }
