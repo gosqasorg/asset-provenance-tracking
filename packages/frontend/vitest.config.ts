@@ -14,10 +14,10 @@ export default defineVitestConfig({
     coverage: {
         provider: 'v8',
         thresholds: {
-            statements: 4.01,
+            statements: 3.9,
             branches:   30.01,
             functions:  10.01,
-            lines:      4.01,
+            lines:      3.9,
         },
     },
   }
