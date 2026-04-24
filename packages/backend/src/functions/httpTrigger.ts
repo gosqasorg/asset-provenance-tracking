@@ -141,7 +141,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     const dataHash = toHex(await sha256(data));
     const deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
     const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
-    const blobID = toHex(await sha256(encryptedData));
+    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
 
     let blobName;
     if (type === 'prov') {
@@ -156,7 +156,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
         ? await encrypt(deviceKey as Uint8Array<ArrayBuffer>, new TextEncoder().encode(fileName), salt as Uint8Array<ArrayBuffer>)
         : { encryptedData: undefined };
 
-    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
+    await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
@@ -245,7 +245,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
 
     const buffer = await client.downloadToBuffer();
     const saltBuffer = fromHex(salt);
-    const data = await decrypt(deviceKey, saltBuffer, buffer);
+    const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
@@ -255,7 +255,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
 
     const contentType = props.metadata?.["gdtcontenttype"];
     const encryptedName = props.metadata?.["gdtname"] ?? "";
-    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer, fromHex(encryptedName)) : undefined;
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
     const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
 
     return { data, contentType, timestamp, filename };
