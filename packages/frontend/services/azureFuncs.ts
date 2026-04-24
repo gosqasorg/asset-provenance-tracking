@@ -87,6 +87,10 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
+        // Checks to see if user is offline, stashes record if offline
+        if (await offlineDetectAndStash(fullUrl, formData) === 202) {
+            throw new Error('Status 202: User is offline but the record has been stashed')
+        }
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
@@ -292,7 +296,9 @@ export async function emptyStash() {
             return 404;
         }
     }
-
+    // Disable the offline banner and enable the online banner
+    displayOfflineBanner = false;
+    displayOnlineBanner = true;
     return 200;
 }
 
@@ -317,4 +323,20 @@ export async function periodicChecker() {
     }
 
     localStorage.setItem('gdt-awaiting-conectivity', "false");
+}
+
+export async function offlineDetectAndStash (formUrl: string, formData: FormData) {
+    try {
+        // Check if the user is online or offline. Stash the request if the user is offline
+        if ((await(onlineTestFetch()))) {
+            return 200;
+        } else {
+            await stashRequest(formUrl, formData);
+            // Intentionally left unawaited
+            periodicChecker();
+            return 202;
+        }
+    } catch (error) {
+        console.log('Error in offlineDetectAndStash: ' + error)
+    }
 }
