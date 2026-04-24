@@ -45,7 +45,7 @@ interface ProvenanceRecord {
 }
 
 interface DecryptedBlob {
-    data: Uint8Array;
+    data: Uint8Array<ArrayBuffer>;
     contentType: string;
     timestamp: number;
     filename?: string;
@@ -81,7 +81,7 @@ export function fromHex(hex: string): Uint8Array {
     return new Uint8Array(Buffer.from(hex, 'hex'));
 }
 
-export function decodeKey(key: string): Uint8Array {
+export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
     const $key = bs58.decode(key);
     switch ($key.length) {
         case 16:
@@ -124,7 +124,7 @@ export async function encrypt(key: Uint8Array<ArrayBuffer>, data: NodeJS.BufferS
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
 
-export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array> {
+export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ["decrypt"]);
     const result = await crypto.subtle.decrypt({ name: "AES-CBC", iv: salt }, $key, encryptedData);
     return new Uint8Array(result);
@@ -229,7 +229,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
@@ -268,7 +268,7 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
-async function convertLegacyProvenance(containerClient: ContainerClient, key: string | Uint8Array) {
+async function convertLegacyProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
@@ -322,7 +322,7 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
-async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
     let count = 0;
 
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
