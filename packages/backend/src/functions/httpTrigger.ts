@@ -1010,7 +1010,7 @@ async function createChildren(context, number_of_children, tags?) {
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children) {
+async function createGroup(context, name, description, n_children, tags = []) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
@@ -1026,7 +1026,7 @@ async function createGroup(context, name, description, n_children) {
         deviceName: name,
         description: description,
         children_key: childKeys,  // Note: this is what turns a record into a group
-        tags: [],            
+        tags: tags,            
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
@@ -1060,7 +1060,8 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['title']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        let tags = theRequest['tags']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children,tags)
         context.log(theGroupRecordPageUrl)
 
         return {
