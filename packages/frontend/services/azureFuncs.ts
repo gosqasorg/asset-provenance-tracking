@@ -236,22 +236,30 @@ export async function connectivityChecker() {
 }
 
 export async function stashRequest(formUrl: string, formData: FormData) {
+    try {
     // Convert values to string and store them
-    let valuesToStore = [];
-    valuesToStore.push(['formUrl', formUrl]);
-    valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
+        let valuesToStore = [];
+        valuesToStore.push(['formUrl', formUrl]);
+        valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get stash_counter and add 1 to it
-    let current_request = localStorage.getItem('stash_counter');
-    if (current_request == null) {
-        current_request = '0';
+        // Get stash_counter and add 1 to it
+        let current_request = localStorage.getItem('stash_counter');
+        if (current_request == null) {
+            current_request = '0';
+        }
+        let stash_counter = parseInt(current_request) + 1;
+        localStorage.setItem('stash_counter', stash_counter.toString());
+
+        // Store the request at a unique key (gosqas_offline_stash_#)
+        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+    } catch (error: any) {
+        // This web API error is thrown when localStorage is full
+        if (error.name === "QuotaExceededError" ) {
+            console.log('localStorage is full: no more records can be stored')
+            throw error
+        }
     }
-    let stash_counter = parseInt(current_request) + 1;
-    localStorage.setItem('stash_counter', stash_counter.toString());
-
-    // Store the request at a unique key (gosqas_offline_stash_#)
-    let request_name = 'gosqas_offline_stash_' + stash_counter;
-    localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
 
 export async function emptyStash() {
