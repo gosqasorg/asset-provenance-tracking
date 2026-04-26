@@ -1,0 +1,330 @@
+[
+  {
+    "city": "Vancouver",
+    "state/province": "British Columbia",
+    "country/region": "Canada",
+    "requests": 1414,
+    "lat": 49.2608724,
+    "lon": -123.113952
+  },
+  {
+    "city": "Tucson",
+    "state/province": "Arizona",
+    "country/region": "United States",
+    "requests": 618,
+    "lat": 32.2228765,
+    "lon": -110.974847
+  },
+  {
+    "city": "Chicago",
+    "state/province": "Illinois",
+    "country/region": "United States",
+    "requests": 564,
+    "lat": 41.8755616,
+    "lon": -87.6244212
+  },
+  {
+    "city": "Temecula",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 560,
+    "lat": 33.4946353,
+    "lon": -117.147366
+  },
+  {
+    "city": "Boydton",
+    "state/province": "Virginia",
+    "country/region": "United States",
+    "requests": 428,
+    "lat": 36.6673066,
+    "lon": -78.3882002
+  },
+  {
+    "city": "Temple Hills",
+    "state/province": "Maryland",
+    "country/region": "United States",
+    "requests": 359,
+    "lat": 38.8140024,
+    "lon": -76.9455296
+  },
+  {
+    "city": "Washington",
+    "state/province": "Virginia",
+    "country/region": "United States",
+    "requests": 312,
+    "lat": 38.7129721,
+    "lon": -78.1593468
+  },
+  {
+    "city": "Cheyenne",
+    "state/province": "Wyoming",
+    "country/region": "United States",
+    "requests": 298,
+    "lat": 41.139981,
+    "lon": -104.820246
+  },
+  {
+    "city": "San Jose",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 216,
+    "lat": 37.3361663,
+    "lon": -121.890591
+  },
+  {
+    "city": "Wakefield",
+    "state/province": "Massachusetts",
+    "country/region": "United States",
+    "requests": 159,
+    "lat": 42.506484,
+    "lon": -71.0728306
+  },
+  {
+    "city": "Des Moines",
+    "state/province": "Iowa",
+    "country/region": "United States",
+    "requests": 145,
+    "lat": 41.5868654,
+    "lon": -93.6249494
+  },
+  {
+    "city": "Phoenix",
+    "state/province": "Arizona",
+    "country/region": "United States",
+    "requests": 141,
+    "lat": 33.4484367,
+    "lon": -112.074141
+  },
+  {
+    "city": "Durham",
+    "state/province": "North Carolina",
+    "country/region": "United States",
+    "requests": 141,
+    "lat": 35.996653,
+    "lon": -78.9018053
+  },
+  {
+    "city": "Paris",
+    "state/province": "Paris",
+    "country/region": "France",
+    "requests": 138,
+    "lat": 48.8588897,
+    "lon": 2.320041
+  },
+  {
+    "city": "Nablus",
+    "state/province": "Nablus",
+    "country/region": "State Of Palestine",
+    "requests": 137,
+    "lat": 32.2179482,
+    "lon": 35.2670849
+  },
+  {
+    "city": "Raleigh",
+    "state/province": "North Carolina",
+    "country/region": "United States",
+    "requests": 130,
+    "lat": 35.7803977,
+    "lon": -78.6390989
+  },
+  {
+    "city": "Wayne",
+    "state/province": "New Jersey",
+    "country/region": "United States",
+    "requests": 127,
+    "lat": 40.9491723,
+    "lon": -74.2376802
+  },
+  {
+    "city": "Dallas",
+    "state/province": "Texas",
+    "country/region": "United States",
+    "requests": 97,
+    "lat": 32.7762719,
+    "lon": -96.7968559
+  },
+  {
+    "city": "Mountain View",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 78,
+    "lat": 37.3893889,
+    "lon": -122.0832101
+  },
+  {
+    "city": "Quincy",
+    "state/province": "Massachusetts",
+    "country/region": "United States",
+    "requests": 67,
+    "lat": 42.2509914,
+    "lon": -71.0037374
+  },
+  {
+    "city": "Peabody",
+    "state/province": "Massachusetts",
+    "country/region": "United States",
+    "requests": 58,
+    "lat": 42.5278731,
+    "lon": -70.9286609
+  },
+  {
+    "city": "Los Angeles",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 48,
+    "lat": 34.0536909,
+    "lon": -118.242766
+  },
+  {
+    "city": "Beaumont",
+    "state/province": "Texas",
+    "country/region": "United States",
+    "requests": 45,
+    "lat": 30.0829344,
+    "lon": -94.0984277
+  },
+  {
+    "city": "Nablus",
+    "state/province": "Nablus",
+    "country/region": "Occupied Palestinian Territory",
+    "requests": 44,
+    "lat": 31.92157,
+    "lon": 35.20329
+  },
+  {
+    "city": "Singapore",
+    "state/province": "Central Singapore",
+    "country/region": "Singapore",
+    "requests": 28,
+    "lat": 1.2959845,
+    "lon": 103.7766186
+  },
+  {
+    "city": "Quincy",
+    "state/province": "Washington",
+    "country/region": "United States",
+    "requests": 25,
+    "lat": 47.2343673,
+    "lon": -119.8535054
+  },
+  {
+    "city": "London",
+    "state/province": "Ontario",
+    "country/region": "Canada",
+    "requests": 16,
+    "lat": 42.9836747,
+    "lon": -81.2496068
+  },
+  {
+    "city": "Savigny-Le-Temple",
+    "state/province": "Seine-Et-Marne",
+    "country/region": "France",
+    "requests": 12,
+    "lat": 48.5958681,
+    "lon": 2.5798953
+  },
+  {
+    "city": "New York",
+    "state/province": "New York",
+    "country/region": "United States",
+    "requests": 9,
+    "lat": 40.7127281,
+    "lon": -74.0060152
+  },
+  {
+    "city": "Austin",
+    "state/province": "Texas",
+    "country/region": "United States",
+    "requests": 9,
+    "lat": 30.2711286,
+    "lon": -97.7436995
+  },
+  {
+    "city": "Orsay",
+    "state/province": "Essonne",
+    "country/region": "France",
+    "requests": 7,
+    "lat": 48.699184,
+    "lon": 2.187457
+  },
+  {
+    "city": "Gif-Sur-Yvette",
+    "state/province": "Essonne",
+    "country/region": "France",
+    "requests": 7,
+    "lat": 48.7018823,
+    "lon": 2.134529
+  },
+  {
+    "city": "Columbus",
+    "state/province": "Ohio",
+    "country/region": "United States",
+    "requests": 7,
+    "lat": 39.9622601,
+    "lon": -83.0007065
+  },
+  {
+    "city": "Las Vegas",
+    "state/province": "Nevada",
+    "country/region": "United States",
+    "requests": 5,
+    "lat": 36.1674263,
+    "lon": -115.1484131
+  },
+  {
+    "city": "Gaza",
+    "state/province": "Gaza",
+    "country/region": "State Of Palestine",
+    "requests": 5,
+    "lat": 31.5128679,
+    "lon": 34.4581358
+  },
+  {
+    "city": "Saint-Ave",
+    "state/province": "Morbihan",
+    "country/region": "France",
+    "requests": 5,
+    "lat": 47.6903849,
+    "lon": -2.7358875
+  },
+  {
+    "city": "Villejuif",
+    "state/province": "Val-De-Marne",
+    "country/region": "France",
+    "requests": 5,
+    "lat": 48.7921098,
+    "lon": 2.3633048
+  },
+  {
+    "city": "Seynod",
+    "state/province": "Haute-Savoie",
+    "country/region": "France",
+    "requests": 5,
+    "lat": 45.8880398,
+    "lon": 6.0992785
+  },
+  {
+    "city": "Ramsey",
+    "state/province": "New Jersey",
+    "country/region": "United States",
+    "requests": 3,
+    "lat": 41.0573188,
+    "lon": -74.1409771
+  },
+  {
+    "city": "Florence",
+    "state/province": "Colorado",
+    "country/region": "United States",
+    "requests": 3,
+    "lat": 38.3902777,
+    "lon": -105.1185988
+  },
+  {
+    "city": "Koeln",
+    "state/province": "Nordrhein-Westfalen",
+    "country/region": "Germany",
+    "requests": 2,
+    "lat": 50.938361,
+    "lon": 6.959974
+  }
+]

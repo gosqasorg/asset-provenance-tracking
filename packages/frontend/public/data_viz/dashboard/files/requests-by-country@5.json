@@ -1,0 +1,26 @@
+[
+  {
+    "country": "USA",
+    "requests": 4654
+  },
+  {
+    "country": "CAN",
+    "requests": 1430
+  },
+  {
+    "country": "FRA",
+    "requests": 179
+  },
+  {
+    "country": "PSX",
+    "requests": 186
+  },
+  {
+    "country": "SGP",
+    "requests": 28
+  },
+  {
+    "country": "DEU",
+    "requests": 2
+  }
+]
