@@ -643,7 +643,7 @@ function _filteredCityData(selectedWindow,d3,recentRequests,geocodedCities)
   return geocodedCities.map(d => ({
     ...d,
     requests: counts.get(d.city) || 0
-  }));
+  })).filter(d => d.requests > 0);
 }
 
 
