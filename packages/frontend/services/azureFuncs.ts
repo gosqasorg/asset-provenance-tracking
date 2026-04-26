@@ -109,6 +109,54 @@ export async function postEmail(email: string) {
     }
 }
 
+//TODO: update function call parameters in createDevice.vue, createContainer.vue, and test/postNotificationEmail.spec.ts
+//TODO: find file with field for already created record
+
+
+export async function postNotificationEmail(deviceKey: string, email: string, tags: string[] = []) {
+    //TODO: implement tags
+
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
+    }
+    if (!email || typeof email !== 'string') {
+        throw new Error("Bad email provided.");
+    }
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    
+    const payload = {
+        email: email,
+        recordKey: deviceKey,  // bckend expects 'recordKey'?
+        tags: tags             
+    };
+
+    //match backend json format 
+    const response = await fetch(`${baseUrl}/notificationSubscription`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (response.status !== 200) {
+        let errorMessage = 'postNotificationEmail: Failed to save email';
+        //Identify specific error message so we can see more than just 'failed to save' and know what went wrong.
+        try {
+            const responseData = await response.json();
+            if (responseData.error) {
+                errorMessage = `postNotificationEmail: ${responseData.error}`;
+            } else if (responseData.message) {
+                errorMessage = `postNotificationEmail: ${responseData.message}`;
+            }
+        } catch (e) {
+            errorMessage = `postNotificationEmail: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+    }
+}
+
 export async function getStatistics() {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/statistics`, {
@@ -246,4 +294,27 @@ export async function emptyStash() {
     }
 
     return 200;
+}
+
+export async function periodicChecker() {
+    // Return if a checker is already running
+    if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
+        console.log("Instance of periodicChecker is already running, returning")
+        return;
+    }
+    localStorage.setItem('gdt-awaiting-conectivity', "true");
+
+    let stash_empty = false;
+    let response = 404
+
+    // Wait for the user to come back online then empty the stash
+    while (!stash_empty) {
+        await connectivityChecker();
+        response = await emptyStash();
+        if (response == 200) {
+            stash_empty = true;
+        }
+    }
+
+    localStorage.setItem('gdt-awaiting-conectivity', "false");
 }

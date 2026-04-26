@@ -41,10 +41,10 @@ jobs:
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Use Node.js 18
+      - name: Use Node.js 22
         uses: actions/setup-node@v4.0.2
         with:
-          node-version: 18
+          node-version: 22
       - name: Checkout
         uses: actions/checkout@v4.1.7
       - name: build frontend
