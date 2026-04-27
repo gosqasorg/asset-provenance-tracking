@@ -144,12 +144,12 @@ async function fetchUrl(url: string, formData?: FormData) {
 }
 
 // ======= EMAIL STUFF =============
-export async function postNotificationEmail(email:string, recordKey: string, tags: string[]) {
+export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/notificationsubscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, recordKey, tags }),
+        body: JSON.stringify({ email, recordKey }),
     });
 
     console.log('postNotificationEmail status:', response.status);

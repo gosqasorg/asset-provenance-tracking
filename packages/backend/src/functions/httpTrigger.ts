@@ -744,7 +744,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         context.log('body:', body);
         const email = body.email;
         const recordKey = body.recordKey;
-        const tags = body.tags ?? [];
+        // const tags = body.tags ?? [];
 
         if (!email || !recordKey){
             return {
@@ -784,7 +784,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             token: token,
             expiresAt: Date.now() + codeExpiration,
             recordKey: recordKey,
-            tags: JSON.stringify(tags),
+            // tags: JSON.stringify(tags),
         };
 
         await tableClient.upsertEntity(entity);
@@ -795,13 +795,15 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         const frontendUrl = 'http://localhost:3000';
         const verifyLink = `${frontendUrl}/history/subscribe/${recordKey}/verify?token=${token}&code=${code}`;
         
-        await sendEmail(
+        const emailResult = await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
             email,
             "GOSQAS Verification Code",
             `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             "GOSQAS Notification"
         )
+
+        context.log('Email send result:', emailResult);
 
         // Return Success (frontend checks for properly formed email)
         return {
@@ -934,7 +936,8 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // on succes, delete pending entity email
         // and call signupfornotifications (with verified user email!! :))
         await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
-        await signupForNotifications(entity.recordKey as string, entity.rowKey as string, JSON.parse(entity.tags as string ?? '[]')) // recordKey is deviceKey, rowKey is email;
+        // await signupForNotifications(entity.recordKey as string, entity.rowKey as string, JSON.parse(entity.tags as string ?? '[]')) // recordKey is deviceKey, rowKey is email;
+        await signupForNotifications(entity.recordKey as string, entity.rowKey as string);
 
         return {
             jsonBody: {message: "Success"},
@@ -1007,7 +1010,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             token: token,
             expiresAt: Date.now() + codeExpiration,
             recordKey: entity.recordKey as string,
-            tags: entity.tags as string ?? '[]'
+            // tags: entity.tags as string ?? '[]'
         };
 
         await tableClient.upsertEntity(updatedEntity);
@@ -1045,7 +1048,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
 
 // Not currently called anywhere...might be able to condense?
-async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
+async function signupForNotifications(deviceKey: string, email: string) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
@@ -1064,7 +1067,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const datum = {
         'key': {
             'email': email,
-            'tags': tags
+            // 'tags': tags
         }
     }    
     const data = JSON.stringify(datum)
