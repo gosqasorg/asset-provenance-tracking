@@ -24,7 +24,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
     steps:
-      - uses: actions/checkout@v4.1.7
+      - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4
 
     - uses: ./.github/actions/setup-backend
 
@@ -56,12 +56,12 @@ jobs:
     needs: backend-run-unit-tests
     steps:
     - name: Checkout
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4
 
     - uses: ./.github/actions/setup-backend
 
     - name: Azure Functions Action
-      uses: Azure/functions-action@v1.5.2
+      uses: Azure/functions-action@v1
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
@@ -74,7 +74,7 @@ jobs:
     needs: backend-build-and-deploy
     steps:
     - name: Checkout
-      uses: actions/checkout@v4.2.0
+      uses: actions/checkout@v4
 
     - uses: ./.github/actions/setup-backend
 
