@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@coreui/coreui": "^5.0.2",
-    "@scalar/nuxt": "^0.5.20",
     "@urlpack/base58": "^2.0.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "bootstrap": "^5.3.3",
