@@ -298,7 +298,8 @@ export async function emptyStash() {
     }
     // Disable the offline banner and enable the online banner
     displayOfflineBanner = false;
-    displayOnlineBanner = true;
+    // Online banner currently doesn't have a way to be disabled, so we'll avoid enabling it until that is implemented
+    // displayOnlineBanner = true;
     return 200;
 }
 
