@@ -1,6 +1,6 @@
 <template>
     <!-- Email notifications modal -->
-    <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
+    <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
         <div class="modal-dialog modal-dialog-centered dialog">
 
         <!-- email input state --> 
@@ -12,6 +12,7 @@
                     class="form-control" 
                     v-model="email" 
                     placeholder="Email"
+                    aria-label="Email address"
                 />
             </div>
             <div class="footer">
@@ -29,7 +30,7 @@
 
 
             <div class="body">
-                <p v-if="error" style="line-height: 30px; margin-bottom: 0;">
+                <p v-if="error" style="line-height: 30px; margin-bottom: 0;" id="code-error" aria-describedby="code-error">
                     That code is incorrect or has expired. Please try again or request a new code to be sent to <strong>{{ email }}</strong>.
                 </p>
                 <p v-else style="line-height: 30px; margin-bottom: 0;">
@@ -40,9 +41,11 @@
                     class="form-control" 
                     v-model="code" 
                     placeholder="Verification Code"
+                    aria-label="Verification Code"
                     maxlength="6"
+                    :class="{ 'input-error': error }"
                 />
-                <p v-if="error && verifyCooldownRemaining !== 0" class="text-danger">{{ error }}</p>
+                <p v-if="error && verifyCooldownRemaining > 0" class="text-danger" role="alert">Invalid code.</p>
             </div>
             <div class="footer">
                 <div class="btn-container">
@@ -102,6 +105,7 @@
                 error: null as string | null,
                 isSubmitting: false,
                 isResending: false,
+                token: '',
 
                 // resend cooldown: 3 free resends, then 1m wait time /2m /4m. 8m. 15m
                 resendCount: 0,
@@ -134,7 +138,7 @@
             verifyLabel(): string {
                 // TODO
                 if (this.error) {
-                    return 'Try Again';
+                    return `Try again (${this.formatTime(this.verifyCooldownRemaining)})`;
                 }
                 return 'Verify';
             }
@@ -159,7 +163,7 @@
                 this.error = null;
                 try {
                     const deviceKey = this.$route.params.deviceKey as string;
-                    const token = await postNotificationEmail(this.email, deviceKey);
+                    this.token = await postNotificationEmail(this.email, deviceKey);
                     this.step = 'verify';
                 } catch(error) {
                     this.$snackbar.add({ 
@@ -211,7 +215,7 @@
                 this.isSubmitting = true;
                 this.error = null;
                 try {
-                    const token = this.$route.query.token as string;
+                    const token = this.token as string;
                     await postVerifyCode(token, this.code);
                     this.step = 'success';
                 } catch {
@@ -230,7 +234,7 @@
                 if (this.resendCooldownRemaining > 0) return;
                 this.isResending = true;
                 try {
-                    const token = this.$route.query.token as string;
+                    const token = this.token as string;
                     await postResendCode(token);
                     this.resendCount++;
                     const cooldownMs = this.getResendCooldownMs();
@@ -373,9 +377,14 @@
 
 .text-danger {
     color: #DC2626;
-    font-size: 14px;
-    margin-top: -10px;
-    margin-bottom: 10px;
+    font-size: 20px;
+    /* margin-top: -10px; */
+    margin-bottom: 0px;
+}
+
+.form-control.input-error {
+    border-color: #DC2626;
+    box-shadow: 0 0 0 1px #DC2626;
 }
 
 @media (prefers-color-scheme: dark) {
