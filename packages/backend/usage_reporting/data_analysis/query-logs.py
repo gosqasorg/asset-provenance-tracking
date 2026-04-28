@@ -1,5 +1,6 @@
 #!/usr/bin/env uv run
 
+import json
 from os import environ
 
 import requests
@@ -11,6 +12,7 @@ directory_id=environ['directory_id']
 app_registration_id=environ['app_registration_id']
 secret_value=environ['secret_value']
 workspace_id=environ['workspace_id']
+
 
 def get_token():
     response = requests.post(
@@ -28,6 +30,14 @@ def get_token():
     return token
 
 
+def prettify_json(func):
+    def wrapper(*args, **kwargs):
+        some_dictionary = func(*args, **kwargs)
+        return json.dumps(some_dictionary, indent=4)
+    return wrapper
+
+
+@prettify_json
 def logs_hello_world(token):
     logs = requests.post(
         f"https://api.loganalytics.io/v1/workspaces/{workspace_id}/query",
@@ -37,8 +47,26 @@ def logs_hello_world(token):
 
     return logs.json()
 
+
+@prettify_json
+def run_query(token, label, query):
+    return requests.post(
+        f"https://api.loganalytics.io/v1/workspaces/{workspace_id}/query",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"query": query}
+    ).json()
+   
+
 if __name__ == '__main__':
     token = get_token()
     logs = logs_hello_world(token)
+    print(logs)
+
+    logs = run_query(
+        token, 
+        "Traces",
+        "AppTraces | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
+    )
+
     print(logs)
 
