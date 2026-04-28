@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-directory_id=environ['directory_id']
-app_registration_id=environ['app_registration_id']
-secret_value=environ['secret_value']
-workspace_id=environ['workspace_id']
+directory_id = environ['directory_id']
+app_registration_id = environ['app_registration_id']
+secret_value = environ['secret_value']
+workspace_id = environ['workspace_id']
 
 
 def get_token():
