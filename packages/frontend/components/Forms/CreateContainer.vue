@@ -366,7 +366,7 @@ export default {
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
                 }
-
+                
                 //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();

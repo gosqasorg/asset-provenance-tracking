@@ -222,7 +222,7 @@ export default {
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
                 }
-
+                
                 // on successful record creation, subscribe user to notifs if they've opted in
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim(); 
