@@ -34,6 +34,7 @@
     "@coreui/coreui": "^5.0.2",
     "@scalar/nuxt": "^0.5.20",
     "@urlpack/base58": "^2.0.0",
+    "@vite-pwa/nuxt": "^1.1.1",
     "bootstrap": "^5.3.3",
     "bootstrap4-toggle": "^3.6.1",
     "bootstrap5-toggle": "^5.1.1",
@@ -47,6 +48,9 @@
     "unstorage": "^1.17.5",
     "vue": "^3.4.27",
     "vue-router": "^4.3.2",
-    "vue3-scroll-spy": "^1.0.8"
+    "vue3-scroll-spy": "^1.0.8",
+    "workbox-core": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0"
   }
 }
