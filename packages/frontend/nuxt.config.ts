@@ -15,6 +15,18 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: ['mixed-decls', 'color-functions', 'global-builtin', 'import']
+        }
+      }
+    },
+    server: {
+      allowedHosts: []
+    }
+  },
   runtimeConfig: {
     // The private keys which are only available server-side
     // Keys within public are also exposed client-side
@@ -32,7 +44,7 @@ export default defineNuxtConfig({
       gitCommit: process.env.GIT_COMMIT
     }
   },
-  modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@scalar/nuxt'],
+  modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@scalar/nuxt', '@vite-pwa/nuxt'],
   snackbar: {
     bottom: true,
     duration: 5000
@@ -49,8 +61,37 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
   nitro: {
     static: true
   },
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'GOSQAS PWA',
+      short_name: 'G PWA',
+      theme_color: '#ffffff',
+      start_url: '/',
+      display: 'standalone',
+      icons: [
+        {
+          src: 'pwa-192x192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: 'pwa-512x512.png',
+          sizes: '512x512',
+          purpose: 'any maskable'
+        }
+      ]
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,vue,mjs}'],
+      maximumFileSizeToCacheInBytes: 5 * 1024 ** 2
+    },
+    devOptions: {
+      enabled: false
+    }
+  },
   scalar: {
-    url: '/openAPI-docs.json',
+    url: '/openAPI-docs-with-servers.json',
     darkMode: true,
     metaData: {
       title: 'GOSQAS API Documentation'
