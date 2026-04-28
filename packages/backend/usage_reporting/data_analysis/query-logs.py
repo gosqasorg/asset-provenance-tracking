@@ -70,3 +70,28 @@ if __name__ == '__main__':
 
     print(logs)
 
+    print(run_query(
+        token, 
+        "Recent Requests",
+        "AppRequests | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
+    ))
+    
+    print(run_query(
+        token, 
+        "Requests by IP",
+        "AppRequests | where TimeGenerated > ago(7d) | summarize request_count = count() by ClientIP | order by request_count desc"
+    ))
+    
+    print(run_query(
+        token, 
+        "Requests by Country",
+        "AppRequests | where TimeGenerated > ago(7d) | summarize request_count = count() by ClientCountryOrRegion | order by request_count desc"
+    ))
+    
+    print(run_query(
+        token, 
+        "Recent Exceptions",
+        "AppExceptions | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
+    ))
+
+
