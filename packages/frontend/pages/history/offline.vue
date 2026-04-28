@@ -18,28 +18,41 @@ Page will be the forum where users can add to the provenance of
 their items while offline.
 -->
 
+<script setup lang="ts">
+    const route = useRoute()
+</script>
+
 <template>
 <div v-if="isCreating">
 	<p class="text-center pb-5 pt-5">Creating record(s)...</p>
 </div>
 <div v-else>
     <div class="deviceKey-history">
-    <div class="row pt-3 pb-6 mx-4">
-        <!-- Display record key -->
-        <section id="device-details" class="details-container">
-        <div class="record-description">
-            <div class="my-4 text-iris fs-1">
-            <p class="text-bold mb-0 device-name">Asset History Records</p>
-            <h1 class="mt-1 mb-1" style="word-break: break-word;">
-                Offline Creation Page
-            </h1>
+        <div class="row pt-3 pb-6 mx-4">
+            <!-- Display record key -->
+            <section id="device-details" class="details-container">
+            <div class="record-description">
+                <div class="my-4 text-iris fs-1">
+                <p class="text-bold mb-0 device-name">Asset History Records</p>
+                <h1 class="mt-1 mb-1" style="word-break: break-word;">
+                    Offline Creation Page
+                </h1>
+                </div>
+                <div class="mb-3 rec">
+                    <span style="word-break: break-word;">This page allows you to add new record entries to existing keys while offline. Create entries here and they will be stored until you are back online, at which point they will be created automatically. If you want to scan a QR while offline please use the button below.</span>
+                </div>
             </div>
-            <div class="mb-3 rec">
-                <span style="word-break: break-word;">This page allows you to add new record entries to existing keys while offline. Create entries here and they will be stored until you are back online, at which point they will be created automatically.</span>
-            </div>
+            </section>
         </div>
-        </section>
-    </div>
+
+        <!-- Button to Scan QRs while offline -->
+        <!-- TODO: style button and/or move it based on offline meeting discussion -->
+        <div style="padding-left: 40px">
+            <video id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
+            <canvas ref="canvas" hidden ></canvas>
+            <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+        </div>
+
         <!-- Form to create a history record -->
         <section id="create-record">
         <form enctype="multipart/form-data" class='record-form mb-4' @submit.prevent="submitRecord">
@@ -101,6 +114,14 @@ their items while offline.
 import { postProvenance, displayOfflineBanner, displayOnlineBanner } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { validateFileSize } from '~/utils/fileSizeValidation';
+import jsQR from 'jsqr';
+import { ref } from 'vue';
+
+const video = ref()
+const canvas = ref()
+let qrdata = null
+let cameraOn = false
+let listenerMade = false
 
 export default {
 data() {
@@ -232,8 +253,93 @@ methods: {
             });
             this.isCreating = false;
         }
+    },
+    async qrCameraOffline () {
+        // Prevent spam clicking/reloading of the camera
+        if (!cameraOn) {
+            cameraOn = true;
+        } else {
+            return;
+        }
+
+        // Constraints of video screen to fit on most mobile devices
+        const constraints = {
+            video: {
+                width: {ideal: 1280},
+                height: {ideal: 720},
+                facingMode: "environment",
+                aspectRatio: {ideal: 1.777777778}
+            }
+        }
+        try {
+            var videoDisplay = document.getElementById("qr-scan-video");
+            if (videoDisplay && videoDisplay.style.display === "none") {
+                videoDisplay.style.display = "block";
+            }
+            
+            // Get user permission to use camera then display camera view once readyState is 4 or 'loadedmetadata'
+            navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+                video.value.srcObject = stream;
+                video.value.load();
+
+                // Make sure we only ever create one event listener
+                if (!listenerMade) {
+                    video.value.addEventListener('loadedmetadata', () => {
+                        listenerMade = true;
+                        video.value.play()
+                        requestAnimationFrame(this.tick)
+                    })
+                }
+            })
+        } 
+        catch (error) {
+            alert(error);
+        }
+    },
+    tick () {
+        // Draw video elements onto canvas to get image data
+        canvas.value.width = video.value.videoWidth;
+        canvas.value.height = video.value.videoHeight;
+        var ctx = canvas.value.getContext('2d' , { willReadFrequently: true })
+        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
+        var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+
+        // Parse ImageData using jsQR to extract deviceKey
+        qrdata = jsQR(imageData.data, imageData.width, imageData.height);
+        var toRegEx = qrdata?.data;
+
+        // Use RegEx to extract the deviceKey to display to user
+        if (toRegEx) {
+            var deviceKey = toRegEx.match('([^/]*)$');
+            if (deviceKey) {
+                this.recordKey = deviceKey[1] || "";
+            }
+            alert('QR Code Scanned');
+
+            // Close the video stream when done
+            const stream = video.value.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+
+                tracks.forEach((track: any) => {
+                    track.stop()
+                })
+                video.value.srcObject = null
+            }
+
+            // Hide the video element
+            var videoDisplay = document.getElementById("qr-scan-video");
+            if (videoDisplay && videoDisplay.style.display === "block") {
+                videoDisplay.style.display = "none";
+            }
+            cameraOn = false;
+        }
+        // Loop to keep scanning for qr code
+        if (cameraOn) {
+            requestAnimationFrame(this.tick);
+        }
+        }
     }
-}
 };
 </script>
 
