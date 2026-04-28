@@ -56,6 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
+import Learn_more from '~/layouts/learn_more.vue';
 import jsQR from 'jsqr';
 import { ref } from 'vue'
 
