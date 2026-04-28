@@ -349,7 +349,7 @@ export function postGetProvenanceMiddleware(body): Boolean {
     return result
 }
 
-async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
 
     let count = 0;
 
