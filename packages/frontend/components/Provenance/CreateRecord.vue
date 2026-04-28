@@ -54,12 +54,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h5 class="text-iris p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
-            </h5>
-            <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
-            </h5>
+            <h4 class="p-1 mt-3" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
+                    Annotate all children
+            </h4>
+
+            <h4 class="p-1 mt-0" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
+                    Recall all children
+            </h4>
+
+            <h4 class="p-1 mt-0">
+                <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
+                    Receive email notifications for this record
+            </h4>
+
+            <div v-if="notify">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    placeholder="Email"
+                    @keyup.enter=""
+                />
+            </div>
         </div>
         
         <!-- Offline Banner Bottom-->
@@ -128,7 +146,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -147,7 +165,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             annotateAll: false,
             recallAll: false,
             annotatePopUp: false,
-            recallPopUp: false
+            recallPopUp: false,
+            notify: false,
+            emailInput: ''
         }
     },
     props: {
@@ -362,6 +382,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     recallChildren(this.recordKey, this.tags, this.description);
                 } else if (this.annotateAll) {
                     notifyChildren(this.recordKey, this.tags);
+                }
+
+                if (this.notify && this.emailInput) {
+                    const email = this.emailInput.trim(); 
+                    await postNotificationEmail(this.recordKey,email);
                 }
 
                 // Refresh CreateRecord component
