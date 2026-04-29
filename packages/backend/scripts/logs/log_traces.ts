@@ -1,12 +1,8 @@
-// This script queries the Azure Log Analytics API for various logs and outputs the results to log_api.txt
-// I run this using npx tsx log_api.ts, similarly for the other log scripts - which have more detailed queries
-
-
 import "dotenv/config";
 import { writeFileSync, appendFileSync } from "fs";
 
 // added file output for when file is run, instead of just console logging
-const outputFile = "log_api.txt";
+const outputFile = "log_traces.txt";
 writeFileSync(outputFile, "");
 
 function log(line: string): void {
@@ -48,31 +44,20 @@ async function runQuery(label: string, query: string): Promise<void> {
     );
 
     log(`\n===** ${label} **===`);
-    // prettified JSON output
     log(JSON.stringify(await result.json(), null, 2));
 }
 
 await runQuery(
-    "Tables",
-    "search * | distinct $table | limit 50"
+    "Recent Traces",
+    "AppTraces | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
 );
 
 await runQuery(
-    "FunctionAppLogs",
-    "FunctionAppLogs | where TimeGenerated > ago(7d) | order by TimeGenerated desc"
+    "Traces by Severity",
+    "AppTraces | where TimeGenerated > ago(7d) | summarize count() by SeverityLevel | order by count_ desc"
 );
 
 await runQuery(
-    "Exceptions",
-    "AppExceptions | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
-);
-
-await runQuery(
-    "Recent Requests",
-    "AppRequests | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
-);
-
-await runQuery(
-    "Traces",
-    "AppTraces | where TimeGenerated > ago(1d) | order by TimeGenerated desc | limit 20"
+    "Traces by Function",
+    "AppTraces | where TimeGenerated > ago(7d) | summarize count() by OperationName | order by count_ desc"
 );

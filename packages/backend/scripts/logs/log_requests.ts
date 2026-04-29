@@ -1,12 +1,8 @@
-// This script queries the Azure Log Analytics API for various logs and outputs the results to log_api.txt
-// I run this using npx tsx log_api.ts, similarly for the other log scripts - which have more detailed queries
-
-
 import "dotenv/config";
 import { writeFileSync, appendFileSync } from "fs";
 
 // added file output for when file is run, instead of just console logging
-const outputFile = "log_api.txt";
+const outputFile = "log_requests.txt";
 writeFileSync(outputFile, "");
 
 function log(line: string): void {
@@ -48,31 +44,40 @@ async function runQuery(label: string, query: string): Promise<void> {
     );
 
     log(`\n===** ${label} **===`);
-    // prettified JSON output
     log(JSON.stringify(await result.json(), null, 2));
 }
 
 await runQuery(
-    "Tables",
-    "search * | distinct $table | limit 50"
-);
-
-await runQuery(
-    "FunctionAppLogs",
-    "FunctionAppLogs | where TimeGenerated > ago(7d) | order by TimeGenerated desc"
-);
-
-await runQuery(
-    "Exceptions",
-    "AppExceptions | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
-);
-
-await runQuery(
     "Recent Requests",
-    "AppRequests | where TimeGenerated > ago(7d) | order by TimeGenerated desc | limit 20"
+    "AppRequests | where TimeGenerated > ago(14d) | order by TimeGenerated desc | limit 20"
 );
 
 await runQuery(
-    "Traces",
-    "AppTraces | where TimeGenerated > ago(1d) | order by TimeGenerated desc | limit 20"
+    "Requests by IP",
+    "AppRequests | where TimeGenerated > ago(14d) | summarize request_count = count() by ClientIP | order by request_count desc"
+);
+
+await runQuery(
+    "Requests by Country",
+    "AppRequests | where TimeGenerated > ago(30d) | summarize request_count = count() by ClientCountryOrRegion | order by request_count desc"
+);
+
+await runQuery(
+    "Requests by Endpoint",
+    "AppRequests | where TimeGenerated > ago(7d) | summarize request_count = count() by Name | order by request_count desc"
+);
+
+await runQuery(
+    "Hourly Traffic Volume",
+    "AppRequests | where TimeGenerated > ago(7d) | summarize request_count = count() by bin(TimeGenerated, 1h) | order by TimeGenerated asc"
+);
+
+await runQuery(
+    "Requests by City",
+    "AppRequests | where TimeGenerated > ago(30d) | summarize request_count = count() by ClientCity, ClientStateOrProvince, ClientCountryOrRegion | order by request_count desc"
+);
+
+await runQuery(
+    "Requests by Region within Country",
+    "AppRequests | where TimeGenerated > ago(30d) | summarize request_count = count() by ClientCountryOrRegion, ClientStateOrProvince | order by ClientCountryOrRegion asc, request_count desc"
 );
