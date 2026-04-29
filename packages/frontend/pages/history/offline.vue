@@ -38,7 +38,7 @@ their items while offline.
                     Offline Creation Page
                 </h1>
                 </div>
-                <div class="mb-3 rec">
+                <div class="rec">
                     <span style="word-break: break-word;">This page allows you to add new record entries to existing keys while offline. Create entries here and they will be stored until you are back online, at which point they will be created automatically. If you want to scan a QR while offline please use the button below.</span>
                 </div>
             </div>
@@ -46,11 +46,10 @@ their items while offline.
         </div>
 
         <!-- Button to Scan QRs while offline -->
-        <!-- TODO: style button and/or move it based on offline meeting discussion -->
         <div style="padding-left: 40px">
-            <video id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
+            <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
             <canvas ref="canvas" hidden ></canvas>
-            <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+            <input class="btn record-button mt-3" value="Scan QR Offline" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
         </div>
 
         <!-- Form to create a history record -->
@@ -345,4 +344,10 @@ methods: {
 
 <style scoped>
     @import '../../assets/css/history-form.css';
+
+    /* Make video rescale dynamically */
+    #qr-scan-video {
+        width: 95% !important;
+        height: auto !important;
+    }
 </style>
