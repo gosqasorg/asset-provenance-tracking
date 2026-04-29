@@ -323,30 +323,12 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
-export function postProvenanceMiddleware(body): Boolean {
+export function postProvenanceMiddleware(body: FormData): Boolean {
 
     // This may seem simple but it is expected to grow
     const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
-    var result = true
 
-    // For creation of one record through postProvenance
-    if (body instanceof FormData) {
-        if (JSON.stringify(body).length > sizeLimit) {
-            result = false
-        } 
-    } else {
-        // When getProvenance gets called by a record already created, 
-        // count the total number of bytes in the string and compare to sizeLimit
-        let stringSize = '';
-        for (const byte in body) {
-            stringSize += byte;
-        }
-        if (stringSize.length > sizeLimit) {
-            result = false
-        } 
-    }
-
-    return result
+    return JSON.stringify(body).length <= sizeLimit
 }
 
 async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
