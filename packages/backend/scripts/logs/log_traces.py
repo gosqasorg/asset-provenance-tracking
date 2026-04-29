@@ -1,5 +1,15 @@
-import requests
+import json
+from os import environ
 
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+directory_id=environ['directory_id']
+app_registration_id=environ['app_registration_id']
+secret_value=environ['secret_value']
+workspace_id=environ['workspace_id']
 
 response = requests.post(
     f"https://login.microsoftonline.com/{directory_id}/oauth2/v2.0/token",
@@ -36,17 +46,6 @@ run_query(
 run_query(
     "Traces by Function",
     "AppTraces | where TimeGenerated > ago(7d) | summarize count() by OperationName | order by count_ desc"
-)
-
-run_query(
-    "Unique Devices from Traces",
-    """AppTraces
-    | where TimeGenerated > ago(30d)
-    | where Message contains 'deviceID'
-    | extend deviceID = extract('deviceID.*?([a-f0-9]{64})', 1, Message)
-    | where isnotempty(deviceID)
-    | summarize dcount(deviceID) by bin(TimeGenerated, 1d)
-    | order by TimeGenerated asc"""
 )
 
 # run_query(

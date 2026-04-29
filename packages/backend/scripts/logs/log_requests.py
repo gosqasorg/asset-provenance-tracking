@@ -1,8 +1,15 @@
-import requests
+import json
+from os import environ
 
-directory_id = process.env["directory_id"]
-app_registration_id = process.env["app_registration_id"]
-secret_value = process.env["secret_value"]
+import requests
+from dotenv import load_dotenv
+
+load_dotenv()
+
+directory_id=environ['directory_id']
+app_registration_id=environ['app_registration_id']
+secret_value=environ['secret_value']
+workspace_id=environ['workspace_id']
 
 response = requests.post(
     f"https://login.microsoftonline.com/{directory_id}/oauth2/v2.0/token",
