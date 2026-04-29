@@ -18,6 +18,9 @@ Page will be the forum where users can keep track of the provenance of
 their items.
 -->
 
+// TODO: Fix Share Record LInk Button: currently does not close when clicked
+// TODO: Remove /subscribe - moved to modal format
+
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
@@ -127,7 +130,7 @@ const recordHasParent = hasParent(provenance);
             </div>
 
             <!-- Email notifications modal -->
-            <ModalsEmailNotification />
+            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode"/>
 
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -169,13 +172,6 @@ const recordHasParent = hasParent(provenance);
               </div>
               
                 <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-
-                <div>
-                  <!-- TEMPORARY: subscribe button for functionality; -->
-                  <RouterLink :to="`/history/subscribe/${_recordKey}`" class="btn download-btn">
-                    Subscribe to Notifications
-                  </RouterLink>
-                </div>
             </section>
 
           </div>
@@ -242,12 +238,26 @@ export default {
       hasReportingKey: false,
       childKeys: [] as string[],
       _recordKey: "",
-      valid: false
+      valid: false,
+      // for email verification
+      autoToken: '' as string,
+      autoCode: '' as string,
     }
   },
   async mounted() {
+    
+
     try {
       const route = useRoute();
+
+      // grab token and code from params for email verif
+      const token = route.query.token as string;
+      const code = route.query.code as string;
+      if (token && code) {
+          this.autoToken = token;
+          this.autoCode = code;
+      }
+      
       this._recordKey = route.params.deviceKey as string;
       const response = await getProvenance(this._recordKey);
       deviceRecord = response[response.length - 1].record;
@@ -264,12 +274,16 @@ export default {
       });
 
       await this.refreshFeed();
+
+      
     } catch (error) {
       this.isCreating = false;
       this.recordKeyFound = false;
       this.hasReportingKey = false;
       console.log(error)
     }
+
+    
   },
   beforeDestroy() {
     EventBus.off('feedRefresh', this.refreshFeed);

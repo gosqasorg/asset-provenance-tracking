@@ -793,13 +793,13 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         // TODO: Change to gosqas.org for deployment;        
         const frontendUrl = 'http://localhost:3000';
-        const verifyLink = `${frontendUrl}/history/subscribe/${recordKey}/verify?token=${token}&code=${code}`;
+        const verifyLink = `${frontendUrl}/history/${recordKey}/?token=${token}&code=${code}`;
         
         const emailResult = await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
             email,
             "GOSQAS Verification Code",
-            `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+            `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             "GOSQAS Notification"
         )
 
@@ -1020,7 +1020,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         // TODO: Change to gosqas for deployment;        
         const frontendUrl = 'http://localhost:3000';
         const deviceKey = entity.recordKey as string;
-        const verifyLink = `${frontendUrl}/history/subscribe/${deviceKey}/verify?token=${token}&code=${code}`;
+        const verifyLink = `${frontendUrl}/history/${deviceKey}/?token=${token}&code=${code}`;
         
         await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",

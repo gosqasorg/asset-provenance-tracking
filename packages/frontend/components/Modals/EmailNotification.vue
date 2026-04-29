@@ -1,3 +1,9 @@
+// TODO: Add dark mode
+// TODO: Add mobile breakpoints
+// TODO: Flow to expired state when link in invalid
+// TODO: Add safe gaurd for user reloading the page with the auto-verify link. In azzure table reads cost money- so we dont want someone to spam reload and cost us money.
+// IDeas: Cooldown maybe, stripping the url, or using local storage to mark the, verified.
+
 <template>
     <!-- Email notifications modal -->
     <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
@@ -45,12 +51,12 @@
                     maxlength="6"
                     :class="{ 'input-error': error }"
                 />
-                <p v-if="error && verifyCooldownRemaining > 0" class="text-danger" role="alert">Invalid code.</p>
+                <!-- <p v-if="error && verifyCooldownRemaining > 0" class="text-danger" role="alert">Invalid code.</p> -->
             </div>
             <div class="footer">
                 <div class="btn-container">
                     <button type="button" class="btn btn-secondary" @click="step = 'signup'">Go Back</button>
-                    <button type="button" class="btn btn-primary" @click="verifyCode" :disabled="verifyDisabled">{{verifyLabel}}</button>
+                    <button type="button" class="btn btn-primary" @click="verifyCode" :disabled="verifyDisabled || !code">{{verifyLabel}}</button>
                 </div>
                 <div class="resend-container">
                     <p style="line-height: 30px; margin-bottom: 0;">Didn't receive a code?</p>
@@ -99,7 +105,7 @@
     export default {
         data() {
             return {
-                step: 'signup' as 'signup' | 'verify' | 'success' | 'failure' | 'expired'  ,
+                step: 'signup' as 'signup' | 'verify' | 'success' | 'expired',
                 email: '',
                 code: '',
                 error: null as string | null,
@@ -121,6 +127,11 @@
             }
         },
 
+        props: {
+            autoToken: { type: String, default: '' },
+            autoCode:  { type: String, default: '' },
+        },
+
         computed: {
             resendDisabled(): boolean {
                 return this.isResending || this.resendCooldownRemaining > 0;
@@ -136,9 +147,13 @@
                 return 'Resend Code'; 
             },
             verifyLabel(): string {
-                // TODO
-                if (this.error) {
+                // try again w/ countdown 
+                if (this.error && this.verifyCooldownRemaining > 0) {
                     return `Try again (${this.formatTime(this.verifyCooldownRemaining)})`;
+                }
+                // if error occured display try again, otherwise default to verify
+                if (this.error) {
+                    return 'Try again';
                 }
                 return 'Verify';
             }
@@ -146,6 +161,9 @@
 
         async mounted() {
             // remove prev mount cause no code attach to url
+            if (this.autoToken && this.autoCode) {
+                await this.autoVerify();
+            } 
         },
 
         methods: {
@@ -203,14 +221,16 @@
                 return seconds * 1000;
             },
 
+            // format time for the buttons as mm:ss
             formatTime(totalSeconds: number): string {
                 const m = Math.floor(totalSeconds / 60);
                 const s = totalSeconds % 60;
-                if (m > 0) return `${m}:${s.toString().padStart(2, '0')}`;
-                return `${s}s`;
+                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                // return `${s}s`;
             },
 
             async verifyCode() {
+                // button should be disabled if cooldown is active, but just in case
                 if (!this.code || this.verifyCooldownRemaining > 0) return;
                 this.isSubmitting = true;
                 this.error = null;
@@ -231,6 +251,7 @@
             },
 
             async resendCode() {
+                // button should be disabled if cooldown is active, but double checking here just in case
                 if (this.resendCooldownRemaining > 0) return;
                 this.isResending = true;
                 try {
@@ -256,6 +277,29 @@
                     this.isResending = false;
                 }
             },
+
+            async autoVerify() {
+                this.token = this.autoToken;
+                this.code = this.autoCode;
+
+                try {
+                    await postVerifyCode(this.token, this.code);
+                    this.step = 'success';
+                } catch (error) {
+                    this.step = "expired";
+                }
+
+                // openning the modal programmatically 
+                // using boostrap
+                const { Modal } = await import('bootstrap');
+                const notifModal = document.getElementById('notifModal');
+                if (notifModal) {                    
+                    new Modal(notifModal).show();
+                }
+                
+
+
+            }
         }
     }
      
@@ -343,6 +387,13 @@
     font-size: 20px;
 }
 
+.btn-link:disabled {
+    color: #4E3681;
+    cursor: not-allowed;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
 .btn-container{
     display: flex;
     flex: 1 1 0;
@@ -384,7 +435,7 @@
 
 .form-control.input-error {
     border-color: #DC2626;
-    box-shadow: 0 0 0 1px #DC2626;
+    box-shadow: 0 0 0 3px #DC2626;
 }
 
 @media (prefers-color-scheme: dark) {
