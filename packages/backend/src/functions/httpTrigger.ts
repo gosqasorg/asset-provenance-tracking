@@ -395,7 +395,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
