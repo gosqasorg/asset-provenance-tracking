@@ -90,6 +90,8 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         // Checks to see if user is offline, stashes record if offline
         if (await offlineDetectAndStash(fullUrl, formData) === 202) {
             throw new Error('Status 202: User is offline but the record has been stashed')
+        } else if (await offlineDetectAndStash(fullUrl, formData) === 507) {
+            throw new Error('Storage limit has been reached, record not stashed')
         }
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
@@ -348,6 +350,7 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
     } catch (error: any) {
         if (error.name === "QuotaExceededError") {
             console.log('Storage limit has been reached: your record has not been stored')
+            return 507;
         }
         else {
           console.log('Error in offlineDetectAndStash: ' + error)
