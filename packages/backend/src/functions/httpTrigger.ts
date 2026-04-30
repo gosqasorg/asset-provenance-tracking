@@ -7,6 +7,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -485,53 +486,101 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    // TODO: need to create below env variables for this code to work, in testing it runs
+    const directory_id = process.env['AZURE_TENANT_ID'];
+    const app_registration_id = process.env['AZURE_CLIENT_ID'];
+    const secret_value = process.env['AZURE_CLIENT_SECRET'];
+    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
+    let client_id = app_registration_id
+    let client_secret = secret_value
 
-    // Get lower bound for determining which records to send (currently sending records from the past two weeks)
-    // 1209600000 = 2 weeks in milliseconds
+    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
+    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
+    let token = tokenResponse.token;
+
+    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
+    let valsAtTimes = [0, 0, 0]
+
+    // Get all counts for records
+    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | count"}`,
+    });
+    let totalRecords = (await logs.json()).tables[0].rows[0][0];
+
+    for (let v in timesToCheck) {
+        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let records1h = valsAtTimes[0]
+    let records24h = valsAtTimes[1]
+    let records7d = valsAtTimes[2]
+
+    // Get all counts for devices (unique keys)
+    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | distinct Url | count"}`,
+    });
+    let totalDevices = (await logs.json()).tables[0].rows[0][0];
+
+    for (let v in timesToCheck) {
+        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | distinct Url | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let devices1h = valsAtTimes[0]
+    let devices24h = valsAtTimes[1]
+    let devices7d = valsAtTimes[2]
+
     const d = new Date()
-    const twoWeeks = Date.now() - 1209600000;
-    var totalRecords = 0;
-    var totalDevices = 0;
-    var previousId = "";
-    var records = [];
+    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
+    let minutes = d.getMinutes() / 60
+    let hours = d.getHours() + minutes
+    let counted = 0
+    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
 
-    // Build up a JSON return value
-    // NOTE: We seem to have to read the properties of the blob to get the
-    // metadata.  There is a field called "metadata" on the blob itself
-    // which does not contain our metadata. I don't know if this is terribly
-    // expensive, or if we could improve it. I insist we should not worry about
-    // performance until we measure it to be a problem, but this is an "orang flag"--
-    // some caution around this issue is warranted.
-    for await (const blob of containerClient.listBlobsFlat()) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const props = await blobClient.getProperties();
-        const metadata = props.metadata;
-        // now we want to build up an object that we can return as statistics
-        // that inlcudes the id and the timestamp, though really the timestamp
-        // is enough. We would like to distinguish the additon of a device
-        // from the addition of new provenance, I supoose.
-        const id = findDeviceIdFromName(blob.name);
-
-        // If the record was created within the last two weeks, add it to the list of records to send to the frontend
-        if (+metadata.gdttimestamp > twoWeeks) {
-            records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
-        }
-
-        // If it's unique, add it to the device count
-        if (previousId != id) {
-            totalDevices++
-        }
-        previousId = id
-        totalRecords++
+    // Get records per day (last 7 days) for the graph
+    for (let i = 0; i <= today; i++) {
+        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | count"}`,
+        });
+        let recent = (await logs.json()).tables[0].rows[0][0];
+        
+        // Add the records we found to the current day, subtracting records we already counted
+        recordsPerDayY[today - i] = recent - counted
+        counted = recent
+        hours += 24
     }
 
-    const contentType = "application/json";
+    // Get records per hour (last 7 days) for the graph
+    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    for (let hour = 0; hour < 24; hour++) {
+        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created in the last 7 days at 'hour'
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | count"}`,
+        });
+        let hourly = (await logs.json()).tables[0].rows[0][0];
+        recordsPerHourY[hour] = hourly
+    }
 
     return {
-        jsonBody: { records, totalRecords, totalDevices },
-        headers: { "Content-Type": contentType },
+        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY },
+        headers: { "Content-Type": "application/json" }
     };
 };
 

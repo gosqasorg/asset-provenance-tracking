@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <div class="container py-4">
       <!-- Loading indicator while data is being fetched -->
       <div v-if="isLoading" class="text-center">
-        Loading statistics (this might take a few minutes)…
+        Loading statistics…
       </div>
   
       <!-- Once data is loaded, show all statistic cards -->
@@ -30,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Total Records</h6>
-                <!-- Computed property totalDevices -->
                 <p class="display-4">{{ totalDevices }}</p>
               </div>
             </div>
@@ -41,14 +40,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Total Record Entries</h6>
-                <!-- Computed property totalRecords -->
                 <p class="display-4">{{ totalRecords }}</p>
               </div>
             </div>
           </div>
         </div>
   
-        <!--Devices added in time windows-->
+        <!-- Unique devices added in time windows -->
         <p class="h6 mb-2">Records added:</p>
         <div class="row text-center mb-4">
           <!-- Last 1 hour -->
@@ -56,8 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Last 1 Hour</h6>
-                <!-- Computes unique deviceIDs in past hour -->
-                <p class="display-4">{{ lastHourDeviceCount }}</p>
+                <p class="display-4">{{ devices1h }}</p>
               </div>
             </div>
           </div>
@@ -66,8 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Last 24 Hours</h6>
-                <!-- Computes unique deviceIDs in past 24h -->
-                <p class="display-4">{{ last24hDeviceCount }}</p>
+                <p class="display-4">{{ devices24h }}</p>
               </div>
             </div>
           </div>
@@ -76,14 +72,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Last 7 Days</h6>
-                <!-- Computes unique deviceIDs in past 7d -->
-                <p class="display-4">{{ last7DaysDeviceCount }}</p>
+                <p class="display-4">{{ devices7d }}</p>
               </div>
             </div>
           </div>
         </div>
   
-        <!-- Records added in time windows -->
+        <!-- Total records added in time windows -->
         <p class="h6 mb-2">Record entries added:</p>
         <div class="row text-center">
           <!-- Last 1 hour -->
@@ -91,8 +86,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Last 1 Hour</h6>
-                <!-- Total records in past hour -->
-                <p class="display-4">{{ lastHourRecordCount }}</p>
+                <p class="display-4">{{ records1h }}</p>
               </div>
             </div>
           </div>
@@ -101,8 +95,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Last 24 Hours</h6>
-                <!-- Total records in past 24h -->
-                <p class="display-4">{{ last24hRecordCount }}</p>
+                <p class="display-4">{{ records24h }}</p>
               </div>
             </div>
           </div>
@@ -111,11 +104,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title">Last 7 Days</h6>
-                <!-- Total records in past 7d -->
-                <p class="display-4">{{ last7DaysRecordCount }}</p>
+                <p class="display-4">{{ records7d }}</p>
               </div>
             </div>
           </div>
+          
           <!-- Graph of records created this week -->
           <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
             <Plotly :data="recordsPerDay" :layout="chartLayout" />
@@ -145,10 +138,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       return {
         // Controls loading spinner
         isLoading: true,
-        // Raw array of { timestamp, deviceID } items from API
-        myTimestampPairs: [],
-        myRecords: 0,
-        myDevices: 0,
+        // Total number of records/devices
+        totalRecords: 0,
+        totalDevices: 0,
+        // Records/Devices per 1hr/24hrs/7days
+        records1h: 0,
+        records24h: 0,
+        records7d: 0,
+        devices1h: 0,
+        devices24h: 0,
+        devices7d: 0,
+        // Y values for the graph
+        recordsPerDayY: [0, 0, 0, 0, 0, 0, 0],
+        recordsPerHourY: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 
         chartLayout: {
           title: {text: 'Record Entries Created This Week'},
@@ -180,88 +182,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     },
   
     computed: {
-      // Totals 
-      // Total number of records fetched
-      totalRecords() {
-        return this.myRecords;
-      },
-      // Total number of unique devices
-      totalDevices() {
-        // Remove duplicate device IDs
-        return this.myDevices;
-      },
-  
-      // Provenance record counts in time windows 
-      lastHourRecordCount() {
-        const now = Date.now()
-        // Filter records with timestamp within last 1 hour
-        return this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= 1 * 60 * 60 * 1000
-        ).length
-      },
-      last24hRecordCount() {
-        const now = Date.now()
-        // Filter records within last 24 hours
-        return this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
-        ).length
-      },
-      last7DaysRecordCount() {
-        const now = Date.now()
-        // Filter records within last 7 days
-        return this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= 7 * 24 * 60 * 60 * 1000
-        ).length
-      },
-  
-      //Device counts in time windows
-      lastHourDeviceCount() {
-        const now = Date.now()
-        // Get only recent records, then dedupe by deviceID
-        const recent = this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= 1 * 60 * 60 * 1000
-        )
-        return new Set(recent.map(r => r.deviceID)).size
-      },
-
-      last24hDeviceCount() {
-        const now = Date.now()
-        const recent = this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= 24 * 60 * 60 * 1000
-        )
-        return new Set(recent.map(r => r.deviceID)).size
-      },
-
-      last7DaysDeviceCount() {
-        const now = Date.now()
-        const recent = this.myTimestampPairs.filter(
-          r => now - Number(r.timestamp) <= 7 * 24 * 60 * 60 * 1000
-        )
-        return new Set(recent.map(r => r.deviceID)).size
-      },
-
-      // Get number of records created each day of the past week to graph
+      // Graph records created each day of the past week
       recordsPerDay() {
-        const d = new Date()
-        const now = Date.now()
-        let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
-        let hours = d.getHours() + (d.getMinutes() / 60)
-        let counted = 0
-
         let x = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat']
-        let y = [0, 0, 0, 0, 0, 0, 0]
-
-        for (let i = 0; i <= today; i++) {
-          // Get records created today
-          let recent = this.myTimestampPairs.filter(
-            r => now - Number(r.timestamp) <= hours * 60 * 60 * 1000
-          )
-          
-          // Add the records we found to the current day, subtracting records we already counted
-          y[today - i] = recent.length - counted
-          counted = recent.length
-          hours += 24
-        }
+        let y = this.recordsPerDayY
 
         const chartData = [{
           x: x,
@@ -275,36 +199,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         return chartData
       },
 
-      // Get number of records created each hour of the past week to graph
+      // Graph number of records created each hour of the past week
       recordsPerHour() {
-        const d = new Date()
-        const now = Date.now()
-        let currentHour = d.getHours()
-        let minutes = d.getMinutes() / 60
-        let counted = 0
-
         let x = ['1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00',
                 '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00']
-        let y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-        for (let weekday = 1; weekday <= 7; weekday++) {
-          for (let hour = 0; hour < 24; hour++) {
-            let hourly = this.myTimestampPairs.filter(
-              // (1,2,3,... [the day] * (0-24 [hours ago] + 0-1 [minutes in the current hour])) * translate to milliseconds)
-              r => now - Number(r.timestamp) <= weekday * (hour + minutes) * 60 * 60 * 1000
-            )
-
-            // If a record was created within an hour, add it to the graph
-            if (hourly.length - counted > 0) {
-              // Get time 'x' hours ago and add records to that time
-              let timeCreated = currentHour - hour
-              if (timeCreated <= 0) { timeCreated += 24; }
-              y[timeCreated - 1] += hourly.length - counted
-              counted = hourly.length
-            }
-          }
-
-        }
+        let y = this.recordsPerHourY
 
         const chartData = [{
           x: x,
@@ -335,16 +234,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     async mounted() {
       // On component mount, load data...
       console.log("loading statistics...")
-      const pairs = await this.fetchData()
+      const counts = await this.fetchData()
 
-      // sort newest-first by timestamp (set to 0 if none exist)
-      if (!pairs.records) {
-        pairs.records = [[0, 0]]
-      }
-      pairs.records.sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-      this.myTimestampPairs = pairs.records
-      this.myRecords = pairs.totalRecords
-      this.myDevices = pairs.totalDevices
+      this.totalRecords = counts.totalRecords
+      this.totalDevices = counts.totalDevices
+
+      this.records1h = counts.records1h
+      this.records24h = counts.records24h
+      this.records7d = counts.records7d
+      this.devices1h = counts.devices1h
+      this.devices24h = counts.devices24h
+      this.devices7d = counts.devices7d
+
+      this.recordsPerDayY = counts.recordsPerDayY
+      this.recordsPerHourY = counts.recordsPerHourY
 
       // Hide loading state
       this.isLoading = false
