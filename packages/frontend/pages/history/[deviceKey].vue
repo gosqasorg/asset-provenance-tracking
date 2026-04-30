@@ -292,7 +292,7 @@ async mounted() {
         console.log(error)
 	}
 },
-beforeDestroy() {
+beforeUnmount() {
 	EventBus.off('feedRefresh', this.refreshFeed);
 	EventBus.off('isCreating', () => {
 	if (!this.isCreating) {

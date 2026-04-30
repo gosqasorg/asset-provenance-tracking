@@ -241,6 +241,7 @@ export default {
                     type: 'error',
                     text: `Failed to create record: ${error}`
                 });
+                EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
             }
