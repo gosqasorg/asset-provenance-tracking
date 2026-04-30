@@ -350,7 +350,7 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
             console.log('Storage limit has been reached: your record has not been stored')
         }
         else {
-        console.log('Error in offlineDetectAndStash: ' + error)
+          console.log('Error in offlineDetectAndStash: ' + error)
         }
     }
 }
