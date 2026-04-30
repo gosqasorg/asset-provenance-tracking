@@ -345,7 +345,12 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
             periodicChecker();
             return 202;
         }
-    } catch (error) {
+    } catch (error: any) {
+        if (error.name === "QuotaExceededError") {
+            console.log('Storage limit has been reached: your record has not been stored')
+        }
+        else {
         console.log('Error in offlineDetectAndStash: ' + error)
+        }
     }
 }
