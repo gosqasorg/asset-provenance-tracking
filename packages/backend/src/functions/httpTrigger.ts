@@ -501,19 +501,28 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
     let valsAtTimes = [0, 0, 0]
 
-    // Get all counts for records
-    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-        method: "POST",
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: `{"query": "AppRequests | where Name == 'postProvenance' | count"}`,
-    });
-    let totalRecords = (await logs.json()).tables[0].rows[0][0];
+    // Get total records and total record entries
+    const containerExists = await containerClient.exists();
+    let totalRecords = 0
+    let uniqueRecords = new Set<string>();
 
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))  // set will only allow unique values to be added
+            }
+        }
+    }
+    let totalDevices = uniqueRecords.size
+
+    // Get time-based record entry counts
     for (let v in timesToCheck) {
-        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
             method: "POST",
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | count"}`,
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
         });
         valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
     }
@@ -521,19 +530,12 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     let records24h = valsAtTimes[1]
     let records7d = valsAtTimes[2]
 
-    // Get all counts for devices (unique keys)
-    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-        method: "POST",
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: `{"query": "AppRequests | where Name == 'postProvenance' | distinct Url | count"}`,
-    });
-    let totalDevices = (await logs.json()).tables[0].rows[0][0];
-
+    // Get time-based record counts
     for (let v in timesToCheck) {
-        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
             method: "POST",
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | distinct Url | count"}`,
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
         });
         valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
     }
@@ -548,13 +550,13 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     let counted = 0
     let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
 
-    // Get records per day (last 7 days) for the graph
+    // Get record entries per day (last 7 days) for the graph
     for (let i = 0; i <= today; i++) {
-        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
             method: "POST",
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | count"}`,
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
         });
         let recent = (await logs.json()).tables[0].rows[0][0];
         
@@ -564,15 +566,15 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         hours += 24
     }
 
-    // Get records per hour (last 7 days) for the graph
+    // Get record entries per hour (last 7 days) for the graph
     let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     for (let hour = 0; hour < 24; hour++) {
-        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
             method: "POST",
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             // Gets number of records created in the last 7 days at 'hour'
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | count"}`,
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
         });
         let hourly = (await logs.json()).tables[0].rows[0][0];
         recordsPerHourY[hour] = hourly
