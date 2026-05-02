@@ -88,8 +88,11 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         // Checks to see if user is offline, stashes record if offline
-        if (await offlineDetectAndStash(fullUrl, formData) === 202) {
+        const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+        if (checkOffline === 202) {
             throw new Error('Status 202: User is offline but the record has been stashed')
+        } else if (checkOffline === 507) {
+            throw new Error('Storage limit has been reached, record not stashed')
         }
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
@@ -240,22 +243,30 @@ export async function connectivityChecker() {
 }
 
 export async function stashRequest(formUrl: string, formData: FormData) {
+    try {
     // Convert values to string and store them
-    let valuesToStore = [];
-    valuesToStore.push(['formUrl', formUrl]);
-    valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
+        let valuesToStore = [];
+        valuesToStore.push(['formUrl', formUrl]);
+        valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get stash_counter and add 1 to it
-    let current_request = localStorage.getItem('stash_counter');
-    if (current_request == null) {
-        current_request = '0';
+        // Get stash_counter and add 1 to it
+        let current_request = localStorage.getItem('stash_counter');
+        if (current_request == null) {
+            current_request = '0';
+        }
+        let stash_counter = parseInt(current_request) + 1;
+        localStorage.setItem('stash_counter', stash_counter.toString());
+
+        // Store the request at a unique key (gosqas_offline_stash_#)
+        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+    } catch (error: any) {
+        // This web API error is thrown when localStorage is full
+        if (error.name === "QuotaExceededError" ) {
+            console.log('localStorage is full: no more records can be stored')
+            throw error
+        }
     }
-    let stash_counter = parseInt(current_request) + 1;
-    localStorage.setItem('stash_counter', stash_counter.toString());
-
-    // Store the request at a unique key (gosqas_offline_stash_#)
-    let request_name = 'gosqas_offline_stash_' + stash_counter;
-    localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
 
 export async function emptyStash() {
@@ -337,7 +348,13 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
             periodicChecker();
             return 202;
         }
-    } catch (error) {
-        console.log('Error in offlineDetectAndStash: ' + error)
+    } catch (error: any) {
+        if (error.name === "QuotaExceededError") {
+            console.log('Storage limit has been reached: your record has not been stored')
+            return 507;
+        }
+        else {
+          console.log('Error in offlineDetectAndStash: ' + error)
+        }
     }
 }
