@@ -88,9 +88,10 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         // Checks to see if user is offline, stashes record if offline
-        if (await offlineDetectAndStash(fullUrl, formData) === 202) {
+        const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+        if (checkOffline === 202) {
             throw new Error('Status 202: User is offline but the record has been stashed')
-        } else if (await offlineDetectAndStash(fullUrl, formData) === 507) {
+        } else if (checkOffline === 507) {
             throw new Error('Storage limit has been reached, record not stashed')
         }
         let response = await fetchUrl(fullUrl, formData);
