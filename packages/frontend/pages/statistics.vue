@@ -168,8 +168,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         chartLayout2: {
           title: {text: 'Record Entries Created Per Hour (Last 7 Days)'},
+          // Draw a line above the x-axis to prevent bars overlapping the x-axis
+          shapes: [{
+            type: 'line',
+            xref: 'paper',
+            x0: 0, x1: 1,
+            y0: 0, y1: 0,
+            line: {
+              color: 'black',
+              width: 1
+            },
+            layer: 'above'
+          }],
           xaxis: {
-            title: {text: 'Hour Created'}
+            title: {text: 'Hour Created (UTC)'}
           },
           yaxis: {
             title: {text: 'Number of Records Created'},
@@ -201,20 +213,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       // Graph number of records created each hour of the past week
       recordsPerHour() {
-        let x = ['1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00',
-                '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '24:00']
         let y = this.recordsPerHourY
 
-        const chartData = [{
-          x: x,
-          y: y,
+        const amRecords = {
+          x: ['12am', '1am', '2am', '3am', '4am', '5am', '6am', '7am', '8am', '9am', '10am', '11am'],
+          y: y.slice(0, 12),
+          name: 'AM',
+          type: 'bar',
+          marker: {
+            color: '#ccecfd'
+          }
+        };
+        const pmRecords = {
+          x: ['12pm', '1pm', '2pm', '3pm', '4pm', '5pm', '6pm', '7pm', '8pm', '9pm', '10pm', '11pm'],
+          y: y.slice(12, 24),
+          name: 'PM',
           type: 'bar',
           marker: {
             color: '#4e3681'
           }
-        }]
+        };
 
-        return chartData
+        return [amRecords, pmRecords]
       }
     },
   

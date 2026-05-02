@@ -508,7 +508,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 
     if (containerExists) {
         for await (const blob of containerClient.listBlobsFlat()) {
-            // Only count blobs that are records, skip attachments
+            // Only count blobs that are records or legacy records, skip attachments
             if (blob.name.includes('prov/')) {
                 totalRecords++
                 uniqueRecords.add(findDeviceIdFromName(blob.name))  // set will only allow unique values to be added
@@ -530,7 +530,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     let records24h = valsAtTimes[1]
     let records7d = valsAtTimes[2]
 
-    // Get time-based record counts
+    // Get time-based unique record counts
     for (let v in timesToCheck) {
         let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
             method: "POST",
@@ -566,8 +566,8 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         hours += 24
     }
 
-    // Get record entries per hour (last 7 days) for the graph
-    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    // Get record entries per hour (last 7 days, time in UTC) for the graph
+    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     for (let hour = 0; hour < 24; hour++) {
         let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
