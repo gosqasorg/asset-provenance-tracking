@@ -7,7 +7,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-// import { sendEmail } from './sendEmail.js';
+import { sendEmail } from './sendEmail.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -455,8 +455,6 @@ async function notifySubscribers(  deviceKey: string, context: InvocationContext
     const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
     const displayName: string = from_address;
     try {
-        // re-added - jara
-        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
             await sendEmail(from_address, to_email, subject, email_body, displayName);
         }
