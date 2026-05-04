@@ -16,13 +16,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the Unsubscribe page for GOSQAS
 -->
 <template>
-    <div class="unsubscribe-container">
-        <h1 class="unsubscribe-title">Unsubscribe successful</h1>
+    <div v-if="unsubscribing" class="unsubscribe-container">
+        <h1 class="unsubscribe-title">Unsubscribing...</h1>
+          <p class="unsubscribe-description">
+              Unsubscribing from record {{ deviceKey }}...
+          </p>
+          <div class="unsubscribe-buttons">
+              <!-- Note: Currently links back to the history/[deviceKey].vue page -->
+              <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+          </div>
+    </div>
+    <div v-else-if="unsubscribeSuccessful" class="unsubscribe-container">
+        <h1 class="unsubscribe-title">Unsubscribe Successful</h1>
         <p class="unsubscribe-description">
             You’ve been unsubscribed from record {{ deviceKey }}.
         </p>
         <div class="unsubscribe-buttons">
-            <!-- Note: Currently links back to the history/[deviceKey].vue page -->
+            <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+        </div>
+    </div>
+    <div v-else class="unsubscribe-container">
+        <h1 class="unsubscribe-title">Unsubscribe Failed</h1>
+        <p class="unsubscribe-description">
+            There was an error trying to unsubscribe from {{ deviceKey }}. Please try again later.
+        </p>
+        <div class="unsubscribe-buttons">
             <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
         </div>
     </div>
@@ -30,19 +48,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
+import { removeNotificationEmail } from '~/services/azureFuncs';
+
 export default {
     data() {
       return {
-        deviceKey: ""
+        deviceKey: "",
+        email: "",
+        unsubscribing: true,
+        unsubscribeSuccessful: true
       }
     },
     async mounted() {
         try {
             const route = useRoute();
             this.deviceKey = route.params.deviceKey as string;
+            // TODO: currently sending the email as a query param, we want a more secure way to do this
+            this.email = route.query.email as string;
+
+            // Below will throw an error on failure, which will display the failure page
+            await removeNotificationEmail(this.deviceKey, this.email);
         } catch (error) {
             console.log(error)
+            this.unsubscribeSuccessful = false
         }
+        this.unsubscribing = false
     }
 };
 </script>
