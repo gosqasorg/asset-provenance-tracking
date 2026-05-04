@@ -324,7 +324,16 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+export function postProvenanceMiddleware(body: FormData): Boolean {
+
+    // This may seem simple but it is expected to grow
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+
+    return JSON.stringify(body).length <= sizeLimit
+}
+
 async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+
     let count = 0;
 
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
@@ -347,7 +356,6 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     }
     return count;
 }
-
 
 /*=================  Endpoints  =====================*/
 
@@ -379,8 +387,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
-
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -388,6 +396,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
