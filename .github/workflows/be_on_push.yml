@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 995-reconfigure-deployment-to-bundle-package
 
   pull_request:
     branches:
@@ -63,7 +64,8 @@ jobs:
 
     - name: Azure Functions Action
       uses: Azure/functions-action@v1
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: github.event_name == 'push'
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
