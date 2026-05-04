@@ -50,6 +50,7 @@
     "vue3-scroll-spy": "^1.0.8",
     "workbox-core": "^7.4.0",
     "workbox-precaching": "^7.4.0",
-    "workbox-routing": "^7.4.0"
+    "workbox-routing": "^7.4.0",
+    "zod": "^4.4.3"
   }
 }
