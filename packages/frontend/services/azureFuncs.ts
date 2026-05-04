@@ -260,6 +260,7 @@ export async function stashRequest(formUrl: string, formData: FormData) {
         // Store the request at a unique key (gosqas_offline_stash_#)
         let request_name = 'gosqas_offline_stash_' + stash_counter;
         localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+        console.log('Inside stashRequest function')
     } catch (error: any) {
         // This web API error is thrown when localStorage is full
         if (error.name === "QuotaExceededError" ) {
@@ -273,6 +274,7 @@ export async function emptyStash() {
     // See how many requests are stored, if any
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
 
+    console.log('Stash_Counter # ' + stash_counter)
     for (stash_counter; stash_counter > 0; stash_counter--) {
         try {
             // Get the last request stored
@@ -318,17 +320,22 @@ export async function periodicChecker() {
     // Return if a checker is already running
     if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
         console.log("Instance of periodicChecker is already running, returning")
+        console.log('Currently in stash: ' )
         return;
     }
     localStorage.setItem('gdt-awaiting-conectivity', "true");
+    console.log('gdt-awaiting-connectivity just switched to true')
 
     let stash_empty = false;
     let response = 404
 
     // Wait for the user to come back online then empty the stash
     while (!stash_empty) {
+        console.log('Inside stash_empty while loop')
         await connectivityChecker();
+        console.log('After calling connectivityChecker function')
         response = await emptyStash();
+        console.log('After calling emptyStash function')
         if (response == 200) {
             stash_empty = true;
         }
@@ -341,11 +348,13 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
     try {
         // Check if the user is online or offline. Stash the request if the user is offline
         if ((await(onlineTestFetch()))) {
+            console.log('Made record while online')
             return 200;
         } else {
             await stashRequest(formUrl, formData);
             // Intentionally left unawaited
             periodicChecker();
+            console.log('Outside of periodicChecker function')
             return 202;
         }
     } catch (error: any) {
