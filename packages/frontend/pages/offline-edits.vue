@@ -23,13 +23,13 @@ while offline.
     <h1>Your Offline Edits</h1>
     <div class="row">
         <div style="margin-bottom: 30px;">
+            <strong>*Note: This page is still a work in progress.</strong><br><br>
             Your recent offline edits are below. Please review any pending edits to confirm they have synced.
         </div>
     </div>
 
     <button class="btn purple-btn" @click="clearAllEdits">Dismiss All Edits</button>
 
-    <!-- TODO: need to stylistically display record keys in gdt-stash-fulfilled (see how history page handles records [feed.vue]) -->
     <div> Records Created: {{ offlineKeys }} </div>
 
 </div>
