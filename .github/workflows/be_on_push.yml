@@ -61,9 +61,13 @@ jobs:
 
     - uses: ./.github/actions/setup-backend
 
+    - name: Remove node_modules
+      shell: bash
+      working-directory: packages/backend
+      run: rm -rf node_modules
+
     - name: Azure Functions Action
       uses: Azure/functions-action@v1
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       with:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
