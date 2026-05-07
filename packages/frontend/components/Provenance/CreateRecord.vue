@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
    This component is a form. The form is used to create a new record that we will track the
    providence for.
    Resourses:
-   https://test-utils.vuejs.org/guide/essentials/forms
+   https://test-utils.fvuejs.org/guide/essentials/forms
 -->
 
 <template>
@@ -47,28 +47,53 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     multiple />
             </div>
             <h5>Add Tags (optional)</h5>
-            <ProvenanceTagInput id="provenanceTag" v-model="tags" @updateTags="handleUpdateTags"
+            <ProvenanceTagInput id="provenanceTag" v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"
                 placeholder="Record Tag" />
             <div>
                 <span v-for="(tag, index) in tags" :key="tag">{{ tag }}{{ index !== tags.length - 1 ? ', ' : '' }}
                 </span>
             </div>
             
-            <h5 class="text-iris p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> Annotate all children
-            </h5>
-            <h5 class="text-iris p-1 mt-0" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/> Recall all children
-            </h5>
+            <h4 class="p-1 mt-3" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
+                    Annotate all children
+            </h4>
+
+            <h4 class="p-1 mt-0" v-if="isGroup">
+                <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
+                    Recall all children
+            </h4>
+
+            <h4 class="p-1 mt-0">
+                <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
+                    Receive email notifications for this record
+            </h4>
+
+            <div v-if="notify">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    placeholder="Email"
+                    @keyup.enter=""
+                />
+            </div>
+
         </div>
         
         <!-- Offline Banner Bottom-->
-        <OfflineBanner v-if="displayBanner" class="offline-banner" style="align-items: center; display: flex">
+        <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
             <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
             </div>
             <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
             </div> 
-        </OfflineBanner>
+        </Banner>
+
+        <!-- Back Online Banner -->
+        <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+            <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+            </div>
+        </Banner>
 
         <div class="d-grid mt-3" id="submit-button">
             <button class="mb-0 record-button" type="submit" style="
@@ -121,13 +146,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
- import OfflineBanner from '../OfflineBanner.vue';
- import { displayOfflineBanner } from '~/services/azureFuncs';
+ import Banner from '../Banner.vue';
 
  export default {
     data() {
@@ -141,7 +165,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             annotateAll: false,
             recallAll: false,
             annotatePopUp: false,
-            recallPopUp: false
+            recallPopUp: false,
+            notify: false,
+            emailInput: ''
         }
     },
     props: {
@@ -166,11 +192,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // The Boolean constructor returns false for "" and true for []
             return Boolean(this.deviceRecord?.children_key);
         },
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
         displayBanner() {
             if (displayOfflineBanner === true) {
                 return true;
+            } else {
+                return false;
             }
-            else{
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+            } else {
                 return false;
             }
         },
@@ -183,15 +217,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false
         },
         async trackingForm() {
-            const annotateCheckBox = document.getElementById("annotate-all");
-            const recallCheckBox = document.getElementById("recall-all");
 
-            if (Object.is(annotateCheckBox, null) || Object.is(recallCheckBox, null)) {
+            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
-            } else if (recallCheckBox.checked == true) {
+            } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (annotateCheckBox.checked == true) {
+            } else if (this.annotateAll) {
                 this.annotatePopUp = true
             } else {
                 this.submitRecord()
@@ -344,7 +376,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
 
-                await postProvenance(this.recordKey, record, this.pictures || []);
+                const response =await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
@@ -352,6 +384,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     notifyChildren(this.recordKey, this.tags);
                 }
 
+                if (this.notify && this.emailInput) {
+                    const email = this.emailInput.trim(); 
+                    await postNotificationEmail(this.recordKey,email);
+                }
                 // Refresh CreateRecord component
                 this.refresh();
 
@@ -498,6 +534,10 @@ input[type=checkbox] {
         color: #FFFFFF;
     }
 
+    h4 {
+        color: #FFFFFF;
+    }
+
     .record-button {
         background-color: #CCECFD;
         color: black;
@@ -523,7 +563,7 @@ input[type=checkbox] {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .offline-banner {
+    .banner {
         background-color: #634a45;
         border-color: #fe9c9e;
         border-width: 2px;
@@ -546,6 +586,10 @@ input[type=checkbox] {
         color: #4E3681;
     }
 
+    h4 {
+        color: #4E3681;
+    }
+
     .record-button {
         background-color: #4E3681;
         color: white;
@@ -559,7 +603,7 @@ input[type=checkbox] {
     .record-button:hover { 
         background-color: #322253;
     }
-    .offline-banner {
+    .banner {
         background-color: #ecdae1;
         border-color: #fe9c9e;
         border-width: 2px;

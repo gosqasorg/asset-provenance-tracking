@@ -16,6 +16,9 @@ import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 // you deploy this function project via this command:
 //  > func azure functionapp publish gosqasbe
 
+// Docs
+// https://learn.microsoft.com/en-us/javascript/api/@azure/functions/httpresponseinit?view=azure-node-latest
+
 /*=================  Setup  =================*/
 
 let accountName; if (isEmpty(accountName = process.env["AZURE_STORAGE_ACCOUNT_NAME"])) {
@@ -32,6 +35,7 @@ const baseUrl = accountName === "devstoreaccount1"
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
+const MAX_ATTACHMENTS_LIMIT = 1000;
 
 /*==============  Utils Section  ============*/
 
@@ -41,7 +45,7 @@ interface ProvenanceRecord {
 }
 
 interface DecryptedBlob {
-    data: Uint8Array;
+    data: Uint8Array<ArrayBuffer>;
     contentType: string;
     timestamp: number;
     filename?: string;
@@ -64,12 +68,12 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
-async function sha256(data: BufferSource) {
+async function sha256(data: NodeJS.BufferSource) {
     const buffer = await crypto.subtle.digest("SHA-256", data);
     return new Uint8Array(buffer);
 }
 
-export function toHex(data: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>): string {
+export function toHex(data: Uint8Array<ArrayBuffer>): string {
     return Buffer.from(data).toString("hex");
 }
 
@@ -77,19 +81,20 @@ export function fromHex(hex: string): Uint8Array {
     return new Uint8Array(Buffer.from(hex, 'hex'));
 }
 
-export function decodeKey(key: string): Uint8Array {
-    const $key = bs58.decode(key);
-    switch ($key.length) {
+export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
+    const theKey = bs58.decode(key);
+
+    switch (theKey.length) {
         case 16:
         case 24:
         case 32:
-            return $key
+            return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${$key.length}`);
+            throw new Error(`Invalid Key Length ${theKey.length}`);
     }
 }
 
-export async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
+export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>): Promise<string> {
     // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
@@ -113,24 +118,24 @@ function calculateLegacyDeviceID(key: string | Uint8Array): bigint {
     return fnv1(key);
 }
 
-export async function encrypt(key: Uint8Array, data: BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
+export async function encrypt(key: Uint8Array<ArrayBuffer>, data: NodeJS.BufferSource, salt?: Uint8Array<ArrayBuffer>): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ['encrypt']);
     salt ??= crypto.getRandomValues(new Uint8Array(16));
     const encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv: salt }, $key, data);
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
 
-export async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array> {
-    const $key = await crypto.subtle.importKey("raw", key, "AES-CBC", false, ["decrypt"]);
+export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array<ArrayBuffer>, encryptedData: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ["decrypt"]);
     const result = await crypto.subtle.decrypt({ name: "AES-CBC", iv: salt }, $key, encryptedData);
     return new Uint8Array(result);
 }
 
-export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey);
-    const { salt, encryptedData } = await encrypt(deviceKey, data);
-    const blobID = toHex(await sha256(encryptedData));
+    const deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
+    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
 
     let blobName;
     if (type === 'prov') {
@@ -142,16 +147,16 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     }
 
     const { encryptedData: encryptedName } = fileName
-        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
+        ? await encrypt(deviceKey as Uint8Array<ArrayBuffer>, new TextEncoder().encode(fileName), salt as Uint8Array<ArrayBuffer>)
         : { encryptedData: undefined };
 
-    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
+    await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
-            gdtsalt: toHex(salt),
+            gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
             gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName) : ""
+            gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
@@ -225,7 +230,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
@@ -234,7 +239,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Prom
 
     const buffer = await client.downloadToBuffer();
     const saltBuffer = fromHex(salt);
-    const data = await decrypt(deviceKey, saltBuffer, buffer);
+    const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
@@ -244,7 +249,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Prom
 
     const contentType = props.metadata?.["gdtcontenttype"];
     const encryptedName = props.metadata?.["gdtname"] ?? "";
-    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer, fromHex(encryptedName)) : undefined;
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
     const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
 
     return { data, contentType, timestamp, filename };
@@ -264,7 +269,7 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
-async function convertLegacyProvenance(containerClient: ContainerClient, key: string | Uint8Array) {
+async function convertLegacyProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
@@ -318,6 +323,38 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+export function postProvenanceMiddleware(body: FormData): Boolean {
+
+    // This may seem simple but it is expected to grow
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+
+    return JSON.stringify(body).length <= sizeLimit
+}
+
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+
+    let count = 0;
+
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        
+        try {
+            const { data } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            const prov = JSON.parse(json) as { attachments?: string[] };
+            
+            if (Array.isArray(prov.attachments)) {
+                count += prov.attachments.length;
+                if (count >= limit) {
+                    return count; 
+                }
+            }
+        } catch {
+            continue;
+        }
+    }
+    return count;
+}
 
 /*=================  Endpoints  =====================*/
 
@@ -350,6 +387,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -357,6 +395,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
@@ -371,6 +410,14 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         attachments.push({ blob: attach, name: attach.name });
     }
 
+    if (attachments.length > 0) {
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+            return { status: 304 };
+        }
+    }
+
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
     if (body.oversizedAttachments) {
         return {
@@ -382,7 +429,38 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+
+    await notifySubscribers(request.params.deviceKey, context);
+    
     return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribers(  deviceKey: string, context: InvocationContext): Promise<HttpResponseInit>{
+    // Notify users who subscribed to this record.
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
+    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    if (emailSet.size === 0) {
+        context.log("No subscribers found for this record.");
+        return;
+    }
+
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
+        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+        return;
+    }
+
+    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
+    const subject: string = 'Tracking update'; 
+    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
+    const displayName: string = from_address;
+    try {
+        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+        for (const to_email of emailSet) {
+            await sendEmail(from_address, to_email, subject, email_body, displayName);
+        }
+    } catch (error) {
+        context.log("Error sending email: " + error);   
+    }
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -705,13 +783,6 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: setup data
-    // const datum = {
-    //     'key': {
-    //         'email': email,
-    //         'tags': tags
-    //     }
-    // }    
-    // const datumJson = JSON.stringify(datum)
 
     // 2 Setup blob name & id
     const type = 'notificationSignups'
@@ -794,7 +865,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     } catch(error) {
         const msg = error instanceof Error ? error.message : String(error);
         return {
-            jsonBody: {message: msg},
+            jsonBody: {message: error.message},
             status: 500,
         }
     }
@@ -819,7 +890,7 @@ async function retrieveNotifEmails(key: string) {
     } catch(error) {
         return {
             jsonBody: {message: error.message},
-            status: status,
+            status: 500,
         }
     } 
 }
@@ -836,6 +907,26 @@ async function streamToString(readableStream) {
         readableStream.on("error", reject);
     });
 }
+
+
+function extractEmailsFromResponse(response: any): Set<string> {
+    const emailSet = new Set<string>();
+    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
+        return emailSet;
+    }
+    try {
+        const parsed = JSON.parse(response.jsonBody.message);
+        if (parsed.email && Array.isArray(parsed.email)) {
+            parsed.email.forEach((e: string) => emailSet.add(e));
+        } else if (parsed.key?.email) {
+            emailSet.add(parsed.key.email);
+        }
+    } catch (error) {
+        console.log("Fail to extract emails:", error.message)
+    }
+    return emailSet;
+}
+
 
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /* How this pseudo-smoketest works:
@@ -869,7 +960,166 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+
+async function createChild(context: InvocationContext, tags: string[] = []) {
+    /* 
+    Note to self: Curious that since children are created before the group parent (implied by groups taking the 
+    list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
+    solve all cases. Then the db gets littered. How large an issue this is is tbd. This may happen, but be nothing
+    to worry about. Question for later: possible to see the "last accessed" date of blob in Azure? Is there an
+    access count? Can we enact a policy of "delete if not accessed since creation and it's been three years"?
+    */ 
+
+    try {
+        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const baseUrl = 'http://localhost:7071/api'
+        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
+        
+        // Create child and group records
+        const childFormData = new FormData();
+        childFormData.append("provenanceRecord", JSON.stringify({
+            blobType: "deviceInitializer",
+            deviceName: "",
+            description: "",
+            tags: tags,
+            hasParent: true,
+            isReportingKey: false
+        }));
+
+        // https://developer.mozilla.org/en-US/docs/Web/API/Response
+        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+            method: "POST",
+            body: childFormData,
+        });
+        const theJson = await theResponse.json()
+        const dataUrl = theResponse.url.split('/')
+        const theRecordKey = dataUrl[dataUrl.length - 1]
+        context.log(theRecordKey)
+        return theRecordKey
+    } catch(e) {
+        context.log('createChild Error: Failed to create child record')
+        return '';
+    }
+}
+
+async function createChildren(context, number_of_children, tags?) {
+    const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
+    let thisChild;
+    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, tags))) {
+            continue;
+        }
+
+        childrenKeys.push(thisChild)
+        if(childrenKeys.length == number_of_children) { 
+            break;
+        }
+    }
+
+    return childrenKeys; 
+}
+
+async function createGroup(context, name, description, n_children) {
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const apiUrl = process.env['api_url'];
+
+    // Create children first
+    let childKeys = await createChildren(context, n_children)
+
+    const groupKey = await makeEncodedDeviceKey()
+    const groupFormData = new FormData();
+
+    groupFormData.append("provenanceRecord", JSON.stringify({
+        blobType: "deviceInitializer",
+        deviceName: name,
+        description: description,
+        children_key: childKeys,  // Note: this is what turns a record into a group
+        tags: [],            
+        hasParent: false,
+        isReportingKey: false
+    })); context.log(groupFormData)
+    
+    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const groupResponse = await fetch(createInitUrl, {
+        method: "POST",
+        body: groupFormData,
+    });
+
+    let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
+    context.log(groupUrlRecordPage)
+
+    return groupUrlRecordPage;
+}
+
+const GroupCreationOrderSchema = z.object({
+    deviceName: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()).optional(),
+    number_of_children: z.number().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
+    create_reporting_key: z.boolean().optional(),
+    annotate: z.boolean().optional(),
+});
+
+export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        GroupCreationOrderSchema.parse(theRequest)
+        let title = theRequest['title']
+        let description = theRequest['description']
+        let n_children = theRequest['number_of_children']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        context.log(theGroupRecordPageUrl)
+
+        return {
+            status: 200,
+            jsonBody: { groupUrl: theGroupRecordPageUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create group: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+
+app.post("createGroup", {
+    authLevel: 'anonymous',
+    route: 'createGroup',
+    handler: createGroupHandler,
+})
 
 app.get("emailSignupTestEndpoint", {
     authLevel: 'anonymous',
@@ -948,3 +1198,5 @@ app.post('recallChildren', {
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
 })
+
+
