@@ -61,6 +61,10 @@ jobs:
 
     - uses: ./.github/actions/setup-backend
 
+    - name: Build Project
+      working-directory: packages/backend
+      run: npm run build #
+
     - name: Remove node_modules
       shell: bash
       working-directory: packages/backend
