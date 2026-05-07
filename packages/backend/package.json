@@ -2,10 +2,10 @@
   "name": "gosqas-az-func",
   "version": "0.0.4",
   "description": "",
-  "main": "dist/bundle.js",
+  "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/bundle.js --external:@azure/functions",
+    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions",
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
