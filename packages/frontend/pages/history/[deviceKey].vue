@@ -135,26 +135,32 @@ const recordHasParent = hasParent(provenance);
 			<div class="buttons-container">
 			<button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-			<ProvenanceShareDropdown 
-				:deviceName="deviceRecord.deviceName" 
-				:description="deviceRecord.description"
-				:fontSize="20"
-				:height="66"
-				:width="48">
-			</ProvenanceShareDropdown>
-			</div>
-			<section id="recalled">
-			<ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
-			</section>
-			<section id="recent">
-			<ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
-			</section>
-			<section id="device-creation">
-			<ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-			</section>
-			<section id="create-record">
-			<ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-			</section>
+              <ProvenanceShareDropdown 
+                :deviceName="deviceRecord.deviceName" 
+                :description="deviceRecord.description"
+                :fontSize="20"
+                :height="66">
+              </ProvenanceShareDropdown>
+
+              <EmailNotificationSignup
+                :recordKey="_recordKey"
+                :fontSize="20"
+                :height="66">
+              </EmailNotificationSignup>
+              
+            </div>
+            <section id="recalled">
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+            </section>
+            <section id="recent">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
+            </section>
+            <section id="device-creation">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+            </section>
+            <section id="create-record">
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+            </section>
 
 			<section id="child-keys">
 			<a class="btn mb-4 user-manual btn-secondary" id="user-manual-btn" href="../user_manual.pdf"
@@ -424,15 +430,37 @@ methods: {
 }
 
 .buttons-container {
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.buttons-container > :deep(.notify-btn) {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  flex: 1 1 300px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+}
+
+.buttons-container :deep(.buttons-container) {
+    flex: 1 1 300px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.buttons-container :deep(.share-btn) {
+    width: 100%;
 }
 
 .download-btn {
-    margin-top: 20px;
-    width: 48% !important;
+  margin-top: 0;
+  flex: 1 1 300px;
 }
 
 .btn-primary {

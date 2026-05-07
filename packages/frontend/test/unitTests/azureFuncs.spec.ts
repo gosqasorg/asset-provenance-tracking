@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { stashRequest, emptyStash, onlineTestFetch } from '~/services/azureFuncs';
+import { stashRequest, emptyStash, onlineTestFetch, periodicChecker } from '~/services/azureFuncs';
 
 async function createRequest(
   key: string,
@@ -230,4 +230,71 @@ describe('Tests to see if we can remove from the stash', () => {
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).toEqual(['{}']);
   }, 200000);
+});
+
+describe("Tests to see if periodicChecker works", async () => {
+  it ("Create a record from periodicChecker", async () => {
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
+      status: 200,
+    } as Response);
+
+    const key = await makeEncodedDeviceKey();
+    let [formUrl, formData] = await createRequest(key, 'stored record', 'testing periodicChecker');
+
+    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
+    localStorage.setItem('gdt-stash-fulfilled', '');
+    stashRequest(formUrl, formData);
+    expect(localStorage.getItem('stash_counter')).toEqual('1');
+
+    // Confirm records were stored
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    expect(requestFromStash).not.toEqual('{}');
+
+    await periodicChecker();
+
+    // Make sure the record was removed from the stash and the new key was stored to display later
+    expect(localStorage.getItem('stash_counter')).toEqual('0');
+    expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
+    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("false");
+
+    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
+    expect(existingKeys).not.toEqual(['{}']);
+    expect(existingKeys.length).toBe(1);
+    expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
+
+    fetchMock.mockRestore();
+  });
+
+  it ("Make sure periodicChecker can run in the background", async () => {
+    // Mock offline since otherwise periodicChecker will instantly return
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
+      status: 500,
+    } as Response);
+    
+    periodicChecker();
+    await new Promise((r) => setTimeout(r, 5000));
+
+    // Confirm that the checker is still running, even after a few seconds
+    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
+
+    fetchMock.mockRestore();
+  });
+
+  it ("Make sure only one instance of periodicChecker can run at a time", async () => {
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
+      status: 500,
+    } as Response);
+    const consoleMock = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    
+    periodicChecker();
+    periodicChecker();
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // Confirm the "already running" message was sent and that the first call is still running
+    expect(consoleMock).toHaveBeenCalledWith('Instance of periodicChecker is already running, returning');
+    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
+
+    consoleMock.mockRestore();
+    fetchMock.mockRestore();
+  });
 });

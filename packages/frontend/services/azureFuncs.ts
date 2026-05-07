@@ -87,6 +87,13 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
+        // Checks to see if user is offline, stashes record if offline
+        const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+        if (checkOffline === 202) {
+            throw new Error('Status 202: User is offline but the record has been stashed')
+        } else if (checkOffline === 507) {
+            throw new Error('Storage limit has been reached, record not stashed')
+        }
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
@@ -106,6 +113,54 @@ export async function postEmail(email: string) {
     });
     if (response.status != 200) {
         throw new Error('postEmail: Failed to save email address')
+    }
+}
+
+//TODO: update function call parameters in createDevice.vue, createContainer.vue, and test/postNotificationEmail.spec.ts
+//TODO: find file with field for already created record
+
+
+export async function postNotificationEmail(deviceKey: string, email: string, tags: string[] = []) {
+    //TODO: implement tags
+
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
+    }
+    if (!email || typeof email !== 'string') {
+        throw new Error("Bad email provided.");
+    }
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    
+    const payload = {
+        email: email,
+        recordKey: deviceKey,  // bckend expects 'recordKey'?
+        tags: tags             
+    };
+
+    //match backend json format 
+    const response = await fetch(`${baseUrl}/notificationSubscription`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (response.status !== 200) {
+        let errorMessage = 'postNotificationEmail: Failed to save email';
+        //Identify specific error message so we can see more than just 'failed to save' and know what went wrong.
+        try {
+            const responseData = await response.json();
+            if (responseData.error) {
+                errorMessage = `postNotificationEmail: ${responseData.error}`;
+            } else if (responseData.message) {
+                errorMessage = `postNotificationEmail: ${responseData.message}`;
+            }
+        } catch (e) {
+            errorMessage = `postNotificationEmail: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
     }
 }
 
@@ -188,22 +243,30 @@ export async function connectivityChecker() {
 }
 
 export async function stashRequest(formUrl: string, formData: FormData) {
+    try {
     // Convert values to string and store them
-    let valuesToStore = [];
-    valuesToStore.push(['formUrl', formUrl]);
-    valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
+        let valuesToStore = [];
+        valuesToStore.push(['formUrl', formUrl]);
+        valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
-    // Get stash_counter and add 1 to it
-    let current_request = localStorage.getItem('stash_counter');
-    if (current_request == null) {
-        current_request = '0';
+        // Get stash_counter and add 1 to it
+        let current_request = localStorage.getItem('stash_counter');
+        if (current_request == null) {
+            current_request = '0';
+        }
+        let stash_counter = parseInt(current_request) + 1;
+        localStorage.setItem('stash_counter', stash_counter.toString());
+
+        // Store the request at a unique key (gosqas_offline_stash_#)
+        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        localStorage.setItem(request_name, JSON.stringify(valuesToStore));
+    } catch (error: any) {
+        // This web API error is thrown when localStorage is full
+        if (error.name === "QuotaExceededError" ) {
+            console.log('localStorage is full: no more records can be stored')
+            throw error
+        }
     }
-    let stash_counter = parseInt(current_request) + 1;
-    localStorage.setItem('stash_counter', stash_counter.toString());
-
-    // Store the request at a unique key (gosqas_offline_stash_#)
-    let request_name = 'gosqas_offline_stash_' + stash_counter;
-    localStorage.setItem(request_name, JSON.stringify(valuesToStore));
 }
 
 export async function emptyStash() {
@@ -244,6 +307,54 @@ export async function emptyStash() {
             return 404;
         }
     }
-
+    // Disable the offline banner and enable the online banner
+    displayOfflineBanner = false;
+    // Online banner currently doesn't have a way to be disabled, so we'll avoid enabling it until that is implemented
+    // displayOnlineBanner = true;
     return 200;
+}
+
+export async function periodicChecker() {
+    // Return if a checker is already running
+    if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
+        console.log("Instance of periodicChecker is already running, returning")
+        return;
+    }
+    localStorage.setItem('gdt-awaiting-conectivity', "true");
+
+    let stash_empty = false;
+    let response = 404
+
+    // Wait for the user to come back online then empty the stash
+    while (!stash_empty) {
+        await connectivityChecker();
+        response = await emptyStash();
+        if (response == 200) {
+            stash_empty = true;
+        }
+    }
+
+    localStorage.setItem('gdt-awaiting-conectivity', "false");
+}
+
+export async function offlineDetectAndStash (formUrl: string, formData: FormData) {
+    try {
+        // Check if the user is online or offline. Stash the request if the user is offline
+        if ((await(onlineTestFetch()))) {
+            return 200;
+        } else {
+            await stashRequest(formUrl, formData);
+            // Intentionally left unawaited
+            periodicChecker();
+            return 202;
+        }
+    } catch (error: any) {
+        if (error.name === "QuotaExceededError") {
+            console.log('Storage limit has been reached: your record has not been stored')
+            return 507;
+        }
+        else {
+          console.log('Error in offlineDetectAndStash: ' + error)
+        }
+    }
 }
