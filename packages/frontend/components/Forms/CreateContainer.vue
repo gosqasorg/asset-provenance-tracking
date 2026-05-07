@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h4 class="mt-1 mb-3">Create New Group</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
+            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500" @keydown.enter.prevent>
             <textarea id="container-description" v-model="description" placeholder="Group Description" maxlength="5000" rows="3"></textarea>
 
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
@@ -26,11 +26,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
-                <input type="number" v-model="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" @change="displayFields" >
+                <input type="number" v-model.number="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" step="1" @input="enforceLimit" @change="displayFields" @keydown="blockInvalidNumberChars">
+                <span style="font-size: 1em; font-weight: normal; margin-left: 8px;">(Limit 500)</span>
             </h4>
 
 
@@ -52,9 +53,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
+            <!-- Sign up for email notifications-->
+            <h4 class="p-1 my-0">
+                <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
+            </h4>
+
+            <div v-if="notify">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    required placeholder="Email"
+                    @keyup.enter=""
+                />
+                </div>
+
             <!-- Volunteer Feedback Email --> 
-            <h4 class="p-1">
-                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
+            <h4 class="p-1 my-0">
+                <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
             <div v-if="isChecked">
@@ -65,6 +81,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     v-model="textInput"
                     placeholder="Email"
                     @keyup.enter=""
+                    @keydown.enter.prevent
                 />
             </div>
 
@@ -103,7 +120,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -123,6 +140,8 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            notify: false,          //sign up for email notifs vals
+            emailInput: '',
             isChecked: false,
             textInput: '',
             customized: false,
@@ -149,6 +168,28 @@ export default {
         },
     },
     methods: {
+        blockInvalidNumberChars(e: KeyboardEvent) {
+            const invalidKeys = ['e', 'E', '+', '-', '.'];
+            if (invalidKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        },
+        enforceLimit() {
+            // To handle cases: empty user input or invalid input types such as the string 'abc' or '1+600'.
+            if (this.childrenKeys === null || this.childrenKeys === undefined || isNaN(this.childrenKeys)) {
+                this.childrenKeys = 0;
+                return;
+            }
+
+            if (this.childrenKeys > 500) {
+                this.childrenKeys = 500;
+            } else if (this.childrenKeys < 0) {
+                this.childrenKeys = 0;
+            } else {
+                this.childrenKeys = Math.floor(this.childrenKeys);
+            }
+        },
+
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
@@ -315,6 +356,14 @@ export default {
 
                 if (response && this.isChecked && this.textInput) {
                         await postEmail(this.textInput);
+                }
+    
+                //Repeated logic from lines 171-177 in CreateDevice.vue
+                if (response && this.notify && this.emailInput) {
+                    const email = this.emailInput.trim();
+                    await postNotificationEmail(deviceKey,email);
+                } else if (!response && this.notify && this.emailInput) {
+                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 // Navigate to the new group page

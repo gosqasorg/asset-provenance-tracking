@@ -21,14 +21,20 @@ their items.
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
-const route = useRoute()
+const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
 
-const provenance = await getProvenance(recordKey);
+// Catches the error when the key is invalid / not found and prevents it from not crashing
+//i.e., not sending the invalid url
+let provenance: any[] = [];
+try {
+	provenance = await getProvenance(recordKey);
+} catch (e) {
+	provenance = [];
+}
 
 const recordHasParent = hasParent(provenance);
-
 </script>
 
 <template>
@@ -101,7 +107,7 @@ const recordHasParent = hasParent(provenance);
 			<div class="record-description">
 				<div class="my-4 text-iris fs-1">
 				<p class="text-bold mb-0 device-name">Asset History Records</p>
-				<h1 class="mt-1 mb-1">
+				<h1 class="mt-1 mb-1" style="word-break: break-word;">
 					{{ deviceRecord?.deviceName }}
 				</h1>
 				</div>
@@ -113,7 +119,7 @@ const recordHasParent = hasParent(provenance);
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
-				<span style="word-wrap: break-word;" v-html="clickableLink(deviceRecord?.description)"></span>
+				<span v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
 				</div>
 
 				<section ref="section" id="priority-notices">
@@ -129,26 +135,32 @@ const recordHasParent = hasParent(provenance);
 			<div class="buttons-container">
 			<button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-			<ProvenanceShareDropdown 
-				:deviceName="deviceRecord.deviceName" 
-				:description="deviceRecord.description"
-				:fontSize="20"
-				:height="66"
-				:width="48">
-			</ProvenanceShareDropdown>
-			</div>
-			<section id="recalled">
-			<ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
-			</section>
-			<section id="recent">
-			<ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
-			</section>
-			<section id="device-creation">
-			<ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
-			</section>
-			<section id="create-record">
-			<ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
-			</section>
+              <ProvenanceShareDropdown 
+                :deviceName="deviceRecord.deviceName" 
+                :description="deviceRecord.description"
+                :fontSize="20"
+                :height="66">
+              </ProvenanceShareDropdown>
+
+              <EmailNotificationSignup
+                :recordKey="_recordKey"
+                :fontSize="20"
+                :height="66">
+              </EmailNotificationSignup>
+              
+            </div>
+            <section id="recalled">
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
+            </section>
+            <section id="recent">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
+            </section>
+            <section id="device-creation">
+              <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
+            </section>
+            <section id="create-record">
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+            </section>
 
 			<section id="child-keys">
 			<a class="btn mb-4 user-manual btn-secondary" id="user-manual-btn" href="../user_manual.pdf"
@@ -189,21 +201,7 @@ const recordHasParent = hasParent(provenance);
 	</div>
 	</div>
 </div>
-<div v-else>
-	<h1 class="error-title">Invalid history key</h1>
-	<h2 class="error-subtitle">No record attached to this key</h2>
-	<p class="error-description">
-	We’re sorry, the record you’re looking for could not be found.
-	Please double-check your key. If you keep receiving this error,
-	email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-	</p>
-	<div class="error-buttons">
-	<!-- Go home button -->
-	<RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-	<!-- Email us button -->
-	<RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
-	</div>
-</div>
+<InvalidHistoryKey v-else></InvalidHistoryKey>
 </template>
 
 <script lang="ts">
@@ -211,6 +209,7 @@ import { getProvenance, displayOnlineBanner, displayOfflineBanner } from '~/serv
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
+import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -219,7 +218,6 @@ let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
-
 
 let headers = [
 { id: "device-details", name: "Record details" },
@@ -233,6 +231,7 @@ let headers = [
 export default {
 components: {
 	KeyList,
+	InvalidHistoryKey,
 },
 data() {
 	return {
@@ -287,6 +286,9 @@ async mounted() {
         this.isCreating = false;
         this.recordKeyFound = false;
         this.hasReportingKey = false;
+        setTimeout(() => {
+          this.isLoading = false;
+        }, 1000); // logs after 1 second
         console.log(error)
 	}
 },
@@ -332,6 +334,11 @@ methods: {
             type: 'error',
             text: 'No provenance record found'
 		});
+		this.isLoading = false;
+		this.recordKeyFound = false;
+		this.hasReportingKey = false;
+		this.childKeys = [];
+		this.valid = false;
 		return;
 	}
 
@@ -389,7 +396,6 @@ methods: {
 	},
 }
 };
-
 </script>
 
 <style scoped>
@@ -424,15 +430,37 @@ methods: {
 }
 
 .buttons-container {
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.buttons-container > :deep(.notify-btn) {
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  flex: 1 1 300px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+}
+
+.buttons-container :deep(.buttons-container) {
+    flex: 1 1 300px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.buttons-container :deep(.share-btn) {
+    width: 100%;
 }
 
 .download-btn {
-    margin-top: 20px;
-    width: 48% !important;
+  margin-top: 0;
+  flex: 1 1 300px;
 }
 
 .btn-primary {

@@ -40,9 +40,15 @@ vi.mock('@azure/storage-blob', () => {
       };
     }
     getBlockBlobClient() { return new MockBlockBlobClient(); }
+    getBlobClient() { return new MockBlobClient();}
+  }
+
+  class MockBlobClient {
+    async download() { return 'testString'; }
   }
 
   return {
+    BlobClient : MockBlobClient,
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
     StorageSharedKeyCredential: class {},
@@ -62,6 +68,26 @@ vi.mock('node:crypto', () => ({
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
   },
 }));
+
+vi.mock('@azure/communication-email', () => {
+    const mockBeginSend = vi.fn().mockResolvedValue({
+        getOperationState: vi.fn().mockReturnValue({ isStarted: true }),
+        isDone: vi.fn().mockReturnValue(true),
+        poll: vi.fn(),
+        getResult: vi.fn().mockReturnValue({ status: 'Succeeded', id: 'test-id' })
+    });
+
+    return {
+        EmailClient: vi.fn().mockImplementation(() => {
+            return {
+                beginSend: mockBeginSend
+            };
+        }),
+        KnownEmailSendStatus: {
+            Succeeded: 'Succeeded'
+        }
+    };
+});
 
 
 function makeHttpRequest(overrides: any = {}) {
