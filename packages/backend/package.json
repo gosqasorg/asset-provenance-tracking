@@ -5,7 +5,7 @@
   "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions",
+    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions-core --external:net --external:http --external:https --external:tls --external:util --external:os --external:fs --external:path --external:crypto --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
