@@ -7,3 +7,6 @@ coverage/
 *.env
 *.ignore
 *.sw*
+*__blobstorage__*
+*azurite_data*
+__azurite_db_*
