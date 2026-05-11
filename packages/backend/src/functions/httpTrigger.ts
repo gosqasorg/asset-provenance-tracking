@@ -969,6 +969,7 @@ async function createChildren(context, number_of_children, hasReportingKey, tags
 
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
+            // ReportingKey is itself a record that is part of a group
             if(hasReportingKey){
                 const reportingTags = [...tags, "reportingkey"]
                 if(!(thisChild = await createChild(context, reportingTags, true))) {
