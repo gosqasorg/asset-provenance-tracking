@@ -268,6 +268,7 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
+// Check if can place status check in here
 async function convertLegacyProvenance(containerClient: ContainerClient, key: string | Uint8Array) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
@@ -351,6 +352,7 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 
 /* ----- API Endpoints Section 1/2: Functions ----- */
 
+// Try...catch whole fxn?
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -362,7 +364,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
         await convertLegacyProvenance(containerClient, deviceKey);
-    }
+    } // else statement here if prov doesn't exist and return 404
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {

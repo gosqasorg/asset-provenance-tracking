@@ -1069,8 +1069,6 @@ describe("Group Creation Tests", () => {
 
 	}, 60000);
 
-	
-
 });
 
 describe("Record Creation Tests", () => {
