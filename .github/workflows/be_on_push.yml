@@ -64,7 +64,7 @@ jobs:
     - name: Remove node_modules
       shell: bash
       working-directory: packages/backend
-      run: rm -rf node_modules
+      run: rm -rf ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/node_modules
 
     - name: Azure Functions Action
       uses: Azure/functions-action@v1
