@@ -29,11 +29,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 placeholder="Description" maxlength="5000" rows="3"></textarea>
             <div v-if="isGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
-                    placeholder="Group Record Keys (optional, separated with a comma)" />
+                    placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
             <div v-else>
                 <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey"
-                    placeholder="Group Key (optional)" />
+                    placeholder="Add to Group (key, optional)" />
             </div>
 
             <div>
@@ -91,7 +91,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <!-- Back Online Banner -->
         <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-            <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+            <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+            <RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
             </div>
         </Banner>
 
