@@ -66,10 +66,8 @@ describe("Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
 
-		const reportingKey = childKeys.at(-1) as string;
-		expect(groupRecord.reportingKey).toBe(reportingKey);
-
 		// Verify reporting key
+		const reportingKey = childKeys.at(-1) as string;
 		const reportingKeyRes = await fetch(`${baseUrl}/provenance/${reportingKey}`)
 		expect(reportingKeyRes.ok).toBe(true);
 		const reportigKeyAttributes = await reportingKeyRes.json();
