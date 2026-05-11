@@ -35,6 +35,7 @@ const baseUrl = accountName === "devstoreaccount1"
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
+const MAX_ATTACHMENTS_LIMIT = 1000;
 
 /*==============  Utils Section  ============*/
 
@@ -44,7 +45,7 @@ interface ProvenanceRecord {
 }
 
 interface DecryptedBlob {
-    data: Uint8Array;
+    data: Uint8Array<ArrayBuffer>;
     contentType: string;
     timestamp: number;
     filename?: string;
@@ -67,12 +68,12 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
-async function sha256(data: BufferSource) {
+async function sha256(data: NodeJS.BufferSource) {
     const buffer = await crypto.subtle.digest("SHA-256", data);
     return new Uint8Array(buffer);
 }
 
-export function toHex(data: WithImplicitCoercion<ArrayBuffer | SharedArrayBuffer>): string {
+export function toHex(data: Uint8Array<ArrayBuffer>): string {
     return Buffer.from(data).toString("hex");
 }
 
@@ -80,19 +81,20 @@ export function fromHex(hex: string): Uint8Array {
     return new Uint8Array(Buffer.from(hex, 'hex'));
 }
 
-export function decodeKey(key: string): Uint8Array {
-    const $key = bs58.decode(key);
-    switch ($key.length) {
+export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
+    const theKey = bs58.decode(key);
+
+    switch (theKey.length) {
         case 16:
         case 24:
         case 32:
-            return $key
+            return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${$key.length}`);
+            throw new Error(`Invalid Key Length ${theKey.length}`);
     }
 }
 
-export async function calculateDeviceID(key: string | Uint8Array): Promise<string> {
+export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>): Promise<string> {
     // if key is a string, convert it to a buffer
     key = typeof key === 'string' ? decodeKey(key) : key;
     const hash = await sha256(key);
@@ -116,24 +118,24 @@ function calculateLegacyDeviceID(key: string | Uint8Array): bigint {
     return fnv1(key);
 }
 
-export async function encrypt(key: Uint8Array, data: BufferSource, salt?: Uint8Array): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
+export async function encrypt(key: Uint8Array<ArrayBuffer>, data: NodeJS.BufferSource, salt?: Uint8Array<ArrayBuffer>): Promise<{ salt: Uint8Array; encryptedData: Uint8Array; }> {
     const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ['encrypt']);
     salt ??= crypto.getRandomValues(new Uint8Array(16));
     const encryptedData = await crypto.subtle.encrypt({ name: "AES-CBC", iv: salt }, $key, data);
     return { salt, encryptedData: new Uint8Array(encryptedData) };
 }
 
-export async function decrypt(key: Uint8Array, salt: Uint8Array, encryptedData: Uint8Array): Promise<Uint8Array> {
-    const $key = await crypto.subtle.importKey("raw", key, "AES-CBC", false, ["decrypt"]);
+export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array<ArrayBuffer>, encryptedData: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    const $key = await crypto.subtle.importKey("raw", key.buffer, "AES-CBC", false, ["decrypt"]);
     const result = await crypto.subtle.decrypt({ name: "AES-CBC", iv: salt }, $key, encryptedData);
     return new Uint8Array(result);
 }
 
-export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey);
-    const { salt, encryptedData } = await encrypt(deviceKey, data);
-    const blobID = toHex(await sha256(encryptedData));
+    const deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
+    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
 
     let blobName;
     if (type === 'prov') {
@@ -145,16 +147,16 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     }
 
     const { encryptedData: encryptedName } = fileName
-        ? await encrypt(deviceKey, new TextEncoder().encode(fileName), salt)
+        ? await encrypt(deviceKey as Uint8Array<ArrayBuffer>, new TextEncoder().encode(fileName), salt as Uint8Array<ArrayBuffer>)
         : { encryptedData: undefined };
 
-    await client.uploadBlockBlob(blobName, encryptedData.buffer, encryptedData.length, {
+    await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
         metadata: {
             gdtcontenttype: contentType,
             gdthash: dataHash,
-            gdtsalt: toHex(salt),
+            gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
             gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName) : ""
+            gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
         },
         blobHTTPHeaders: {
             blobContentType: "application/octet-stream"
@@ -228,7 +230,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Promise<DecryptedBlob> {
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
     if (!salt) throw new Error(`Missing Salt ${client.name}`);
@@ -237,7 +239,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Prom
 
     const buffer = await client.downloadToBuffer();
     const saltBuffer = fromHex(salt);
-    const data = await decrypt(deviceKey, saltBuffer, buffer);
+    const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
@@ -247,7 +249,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array): Prom
 
     const contentType = props.metadata?.["gdtcontenttype"];
     const encryptedName = props.metadata?.["gdtname"] ?? "";
-    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer, fromHex(encryptedName)) : undefined;
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
     const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
 
     return { data, contentType, timestamp, filename };
@@ -267,7 +269,7 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
-async function convertLegacyProvenance(containerClient: ContainerClient, key: string | Uint8Array) {
+async function convertLegacyProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
@@ -321,6 +323,38 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+export function postProvenanceMiddleware(body: FormData): Boolean {
+
+    // This may seem simple but it is expected to grow
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+
+    return JSON.stringify(body).length <= sizeLimit
+}
+
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+
+    let count = 0;
+
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        
+        try {
+            const { data } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            const prov = JSON.parse(json) as { attachments?: string[] };
+            
+            if (Array.isArray(prov.attachments)) {
+                count += prov.attachments.length;
+                if (count >= limit) {
+                    return count; 
+                }
+            }
+        } catch {
+            continue;
+        }
+    }
+    return count;
+}
 
 /*=================  Endpoints  =====================*/
 
@@ -352,8 +386,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
-
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -361,6 +395,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
@@ -373,6 +408,14 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         if (typeof attach === 'string') continue;
         console.log("attach type: " + typeof(attach))
         attachments.push({ blob: attach, name: attach.name });
+    }
+
+    if (attachments.length > 0) {
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+            return { status: 304 };
+        }
     }
 
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
@@ -918,7 +961,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, tags: string[] = [], isReportingKey: boolean = false ) {
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isReportingKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -928,15 +971,15 @@ async function createChild(context: InvocationContext, tags: string[] = [], isRe
     */ 
 
     try {
-        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const baseUrl = 'http://localhost:7071/api'
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // const baseUrl = 'http://localhost:7071/api'
         const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
-            deviceName: "",
+            deviceName: custom_title,
             description: "",
             tags: tags,
             hasParent: true,
@@ -959,14 +1002,17 @@ async function createChild(context: InvocationContext, tags: string[] = [], isRe
     }
 }
 
-async function createChildren(context, number_of_children, hasReportingKey, tags) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], hasReportingKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, tags))) {
+    let j = 0;
+    
+    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, custom_child_titles[j], tags))) {
             continue;
         }
 
+        j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             // ReportingKey is itself a record that is part of a group
@@ -984,13 +1030,27 @@ async function createChildren(context, number_of_children, hasReportingKey, tags
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children, hasReportingKey, tags) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasReportingKey, tags) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
+    // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
+    if (!Array.isArray(custom_child_titles)) {
+        custom_child_titles = []
+        for (let i = 0; i < n_children; i++) {
+                custom_child_titles.push(`${name} #${i + 1}`)
+        }
+    };
+
+    let customLen = custom_child_titles.length
+    if (n_children > customLen) {
+        for (let i = 0; i < n_children - customLen; i++) {
+            custom_child_titles.push("")
+        }
+    };
     // Create children first
-    let childKeys = await createChildren(context, n_children, hasReportingKey, tags)
+    let childKeys = await createChildren(context, n_children, custom_child_titles, hasReportingKey, tags)
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1004,9 +1064,11 @@ async function createGroup(context, name, description, n_children, hasReportingK
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
-        children_key: childKeys,  // Note: this is what turns a record into a group
+        number_of_children: n_children,
+        children_key: childKeys,  // Note: this is what turns a record into a group     
+        children_name: custom_child_titles,
         ...(reporting_key ? { reportingKey: reporting_key } : {}), // only gets added if reporting key is present
-        tags: tags,            
+        tags: tags,         
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
@@ -1031,6 +1093,7 @@ const GroupCreationOrderSchema = z.object({
     number_of_children: z.number().optional(),
     hasReportingKey: z.boolean().optional(),
     custom_record_titles: z.array(z.string()).optional(),
+    children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
 });
@@ -1039,12 +1102,13 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     try{
         let theRequest = await request.json()
         GroupCreationOrderSchema.parse(theRequest)
-        let title = theRequest['title']
+        let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
         let hasReportingKey = theRequest['hasReportingKey']
         let tags = theRequest['tags']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, hasReportingKey, tags)
+        let custom_child_titles = theRequest['children_name']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasReportingKey, tags)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1173,3 +1237,5 @@ app.post('recallChildren', {
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
 })
+
+

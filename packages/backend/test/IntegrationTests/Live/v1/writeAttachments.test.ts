@@ -7,7 +7,7 @@ import { writeFile } from 'fs/promises';
 
 
 describe("Creating records with attachments", () => {
-	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
 	// create a record with an attachement 
 	it("Create record with one attachment ", async () => {
@@ -65,7 +65,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare original attached file and downlaod
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -141,7 +141,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare FIRST attachment
             const attachmentHash1 = responseString.attachments[0];
-            const downloadUrl1 = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash1}`;
+            const downloadUrl1 = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash1}`;
             console.log('Downloading first attachment from:', downloadUrl1);
             const downloadResponse1 = await fetch(downloadUrl1);
             expect(downloadResponse1.ok).toBe(true);
@@ -152,7 +152,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare SECOND attachment
             const attachmentHash2 = responseString.attachments[1];
-            const downloadUrl2 = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash2}`;
+            const downloadUrl2 = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash2}`;
             console.log('Downloading second attachment from:', downloadUrl2);
             const downloadResponse2 = await fetch(downloadUrl2);
             expect(downloadResponse2.ok).toBe(true);
@@ -221,7 +221,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare PDF attachment
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading PDF from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -275,44 +275,24 @@ describe("Creating records with attachments", () => {
             body: formData,
             });
 
-            expect(postResponse.ok).toBe(true);
-            console.log('Large file upload succeeded');
+            expect(postResponse.ok).toBe(false);
+            console.log('Large file upload failed as expected');
 
         } catch (error) {
             console.error("(Create POST Test - Large File) Error creating a record: " + error); 
             throw error;
         }
 
-        // GET record key to make sure it exists with large attachment
+        // GET record key to make sure it doesn't exist with large attachement
         let getResponse; 
         try {
             getResponse = await fetch(fullUrl);
             getResponse = await getResponse.json();
-            let responseString = JSON.parse(JSON.stringify(getResponse[0]));
-
-            expect(JSON.stringify(getResponse)).not.toBe('[]');
-            expect(responseString.record.deviceName).toBe('Create Record Test - Large File');
-            expect(responseString.record.description).toBe('An API Feature Test - Large Attachment (>2MB)');
-            expect(responseString.attachments.length).toBe(1);
-
-            // Download and compare large attachment
-            const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
-            console.log('Downloading large file from:', downloadUrl);
-            const downloadResponse = await fetch(downloadUrl);
-            expect(downloadResponse.ok).toBe(true);
-            const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer());
-            
-            // Reading original large file 
-            const originalBuffer = await readFile('./test/attachments/LargeFile.pdf');
-            expect(Buffer.compare(originalBuffer, retrievedBuffer)).toBe(0);
-            console.log('Large file attachment matches original');
+            expect(JSON.stringify(getResponse)).toBe('[]');
 
         } catch(error) {
             console.error('(Create GET Test - Large File) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
             throw error;
         }
     }, 600000);
-
-
 });

@@ -53,8 +53,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
+            <!-- Sign up for email notifications-->
+            <h4 class="p-1 my-0">
+                <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
+            </h4>
+
+            <div v-if="notify">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    required placeholder="Email"
+                    @keyup.enter=""
+                />
+                </div>
+
             <!-- Volunteer Feedback Email --> 
-            <h4 class="p-1">
+            <h4 class="p-1 my-0">
                 <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
     
@@ -80,8 +95,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Back Online Banner -->
             <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-                <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
-                </div>
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+				</div>
             </Banner>
 
         </div>
@@ -105,7 +121,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -125,6 +141,8 @@ export default {
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            notify: false,          //sign up for email notifs vals
+            emailInput: '',
             isChecked: false,
             textInput: '',
             customized: false,
@@ -339,6 +357,14 @@ export default {
 
                 if (response && this.isChecked && this.textInput) {
                         await postEmail(this.textInput);
+                }
+    
+                //Repeated logic from lines 171-177 in CreateDevice.vue
+                if (response && this.notify && this.emailInput) {
+                    const email = this.emailInput.trim();
+                    await postNotificationEmail(deviceKey,email);
+                } else if (!response && this.notify && this.emailInput) {
+                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 // Navigate to the new group page
