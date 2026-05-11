@@ -1057,11 +1057,11 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     try{
         let theRequest = await request.json()
         GroupCreationOrderSchema.parse(theRequest)
-        let title = theRequest['title']
+        let deviceName = theRequest['title']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
         let tags = theRequest['tags']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children,tags)
+        let theGroupRecordPageUrl = await createGroup(context, deviceName, description, n_children,tags)
         context.log(theGroupRecordPageUrl)
 
         return {
