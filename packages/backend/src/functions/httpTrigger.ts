@@ -1018,7 +1018,7 @@ async function createChildren(context, number_of_children: number, custom_child_
             // ReportingKey is itself a record that is part of a group
             if(hasReportingKey){
                 const reportingTags = [...tags, "reportingkey"]
-                if(!(thisChild = await createChild(context, reportingTags, true))) {
+                if(!(thisChild = await createChild(context,"Reporting Key", reportingTags, true))) {
                     continue;
                 }
                 childrenKeys.push(thisChild)
@@ -1065,7 +1065,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         deviceName: name,
         description: description,
         number_of_children: n_children,
-        children_key: childKeys,  // Note: this is what turns a record into a group     
+        children_key: hasReportingKey ? childKeys.slice(0, -1) : childKeys,  // Note: this omits the reporting key from children key  
         children_name: custom_child_titles,
         ...(reporting_key ? { reportingKey: reporting_key } : {}), // only gets added if reporting key is present
         tags: tags,         

@@ -64,15 +64,15 @@ describe("Group Creation Tests", () => {
 		expect(groupRecord.description).toBe(groupPayload.description);
 
 		const childKeys: string[] = groupRecord.children_key;
-		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
+		expect(childKeys.length).toBe(groupPayload.number_of_children);
 
 		// Verify reporting key
-		const reportingKey = childKeys.at(-1) as string;
+		const reportingKey = groupRecord.reportingKey as string;
 		const reportingKeyRes = await fetch(`${baseUrl}/provenance/${reportingKey}`)
 		expect(reportingKeyRes.ok).toBe(true);
-		const reportigKeyAttributes = await reportingKeyRes.json();
-		expect(reportigKeyAttributes.length).toBeGreaterThan(0);
-		const reportingKeyRecord = reportigKeyAttributes[0].record;
+		const reportingKeyAttributes = await reportingKeyRes.json();
+		expect(reportingKeyAttributes.length).toBe(0);
+		const reportingKeyRecord = reportingKeyAttributes[0].record;
 		expect(reportingKeyRecord.isReportingKey).toBe(true);
 		expect(reportingKeyRecord.tags).toContain("reportingkey");
     }, 6000);
