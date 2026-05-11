@@ -75,7 +75,7 @@ export default {
         }
     },
     methods: {
-        downloadQRCode(name = 'v23' ) {
+        downloadQRCode(name) {
             this.qrCodeStyling?.download({
                 name: name,
                 extension: 'png'
