@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@coreui/coreui": "^5.0.2",
-    "@scalar/nuxt": "^0.5.20",
     "@urlpack/base58": "^2.0.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "bootstrap": "^5.3.3",
@@ -40,7 +39,7 @@
     "bootstrap5-toggle": "^5.1.1",
     "jsqr": "^1.4.0",
     "mitt": "^3.0.1",
-    "nuxt": "^3.11.2",
+    "nuxt": "4.4.2",
     "nuxt-snackbar": "^1.1.2",
     "qr-code-styling": "^1.7.2",
     "qrcode-generator": "^1.4.4",
@@ -51,6 +50,10 @@
     "vue3-scroll-spy": "^1.0.8",
     "workbox-core": "^7.4.0",
     "workbox-precaching": "^7.4.0",
-    "workbox-routing": "^7.4.0"
+    "workbox-routing": "^7.4.0",
+    "zod": "^4.4.3"
+  },
+  "optionalDependencies": {
+    "@oxc-parser/binding-linux-x64-gnu": "^0.128.0"
   }
 }
