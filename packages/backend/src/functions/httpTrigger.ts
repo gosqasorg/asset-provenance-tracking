@@ -1065,7 +1065,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         deviceName: name,
         description: description,
         number_of_children: n_children,
-        children_key: hasReportingKey ? childKeys.slice(0, -1) : childKeys,  // Note: this omits the reporting key from children key  
+        children_key: childKeys,   
         children_name: custom_child_titles,
         ...(reporting_key ? { reportingKey: reporting_key } : {}), // only gets added if reporting key is present
         tags: tags,         

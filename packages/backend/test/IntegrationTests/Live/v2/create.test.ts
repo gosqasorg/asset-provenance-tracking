@@ -64,7 +64,7 @@ describe("Group Creation Tests", () => {
 		expect(groupRecord.description).toBe(groupPayload.description);
 
 		const childKeys: string[] = groupRecord.children_key;
-		expect(childKeys.length).toBe(groupPayload.number_of_children);
+		expect(childKeys.length - 1).toBe(groupPayload.number_of_children);
 
 		// Verify reporting key
 		const reportingKey = groupRecord.reportingKey as string;
