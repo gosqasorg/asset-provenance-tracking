@@ -132,47 +132,49 @@ describe("Group Creation v2 tests", () => {
             });
 
             // last two test cases, 13 & 14, are meant to fail during record creation
-            if (i < testCases.length - 2){
-                // checks if fetch() response was sucessful (status in 200 - 299)
-                expect(response.ok).toBe(true);
-                
-                let url = (await response.json()).groupUrl;
-                console.log(`Custom title test case #${i}: ${url}`)
-
-                // retrieves and stores parent records and tests that parent deviceName matches test cases
-                let parentKey = url.substring(url.lastIndexOf('/') + 1);
-                let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
-                let parentRecord = prov[0].record
-                // console.log(parentRecord)
-                expect(parentRecord.deviceName).toBe(currCase.deviceName)
-                groupParentRecords.push(parentRecord);
-
-                // stores child keys by group
-                let childKeys = parentRecord.children_key
-                groupedChildKeys.push(childKeys);
-                
-                // retrieves and stores custom child titles by group
-                let tempGroup = []
-                for (let j = 0; j < currCase.number_of_children; j ++) {
-                    let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
-                    let childTitle = childProv[0].record.deviceName
-                    tempGroup.push(childTitle)
-
-                    // tests that retrieved custom child titles match test cases based on existence, length, and contents of children_name key and parent deviceName
-                    if (currCase.children_name) {
-                        if (j <= currCase.children_name.length - 1) {
-                            expect(childTitle).toBe(currCase.children_name[j])
-                        } else {
-                            expect(childTitle).toBe("")
-                        }
-                    } else {
-                        expect(childTitle).toBe(`${currCase.deviceName} #${j + 1}`)
-                    };
-                }
-                groupedChildTitles.push(tempGroup)
-            } else {
+            if (i >= testCases.length - 2){
                 expect(response.ok).toBe(false);
+                continue
             }
+            
+            // checks if fetch() response was sucessful (status in 200 - 299)
+            expect(response.ok).toBe(true);
+            
+            let url = (await response.json()).groupUrl;
+            console.log(`Custom title test case #${i}: ${url}`)
+
+            // retrieves and stores parent records and tests that parent deviceName matches test cases
+            let parentKey = url.substring(url.lastIndexOf('/') + 1);
+            let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+            let parentRecord = prov[0].record
+            // console.log(parentRecord)
+            expect(parentRecord.deviceName).toBe(currCase.deviceName)
+            groupParentRecords.push(parentRecord);
+
+            // stores child keys by group
+            let childKeys = parentRecord.children_key
+            groupedChildKeys.push(childKeys);
+            
+            // retrieves and stores custom child titles by group
+            let tempGroup = []
+            for (let j = 0; j < currCase.number_of_children; j ++) {
+                let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
+                let childTitle = childProv[0].record.deviceName
+                tempGroup.push(childTitle)
+
+                // tests that retrieved custom child titles match test cases based on existence, length, and contents of children_name key and parent deviceName
+                if (!currCase.children_name) {
+                    expect(childTitle).toBe(`${currCase.deviceName} #${j + 1}`)
+                    continue
+                }
+
+                if (j <= currCase.children_name.length - 1) {
+                    expect(childTitle).toBe(currCase.children_name[j])
+                } else {
+                    expect(childTitle).toBe("")
+                }
+            }
+            groupedChildTitles.push(tempGroup)
         };
         // console.log("groupParentRecords: ", groupParentRecords)
         // console.log("groupedChildKeys: ", groupedChildKeys)
