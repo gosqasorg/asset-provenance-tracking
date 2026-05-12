@@ -13,6 +13,21 @@ app_registration_id = environ['app_registration_id']
 secret_value = environ['secret_value']
 workspace_id = environ['workspace_id']
 
+# Modern table names, from:
+# https://learn.microsoft.com/en-us/previous-versions/azure/azure-monitor/app/convert-classic-resource#workspace-based-resource-changes
+names = [
+    'AppAvailabilityResults', 
+    'AppBrowserTimings',
+    'AppDependencies',
+    'AppEvents',
+    'AppMetrics',
+    'AppPageViews',
+    'AppPerformanceCounters',
+    'AppRequests',
+    'AppExceptions',
+    'AppTraces'
+]
+
 
 def get_token():
     response = requests.post(
@@ -55,7 +70,7 @@ def run_query(token, label, query):
         headers={"Authorization": f"Bearer {token}"},
         json={"query": query}
     ).json()
-   
+
 
 if __name__ == '__main__':
     token = get_token()
