@@ -107,10 +107,11 @@ const recordHasParent = hasParent(provenance);
 
 			<!-- Back Online Banner -->
 			<Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
-				<img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
-				<div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
 				</div>
-			</Banner>
+            </Banner>
 
 			<section id="device-details" class="details-container">
 			<div class="record-description">
