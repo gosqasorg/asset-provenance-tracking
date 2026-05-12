@@ -71,7 +71,7 @@ describe("Group Creation Tests", () => {
 		const reportingKeyRes = await fetch(`${baseUrl}/provenance/${reportingKey}`)
 		expect(reportingKeyRes.ok).toBe(true);
 		const reportingKeyAttributes = await reportingKeyRes.json();
-		expect(reportingKeyAttributes.length).toBe(0);
+		expect(reportingKeyAttributes.length).toBeGreaterThan(0);
 		const reportingKeyRecord = reportingKeyAttributes[0].record;
 		expect(reportingKeyRecord.isReportingKey).toBe(true);
 		expect(reportingKeyRecord.tags).toContain("reportingkey");
