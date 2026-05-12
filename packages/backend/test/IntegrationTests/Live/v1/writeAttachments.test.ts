@@ -295,6 +295,4 @@ describe("Creating records with attachments", () => {
             throw error;
         }
     }, 600000);
-
-
 });
