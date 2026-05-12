@@ -95,8 +95,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Back Online Banner -->
             <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-                <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
-                </div>
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+				</div>
             </Banner>
 
         </div>

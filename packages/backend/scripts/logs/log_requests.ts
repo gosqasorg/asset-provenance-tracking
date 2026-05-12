@@ -81,3 +81,5 @@ await runQuery(
     "Requests by Region within Country",
     "AppRequests | where TimeGenerated > ago(30d) | summarize request_count = count() by ClientCountryOrRegion, ClientStateOrProvince | order by ClientCountryOrRegion asc, request_count desc"
 );
+
+
