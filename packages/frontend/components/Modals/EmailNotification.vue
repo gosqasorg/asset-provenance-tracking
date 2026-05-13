@@ -1,8 +1,11 @@
 // TODO: Add dark mode
 // TODO: Add mobile breakpoints
 // TODO: Flow to expired state when link in invalid
-// TODO: Add safe gaurd for user reloading the page with the auto-verify link. In azzure table reads cost money- so we dont want someone to spam reload and cost us money.
+// TODO: Add safe gaurd for user reloading the page with the auto-verify link. In azure table reads cost money- so we dont want someone to spam reload and cost us money.
 // IDeas: Cooldown maybe, stripping the url, or using local storage to mark the, verified.
+// Both- stripping the url and marking the token as verified in local storage should work?
+
+// TODO: IN httpTrigger- check if email already in verified list before verifying them again.
 
 <template>
     <!-- Email notifications modal -->
@@ -23,7 +26,7 @@
             </div>
             <div class="footer">
                 <div class="btn-container">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Go Back</button>
+                    <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal">Go Back</button>
                     <button type="button" class="btn btn-primary" @click="sendCode" :disabled="isSubmitting || !email">Turn on notifications</button>
                 </div>
             </div>
@@ -49,13 +52,13 @@
                     placeholder="Verification Code"
                     aria-label="Verification Code"
                     maxlength="6"
-                    :class="{ 'input-error': error }"
+                    :class="{ 'input-error': error && verifyCooldownRemaining > 0 }"
                 />
                 <!-- <p v-if="error && verifyCooldownRemaining > 0" class="text-danger" role="alert">Invalid code.</p> -->
             </div>
             <div class="footer">
                 <div class="btn-container">
-                    <button type="button" class="btn btn-secondary" @click="step = 'signup'">Go Back</button>
+                    <button type="button" class="btn btn-tertiary" @click="step = 'signup'">Go Back</button>
                     <button type="button" class="btn btn-primary" @click="verifyCode" :disabled="verifyDisabled || !code">{{verifyLabel}}</button>
                 </div>
                 <div class="resend-container">
@@ -74,7 +77,7 @@
             </div>
             <div class="footer">
                 <div class="btn-container">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Go back to record</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @click="step = 'signup'">Go back to record</button>
                 </div>
             </div>
         </div>
@@ -87,7 +90,7 @@
             </div>
             <div class="footer">
                 <div class="btn-container">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Go Back</button>
+                    <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal">Go Back</button>
                     <button type="button" class="btn btn-primary" @click="resendCode, step = 'signup'" :disabled="isSubmitting">Request a new code</button>
                 </div>
             </div>
@@ -155,7 +158,7 @@
                 if (this.error) {
                     return 'Try again';
                 }
-                return 'Verify';
+                return 'Submit Code';
             }
         },
 
@@ -236,8 +239,12 @@
                 this.error = null;
                 try {
                     const token = this.token as string;
-                    await postVerifyCode(token, this.code);
+                    if (!localStorage.getItem(`${token}_verified`)) {
+                        // if this token is not already verfied- so we don't hit the api unless necessary
+                        await postVerifyCode(token, this.code);
+                    }
                     this.step = 'success';
+                    localStorage.setItem(`${token}_verified`, 'true');
                 } catch {
                     this.invalidAttempts++;
                     const cooldownMs = this.getVerifyCooldownMs();
@@ -283,22 +290,23 @@
                 this.code = this.autoCode;
 
                 try {
-                    await postVerifyCode(this.token, this.code);
+                    if (!localStorage.getItem(`${this.token}_verified`)) {
+                        // if this token is not already verfied- so we don't hit the api unless necessary
+                        await postVerifyCode(this.token, this.code);
+                    }
                     this.step = 'success';
+                    localStorage.setItem(`${this.token}_verified`, 'true');
                 } catch (error) {
                     this.step = "expired";
                 }
 
                 // openning the modal programmatically 
-                // using boostrap
+                // using bootstrap
                 const { Modal } = await import('bootstrap');
                 const notifModal = document.getElementById('notifModal');
                 if (notifModal) {                    
                     new Modal(notifModal).show();
                 }
-                
-
-
             }
         }
     }
@@ -315,8 +323,6 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border: 2px solid #4E3681;
-  background-color: #F1F5F9;
 }
 
 .header {
@@ -328,7 +334,6 @@
     font-family: 'Poppins', sans-serif;
     font-size: 40px;
     font-weight: 500;
-    color: #322253;
     line-height: 60px;
     border-bottom: none;
     padding-bottom: 0px;
@@ -344,6 +349,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  
   /* text-wrap: balance; */
 }
 
@@ -380,7 +386,6 @@
 .btn-link {
     background: none;
     border: none;
-    color: #4E3681;
     font-weight: bold;
     text-decoration: none;
     cursor: pointer;
@@ -388,9 +393,19 @@
 }
 
 .btn-link:disabled {
-    color: #4E3681;
     cursor: not-allowed;
-    opacity: 0.4;
+    opacity: 0.41;
+    pointer-events: none;
+}
+
+.btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.33;
+    pointer-events: none;
+}
+
+.btn-tertiary:disabled {
+    cursor: not-allowed;
     pointer-events: none;
 }
 
@@ -406,25 +421,7 @@
     justify-content: center;
 }
 
-.btn-primary {
-  background-color: #4E3681;
-  color: #FFFFFF;
-}
 
-.btn-secondary {
-  background-color: #FFFFFF;
-  color: #322253;
-  border: 2px solid #4E3681;
-}
-
-.btn-primary:hover {
-  background-color: #322253;
-}
-
-.btn-secondary:hover {
-  background-color: #4E3681;
-  color: #FFFFFF;
-}
 
 .text-danger {
     color: #DC2626;
@@ -439,7 +436,113 @@
 }
 
 @media (prefers-color-scheme: dark) {
+    /* // modal background, text color, button colors, border colors */
+    .content {
+        background-color: #353535;
+        border: 2px solid #CCECFD;
+    }
 
+    .title {
+        color: #E6F6FF;
+    }
+
+    .body{
+        color: #FFFFFF;
+    }
+
+    .btn-link {
+        color: #CCECFD
+    }
+
+    .btn-link:disabled {
+        color: #CCECFD;
+        opacity: 0.33;
+    }
+
+    .btn-primary {
+        background-color: #CCECFD;
+        color: #1E2019;
+    }
+
+    .btn-primary:disabled {
+        background-color: #CCECFD;
+        color: #1E2019;
+        opacity: 0.33;
+    }
+
+    .btn-primary:hover {
+        background-color: #E6F6FF;
+    }
+
+    .btn-primary:active {
+        color: #1E2019;
+    }
+
+    .btn-tertiary {
+        background-color: #353535;
+        color: #FFFFFF;
+        border: 2px solid #FFFFFF;
+    }    
+
+    .btn-tertiary:hover {
+        background-color: #FFFFFF;
+        color: #353535;
+    }
+    
+    .resend-container p {
+        color: #FFFFFF
+    }
+
+}
+
+@media (prefers-color-scheme: light) {
+     content {
+        border: 2px solid #4E3681;
+        background-color: #F1F5F9;
+    }
+
+    .title {
+        color: #322253;
+    }
+
+    .body{
+        color: #1E2019;
+    }
+
+    .btn-link {
+        color: #4E3681;
+    }
+
+    .btn-link:disabled {
+        color: #4E3681;
+        cursor: not-allowed;
+        opacity: 0.41;
+        pointer-events: none;
+    }
+
+    .btn-primary {
+        background-color: #4E3681;
+        color: #FFFFFF;
+    }
+
+    .btn-tertiary {
+        background-color: #F1F5F9;
+        color: #322253;
+        border: 2px solid #4E3681;
+    }
+
+    .btn-primary:hover {
+        background-color: #322253;
+    }
+
+    .btn-tertiary:hover {
+        background-color: #4E3681;
+        color: #FFFFFF;
+    }
+
+    .resend-container p {
+        color: #1E2019
+    }
 }
 
 </style>

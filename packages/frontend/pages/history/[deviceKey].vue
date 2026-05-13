@@ -256,6 +256,7 @@ export default {
       if (token && code) {
           this.autoToken = token;
           this.autoCode = code;
+          this.$router.replace({query: {}}); // remove the token and code from the url after grabbing them- to prevent user from spam reloading.
       }
       
       this._recordKey = route.params.deviceKey as string;
