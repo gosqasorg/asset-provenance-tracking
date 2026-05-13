@@ -390,6 +390,7 @@ export default {
                     type: 'error',
                     text: `Error creating the group: ${error}`
                 })
+                EventBus.emit('isLoading')
             }
 
             

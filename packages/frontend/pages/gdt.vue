@@ -89,7 +89,20 @@ export default {
     mounted() {
         // switch to loading screen when a form is submitted
         EventBus.on('isLoading', () => {
-            this.isLoading = true;
+            if (!this.isLoading) {
+                this.isLoading = true;
+                return
+            }
+            this.isLoading = false;
+        })
+    },
+    beforeUnmount() {
+        EventBus.off('isLoading', () => {
+            if (!this.isLoading) {
+                this.isLoading = true;
+                return
+            }
+            this.isLoading = false;
         })
     },
     methods: {
