@@ -241,7 +241,7 @@ describe("Creating records with attachments", () => {
     it("Create record with large attachment", async () => {
         // Create record key
         const deviceKey = await makeEncodedDeviceKey();
-        console.log("Created Device Key (large file <2MB): " + deviceKey);
+        console.log("Created Device Key (large file >2MB): " + deviceKey);
         let fullUrl = `${baseUrl}${deviceKey}`
         expect(deviceKey.length).toBe(22);
         expect(validateKey(deviceKey)).toBe(true);
@@ -251,7 +251,7 @@ describe("Creating records with attachments", () => {
             const data = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test - Large File",
-            description: "An API Feature Test - Large Attachment (<2MB)",
+            description: "An API Feature Test - Large Attachment (>2MB)",
             tags: {},
             children_key: '',
             hasParent: false,
@@ -260,15 +260,15 @@ describe("Creating records with attachments", () => {
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(data));
 
-            // Attach LARGE file (<2MB)
-            const buffer = await readFile('./test/attachments/LargePDF2.pdf');
+            // Attach LARGE file (>2MB)
+            const buffer = await readFile('./test/attachments/LargeFile.pdf');
             const blob = new Blob([buffer], { type: 'application/pdf' });
             formData.append('large.jpg', blob);
 
             // File size check 
             const fileSizeInMB = buffer.length / (1024 * 1024);
             console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
-            expect(fileSizeInMB).toBeLessThan(2); 
+            expect(fileSizeInMB).toBeGreaterThan(2); 
 
             const postResponse = await fetch(fullUrl, {
             method: "POST",
@@ -288,31 +288,11 @@ describe("Creating records with attachments", () => {
         try {
             getResponse = await fetch(fullUrl);
             getResponse = await getResponse.json();
-            let responseString = JSON.parse(JSON.stringify(getResponse[0]));
-
-            expect(JSON.stringify(getResponse)).not.toBe('[]');
-            expect(responseString.record.deviceName).toBe('Create Record Test - Large File');
-            expect(responseString.record.description).toBe('An API Feature Test - Large Attachment (<2MB)');
-            expect(responseString.attachments.length).toBe(1);
-
-            // Download and compare large attachment
-            const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gdtprodbackend.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
-            console.log('Downloading large file from:', downloadUrl);
-            const downloadResponse = await fetch(downloadUrl);
-            expect(downloadResponse.ok).toBe(true);
-            const retrievedBuffer = Buffer.from(await downloadResponse.arrayBuffer());
-            
-            // Reading original large file 
-            const originalBuffer = await readFile('./test/attachments/LargePDF2.pdf');
-            expect(Buffer.compare(originalBuffer, retrievedBuffer)).toBe(0);
-            console.log('Large file attachment matches original');
+            expect(JSON.stringify(getResponse)).toBe('[]');
 
         } catch(error) {
             console.error('(Create GET Test - Large File) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
             throw error;
         }
     }, 600000);
-
-
 });
