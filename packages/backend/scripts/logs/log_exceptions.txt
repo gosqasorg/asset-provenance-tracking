@@ -1,0 +1,293 @@
+
+===** Recent Exceptions **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "TenantId",
+          "type": "string"
+        },
+        {
+          "name": "TimeGenerated",
+          "type": "datetime"
+        },
+        {
+          "name": "ProblemId",
+          "type": "string"
+        },
+        {
+          "name": "HandledAt",
+          "type": "string"
+        },
+        {
+          "name": "ExceptionType",
+          "type": "string"
+        },
+        {
+          "name": "Message",
+          "type": "string"
+        },
+        {
+          "name": "Assembly",
+          "type": "string"
+        },
+        {
+          "name": "Method",
+          "type": "string"
+        },
+        {
+          "name": "OuterType",
+          "type": "string"
+        },
+        {
+          "name": "OuterMessage",
+          "type": "string"
+        },
+        {
+          "name": "OuterAssembly",
+          "type": "string"
+        },
+        {
+          "name": "OuterMethod",
+          "type": "string"
+        },
+        {
+          "name": "InnermostType",
+          "type": "string"
+        },
+        {
+          "name": "InnermostMessage",
+          "type": "string"
+        },
+        {
+          "name": "InnermostAssembly",
+          "type": "string"
+        },
+        {
+          "name": "InnermostMethod",
+          "type": "string"
+        },
+        {
+          "name": "SeverityLevel",
+          "type": "int"
+        },
+        {
+          "name": "Details",
+          "type": "dynamic"
+        },
+        {
+          "name": "Properties",
+          "type": "dynamic"
+        },
+        {
+          "name": "Measurements",
+          "type": "dynamic"
+        },
+        {
+          "name": "OperationName",
+          "type": "string"
+        },
+        {
+          "name": "OperationId",
+          "type": "string"
+        },
+        {
+          "name": "ParentId",
+          "type": "string"
+        },
+        {
+          "name": "SyntheticSource",
+          "type": "string"
+        },
+        {
+          "name": "SessionId",
+          "type": "string"
+        },
+        {
+          "name": "UserId",
+          "type": "string"
+        },
+        {
+          "name": "UserAuthenticatedId",
+          "type": "string"
+        },
+        {
+          "name": "UserAccountId",
+          "type": "string"
+        },
+        {
+          "name": "AppVersion",
+          "type": "string"
+        },
+        {
+          "name": "AppRoleName",
+          "type": "string"
+        },
+        {
+          "name": "AppRoleInstance",
+          "type": "string"
+        },
+        {
+          "name": "ClientType",
+          "type": "string"
+        },
+        {
+          "name": "ClientModel",
+          "type": "string"
+        },
+        {
+          "name": "ClientOS",
+          "type": "string"
+        },
+        {
+          "name": "ClientIP",
+          "type": "string"
+        },
+        {
+          "name": "ClientCity",
+          "type": "string"
+        },
+        {
+          "name": "ClientStateOrProvince",
+          "type": "string"
+        },
+        {
+          "name": "ClientCountryOrRegion",
+          "type": "string"
+        },
+        {
+          "name": "ClientBrowser",
+          "type": "string"
+        },
+        {
+          "name": "ResourceGUID",
+          "type": "string"
+        },
+        {
+          "name": "IKey",
+          "type": "string"
+        },
+        {
+          "name": "SDKVersion",
+          "type": "string"
+        },
+        {
+          "name": "ItemCount",
+          "type": "int"
+        },
+        {
+          "name": "SourceSystem",
+          "type": "string"
+        },
+        {
+          "name": "Type",
+          "type": "string"
+        },
+        {
+          "name": "_ResourceId",
+          "type": "string"
+        }
+      ],
+      "rows": [
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-24T06:34:52.9396211Z",
+          "System.Threading.Tasks.TaskCanceledException at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess",
+          "",
+          "System.Threading.Tasks.TaskCanceledException",
+          "",
+          "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+          "System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess",
+          "Microsoft.Azure.WebJobs.Host.FunctionInvocationException",
+          "Exception while executing function: Functions.getAttachment",
+          "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+          "System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw",
+          "System.Threading.Tasks.TaskCanceledException",
+          "A task was canceled.",
+          "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+          "System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess",
+          3,
+          "[{\"severityLevel\":\"Error\",\"outerId\":\"0\",\"message\":\"Exception while executing function: Functions.getAttachment\",\"type\":\"Microsoft.Azure.WebJobs.Host.FunctionInvocationException\",\"id\":\"40435545\",\"parsedStack\":[{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":0,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<ExecuteWithLoggingAsync>d__27.MoveNext\",\"level\":1,\"line\":361,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":2,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":3,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":4,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":5,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<TryExecuteAsync>d__19.MoveNext\",\"level\":6,\"line\":113,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"}]},{\"severityLevel\":\"Error\",\"outerId\":\"40435545\",\"message\":\"The invocation request with Id '825dd082-3f3c-44d8-8c0b-809b7a747993' was canceled.\",\"type\":\"Microsoft.Azure.WebJobs.Host.FunctionInvocationCanceledException\",\"id\":\"5813882\",\"parsedStack\":[{\"assembly\":\"Microsoft.Azure.WebJobs.Script.Grpc, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.WorkerFunctionInvoker+<InvokeCore>d__9.MoveNext\",\"level\":0,\"line\":108,\"fileName\":\"/_/src/WebJobs.Script.Grpc/WorkerFunctionInvoker.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":1,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":2,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":3,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":4,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Script, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.FunctionInvokerBase+<Invoke>d__24.MoveNext\",\"level\":5,\"line\":82,\"fileName\":\"/_/src/WebJobs.Script/Description/FunctionInvokerBase.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":6,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":7,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":8,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":9,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Script, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.FunctionGenerator+<Coerce>d__3`1.MoveNext\",\"level\":10,\"line\":225,\"fileName\":\"/_/src/WebJobs.Script/Description/FunctionGenerator.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":11,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":12,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":13,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":14,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionInvoker`2+<InvokeAsync>d__10.MoveNext\",\"level\":15,\"line\":53,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionInvoker.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":16,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":17,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":18,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":19,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<InvokeWithTimeoutAsync>d__34.MoveNext\",\"level\":20,\"line\":590,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":21,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":22,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":23,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":24,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<ExecuteWithWatchersAsync>d__33.MoveNext\",\"level\":25,\"line\":532,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":26,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":27,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":28,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.GetResult\",\"level\":29,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<ExecuteWithLoggingAsync>d__27.MoveNext\",\"level\":30,\"line\":315,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"}]},{\"severityLevel\":\"Error\",\"outerId\":\"5813882\",\"message\":\"A task was canceled.\",\"type\":\"System.Threading.Tasks.TaskCanceledException\",\"id\":\"52988941\",\"parsedStack\":[{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":0,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":1,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":2,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Script.Grpc, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.WorkerFunctionInvoker+<InvokeCore>d__9.MoveNext\",\"level\":3,\"line\":103,\"fileName\":\"/_/src/WebJobs.Script.Grpc/WorkerFunctionInvoker.cs\"}]}]",
+          "{\"InvocationId\":\"825dd082-3f3c-44d8-8c0b-809b7a747993\",\"ProcessId\":\"2500\",\"HostInstanceId\":\"bed17760-bfc4-4eff-86a6-5586a215c404\",\"prop__{OriginalFormat}\":\"Result '{Name}' (started at={StartTime}, duration={Duration}, succeeded={Succeeded})\",\"LogLevel\":\"Error\",\"Category\":\"Host.Results\",\"prop__Name\":\"getAttachment\",\"prop__Duration\":\"00:00:00.0278019\",\"prop__EndTime\":\"2026-04-24T06:34:52.9390000Z\",\"prop__FullName\":\"Functions.getAttachment\",\"prop__TriggerReason\":\"This function was programmatically called via the host APIs.\",\"prop__StartTime\":\"2026-04-24T06:34:52.9110000Z\",\"prop__Succeeded\":\"False\",\"prop__InvocationId\":\"825dd082-3f3c-44d8-8c0b-809b7a747993\",\"prop__MS_AzureFunctionsRequestID\":\"43549a19-cef2-456f-8e9d-aae3ccb153de\"}",
+          null,
+          "getAttachment",
+          "ec9e713bcf8fb1262f8cbb66192b35c2",
+          "7d298d4f7818495a",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "e0ed5f937106164c40cd64072f7c9e719ecf6b215312a13dab910944a92a1881",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Durham",
+          "North Carolina",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "Azure",
+          "AppExceptions",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-24T06:34:52.9383763Z",
+          "System.Threading.Tasks.TaskCanceledException at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess",
+          "",
+          "System.Threading.Tasks.TaskCanceledException",
+          "",
+          "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+          "System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess",
+          "Microsoft.Azure.WebJobs.Host.FunctionInvocationException",
+          "Exception while executing function: Functions.getAttachment",
+          "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+          "System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw",
+          "System.Threading.Tasks.TaskCanceledException",
+          "A task was canceled.",
+          "System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e",
+          "System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess",
+          3,
+          "[{\"severityLevel\":\"Error\",\"outerId\":\"0\",\"message\":\"Exception while executing function: Functions.getAttachment\",\"type\":\"Microsoft.Azure.WebJobs.Host.FunctionInvocationException\",\"id\":\"40435545\",\"parsedStack\":[{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":0,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<ExecuteWithLoggingAsync>d__27.MoveNext\",\"level\":1,\"line\":361,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":2,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":3,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":4,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":5,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<TryExecuteAsync>d__19.MoveNext\",\"level\":6,\"line\":113,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"}]},{\"severityLevel\":\"Error\",\"outerId\":\"40435545\",\"message\":\"The invocation request with Id '825dd082-3f3c-44d8-8c0b-809b7a747993' was canceled.\",\"type\":\"Microsoft.Azure.WebJobs.Host.FunctionInvocationCanceledException\",\"id\":\"5813882\",\"parsedStack\":[{\"assembly\":\"Microsoft.Azure.WebJobs.Script.Grpc, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.WorkerFunctionInvoker+<InvokeCore>d__9.MoveNext\",\"level\":0,\"line\":108,\"fileName\":\"/_/src/WebJobs.Script.Grpc/WorkerFunctionInvoker.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":1,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":2,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":3,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":4,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Script, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.FunctionInvokerBase+<Invoke>d__24.MoveNext\",\"level\":5,\"line\":82,\"fileName\":\"/_/src/WebJobs.Script/Description/FunctionInvokerBase.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":6,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":7,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":8,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":9,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Script, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.FunctionGenerator+<Coerce>d__3`1.MoveNext\",\"level\":10,\"line\":225,\"fileName\":\"/_/src/WebJobs.Script/Description/FunctionGenerator.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":11,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":12,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":13,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":14,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionInvoker`2+<InvokeAsync>d__10.MoveNext\",\"level\":15,\"line\":53,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionInvoker.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":16,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":17,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":18,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":19,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<InvokeWithTimeoutAsync>d__34.MoveNext\",\"level\":20,\"line\":590,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":21,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":22,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":23,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":24,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<ExecuteWithWatchersAsync>d__33.MoveNext\",\"level\":25,\"line\":532,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw\",\"level\":26,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":27,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":28,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.GetResult\",\"level\":29,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Host, Version=3.0.45.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35\",\"method\":\"Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor+<ExecuteWithLoggingAsync>d__27.MoveNext\",\"level\":30,\"line\":315,\"fileName\":\"/_/src/Microsoft.Azure.WebJobs.Host/Executors/FunctionExecutor.cs\"}]},{\"severityLevel\":\"Error\",\"outerId\":\"5813882\",\"message\":\"A task was canceled.\",\"type\":\"System.Threading.Tasks.TaskCanceledException\",\"id\":\"52988941\",\"parsedStack\":[{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess\",\"level\":0,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification\",\"level\":1,\"line\":0},{\"assembly\":\"System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e\",\"method\":\"System.Runtime.CompilerServices.TaskAwaiter`1.GetResult\",\"level\":2,\"line\":0},{\"assembly\":\"Microsoft.Azure.WebJobs.Script.Grpc, Version=4.1048.0.0, Culture=neutral, PublicKeyToken=null\",\"method\":\"Microsoft.Azure.WebJobs.Script.Description.WorkerFunctionInvoker+<InvokeCore>d__9.MoveNext\",\"level\":3,\"line\":103,\"fileName\":\"/_/src/WebJobs.Script.Grpc/WorkerFunctionInvoker.cs\"}]}]",
+          "{\"FormattedMessage\":\"Executed 'Functions.getAttachment' (Failed, Id=825dd082-3f3c-44d8-8c0b-809b7a747993, Duration=23ms)\",\"EventName\":\"FunctionCompleted\",\"EventId\":\"3\",\"prop__invocationId\":\"825dd082-3f3c-44d8-8c0b-809b7a747993\",\"InvocationId\":\"825dd082-3f3c-44d8-8c0b-809b7a747993\",\"prop__functionName\":\"Functions.getAttachment\",\"ProcessId\":\"2500\",\"HostInstanceId\":\"bed17760-bfc4-4eff-86a6-5586a215c404\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Error\",\"prop__status\":\"Failed\",\"Category\":\"Function.getAttachment\",\"prop__executionDuration\":\"23\",\"prop__MS_AzureFunctionsRequestID\":\"43549a19-cef2-456f-8e9d-aae3ccb153de\"}",
+          null,
+          "getAttachment",
+          "ec9e713bcf8fb1262f8cbb66192b35c2",
+          "7d298d4f7818495a",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "e0ed5f937106164c40cd64072f7c9e719ecf6b215312a13dab910944a92a1881",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Durham",
+          "North Carolina",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "Azure",
+          "AppExceptions",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ]
+      ]
+    }
+  ]
+}
