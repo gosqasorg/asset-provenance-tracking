@@ -1,6 +1,3 @@
-// TODO: Add mobile breakpoints
-// TODO: IN httpTrigger- check if email already in verified list before verifying them again.
-
 <template>
     <!-- Email notifications modal -->
     <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">

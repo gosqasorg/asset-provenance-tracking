@@ -756,7 +756,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         context.log("Received signup for " + email)
 
         // Pending Verifications Table (copied from postEmail - will refactor later)
-        // TODO: Refactor Table creation
+        // TODO: * Refactor Table creation
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
@@ -791,7 +791,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        // TODO: Change to gosqas.org for deployment;        
+        // TODO: * Change to gosqas.org for deployment;        
         const frontendUrl = 'http://localhost:3000';
         const verifyLink = `${frontendUrl}/history/${recordKey}/?token=${token}&code=${code}`;
         
@@ -1017,7 +1017,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        // TODO: Change to gosqas for deployment;        
+        // TODO: * Change to gosqas for deployment;        
         const frontendUrl = 'http://localhost:3000';
         const deviceKey = entity.recordKey as string;
         const verifyLink = `${frontendUrl}/history/${deviceKey}/?token=${token}&code=${code}`;

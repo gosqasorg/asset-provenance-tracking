@@ -18,9 +18,6 @@ Page will be the forum where users can keep track of the provenance of
 their items.
 -->
 
-// TODO: Fix Share Record LInk Button: currently does not close when clicked
-// TODO: Remove /subscribe - moved to modal format
-
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
