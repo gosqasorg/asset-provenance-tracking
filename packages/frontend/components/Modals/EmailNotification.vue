@@ -1,10 +1,4 @@
-// TODO: Add dark mode
 // TODO: Add mobile breakpoints
-// TODO: Flow to expired state when link in invalid
-// TODO: Add safe gaurd for user reloading the page with the auto-verify link. In azure table reads cost money- so we dont want someone to spam reload and cost us money.
-// IDeas: Cooldown maybe, stripping the url, or using local storage to mark the, verified.
-// Both- stripping the url and marking the token as verified in local storage should work?
-
 // TODO: IN httpTrigger- check if email already in verified list before verifying them again.
 
 <template>
@@ -543,6 +537,55 @@
     .resend-container p {
         color: #1E2019
     }
+}
+
+@media (max-width: 1140px) {
+  .dialog {
+    width: 340px;
+  }
+
+  .title {
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 42px;
+  }
+
+  .btn {
+  height: 48px;
+  padding: 12px auto;
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.body p {
+  font-size: 18px !important; 
+  line-height: 27px !important;
+}
+
+.form-control {
+    border: 1px solid #CBD5E1;
+    font-size: 16px;
+    height: 36px;
+}
+
+
+  .resend-container {
+    flex-direction: column;
+  }
+
+  .resend-container p {
+    align-self: center;
+    font-size: 18px;
+  }
+
+  .btn-container {
+    flex-direction: column-reverse;
+  }
+
+  .btn-link {
+    font-size: 18px;
+  }
 }
 
 </style>
