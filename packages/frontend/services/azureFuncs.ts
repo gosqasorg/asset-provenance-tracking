@@ -215,7 +215,7 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
     }
 
     try {
-        let response = await fetch(url);
+        let response = await fetch(url, { cache: 'no-store'});
         if (response.status !== 200) {
             result = false;
 
