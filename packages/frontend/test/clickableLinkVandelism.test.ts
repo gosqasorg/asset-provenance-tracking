@@ -2,8 +2,8 @@
 
 // tells vitest to use node env instead of nuxt
 import { describe, it, expect } from "vitest";
-import clickableLink from "../../../../frontend/utils/clickableLink";
-import { makeEncodedDeviceKey, validateKey } from "../../../src/utils/keyFuncs";
+import clickableLink from "../utils/clickableLink";
+import { makeEncodedDeviceKey, validateKey } from "../../backend/src/utils/keyFuncs";
 
 const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
 let timeout = 30000;
