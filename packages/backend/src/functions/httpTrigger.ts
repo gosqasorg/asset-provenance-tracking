@@ -1,3 +1,7 @@
+// TODO: * Rework Pending Email Verification Email Schema
+// Note: Partition Key becoems the token and RowKey become the code. Add column for verified state. Keep Email Column, Expired Column, Record Key and Timestamp.
+// TODO: * Rework link sent to emails to no longer have the record key in it. Obtain record key from the token instead.
+
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";

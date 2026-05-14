@@ -1,3 +1,10 @@
+# TODO: * add loading states to buttons
+# TODO: * add error states to email input field
+# TODO: * Modify coolder to submit. 10 -> 10 -> 10 -> 30 -> 60 etc
+# TODO: * add state for email already verfied, incase user tries to sign up with an email that's already subscribed.
+# Note: ask vincent if emails that are subscribed to multiple records need to be verified each time
+
+
 <template>
     <!-- Email notifications modal -->
     <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
