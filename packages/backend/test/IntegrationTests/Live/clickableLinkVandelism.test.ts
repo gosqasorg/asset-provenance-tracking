@@ -1,3 +1,6 @@
+// @vitest-environment node
+
+// tells vitest to use node env instead of nuxt
 import { describe, it, expect } from "vitest";
 import clickableLink from "../../../../frontend/utils/clickableLink";
 import { makeEncodedDeviceKey, validateKey } from "../../../src/utils/keyFuncs";
