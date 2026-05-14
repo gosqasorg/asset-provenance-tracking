@@ -23,7 +23,7 @@ export default function clickableLink(description: string)  {
     }
 
     // Encode HTML entities 
-    // this should prevent xxs attacks, but still allow the users tp write out html as part of the description
+    // this should prevent xxs attacks, but still allow the users to write out html as part of the description
     const encodeHTML = (str: string) => {
         return str
         .replace(/&/g, '&amp')
