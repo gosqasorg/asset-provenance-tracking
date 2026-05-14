@@ -1,0 +1,1096 @@
+
+===** Recent Traces **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "TenantId",
+          "type": "string"
+        },
+        {
+          "name": "TimeGenerated",
+          "type": "datetime"
+        },
+        {
+          "name": "Message",
+          "type": "string"
+        },
+        {
+          "name": "SeverityLevel",
+          "type": "int"
+        },
+        {
+          "name": "Properties",
+          "type": "dynamic"
+        },
+        {
+          "name": "Measurements",
+          "type": "dynamic"
+        },
+        {
+          "name": "OperationName",
+          "type": "string"
+        },
+        {
+          "name": "OperationId",
+          "type": "string"
+        },
+        {
+          "name": "ParentId",
+          "type": "string"
+        },
+        {
+          "name": "SyntheticSource",
+          "type": "string"
+        },
+        {
+          "name": "SessionId",
+          "type": "string"
+        },
+        {
+          "name": "UserId",
+          "type": "string"
+        },
+        {
+          "name": "UserAuthenticatedId",
+          "type": "string"
+        },
+        {
+          "name": "UserAccountId",
+          "type": "string"
+        },
+        {
+          "name": "AppVersion",
+          "type": "string"
+        },
+        {
+          "name": "AppRoleName",
+          "type": "string"
+        },
+        {
+          "name": "AppRoleInstance",
+          "type": "string"
+        },
+        {
+          "name": "ClientType",
+          "type": "string"
+        },
+        {
+          "name": "ClientModel",
+          "type": "string"
+        },
+        {
+          "name": "ClientOS",
+          "type": "string"
+        },
+        {
+          "name": "ClientIP",
+          "type": "string"
+        },
+        {
+          "name": "ClientCity",
+          "type": "string"
+        },
+        {
+          "name": "ClientStateOrProvince",
+          "type": "string"
+        },
+        {
+          "name": "ClientCountryOrRegion",
+          "type": "string"
+        },
+        {
+          "name": "ClientBrowser",
+          "type": "string"
+        },
+        {
+          "name": "ResourceGUID",
+          "type": "string"
+        },
+        {
+          "name": "IKey",
+          "type": "string"
+        },
+        {
+          "name": "SDKVersion",
+          "type": "string"
+        },
+        {
+          "name": "ItemCount",
+          "type": "int"
+        },
+        {
+          "name": "ReferencedItemId",
+          "type": "string"
+        },
+        {
+          "name": "ReferencedType",
+          "type": "string"
+        },
+        {
+          "name": "SourceSystem",
+          "type": "string"
+        },
+        {
+          "name": "Type",
+          "type": "string"
+        },
+        {
+          "name": "_ResourceId",
+          "type": "string"
+        }
+      ],
+      "rows": [
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:48.6011726Z",
+          "Executed 'Functions.getProvenance' (Succeeded, Id=f0c705ca-5c25-42b2-97bf-45e0d14a7691, Duration=38ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"f0c705ca-5c25-42b2-97bf-45e0d14a7691\",\"InvocationId\":\"f0c705ca-5c25-42b2-97bf-45e0d14a7691\",\"prop__MS_AzureFunctionsRequestID\":\"345336b1-b485-4ee0-a9c0-d28050aeb0b8\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"38\"}",
+          null,
+          "getProvenance",
+          "a63505347b67091a6742d4ecd603d0b7",
+          "6fb25f35ea7bf614",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Wakefield",
+          "Massachusetts",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:48.5653264Z",
+          "getProvenance {\n  accountName: 'gdtprodstorage',\n  deviceKey: 'X15qXsxV8PXZj25A5np97R',\n  deviceID: '6fcacad9f32c85e5c4301216fde3ee5ce1ef778639dbb1ef88a4cdd75ff7921b'\n}",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance.User\",\"InvocationId\":\"f0c705ca-5c25-42b2-97bf-45e0d14a7691\",\"prop__MS_AzureFunctionsRequestID\":\"345336b1-b485-4ee0-a9c0-d28050aeb0b8\"}",
+          null,
+          "getProvenance",
+          "a63505347b67091a6742d4ecd603d0b7",
+          "6fb25f35ea7bf614",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Wakefield",
+          "Massachusetts",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:48.5624432Z",
+          "Executing 'Functions.getProvenance' (Reason='This function was programmatically called via the host APIs.', Id=f0c705ca-5c25-42b2-97bf-45e0d14a7691)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executing '{functionName}' (Reason='{reason}', Id={invocationId})\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"1\",\"EventName\":\"FunctionStarted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"f0c705ca-5c25-42b2-97bf-45e0d14a7691\",\"InvocationId\":\"f0c705ca-5c25-42b2-97bf-45e0d14a7691\",\"prop__reason\":\"This function was programmatically called via the host APIs.\",\"prop__MS_AzureFunctionsRequestID\":\"345336b1-b485-4ee0-a9c0-d28050aeb0b8\"}",
+          null,
+          "getProvenance",
+          "a63505347b67091a6742d4ecd603d0b7",
+          "6fb25f35ea7bf614",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Wakefield",
+          "Massachusetts",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:48.5155196Z",
+          "Executed 'Functions.getProvenance' (Succeeded, Id=8e5dac1c-5b99-4659-87f4-e42df28d61af, Duration=41ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"8e5dac1c-5b99-4659-87f4-e42df28d61af\",\"InvocationId\":\"8e5dac1c-5b99-4659-87f4-e42df28d61af\",\"prop__MS_AzureFunctionsRequestID\":\"cb5721ee-eb79-4152-a1fe-c7cdc703bff0\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"41\"}",
+          null,
+          "getProvenance",
+          "1a2af6044c044e5c6b36e5b5ae003e2a",
+          "3cb89407e97d6ff9",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Wakefield",
+          "Massachusetts",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:48.4779589Z",
+          "getProvenance {\n  accountName: 'gdtprodstorage',\n  deviceKey: 'X15qXsxV8PXZj25A5np97R',\n  deviceID: '6fcacad9f32c85e5c4301216fde3ee5ce1ef778639dbb1ef88a4cdd75ff7921b'\n}",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance.User\",\"InvocationId\":\"8e5dac1c-5b99-4659-87f4-e42df28d61af\",\"prop__MS_AzureFunctionsRequestID\":\"cb5721ee-eb79-4152-a1fe-c7cdc703bff0\"}",
+          null,
+          "getProvenance",
+          "1a2af6044c044e5c6b36e5b5ae003e2a",
+          "3cb89407e97d6ff9",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Wakefield",
+          "Massachusetts",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:48.4745268Z",
+          "Executing 'Functions.getProvenance' (Reason='This function was programmatically called via the host APIs.', Id=8e5dac1c-5b99-4659-87f4-e42df28d61af)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executing '{functionName}' (Reason='{reason}', Id={invocationId})\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"1\",\"EventName\":\"FunctionStarted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"8e5dac1c-5b99-4659-87f4-e42df28d61af\",\"InvocationId\":\"8e5dac1c-5b99-4659-87f4-e42df28d61af\",\"prop__reason\":\"This function was programmatically called via the host APIs.\",\"prop__MS_AzureFunctionsRequestID\":\"cb5721ee-eb79-4152-a1fe-c7cdc703bff0\"}",
+          null,
+          "getProvenance",
+          "1a2af6044c044e5c6b36e5b5ae003e2a",
+          "3cb89407e97d6ff9",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Wakefield",
+          "Massachusetts",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.3219082Z",
+          "Executed 'Functions.getProvenance' (Succeeded, Id=b00ed467-5222-405b-aa82-6c27897317b1, Duration=32ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"b00ed467-5222-405b-aa82-6c27897317b1\",\"InvocationId\":\"b00ed467-5222-405b-aa82-6c27897317b1\",\"prop__MS_AzureFunctionsRequestID\":\"adf50fd0-1527-444d-bfc9-59a8f307e1ec\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"32\"}",
+          null,
+          "getProvenance",
+          "4dbef15c516e1259f1111f25db8c958a",
+          "35cbb59bb9a4abe1",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.2931177Z",
+          "getProvenance {\n  accountName: 'gdtprodstorage',\n  deviceKey: 'HbzMWN7ezwBXAk4nZgcxsE',\n  deviceID: '985392eeb43c19f533a360afc71fceb7607233f01a5e25740b60357ed8a5ea0e'\n}",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance.User\",\"InvocationId\":\"b00ed467-5222-405b-aa82-6c27897317b1\",\"prop__MS_AzureFunctionsRequestID\":\"adf50fd0-1527-444d-bfc9-59a8f307e1ec\"}",
+          null,
+          "getProvenance",
+          "4dbef15c516e1259f1111f25db8c958a",
+          "35cbb59bb9a4abe1",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.2897857Z",
+          "Executing 'Functions.getProvenance' (Reason='This function was programmatically called via the host APIs.', Id=b00ed467-5222-405b-aa82-6c27897317b1)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executing '{functionName}' (Reason='{reason}', Id={invocationId})\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"1\",\"EventName\":\"FunctionStarted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"b00ed467-5222-405b-aa82-6c27897317b1\",\"InvocationId\":\"b00ed467-5222-405b-aa82-6c27897317b1\",\"prop__reason\":\"This function was programmatically called via the host APIs.\",\"prop__MS_AzureFunctionsRequestID\":\"adf50fd0-1527-444d-bfc9-59a8f307e1ec\"}",
+          null,
+          "getProvenance",
+          "4dbef15c516e1259f1111f25db8c958a",
+          "35cbb59bb9a4abe1",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.1021932Z",
+          "Executed 'Functions.postProvenance' (Succeeded, Id=9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27, Duration=112ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.postProvenance\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.postProvenance\",\"prop__invocationId\":\"9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27\",\"InvocationId\":\"9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27\",\"prop__MS_AzureFunctionsRequestID\":\"4556da2d-315e-4f4e-92c3-1ec523cdc2e4\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"112\"}",
+          null,
+          "postProvenance",
+          "3951c2cf679f58a6eefdec5919485979",
+          "4b177a9cf092af33",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.1019216Z",
+          "No subscribers found for this record.",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.postProvenance.User\",\"InvocationId\":\"9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27\",\"prop__MS_AzureFunctionsRequestID\":\"4556da2d-315e-4f4e-92c3-1ec523cdc2e4\"}",
+          null,
+          "postProvenance",
+          "3951c2cf679f58a6eefdec5919485979",
+          "4b177a9cf092af33",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.0196419Z",
+          "postProvenance {\n  accountName: 'gdtprodstorage',\n  deviceKey: 'HbzMWN7ezwBXAk4nZgcxsE',\n  deviceID: '985392eeb43c19f533a360afc71fceb7607233f01a5e25740b60357ed8a5ea0e'\n}",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.postProvenance.User\",\"InvocationId\":\"9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27\",\"prop__MS_AzureFunctionsRequestID\":\"4556da2d-315e-4f4e-92c3-1ec523cdc2e4\"}",
+          null,
+          "postProvenance",
+          "3951c2cf679f58a6eefdec5919485979",
+          "4b177a9cf092af33",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:22.0161957Z",
+          "Executing 'Functions.postProvenance' (Reason='This function was programmatically called via the host APIs.', Id=9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executing '{functionName}' (Reason='{reason}', Id={invocationId})\",\"LogLevel\":\"Information\",\"Category\":\"Function.postProvenance\",\"EventId\":\"1\",\"EventName\":\"FunctionStarted\",\"prop__functionName\":\"Functions.postProvenance\",\"prop__invocationId\":\"9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27\",\"InvocationId\":\"9bbe8f3e-c2e8-41a0-b9d2-fdab32c46b27\",\"prop__reason\":\"This function was programmatically called via the host APIs.\",\"prop__MS_AzureFunctionsRequestID\":\"4556da2d-315e-4f4e-92c3-1ec523cdc2e4\"}",
+          null,
+          "postProvenance",
+          "3951c2cf679f58a6eefdec5919485979",
+          "4b177a9cf092af33",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.8141382Z",
+          "Executed 'Functions.getAttachment' (Succeeded, Id=e73c7fc5-d07e-401e-9437-2faaee24b9c6, Duration=56ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.getAttachment\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.getAttachment\",\"prop__invocationId\":\"e73c7fc5-d07e-401e-9437-2faaee24b9c6\",\"InvocationId\":\"e73c7fc5-d07e-401e-9437-2faaee24b9c6\",\"prop__MS_AzureFunctionsRequestID\":\"bb6fd8b0-c286-497d-84dd-59908bd972f3\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"56\"}",
+          null,
+          "getAttachment",
+          "6441df6651f55c8e7f8aa9caabb7426f",
+          "ed8ecca9e52bc8dd",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.7611356Z",
+          "getDecryptedBlob {\n  accountName: 'gdtprodstorage',\n  deviceKey: 'QHnRKH9tJiTEvVQnLHM6pG',\n  deviceID: 'd8debded816ba2d078ef7075a5d2ebcc96bed176638b2c3c534fc4bddf075de3',\n  attachmentID: 'ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a'\n}",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.getAttachment.User\",\"InvocationId\":\"e73c7fc5-d07e-401e-9437-2faaee24b9c6\",\"prop__MS_AzureFunctionsRequestID\":\"bb6fd8b0-c286-497d-84dd-59908bd972f3\"}",
+          null,
+          "getAttachment",
+          "6441df6651f55c8e7f8aa9caabb7426f",
+          "ed8ecca9e52bc8dd",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.7577572Z",
+          "Executing 'Functions.getAttachment' (Reason='This function was programmatically called via the host APIs.', Id=e73c7fc5-d07e-401e-9437-2faaee24b9c6)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executing '{functionName}' (Reason='{reason}', Id={invocationId})\",\"LogLevel\":\"Information\",\"Category\":\"Function.getAttachment\",\"EventId\":\"1\",\"EventName\":\"FunctionStarted\",\"prop__functionName\":\"Functions.getAttachment\",\"prop__invocationId\":\"e73c7fc5-d07e-401e-9437-2faaee24b9c6\",\"InvocationId\":\"e73c7fc5-d07e-401e-9437-2faaee24b9c6\",\"prop__reason\":\"This function was programmatically called via the host APIs.\",\"prop__MS_AzureFunctionsRequestID\":\"bb6fd8b0-c286-497d-84dd-59908bd972f3\"}",
+          null,
+          "getAttachment",
+          "6441df6651f55c8e7f8aa9caabb7426f",
+          "ed8ecca9e52bc8dd",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.6637959Z",
+          "Executed 'Functions.getAttachment' (Succeeded, Id=31cd3a5e-1298-4a1c-887b-8d5e073dd9f1, Duration=33ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.getAttachment\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.getAttachment\",\"prop__invocationId\":\"31cd3a5e-1298-4a1c-887b-8d5e073dd9f1\",\"InvocationId\":\"31cd3a5e-1298-4a1c-887b-8d5e073dd9f1\",\"prop__MS_AzureFunctionsRequestID\":\"77ef6dd7-cec5-4cee-9d4d-8d719a5163bb\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"33\"}",
+          null,
+          "getAttachment",
+          "28703279bfbd3ef98252d5eca0cdcc0c",
+          "1c44be0700beb161",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.6330318Z",
+          "getDecryptedBlob {\n  accountName: 'gdtprodstorage',\n  deviceKey: 'QHnRKH9tJiTEvVQnLHM6pG',\n  deviceID: 'd8debded816ba2d078ef7075a5d2ebcc96bed176638b2c3c534fc4bddf075de3',\n  attachmentID: '023099985802d6395cec200274b1cf8a09c8193c22b1d35e3b2afabe3ce7f058'\n}",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"LogLevel\":\"Information\",\"Category\":\"Function.getAttachment.User\",\"InvocationId\":\"31cd3a5e-1298-4a1c-887b-8d5e073dd9f1\",\"prop__MS_AzureFunctionsRequestID\":\"77ef6dd7-cec5-4cee-9d4d-8d719a5163bb\"}",
+          null,
+          "getAttachment",
+          "28703279bfbd3ef98252d5eca0cdcc0c",
+          "1c44be0700beb161",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.6301556Z",
+          "Executing 'Functions.getAttachment' (Reason='This function was programmatically called via the host APIs.', Id=31cd3a5e-1298-4a1c-887b-8d5e073dd9f1)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executing '{functionName}' (Reason='{reason}', Id={invocationId})\",\"LogLevel\":\"Information\",\"Category\":\"Function.getAttachment\",\"EventId\":\"1\",\"EventName\":\"FunctionStarted\",\"prop__functionName\":\"Functions.getAttachment\",\"prop__invocationId\":\"31cd3a5e-1298-4a1c-887b-8d5e073dd9f1\",\"InvocationId\":\"31cd3a5e-1298-4a1c-887b-8d5e073dd9f1\",\"prop__reason\":\"This function was programmatically called via the host APIs.\",\"prop__MS_AzureFunctionsRequestID\":\"77ef6dd7-cec5-4cee-9d4d-8d719a5163bb\"}",
+          null,
+          "getAttachment",
+          "28703279bfbd3ef98252d5eca0cdcc0c",
+          "1c44be0700beb161",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ],
+        [
+          "f26c73b7-a547-497e-a33f-6f8f0b125fe3",
+          "2026-04-28T21:28:21.6164522Z",
+          "Executed 'Functions.getProvenance' (Succeeded, Id=9206a118-4887-427b-9603-acfd0a37ea97, Duration=60ms)",
+          1,
+          "{\"ProcessId\":\"3008\",\"HostInstanceId\":\"04d47a24-d786-4563-bde0-c457d34595b4\",\"prop__{OriginalFormat}\":\"Executed '{functionName}' ({status}, Id={invocationId}, Duration={executionDuration}ms)\",\"LogLevel\":\"Information\",\"Category\":\"Function.getProvenance\",\"EventId\":\"2\",\"EventName\":\"FunctionCompleted\",\"prop__functionName\":\"Functions.getProvenance\",\"prop__invocationId\":\"9206a118-4887-427b-9603-acfd0a37ea97\",\"InvocationId\":\"9206a118-4887-427b-9603-acfd0a37ea97\",\"prop__MS_AzureFunctionsRequestID\":\"fb36e4fe-61eb-4951-8c49-4cd801a11920\",\"prop__status\":\"Succeeded\",\"prop__executionDuration\":\"60\"}",
+          null,
+          "getProvenance",
+          "2d79b3c2d3c5b906e5aae412b6dba82f",
+          "da2cc501d48c67d7",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "gdtprodbackend",
+          "f92296ca210bce0943a6e420edbf26f3f7a98207289bbdeab11864ddc6cfc422",
+          "PC",
+          "",
+          "",
+          "0.0.0.0",
+          "Des Moines",
+          "Iowa",
+          "United States",
+          "",
+          "ccc3802b-38c9-48b6-8ae4-b906a6432410",
+          "bb2cfcfb-d10d-4edb-9586-b13b8679caa2",
+          "azurefunctions: 4.1048.200.26180",
+          1,
+          "",
+          "",
+          "Azure",
+          "AppTraces",
+          "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourcegroups/rg-gdt-prod/providers/microsoft.insights/components/gdtprodbackend"
+        ]
+      ]
+    }
+  ]
+}
+
+===** Traces by Severity **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "SeverityLevel",
+          "type": "int"
+        },
+        {
+          "name": "count_",
+          "type": "long"
+        }
+      ],
+      "rows": [
+        [
+          1,
+          6591
+        ],
+        [
+          3,
+          25
+        ],
+        [
+          0,
+          7
+        ]
+      ]
+    }
+  ]
+}
+
+===** Traces by Function **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "OperationName",
+          "type": "string"
+        },
+        {
+          "name": "count_",
+          "type": "long"
+        }
+      ],
+      "rows": [
+        [
+          "getProvenance",
+          3201
+        ],
+        [
+          "postProvenance",
+          2180
+        ],
+        [
+          "getAttachment",
+          1094
+        ],
+        [
+          "recallChildren",
+          64
+        ],
+        [
+          "createGroup",
+          42
+        ],
+        [
+          "",
+          27
+        ],
+        [
+          "getAttachmentName",
+          9
+        ],
+        [
+          "postNotificationEmail",
+          6
+        ]
+      ]
+    }
+  ]
+}
+
+===** Unique Devices from Traces **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "TimeGenerated",
+          "type": "datetime"
+        },
+        {
+          "name": "dcount_deviceID",
+          "type": "long"
+        }
+      ],
+      "rows": [
+        [
+          "2026-03-30T00:00:00Z",
+          89
+        ],
+        [
+          "2026-03-31T00:00:00Z",
+          79
+        ],
+        [
+          "2026-04-01T00:00:00Z",
+          2
+        ],
+        [
+          "2026-04-02T00:00:00Z",
+          63
+        ],
+        [
+          "2026-04-03T00:00:00Z",
+          42
+        ],
+        [
+          "2026-04-04T00:00:00Z",
+          67
+        ],
+        [
+          "2026-04-05T00:00:00Z",
+          30
+        ],
+        [
+          "2026-04-06T00:00:00Z",
+          40
+        ],
+        [
+          "2026-04-07T00:00:00Z",
+          157
+        ],
+        [
+          "2026-04-08T00:00:00Z",
+          43
+        ],
+        [
+          "2026-04-09T00:00:00Z",
+          377
+        ],
+        [
+          "2026-04-10T00:00:00Z",
+          229
+        ],
+        [
+          "2026-04-11T00:00:00Z",
+          1
+        ],
+        [
+          "2026-04-12T00:00:00Z",
+          2
+        ],
+        [
+          "2026-04-13T00:00:00Z",
+          200
+        ],
+        [
+          "2026-04-14T00:00:00Z",
+          356
+        ],
+        [
+          "2026-04-15T00:00:00Z",
+          22
+        ],
+        [
+          "2026-04-16T00:00:00Z",
+          498
+        ],
+        [
+          "2026-04-17T00:00:00Z",
+          28
+        ],
+        [
+          "2026-04-18T00:00:00Z",
+          57
+        ],
+        [
+          "2026-04-19T00:00:00Z",
+          110
+        ],
+        [
+          "2026-04-20T00:00:00Z",
+          151
+        ],
+        [
+          "2026-04-21T00:00:00Z",
+          29
+        ],
+        [
+          "2026-04-22T00:00:00Z",
+          2
+        ],
+        [
+          "2026-04-23T00:00:00Z",
+          4
+        ],
+        [
+          "2026-04-24T00:00:00Z",
+          188
+        ],
+        [
+          "2026-04-25T00:00:00Z",
+          2
+        ],
+        [
+          "2026-04-26T00:00:00Z",
+          44
+        ],
+        [
+          "2026-04-27T00:00:00Z",
+          58
+        ],
+        [
+          "2026-04-28T00:00:00Z",
+          111
+        ]
+      ]
+    }
+  ]
+}

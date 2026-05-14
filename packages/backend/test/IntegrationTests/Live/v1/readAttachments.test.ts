@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { makeEncodedDeviceKey, validateKey } from '../../../src/utils/keyFuncs';
+import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 
 describe("Creating records with attachments", () => {
-	const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
 	it("Create a record with an attachment", async () => {
 		// Create record key
