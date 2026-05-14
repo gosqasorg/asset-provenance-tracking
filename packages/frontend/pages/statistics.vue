@@ -80,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
         <!-- Total records added in time windows -->
         <p class="h6 mb-2">Record entries added:</p>
-        <div class="row text-center">
+        <div class="row text-center mb-4">
           <!-- Last 1 hour -->
           <div class="col-md-4 mb-3">
             <div class="card">
@@ -108,7 +108,50 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               </div>
             </div>
           </div>
-          
+        </div>
+
+        <!-- Total Attachments -->
+        <p class="h6 mb-2">Attachments added:</p>
+        <div class="row text-center mb-4">
+          <!-- Total attachments -->
+          <div class="mb-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Total Attachments</h6>
+                <p class="display-4">{{ totalAttachments }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Failure/Success Counts (only visible on dev) -->
+        <div v-if="devEnv">
+          <p class="h6 mb-2">Successful/Failed record creation (last 3 months):</p>
+          <div class="row text-center">
+            <!-- Successes -->
+            <div class="col-md-6 mb-3">
+              <div class="card">
+                <div class="card-body">
+                  <h6 class="card-title">Successes</h6>
+                  <p class="display-4">{{ totalSuccesses }}</p>
+                </div>
+              </div>
+            </div>
+            <!-- Failures -->
+            <div class="col-md-6 mb-3">
+              <div class="card">
+                <div class="card-body">
+                  <h6 class="card-title">Failures</h6>
+                  <p class="display-4">{{ totalFailures }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+
+        <!-- Graphs of the data -->
+        <div class="row text-center">
           <!-- Graph of records created this week -->
           <div class="mt-4 mb-3" style="border: solid 1px lightgrey; border-radius: 10px; background-color: white">
             <Plotly :data="recordsPerDay" :layout="chartLayout" />
@@ -138,9 +181,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       return {
         // Controls loading spinner
         isLoading: true,
-        // Total number of records/devices
+        // Total number of records/devices/attachments
         totalRecords: 0,
         totalDevices: 0,
+        totalAttachments: 0,
+        // Total successful/failed postProv calls (dev only)
+        totalFailures: 0,
+        totalSuccesses: 0,
+        devEnv: false,
         // Records/Devices per 1hr/24hrs/7days
         records1h: 0,
         records24h: 0,
@@ -258,6 +306,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       this.totalRecords = counts.totalRecords
       this.totalDevices = counts.totalDevices
+      this.totalAttachments = counts.totalAttachments
 
       this.records1h = counts.records1h
       this.records24h = counts.records24h
@@ -268,6 +317,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       this.recordsPerDayY = counts.recordsPerDayY
       this.recordsPerHourY = counts.recordsPerHourY
+
+      this.totalFailures = counts.totalFailures
+      this.totalSuccesses = counts.totalSuccesses
+
+      // Show dev counts if environment is not prod
+      const baseUrl = useRuntimeConfig().public.environment;
+      if (baseUrl != 'production') {
+        this.devEnv = true
+      }
 
       // Hide loading state
       this.isLoading = false

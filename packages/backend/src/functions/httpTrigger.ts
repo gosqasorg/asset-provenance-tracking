@@ -38,6 +38,10 @@ const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
 
+let totalRecords = 0;
+let totalAttachments = 0;
+let totalDevices = 0;
+
 /*==============  Utils Section  ============*/
 
 interface ProvenanceRecord {
@@ -501,22 +505,6 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
     let valsAtTimes = [0, 0, 0]
 
-    // Get total records and total record entries
-    const containerExists = await containerClient.exists();
-    let totalRecords = 0
-    let uniqueRecords = new Set<string>();
-
-    if (containerExists) {
-        for await (const blob of containerClient.listBlobsFlat()) {
-            // Only count blobs that are records or legacy records, skip attachments
-            if (blob.name.includes('prov/')) {
-                totalRecords++
-                uniqueRecords.add(findDeviceIdFromName(blob.name))  // set will only allow unique values to be added
-            }
-        }
-    }
-    let totalDevices = uniqueRecords.size
-
     // Get time-based record entry counts
     for (let v in timesToCheck) {
         let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
@@ -580,8 +568,24 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         recordsPerHourY[hour] = hourly
     }
 
+    // Get number of calls to postProvenance that failed in the last 3 months
+    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
+    });
+    let totalFailures = (await logs.json()).tables[0].rows[0][0];
+
+    // Get number of calls to postProvenance that succeeded in the last 3 months
+    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
+    });
+    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
+
     return {
-        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY },
+        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
         headers: { "Content-Type": "application/json" }
     };
 };
@@ -1164,6 +1168,33 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         }
     }
 }
+
+async function getRecordCounts(): Promise<void> {
+    // Get total records and total record entries
+    const containerExists = await containerClient.exists();
+    totalRecords = 0
+    totalAttachments = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))  // set will only allow unique values to be added
+            } else {
+                totalAttachments++
+            }
+        }
+    }
+    totalDevices = uniqueRecords.size
+}
+
+// Update record counts once per day at midnight
+app.timer('updateRecordCounts', {
+    schedule: `0 0 * * *`,
+    handler: getRecordCounts,
+})
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
