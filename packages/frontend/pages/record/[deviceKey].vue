@@ -61,7 +61,7 @@ const recordHasParent = hasParent(provenance);
                         <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
                         <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
-                        <EmailNotificationSignup :recordKey="_recordKey" :fontSize="18" :height="61" :width="48"></EmailNotificationSignup>
+                        <EmailNotificationSignup :recordKey="_recordKey" :fontSize="18" :height="61"></EmailNotificationSignup>
                     </div>
 
                     <!-- QR -->
@@ -148,7 +148,7 @@ export default {
         },
         downloadQRCode() {
             const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode()
+            qrCodeComponent?.downloadQRCode(this._recordKey);
         },
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3

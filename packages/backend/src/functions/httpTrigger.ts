@@ -365,7 +365,16 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     return await decryptBlob(blobClient, deviceKey);
 }
 
+export function postProvenanceMiddleware(body: FormData): Boolean {
+
+    // This may seem simple but it is expected to grow
+    const sizeLimit: number = 2*10**9  // 2 gigabytes, this may change
+
+    return JSON.stringify(body).length <= sizeLimit
+}
+
 async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+
     let count = 0;
 
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
@@ -388,7 +397,6 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     }
     return count;
 }
-
 
 /*=================  Endpoints  =====================*/
 
@@ -420,8 +428,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
-
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -429,6 +437,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
@@ -1058,7 +1067,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, tags: string[] = []) {
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1068,15 +1077,15 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     */ 
 
     try {
-        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const baseUrl = 'http://localhost:7071/api'
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // const baseUrl = 'http://localhost:7071/api'
         const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
-            deviceName: "",
+            deviceName: custom_title,
             description: "",
             tags: tags,
             hasParent: true,
@@ -1099,14 +1108,17 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     }
 }
 
-async function createChildren(context, number_of_children, tags?) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], tags?) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, tags))) {
+    let j = 0;
+    
+    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, custom_child_titles[j], tags))) {
             continue;
         }
 
+        j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
@@ -1116,13 +1128,27 @@ async function createChildren(context, number_of_children, tags?) {
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[]) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
+    // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
+    if (!Array.isArray(custom_child_titles)) {
+        custom_child_titles = []
+        for (let i = 0; i < n_children; i++) {
+                custom_child_titles.push(`${name} #${i + 1}`)
+        }
+    };
+
+    let customLen = custom_child_titles.length
+    if (n_children > customLen) {
+        for (let i = 0; i < n_children - customLen; i++) {
+            custom_child_titles.push("")
+        }
+    };
     // Create children first
-    let childKeys = await createChildren(context, n_children)
+    let childKeys = await createChildren(context, n_children, custom_child_titles)
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1131,7 +1157,9 @@ async function createGroup(context, name, description, n_children) {
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
+        number_of_children: n_children,
         children_key: childKeys,  // Note: this is what turns a record into a group
+        children_name: custom_child_titles,
         tags: [],            
         hasParent: false,
         isReportingKey: false
@@ -1154,7 +1182,7 @@ const GroupCreationOrderSchema = z.object({
     description: z.string(),
     tags: z.array(z.string()).optional(),
     number_of_children: z.number().optional(),
-    custom_record_titles: z.array(z.string()).optional(),
+    children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
 });
@@ -1163,10 +1191,11 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     try{
         let theRequest = await request.json()
         GroupCreationOrderSchema.parse(theRequest)
-        let title = theRequest['title']
+        let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+        let custom_child_titles = theRequest['children_name']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1305,3 +1334,5 @@ app.post('recallChildren', {
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
 })
+
+
