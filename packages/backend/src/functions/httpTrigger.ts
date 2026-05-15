@@ -38,9 +38,46 @@ const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
 
-let totalRecords = 0;
-let totalAttachments = 0;
-let totalDevices = 0;
+// Public class for getting statistics page totals
+class recordTotals {
+    public totalRecords: number;
+    public totalAttachments: number;
+    public totalDevices: number;
+
+    constructor(records: number, attachments: number, devices: number) {
+        this.totalRecords = records;
+        this.totalAttachments = attachments;
+        this.totalDevices = devices;
+        this.setTotals()  // set totals outside the timer trigger when backend is first built
+    }
+
+    public async setTotals() {
+        // Get total records, record entries, and attachments
+        const containerExists = await containerClient.exists();
+        this.totalRecords = 0
+        this.totalAttachments = 0
+        let uniqueRecords = new Set<string>();
+
+        if (containerExists) {
+            for await (const blob of containerClient.listBlobsFlat()) {
+                // Only count blobs that are records or legacy records, skip attachments
+                if (blob.name.includes('prov/')) {
+                    this.totalRecords++
+                    uniqueRecords.add(findDeviceIdFromName(blob.name))
+                } else {
+                    this.totalAttachments++
+                }
+            }
+        }
+        this.totalDevices = uniqueRecords.size
+    }
+
+    getTotals(): number[] {
+        return [this.totalRecords, this.totalAttachments, this.totalDevices]
+    }
+}
+
+let totals = new recordTotals(0, 0, 0);
 
 /*==============  Utils Section  ============*/
 
@@ -583,6 +620,8 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
     });
     let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
+
+    let [totalRecords, totalAttachments, totalDevices] = totals.getTotals()
 
     return {
         jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
@@ -1169,31 +1208,14 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
-async function getRecordCounts(): Promise<void> {
-    // Get total records and total record entries
-    const containerExists = await containerClient.exists();
-    totalRecords = 0
-    totalAttachments = 0
-    let uniqueRecords = new Set<string>();
-
-    if (containerExists) {
-        for await (const blob of containerClient.listBlobsFlat()) {
-            // Only count blobs that are records or legacy records, skip attachments
-            if (blob.name.includes('prov/')) {
-                totalRecords++
-                uniqueRecords.add(findDeviceIdFromName(blob.name))  // set will only allow unique values to be added
-            } else {
-                totalAttachments++
-            }
-        }
-    }
-    totalDevices = uniqueRecords.size
+async function setStatisticsTotals() {
+    totals.setTotals()
 }
 
-// Update record counts once per day at midnight
+// Once per day update the total record, record entry, and attachment counts
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
-    handler: getRecordCounts,
+    handler: setStatisticsTotals
 })
 
 
