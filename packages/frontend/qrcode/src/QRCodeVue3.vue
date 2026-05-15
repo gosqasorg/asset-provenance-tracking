@@ -10,7 +10,7 @@ export interface Props {
   imgclass: string;
   myclass: string;
   downloadButton: string;
-  ButtonName: string;
+  buttonName: string;
   qrOptions: any;
   imageOptions: any;
   dotsOptions: any;
@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   imgclass: "",
   myclass: "",
   downloadButton: "",
-  ButtonName: "Download",
+  buttonName: "Download",
   qrOptions: {
     typeNumber: 0,
     mode: "Byte",
@@ -64,7 +64,7 @@ const props = withDefaults(defineProps<Props>(), {
   <Suspense>
     <QRCodeVue3Async
       :background-options="props.backgroundOptions"
-      :button-name="props.ButtonName"
+      :button-name="props.buttonName"
       :corners-dot-options="props.cornersDotOptions"
       :corners-square-options="props.cornersSquareOptions"
       :dots-options="props.dotsOptions"
