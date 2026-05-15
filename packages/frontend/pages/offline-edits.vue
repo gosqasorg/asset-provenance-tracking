@@ -22,13 +22,21 @@ while offline.
 <div class="container-md" id="donate-container">
     <h1>Your Offline Edits</h1>
     <div class="row">
-        <div style="margin-bottom: 30px;">
-            <strong>*Note: This page is still a work in progress.</strong><br><br>
+        <div style="margin-bottom: 30px; color: white">
             Your recent offline edits are below. Please review any pending edits to confirm they have synced.
         </div>
     </div>
 
-    <button class="btn purple-btn" @click="clearAllEdits">Dismiss All Edits</button>
+    <button class="btn dismiss-all" @click="clearAllEdits">Dismiss all edits</button>
+    <button class="btn dismiss-published" @click="sample">Dismiss published edits</button>
+
+    <div v-for="(key, index) in offlineKeys">
+        <div class="key-text">
+            <p>{{ key }}</p>
+            <div style="background-color: #91bdf5; border-radius: 20px; width: 105px; color: black; text-align: center; height:40px; display:flex; justify-content: center; align-items: center;">Queued</div>
+        </div>
+
+    </div>
 
     <div> Records Created: {{ offlineKeys }} </div>
 
@@ -42,6 +50,7 @@ data() {
         offlineKeys: [] as string[],
 	}
 },
+
 async mounted() {
     try {
         this.getOfflineKeys()
@@ -49,20 +58,32 @@ async mounted() {
         console.log("There was an error displaying your offline edits: " + e)
     }
 },
+
 methods: {
     getOfflineKeys() {
         // Get all keys that were successfully created while offline
-        let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
-        if (existingKeys) {
-            for (const key of existingKeys.split(",")) {
-                this.offlineKeys.push(key)
-            }
+        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+        for (stash_counter; stash_counter > 0; stash_counter--) {
+            let test = JSON.parse(localStorage.getItem('gosqas_offline_stash_' + stash_counter) || '{}')
+            let fullUrl = test[0][1]
+            let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            this.offlineKeys.push(record)   
         }
     },
 	clearAllEdits() {
         localStorage.setItem("gdt-stash-fulfilled", "")
         window.location.reload();
 	},
+    sample() {
+        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+        for (stash_counter; stash_counter > 0; stash_counter--) {
+            let test = JSON.parse(localStorage.getItem('gosqas_offline_stash_' + stash_counter) || '{}')
+            let fullUrl = test[0][1]
+            let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            this.offlineKeys.push(record)            
+        }
+
+    }
 }
 }
 </script>
@@ -77,15 +98,27 @@ methods: {
     padding: 50px 20px 40px 20px;
 }
 
-.purple-btn {
+.dismiss-all {
+    margin-bottom: 20px;
+    margin-right: 15px;
+    padding: 12px 16px;
+    width: 14%;
+    border-radius: 11px;
+}
+.dismiss-published {
     margin-bottom: 20px;
     padding: 12px 16px;
+    width: 19%;
+    border-radius: 11px;
 }
 
 /* Wrap buttons once screen gets below a certain size */
-@media (max-width: 991px) {
-.purple-btn {
-	width: 100% !important;
+@media (max-width: 767px) {
+.dismiss-all {
+	width: 30% !important;
+}
+.dismiss-published {
+    width: 50% !important;
 }
 }
 
@@ -97,14 +130,34 @@ methods: {
     p {
         color: #FFFFFF;
     }
-    .purple-btn {
+    .dismiss-all {
         background-color: #CCECFD;
         border: #CCECFD;
         color: black;
     }
-    .purple-btn:hover,
-    .purple-btn:active {
+    .dismiss-published {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+    .dismiss-published:hover,
+    .dismiss-published:active {
         background-color: #e6f6ff !important;
+    }
+    .dismiss-all:hover,
+    .dismiss-all:active {
+        background-color: #e6f6ff !important;
+    }
+    .key-text {
+        color: white;
+        padding: 20px;
+        margin-bottom: 14px;
+        margin-top: 14px;
+        border: solid;
+        border-color: #91bdf5;
+        border-radius: 20px;
+        word-wrap: break-word;
+        background-color: #383838;
     }
 }
 /* Light mode version*/
@@ -115,16 +168,25 @@ methods: {
     p {
         color: #1E2019;
     }
-    .purple-btn {
+    .dismiss-all {
         background-color: #4e3681;
         border: #4e3681;
         color: white;
     }
-
-    .purple-btn:hover,
-    .purple-btn:active {
+    .dismiss-published {
+        background-color: #4e3681;
+        border: #4e3681;
+        color: white;
+    }
+    .dismiss-all:hover,
+    .dismiss-all:active {
         background-color: #322253 !important;
         color: white !important;
+    }
+    .dismiss-published:hover,
+    .dismiss-published:active {
+        background-color: #322253 !important;
+        color: white !important;        
     }
 }
 </style>
