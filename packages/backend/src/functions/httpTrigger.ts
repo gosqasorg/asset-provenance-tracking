@@ -7,6 +7,9 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import {encode as base58encode } from '@urlpack/base58';
+import { webcrypto } from 'crypto';
+
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -36,6 +39,8 @@ const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
+
+const { subtle } = webcrypto;
 
 /*==============  Utils Section  ============*/
 
@@ -438,7 +443,17 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 async function notifySubscribers(deviceKey: string, context: InvocationContext): Promise<HttpResponseInit> {
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
-    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+
+    // TODO: move below logic into extractEmails function OR delete that function
+    const emailSet = new Set<string>();
+    const emailIDArray = new Array<string>();
+    if (retrieveNotifEmailResponse && (retrieveNotifEmailResponse.status == 200) && retrieveNotifEmailResponse.jsonBody && retrieveNotifEmailResponse.jsonBody.message) {
+        let emails = JSON.parse(retrieveNotifEmailResponse.jsonBody.message)?.email
+        let emailIDs = JSON.parse(retrieveNotifEmailResponse.jsonBody.message)?.email_id
+        emails.forEach((e: string) => emailSet.add(e));
+        emailIDs.forEach((e: string) => emailIDArray.push(e));
+    }
+
     if (emailSet.size === 0) {
         context.log("No subscribers found for this record.");
         return;
@@ -453,16 +468,23 @@ async function notifySubscribers(deviceKey: string, context: InvocationContext):
     const subject: string = 'Tracking update'; 
     const baseUrl = process.env['frontend_url'];
     const displayName: string = from_address;
+    let index = 0;
     try {
         const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
-            // TODO: currently sending the email as a query param, we want a more secure way to do this
-            const unsubscribe_page: string = `${baseUrl}/history/unsubscribe/${deviceKey}?email=${to_email}`;
+            const unsubscribe_page: string = `${baseUrl}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
             const email_body: string = `Hi, you are receiving this message because you signed up for record updates. If you wish to unsubscribe then click the link below: ${unsubscribe_page}`;
-            await sendEmail(from_address, to_email, subject, email_body, displayName);
+            index++
+            let result = await sendEmail(from_address, to_email, subject, email_body, displayName);
+
+            if (result.status !== "Succeeded") {
+                let errorCode = (result.message.statusCode).toString() + " "
+                let errorMessage = errorCode + result.message.code
+                throw errorMessage
+            }
         }
     } catch (error) {
-        context.log("Error sending email: " + error);   
+        context.error("Error sending email: " + error);   
     }
 }
 
@@ -801,6 +823,7 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     const exists = await blobClient.exists();
 
     let existingEmails: string[] = [];
+    let existingEmailIDs: string[] = [];
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
         const text = buffer.toString("utf8");
@@ -811,6 +834,13 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
             if (Array.isArray(emailsFromBlob)) {
                 existingEmails = emailsFromBlob.filter(email => {
                     return typeof email === "string";
+                });
+            }
+
+            const emailIDsFromBlob = parsed?.email_id;
+            if (Array.isArray(emailIDsFromBlob)) {
+                existingEmailIDs = emailIDsFromBlob.filter(id => {
+                    return typeof id === "string";
                 });
             }
         }
@@ -832,7 +862,30 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
         };
     }
 
-    const payloadObj = { email: Array.from(emailSet), tags};
+    const emailArray = Array.from(emailSet)
+    const emailIDSet = new Set(
+        existingEmailIDs
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
+
+    // Generate a unique string id to represent the new email
+    for (let i = emailIDSet.size; i < emailSet.size; i++) {
+        const uniqueString = await subtle.generateKey(
+            {
+            name: "AES-CBC",
+            length: 256
+            },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        const buffer = await subtle.exportKey("raw", uniqueString);
+        const uniqueEmailString = base58encode(new Uint8Array(buffer));
+        emailIDSet.add(uniqueEmailString)
+    }
+
+    const payloadObj = { email: emailArray, email_id: Array.from(emailIDSet), tags};
     const data = JSON.stringify(payloadObj);
 
     const uploadOptions = {
@@ -877,18 +930,18 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
 export async function removeNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const body = await request.json() as any;
-        const email = body.email;
+        const emailID = body.id;
         const recordKey = body.recordKey;
 
-        if (!email || !recordKey) {
+        if (!emailID || !recordKey) {
             return {
-                jsonBody: {error: "Error: email and record key required"},
+                jsonBody: {error: "Error: email id and record key required"},
                 status: 400
             }
         }
 
         await containerClient.createIfNotExists();
-        const response = await unsubscribeFromNotifications(recordKey, email, [], context);
+        const response = await unsubscribeFromNotifications(recordKey, emailID, [], context);
 
         context.log("Unsubscribed from the record");
         return response;
@@ -904,21 +957,18 @@ export async function removeNotificationEmail(request: HttpRequest, context: Inv
     
 }
 
-async function unsubscribeFromNotifications(deviceKey: string, email: string, tags: string[] = [], context: InvocationContext) {
+async function unsubscribeFromNotifications(deviceKey: string, emailID: string, tags: string[] = [], context: InvocationContext) {
     // Get the name of the deviceKey client
     const deviceID = await calculateDeviceID(deviceKey);
     const type = 'notificationSignups'
     const blobName = `${type}/${deviceID}`
 
     const blobClient = containerClient.getBlockBlobClient(blobName);
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Ignored empty email" }, status: 200 };
-    }
 
-    // Get all emails from the deviceKey client
+    // Get all emails/ids from the deviceKey client
     const exists = await blobClient.exists();
     let existingEmails: string[] = [];
+    let existingEmailIDs: string[] = [];
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
         const text = buffer.toString("utf8");
@@ -931,10 +981,25 @@ async function unsubscribeFromNotifications(deviceKey: string, email: string, ta
                     return typeof email === "string";
                 });
             }
+
+            const emailIDsFromBlob = parsed?.email_id;
+            if (Array.isArray(emailIDsFromBlob)) {
+                existingEmailIDs = emailIDsFromBlob.filter(id => {
+                    return typeof id === "string";
+                });
+            }
         }
     }
 
-    // Remove specified email from the set
+    const emailIndex = existingEmailIDs.indexOf("emailID")
+    const email = existingEmails[emailIndex]
+
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized || emailIndex == -1) {
+        return { jsonBody: { message: "Email not found in the database" }, status: 200 };
+    }
+
+    // Remove specified email/id from the set
     const emailSet = new Set(
         existingEmails
         .map(s => s.trim().toLowerCase())
@@ -942,6 +1007,13 @@ async function unsubscribeFromNotifications(deviceKey: string, email: string, ta
     );
     const sizeBeforeRemoving = emailSet.size;
     emailSet.delete(normalized);
+
+    const emailIDSet = new Set(
+        existingEmailIDs
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
+    emailIDSet.delete(emailID);
 
     // If set size is the same after deleting specified email then the email was not in the blob
     if (emailSet.size === sizeBeforeRemoving) {
@@ -951,7 +1023,7 @@ async function unsubscribeFromNotifications(deviceKey: string, email: string, ta
         };
     }
 
-    const payloadObj = { email: Array.from(emailSet), tags};
+    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
     const data = JSON.stringify(payloadObj);
 
     const uploadOptions = {
@@ -962,7 +1034,7 @@ async function unsubscribeFromNotifications(deviceKey: string, email: string, ta
     };
 
     try {
-        // Update the blob to have all emails except the one we removed
+        // Update the blob to have all emails/ids except the one we removed
         let status = (await containerClient.uploadBlockBlob(
                         blobName,   // 1. Blob name
                         data,       // 2. body (can be a string)
@@ -1252,7 +1324,6 @@ app.post("postNotificationEmail", {
     handler: postNotificationEmail
 })
 
-// TODO: post isn't really accurate since were getting and deleting
 app.post('removeNotificationEmail', {
     authLevel: 'anonymous',
     route: 'history/unsubscribe',

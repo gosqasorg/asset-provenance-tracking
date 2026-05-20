@@ -16,7 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the Unsubscribe page for GOSQAS
 -->
 <template>
-    <div v-if="unsubscribing" class="unsubscribe-container">
+    <div v-if="loading" class="unsubscribe-container">
         <h1 class="unsubscribe-title">Unsubscribing...</h1>
           <p class="unsubscribe-description">
               Unsubscribing from record {{ deviceKey }}...
@@ -54,8 +54,8 @@ export default {
     data() {
       return {
         deviceKey: "",
-        email: "",
-        unsubscribing: true,
+        emailID: "",
+        loading: true,
         unsubscribeSuccessful: true
       }
     },
@@ -63,16 +63,15 @@ export default {
         try {
             const route = useRoute();
             this.deviceKey = route.params.deviceKey as string;
-            // TODO: currently sending the email as a query param, we want a more secure way to do this
-            this.email = route.query.email as string;
+            this.emailID = route.query.id as string;
 
             // Below will throw an error on failure, which will display the failure page
-            await removeNotificationEmail(this.deviceKey, this.email);
+            await removeNotificationEmail(this.deviceKey, this.emailID);
         } catch (error) {
             console.log(error)
             this.unsubscribeSuccessful = false
         }
-        this.unsubscribing = false
+        this.loading = false
     }
 };
 </script>

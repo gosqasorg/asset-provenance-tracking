@@ -164,18 +164,18 @@ export async function postNotificationEmail(deviceKey: string, email: string, ta
     }
 }
 
-export async function removeNotificationEmail(deviceKey: string, email: string) {
+export async function removeNotificationEmail(deviceKey: string, emailID: string) {
     if (!validateKey(deviceKey)) {
         throw new Error("Bad key provided.");
     }
-    if (!email || typeof email !== 'string') {
-        throw new Error("Bad email provided.");
+    if (!emailID || typeof emailID !== 'string') {
+        throw new Error("Bad emailID provided.");
     }
 
     const baseUrl = useRuntimeConfig().public.baseUrl;
     
     const payload = {
-        email: email,
+        id: emailID,
         recordKey: deviceKey,
     };
 
