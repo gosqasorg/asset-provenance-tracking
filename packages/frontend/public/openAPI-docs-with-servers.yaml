@@ -34,10 +34,10 @@ paths:
       description: This endpoint creates a group and returns a unique group URL.
       operationId: createGroup
       requestBody:
-        description: Group creation parameters
+        description: Group creation parameters. Use `multipart/form-data` to upload one or more attachments alongside the new group record.
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
