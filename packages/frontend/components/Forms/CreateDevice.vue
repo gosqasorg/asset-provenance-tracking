@@ -60,6 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
                 <div v-if="isChecked">
+                    <!-- TODO: API call function -->
                     <input
                         type="text"
                         class="form-control"
@@ -72,17 +73,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <!-- Offline Banner -->
-            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
                 </div> 
             </Banner>
 
+            <!-- Banner to Offline History Create Page -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
+
             <!-- Back Online Banner -->
-            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				<RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
 				</div>
             </Banner>
         </div>
@@ -242,6 +252,7 @@ export default {
                     type: 'error',
                     text: `Failed to create record: ${error}`
                 });
+                EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
             }
@@ -323,16 +334,8 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
+    .banner-link {
+        color: #CCECFD;
     }
 }
 /* Light mode version*/
@@ -355,16 +358,8 @@ export default {
     #record-button:hover { 
         background-color: #322253;
     }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
+    .banner-link {
+        color: #4E3681;
     }
 }
 
