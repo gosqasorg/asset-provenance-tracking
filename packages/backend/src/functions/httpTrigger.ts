@@ -1224,7 +1224,7 @@ app.post("postNotificationEmail", {
 
 app.post('deleteNotificationEmail', {
     authLevel: 'anonymous',
-    route: 'history/unsubscribe',
+    route: 'notificationUnsubscribe',
     handler: deleteNotificationEmail,
 })
 

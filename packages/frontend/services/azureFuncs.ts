@@ -180,7 +180,7 @@ export async function removeNotificationEmail(deviceKey: string, emailID: string
     };
 
     // match backend json format 
-    const response = await fetch(`${baseUrl}/history/unsubscribe`, {
+    const response = await fetch(`${baseUrl}/notificationUnsubscribe`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
