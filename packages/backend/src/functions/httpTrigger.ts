@@ -971,8 +971,8 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     */ 
 
     try {
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        // const baseUrl = 'http://localhost:7071/api'
+        // const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const baseUrl = 'http://localhost:7071/api'
         const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
@@ -1022,10 +1022,11 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: ForwardAttachment[] = []) {
-    const baseUrl = process.env['backend_url'];
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
+
+    n_children = Math.max(0, n_children ?? 0);
 
     // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
@@ -1043,6 +1044,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
     };
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles)
+    if (childKeys.length !== n_children) {
+        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1060,7 +1064,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     })); context.log(groupFormData)
 
     for (const attachment of attachments) {
-        groupFormData.append("attachment", attachment.blob, attachment.filename);
+        groupFormData.append("attachment", attachment.blob, attachment.name);
     }
     
     const createInitUrl = `${apiUrl}/provenance/${groupKey}`
@@ -1068,6 +1072,10 @@ async function createGroup(context, name, description, n_children: number = 0, c
         method: "POST",
         body: groupFormData,
     });
+    if (!groupResponse.ok) {
+        const errorBody = await groupResponse.text().catch(() => "");
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1085,34 +1093,22 @@ const GroupCreationOrderSchema = z.object({
     annotate: z.boolean().optional(),
 });
 
-type ForwardAttachment = {
-    filename: string;
-    blob: Blob;
-};
-
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest: any;  // The parsed request payload may come from either formData or request.json().
-        const attachments: ForwardAttachment[] = [];
-        const contentType = request.headers.get("content-type") || ""; // Read the content type to decide whether to parse multipart form data or regular JSON.
+        const attachments: NamedBlob[] = [];
+        const formData = await request.formData();
 
-        if (contentType.includes("multipart/form-data")) {
-            const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord"); 
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError(
+                "Missing provenanceRecord in form data"
+            );
+        }
 
-            const recordStr = formData.get("groupRecord") || formData.get("provenanceRecord");
-            if (typeof recordStr !== "string") {
-                throw new SyntaxError(
-                    "Missing groupRecord or provenanceRecord in form data"
-                );
-            }
-
-            theRequest = JSON.parse(recordStr);
-            for (const value of formData.values()) {
-                if (typeof value === "string") continue;
-                attachments.push({filename: value.name || "attachment", blob: value});
-            }
-        } else {
-            theRequest = await request.json();
+        let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({name: value.name || "attachment", blob: value});
         }
 
         GroupCreationOrderSchema.parse(theRequest)

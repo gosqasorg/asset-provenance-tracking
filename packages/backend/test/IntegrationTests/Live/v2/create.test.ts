@@ -35,15 +35,15 @@ describe("Group Creation v2 tests", () => {
     };
 
     const formData = new FormData();
-    formData.append("groupRecord", JSON.stringify(payload));
+    formData.append("provenanceRecord", JSON.stringify(payload));
 
-    const imageBuffer = await readFile("./test/attachments/a200.jpg");
+    const imageBuffer = await readFile("./test/attachments/b200.jpg");
     const imageBlob = new Blob([Uint8Array.from(imageBuffer)], { type: "image/jpeg" });
-    formData.append("attachment", imageBlob, "a200.jpg");
+    formData.append("attachment", imageBlob, "b200.jpg");
 
-    const pdfBuffer = await readFile("./test/attachments/PDFTest2.pdf");
+    const pdfBuffer = await readFile("./test/attachments/PDFTest.pdf");
     const pdfBlob = new Blob([Uint8Array.from(pdfBuffer)], { type: "application/pdf" });
-    formData.append("attachment", pdfBlob, "PDFTest2.pdf");
+    formData.append("attachment", pdfBlob, "PDFTest.pdf");
 
     const response = await fetch(`${baseUrl}/createGroup`, {
         method: "POST",
@@ -209,9 +209,11 @@ describe("Group Creation v2 tests", () => {
             let response;
 
             // creates group records as found in above in testCases
+            const caseFormData = new FormData();
+            caseFormData.append("provenanceRecord", JSON.stringify(currCase));
             response = await fetch(`${baseUrl}/createGroup`, {
                 method: "POST",
-                body: JSON.stringify(currCase)
+                body: caseFormData
             });
 
             // last two test cases, 13 & 14, are meant to fail during record creation
