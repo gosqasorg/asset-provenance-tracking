@@ -8,7 +8,6 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import {encode as base58encode } from '@urlpack/base58';
-import { webcrypto } from 'crypto';
 
 
 // To deploy this project from the command line, you need:
@@ -39,8 +38,6 @@ const cred = new StorageSharedKeyCredential(accountName, accountKey);
 const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
-
-const { subtle } = webcrypto;
 
 /*==============  Utils Section  ============*/
 
@@ -898,7 +895,7 @@ async function updateNotifications(deviceKey: string, emailInfo: string, tags: s
 
     // Generate a unique string id to represent the new email (only if we're subscribing, skips if unsubscribing)
     for (let i = emailIDSet.size; i < emailSet.size; i++) {
-        const uniqueString = await subtle.generateKey(
+        const uniqueString = await crypto.subtle.generateKey(
             {
             name: "AES-CBC",
             length: 256
@@ -907,7 +904,7 @@ async function updateNotifications(deviceKey: string, emailInfo: string, tags: s
             ['encrypt', 'decrypt']
         );
 
-        const buffer = await subtle.exportKey("raw", uniqueString);
+        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
         const uniqueEmailString = base58encode(new Uint8Array(buffer));
         emailIDSet.add(uniqueEmailString)
     }

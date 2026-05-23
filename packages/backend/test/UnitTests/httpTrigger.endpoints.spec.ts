@@ -64,6 +64,8 @@ vi.mock('node:crypto', () => ({
       importKey: vi.fn(async () => ({})),
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
+      generateKey: vi.fn(async () => new Uint8Array(16).buffer),
+      exportKey: vi.fn(async () => new Uint8Array(16).buffer),
     },
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
   },
