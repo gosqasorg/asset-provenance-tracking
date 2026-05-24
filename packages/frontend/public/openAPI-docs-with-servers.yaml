@@ -34,25 +34,28 @@ paths:
       description: This endpoint creates a group and returns a unique group URL.
       operationId: createGroup
       requestBody:
-        description: Group creation parameters. Use `multipart/form-data` to upload one or more attachments alongside the new group record.
+        description: Group creation parameters. Send as `multipart/form-data`; omit the `attachment` field for groups with no attachments.
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
               required:
-                - deviceName
-                - description
+                - provenanceRecord
               properties:
-                deviceName:
+                provenanceRecord:
                   type: string
-                  example: "Group Title"
-                description:
-                  type: string
-                  example: "Group Description"
-                number_of_children:
-                  type: integer
-                  example: 5
+                  description: >
+                    JSON-stringified group creation payload. <br>
+                    Required fields: `deviceName` (string), `description` (string). <br>
+                    Optional fields: `number_of_children` (integer), `children_name`(array of strings), `tags` (array of strings), `create_reporting_key`(boolean), `annotate` (boolean).
+                  example: '{"deviceName":"Group Title","description":"Group Description","tags":["damaged"],"number_of_children":2,"children_name":["Unit A","Unit B"],"create_reporting_key":false,"annotate":false}'
+                attachment:
+                  type: array
+                  description: Optional. Zero or more files to attach to the new group record.
+                  items:
+                    type: string
+                    format: binary
       responses:
         '200':
           description: Successful creation
@@ -65,15 +68,25 @@ paths:
                     type: string
                     example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
         '400':
-          description: Bad Request
+          description: Bad Request. For example,`provenanceRecord` is missing/not valid JSON, or its fields fail schema validation.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  data:
                     type: string
                     example: "Invalid input parameters"
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Error: Internal server error."
 
 
 
