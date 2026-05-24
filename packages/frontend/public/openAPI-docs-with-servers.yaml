@@ -68,7 +68,7 @@ paths:
                     type: string
                     example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
         '400':
-          description: Bad Request. For example,`provenanceRecord` is missing/not valid JSON, or its fields fail schema validation.
+          description: Bad Request. For example,`provenanceRecord` is missing, contains invalid JSON, or has fields that fail schema validation.
           content:
             application/json:
               schema:
