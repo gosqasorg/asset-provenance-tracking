@@ -1,3 +1,8 @@
+
+type BufferSource = any;
+namespace NodeJS { export type BufferSource = any; }
+// delete the top two lines, temporary for testing
+
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -1055,12 +1060,12 @@ const GroupCreationOrderSchema = z.object({
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
-        GroupCreationOrderSchema.parse(theRequest)
-        let deviceName = theRequest['title']
-        let description = theRequest['description']
-        let n_children = theRequest['number_of_children']
-        let tags = theRequest['tags']
+        const theRequest = await request.json()
+        const validated = GroupCreationOrderSchema.parse(theRequest)
+        const deviceName = validated.deviceName;
+        let description = validated.description;
+        let n_children = validated.number_of_children;
+        let tags = validated.tags;
         let theGroupRecordPageUrl = await createGroup(context, deviceName, description, n_children,tags)
         context.log(theGroupRecordPageUrl)
 

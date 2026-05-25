@@ -3,10 +3,10 @@ import { describe, it, expect } from "vitest";
 
 describe ("v2 Group Creation Tests", () => {
 
-    it("should should verify that tags are applied correctly", async() => {
+    it("should verify that tags are applied correctly", async() => {
 
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const apiUrl = `${baseUrl}/v2/createGroup`;
+        const baseUrl = "http://localhost:7071/api";
+        const apiUrl = `${baseUrl}/createGroup`;
 
         const payload = {
             deviceName: "ItHasATag",
@@ -22,23 +22,24 @@ describe ("v2 Group Creation Tests", () => {
             body: JSON.stringify(payload)
 
         });
-
+        //temporary to debug 
+        console.log("Response Status:", response.status);
+        
         expect(response.status).toBe(200);
         const data = await response.json();
         expect(data.groupUrl).toContain("/record/");
 
         const groupKey = data.groupUrl.split('/').pop();
         const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-        const actualRecord = await verifyResponse.json();
+        const responseData = await verifyResponse.json();
+        const actualRecord = responseData[0];
+        console.log(actualRecord);
         expect(actualRecord.deviceName).toBe(payload.deviceName);
         expect(actualRecord.tags).toEqual(["Harry", "Ron"]);
-// need to put in try and catch block!
-// need to double run and double check if the splicing works or should i use diff method?
-// find run and then check if it passes the tests 
-// create test it is meant to fail like the wrong devicename etc or the run tags
+        
 
 
-    });
+    }, 3000);
 
 
 
