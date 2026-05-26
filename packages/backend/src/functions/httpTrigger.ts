@@ -1,4 +1,4 @@
-// TODO: * Rework Pending Email Verification Email Schema
+// TODO: * Rework Pending Email Verification Email Schema - DONE
 // Note: Partition Key becoems the token and RowKey become the code. Add column for verified state. Keep Email Column, Expired Column, Record Key and Timestamp.
 // TODO: * Rework link sent to emails to no longer have the record key in it. Obtain record key from the token instead.
 
@@ -782,10 +782,10 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // include expiration for code (10 mins for now i think)
         const codeExpiration = 10 * 60 * 1000;
         const entity = {
-            partitionKey: 'PendingVerification',
-            rowKey: email,
-            code: code,
-            token: token,
+            partitionKey: token,
+            rowKey: code,
+            email: email,
+            verified: false,
             expiresAt: Date.now() + codeExpiration,
             recordKey: recordKey,
             // tags: JSON.stringify(tags),
@@ -845,19 +845,19 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     const credential = new AzureNamedKeyCredential(accountName, accountKey);
     const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
 
-    // query by token since rowKey is email
+    // query by partitionKey (token)
     const entities = tableClient.listEntities({
-        queryOptions: { filter: `token eq '${token}'` }
+        queryOptions: { filter: `PartitionKey eq '${token}'` }
     });
 
-    // get first match 
+    // get first match
     let entity = null;
     for await (const e of entities) {
         entity = e;
         break;
     }
 
-    // not found 
+    // not found
     if (!entity) {
         return {
             jsonBody: { error: "Invalid or expired code" },
@@ -867,7 +867,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 
     // expired - delete and return 404
     if (Date.now() > entity.expiresAt) {
-        await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
+        await tableClient.deleteEntity(entity.partitionKey as string, entity.rowKey as string);
         return {
             jsonBody: { error: "Invalid or expired code" },
             status: 404
@@ -917,31 +917,26 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         await tableClient.createTable();  // Create if not exist, no error if it does
 
 
-        // query by token
-        const entities = tableClient.listEntities({
-            queryOptions: { filter: `token eq '${token}'` }
-        });
-
+        // look up directly by partitionKey (token) and rowKey (code)
         let entity = null;
-        for await (const e of entities) {
-            entity = e;
-            break;
+        try {
+            entity = await tableClient.getEntity(token, code);
+        } catch {
+            // not found
         }
 
-        // not found, expired, or wrong code - same generic msg
-        if (!entity || Date.now() > entity.expiresAt || entity.code !== code) {
+        // not found, expired - same generic msg
+        if (!entity || Date.now() > entity.expiresAt) {
             return {
                 jsonBody: { error: "Invalid or expired code" },
                 status: 400
             }
         }
 
-        // return failure if any 
-        // on succes, delete pending entity email
-        // and call signupfornotifications (with verified user email!! :))
-        await tableClient.deleteEntity('PendingVerification', entity.rowKey as string);
-        // await signupForNotifications(entity.recordKey as string, entity.rowKey as string, JSON.parse(entity.tags as string ?? '[]')) // recordKey is deviceKey, rowKey is email;
-        await signupForNotifications(entity.recordKey as string, entity.rowKey as string);
+        // on success, delete pending entity and call signupForNotifications
+        await tableClient.deleteEntity(token, code);
+        // await signupForNotifications(entity.recordKey as string, entity.email as string, JSON.parse(entity.tags as string ?? '[]'))
+        await signupForNotifications(entity.recordKey as string, entity.email as string);
 
         return {
             jsonBody: {message: "Success"},
@@ -981,9 +976,9 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
 
-        // fild the old entity by token
+        // find the old entity by partitionKey (token)
         const entities = tableClient.listEntities({
-            queryOptions: {filter: `token eq '${token}'`}
+            queryOptions: {filter: `PartitionKey eq '${token}'`}
         });
 
         let entity = null;
@@ -996,39 +991,38 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         if (!entity) {
             return {
                 jsonBody: { error: "Invalid or expired code" },
-                status: 404 
+                status: 404
             }
         }
 
-        // gen new code token
+        // gen new code
         const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
 
-        // store email, code, rec and tags in table
-        // upsert incase of code resend
-        // include expiration for code (10 mins for now i think)
+        // delete old entity (token, oldCode) and create new (token, newCode)
         const codeExpiration = 10 * 60 * 1000;
+        await tableClient.deleteEntity(token, entity.rowKey as string);
         const updatedEntity = {
-            partitionKey: 'PendingVerification',
-            rowKey: entity.rowKey as string,
-            code: code,
-            token: token,
+            partitionKey: token,
+            rowKey: code,
+            email: entity.email as string,
+            verified: false,
             expiresAt: Date.now() + codeExpiration,
             recordKey: entity.recordKey as string,
             // tags: entity.tags as string ?? '[]'
         };
 
-        await tableClient.upsertEntity(updatedEntity);
+        await tableClient.createEntity(updatedEntity);
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        // TODO: * Change to gosqas for deployment;        
+        // TODO: * Change to gosqas for deployment;
         const frontendUrl = 'http://localhost:3000';
         const deviceKey = entity.recordKey as string;
         const verifyLink = `${frontendUrl}/history/${deviceKey}/?token=${token}&code=${code}`;
-        
+
         await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
-            entity.rowKey as string,
+            entity.email as string,
             "GOSQAS Verification Code",
             `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             "GOSQAS Notification"
