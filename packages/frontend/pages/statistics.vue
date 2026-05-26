@@ -18,6 +18,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
       <div v-if="isLoading" class="text-center">
         Loading statistics…
       </div>
+
+      <!-- Error message only when running this page locally -->
+      <div v-else-if="isLocal" class="text-center mt-4">
+        This page cannot run locally. Please check out our <a class="gosqas-link" href="https://dev.gosqas.org/statistics">development site</a> or our <a class="gosqas-link" href="https://gosqas.org/statistics">production site</a> instead.
+      </div>
   
       <!-- Once data is loaded, show all statistic cards -->
       <div v-else>
@@ -125,7 +130,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <!-- Failure/Success Counts (only visible on dev) -->
-        <div v-if="devEnv">
+        <div v-if="isDev">
           <p class="h6 mb-2">Successful/Failed record creation (last 3 months):</p>
           <div class="row text-center">
             <!-- Successes -->
@@ -164,9 +169,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
       </div>
     </div>
-  </template>
+</template>
   
-  <script>
+<script>
   import { getStatistics } from '~/services/azureFuncs'
   import PlotlyChart from '../components/Plotly.vue'
   
@@ -179,6 +184,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   
     data() {
       return {
+        // If running locally don't display the page
+        isLocal: false,
         // Controls loading spinner
         isLoading: true,
         // Total number of records/devices/attachments
@@ -188,7 +195,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         // Total successful/failed postProv calls (dev only)
         totalFailures: 0,
         totalSuccesses: 0,
-        devEnv: false,
+        isDev: false,
         // Records/Devices per 1hr/24hrs/7days
         records1h: 0,
         records24h: 0,
@@ -302,34 +309,56 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     async mounted() {
       // On component mount, load data...
       console.log("loading statistics...")
-      const counts = await this.fetchData()
 
-      this.totalRecords = counts.totalRecords
-      this.totalDevices = counts.totalDevices
-      this.totalAttachments = counts.totalAttachments
+      const environment = useRuntimeConfig().public.environment;
 
-      this.records1h = counts.records1h
-      this.records24h = counts.records24h
-      this.records7d = counts.records7d
-      this.devices1h = counts.devices1h
-      this.devices24h = counts.devices24h
-      this.devices7d = counts.devices7d
+      // Get the statistics from the backend only if we are not running locally
+      // (getStatistics() needs to connect to Azure Log Analytics, and since we don't have an alternative for local development,
+      // we're just skipping it for now)
+      if (environment != 'development') {
+        const counts = await this.fetchData()
 
-      this.recordsPerDayY = counts.recordsPerDayY
-      this.recordsPerHourY = counts.recordsPerHourY
+        this.totalRecords = counts.totalRecords
+        this.totalDevices = counts.totalDevices
+        this.totalAttachments = counts.totalAttachments
 
-      this.totalFailures = counts.totalFailures
-      this.totalSuccesses = counts.totalSuccesses
+        this.records1h = counts.records1h
+        this.records24h = counts.records24h
+        this.records7d = counts.records7d
+        this.devices1h = counts.devices1h
+        this.devices24h = counts.devices24h
+        this.devices7d = counts.devices7d
 
-      // Show dev counts if environment is not prod
-      const baseUrl = useRuntimeConfig().public.environment;
-      if (baseUrl != 'production') {
-        this.devEnv = true
+        this.recordsPerDayY = counts.recordsPerDayY
+        this.recordsPerHourY = counts.recordsPerHourY
+
+        this.totalFailures = counts.totalFailures
+        this.totalSuccesses = counts.totalSuccesses
+
+        // Show dev counts if environment is not prod
+        if (environment != 'production') {
+          this.isDev = true
+        }
+      } else {
+        this.isLocal = true
       }
 
       // Hide loading state
       this.isLoading = false
     }
   }
-  </script>
+</script>
+
+<style>
+  @media (prefers-color-scheme: dark) {
+    .gosqas-link {
+      color: #CCECFD; 
+    }
+  }
+  @media (prefers-color-scheme: light) {
+    .gosqas-link {
+      color: #4E3681; 
+    }
+  }
+</style>
   

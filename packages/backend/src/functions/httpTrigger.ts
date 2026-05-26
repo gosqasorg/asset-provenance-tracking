@@ -38,46 +38,44 @@ const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
 
-// Public class for getting statistics page totals
-class recordTotals {
-    public totalRecords: number;
-    public totalAttachments: number;
-    public totalDevices: number;
+// Generic class for storing data totals
+class dataTotals {
+    public storedTotals: Object;
 
-    constructor(records: number, attachments: number, devices: number) {
-        this.totalRecords = records;
-        this.totalAttachments = attachments;
-        this.totalDevices = devices;
-        this.setTotals()  // set totals outside the timer trigger when backend is first built
+    constructor() {
+        this.storedTotals = {};
     }
 
-    public async setTotals() {
+    public async setStatisticsTotals() {
         // Get total records, record entries, and attachments
         const containerExists = await containerClient.exists();
-        this.totalRecords = 0
-        this.totalAttachments = 0
+        let totalRecords = 0
+        let totalAttachments = 0
         let uniqueRecords = new Set<string>();
 
         if (containerExists) {
             for await (const blob of containerClient.listBlobsFlat()) {
                 // Only count blobs that are records or legacy records, skip attachments
                 if (blob.name.includes('prov/')) {
-                    this.totalRecords++
+                    totalRecords++
                     uniqueRecords.add(findDeviceIdFromName(blob.name))
                 } else {
-                    this.totalAttachments++
+                    totalAttachments++
                 }
             }
         }
-        this.totalDevices = uniqueRecords.size
+        this.storedTotals["records"] = totalRecords
+        this.storedTotals["attachments"] = totalAttachments
+        this.storedTotals["devices"] = uniqueRecords.size
     }
 
-    getTotals(): number[] {
-        return [this.totalRecords, this.totalAttachments, this.totalDevices]
+    getStatisticsTotals(): number[] {
+        return [this.storedTotals["records"], this.storedTotals["attachments"], this.storedTotals["devices"]]
     }
 }
 
-let totals = new recordTotals(0, 0, 0);
+let statisticsTotals = new dataTotals();
+statisticsTotals.setStatisticsTotals();
 
 /*==============  Utils Section  ============*/
 
@@ -630,7 +628,8 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     });
     let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
 
-    let [totalRecords, totalAttachments, totalDevices] = totals.getTotals()
+    // Get total statistics counts (refreshes once per day)
+    let [totalRecords, totalAttachments, totalDevices] = statisticsTotals.getStatisticsTotals()
 
     return {
         jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
@@ -1238,7 +1237,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 }
 
 async function setStatisticsTotals() {
-    totals.setTotals()
+    statisticsTotals.setStatisticsTotals()
 }
 
 // Once per day update the total record, record entry, and attachment counts
