@@ -275,6 +275,19 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
+async function stashKeys(fullUrl: string, stashName: string) {
+    let keys = [];
+    let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+    let existingKeys = localStorage.getItem(stashName)
+    if (existingKeys) {
+        for (const key of existingKeys.split(",")) {
+            keys.push(key)
+        }
+    }
+    keys.push(currentKey)
+    localStorage.setItem(stashName, keys.toString())
+}
+
 export async function emptyStash() {
     // See how many requests are stored, if any
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
@@ -283,7 +296,6 @@ export async function emptyStash() {
         // Get the last request stored
         let request_name = 'gosqas_offline_stash_' + stash_counter;
         let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-        // If request is empty, delete it and move onto the next one
         if (request === '{}') { 
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString())
@@ -293,42 +305,22 @@ export async function emptyStash() {
         let record = request[1][1];
 
         try {
-            // Fulfill the request (this will throw an error if it fails)
+            // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
             formData.append('provenanceRecord', record);
             let response = await fetchUrl(fullUrl, formData)
             response = await fetchUrl(fullUrl)
 
             // Add created key to a list of successfully created keys to display later
-            let keysCreated = [];
-            let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
-            let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
-            if (existingKeys) {
-                for (const key of existingKeys.split(",")) {
-                    keysCreated.push(key)
-                }
-            }
-            keysCreated.push(currentKey)
-            localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
+            stashKeys(fullUrl, "gdt-stash-fulfilled")
 
             // Remove request from stash and update counter
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString());
         } catch (error) {
-            // If the record fails to create for any reason other than being offline, add it to the failed stash.
             if (await(onlineTestFetch())) {
-                let keysFailed = [];
-                let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
-                let existingKeys = localStorage.getItem("gdt-stash-failed")
-                if (existingKeys) {
-                    for (const key of existingKeys.split(",")) {
-                        keysFailed.push(key)
-                    }
-                }
-                keysFailed.push(currentKey)
-                localStorage.setItem("gdt-stash-failed", keysFailed.toString())
-
-                // Remove request from stash and update counter
+                // If the record fails to create for any reason other than being offline, add it to the failed stash
+                stashKeys(fullUrl, "gdt-stash-failed")
                 localStorage.removeItem(request_name)
                 localStorage.setItem('stash_counter', (stash_counter - 1).toString());
             }
