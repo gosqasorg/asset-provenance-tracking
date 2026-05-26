@@ -1,6 +1,6 @@
-# TODO: * add loading states to buttons
-# TODO: * add error states to email input field
-# TODO: * Modify coolder to submit. 10 -> 10 -> 10 -> 30 -> 60 etc
+# TODO: * add loading states to buttons - DONE
+# TODO: * add error states to email input field - DONE
+# TODO: * Modify coolder to submit. 10 -> 10 -> 10 -> 30 -> 60 etc - DONE
 # TODO: * add state for email already verfied, incase user tries to sign up with an email that's already subscribed.
 # Note: ask vincent if emails that are subscribed to multiple records need to be verified each time
 
@@ -15,17 +15,20 @@
             <h5 class="modal-title title" id="notifModalLabel">Turn on email notifications</h5>
             <div class="body">
                 <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
-                <input 
-                    class="form-control" 
-                    v-model="email" 
+                <input
+                    class="form-control"
+                    v-model="email"
+                    @input="emailError = null"
                     placeholder="Email"
                     aria-label="Email address"
+                    :class="{ 'input-error': emailError }"
                 />
+                <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
             </div>
             <div class="footer">
                 <div class="btn-container">
                     <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal">Go Back</button>
-                    <button type="button" class="btn btn-primary" @click="sendCode" :disabled="isSubmitting || !email">Turn on notifications</button>
+                    <button type="button" class="btn btn-primary" @click="sendCode" :disabled="isSubmitting || !email">{{ emailLabel }}</button>
                 </div>
             </div>
         </div>
@@ -89,7 +92,7 @@
             <div class="footer">
                 <div class="btn-container">
                     <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal">Go Back</button>
-                    <button type="button" class="btn btn-primary" @click="resendCode, step = 'signup'" :disabled="isSubmitting">Request a new code</button>
+                    <button type="button" class="btn btn-primary" @click="resendCode, step = 'signup'" :disabled="isSubmitting">{{ requestCodeLabel }}</button>
                 </div>
             </div>
         </div>
@@ -110,6 +113,7 @@
                 email: '',
                 code: '',
                 error: null as string | null,
+                emailError: null as string | null,
                 isSubmitting: false,
                 isResending: false,
                 token: '',
@@ -148,6 +152,7 @@
                 return 'Resend Code'; 
             },
             verifyLabel(): string {
+                if (this.isSubmitting) return 'Verifying...';
                 // try again w/ countdown 
                 if (this.error && this.verifyCooldownRemaining > 0) {
                     return `Try again (${this.formatTime(this.verifyCooldownRemaining)})`;
@@ -157,6 +162,14 @@
                     return 'Try again';
                 }
                 return 'Submit Code';
+            },
+            emailLabel(): string {
+                if (this.isSubmitting) return 'Sending Code...';
+                return 'Turn on notifications';
+            },
+            requestCodeLabel(): string {
+                if (this.isSubmitting) return 'Sending Code...';
+                return 'Request a new code';
             }
         },
 
@@ -171,15 +184,13 @@
             async sendCode() {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
                 if (!this.email || !emailRegex.test(this.email)) {
-                    this.$snackbar.add({ 
-                        type: 'error', 
-                        text: `Invalid Email` 
-                    });
-                   return; 
+                    this.emailError = 'Please enter a valid email address.';
+                    return;
                 } 
 
                 this.isSubmitting = true;
                 this.error = null;
+                this.emailError = null;
                 try {
                     const deviceKey = this.$route.params.deviceKey as string;
                     this.token = await postNotificationEmail(this.email, deviceKey);
@@ -218,7 +229,8 @@
 
             // 30s, 60s, 120s, 240s, 480s, 600s 
             getVerifyCooldownMs(): number {
-                const seconds = Math.min(30 * Math.pow(2, this.invalidAttempts - 1), 600);
+                if (this.resendCount <= 3) return 10 * 1000; // 10s for first 3 attempts
+                const seconds = Math.min(30 * Math.pow(2, this.invalidAttempts - 4), 600); // starts at 30s on 4th attempt, doubles each time, maxes out at 10m
                 return seconds * 1000;
             },
 
