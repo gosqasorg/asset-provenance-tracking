@@ -280,18 +280,24 @@ export async function emptyStash() {
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
 
     for (stash_counter; stash_counter > 0; stash_counter--) {
-        try {
-            // Get the last request stored
-            let request_name = 'gosqas_offline_stash_' + stash_counter;
-            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-            let fullUrl = request[0][1];
-            let record = request[1][1];
+        // Get the last request stored
+        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+        // If request is empty, delete it and move onto the next one
+        if (request === '{}') { 
+            localStorage.removeItem(request_name)
+            localStorage.setItem('stash_counter', (stash_counter - 1).toString())
+            continue
+        }
+        let fullUrl = request[0][1];
+        let record = request[1][1];
 
-            // Fulfill the request
+        try {
+            // Fulfill the request (this will throw an error if it fails)
             const formData = new FormData();
             formData.append('provenanceRecord', record);
             let response = await fetchUrl(fullUrl, formData)
-            if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
+            response = await fetchUrl(fullUrl)
 
             // Add created key to a list of successfully created keys to display later
             let keysCreated = [];
@@ -309,8 +315,30 @@ export async function emptyStash() {
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString());
         } catch (error) {
+            // If the record fails to create for any reason other than being offline, add it to the failed stash.
+            if (await(onlineTestFetch())) {
+                let keysFailed = [];
+                let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
+                let existingKeys = localStorage.getItem("gdt-stash-failed")
+                if (existingKeys) {
+                    for (const key of existingKeys.split(",")) {
+                        keysFailed.push(key)
+                    }
+                }
+                keysFailed.push(currentKey)
+                localStorage.setItem("gdt-stash-failed", keysFailed.toString())
+
+                // Remove request from stash and update counter
+                localStorage.removeItem(request_name)
+                localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+            }
+
             console.log("Record from localStorage failed to create: " + error)
-            return 404;
+        }
+
+        // Check if user is still online before trying to create more records
+        if (!await(onlineTestFetch())) {
+            return 202;
         }
     }
     // Disable the offline banner and enable the online banner
