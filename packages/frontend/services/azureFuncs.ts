@@ -276,16 +276,21 @@ export async function stashRequest(formUrl: string, formData: FormData) {
 }
 
 async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number) {
-    let keys = [];
-    let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
-    let existingKeys = localStorage.getItem(stashName)
-    if (existingKeys) {
-        for (const key of existingKeys.split(",")) {
-            keys.push(key)
+    try {
+        let keys = [];
+        let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+        let existingKeys = localStorage.getItem(stashName)
+        if (existingKeys) {
+            for (const key of existingKeys.split(",")) {
+                keys.push(key)
+            }
         }
+        keys.push(currentKey)
+        localStorage.setItem(stashName, keys.toString())
+
+    } catch (error) {
+        console.log("Record from localStorage was not able to be stashed: " + error)
     }
-    keys.push(currentKey)
-    localStorage.setItem(stashName, keys.toString())
 
     // Remove request from stash and update counter
     localStorage.removeItem(request_name)
