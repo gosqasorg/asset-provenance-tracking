@@ -275,7 +275,7 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
-async function stashKeys(fullUrl: string, stashName: string) {
+async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number) {
     let keys = [];
     let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
     let existingKeys = localStorage.getItem(stashName)
@@ -286,6 +286,10 @@ async function stashKeys(fullUrl: string, stashName: string) {
     }
     keys.push(currentKey)
     localStorage.setItem(stashName, keys.toString())
+
+    // Remove request from stash and update counter
+    localStorage.removeItem(request_name)
+    localStorage.setItem('stash_counter', (stash_counter - 1).toString());
 }
 
 export async function emptyStash() {
@@ -308,31 +312,27 @@ export async function emptyStash() {
             // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
             formData.append('provenanceRecord', record);
-            let response = await fetchUrl(fullUrl, formData)
-            response = await fetchUrl(fullUrl)
+
+            await fetchUrl(fullUrl, formData);  // fetchUrl POST handles retries/errors
+            let response = await fetchUrl(fullUrl);  // fetchUrl GET returns [] if no record is found
+            if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            stashKeys(fullUrl, "gdt-stash-fulfilled")
-
-            // Remove request from stash and update counter
-            localStorage.removeItem(request_name)
-            localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+            stashKeysAndRemove(fullUrl, "gdt-stash-fulfilled", request_name, stash_counter)
         } catch (error) {
+            // If the record fails to create for any reason other than being offline, add it to the failed stash
             if (await(onlineTestFetch())) {
-                // If the record fails to create for any reason other than being offline, add it to the failed stash
-                stashKeys(fullUrl, "gdt-stash-failed")
-                localStorage.removeItem(request_name)
-                localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+                stashKeysAndRemove(fullUrl, "gdt-stash-failed", request_name, stash_counter)
             }
 
             console.log("Record from localStorage failed to create: " + error)
         }
 
-        // Check if user is still online before trying to create more records
         if (!await(onlineTestFetch())) {
             return 202;
         }
     }
+
     // Disable the offline banner and enable the online banner
     displayOfflineBanner = false;
     // Online banner currently doesn't have a way to be disabled, so we'll avoid enabling it until that is implemented
