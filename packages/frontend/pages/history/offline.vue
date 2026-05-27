@@ -35,7 +35,7 @@ their items while offline.
                 <div class="my-4 text-iris fs-1">
                 <p class="text-bold mb-0 device-name">Asset History Records</p>
                 <h1 class="mt-1 mb-1" style="word-break: break-word;">
-                    Offline Creation Page
+                    Offline: Add to Existing Record
                 </h1>
                 </div>
                 <div class="rec">
