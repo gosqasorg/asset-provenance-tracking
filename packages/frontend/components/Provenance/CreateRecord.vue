@@ -276,9 +276,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         async redirectIfOffline() {
             // If the user is offline navigate to the offline history page instead
-            // Only do this if they are using the PWA, since when purely offline the page won't load
-            let inPWA = window.matchMedia('(display-mode: standalone)').matches;
-            if (!(await onlineTestFetch()) && inPWA) {
+            if (!(await onlineTestFetch())) {
                 const frontendUrl = useRuntimeConfig().public.frontendUrl;
                 window.location.assign(`${frontendUrl}/history/offline?key=${this.recordKey}`);
             }
