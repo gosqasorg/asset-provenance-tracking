@@ -130,7 +130,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -386,10 +386,20 @@ export default {
                     })
                 }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                // Only do this if they are using the PWA, since when purely offline the page won't load
+                let inPWA = window.matchMedia('(display-mode: standalone)').matches;
+                if (!(await onlineTestFetch()) && inPWA) {
+                    const frontendUrl = useRuntimeConfig().public.frontendUrl;
+                    window.location.assign(`${frontendUrl}/history/offline?key=${deviceKey}`);
+                }
+
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating the group: ${error}`
                 })
+
+                // Otherwise just return to the /gdt page
                 EventBus.emit('isLoading')
             }
 

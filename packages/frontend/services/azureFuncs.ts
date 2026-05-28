@@ -214,7 +214,7 @@ async function fetchUrl(url: string, formData?: FormData) {
 export async function onlineTestFetch(url?: string): Promise<boolean> {
     let result = true;
 
-    // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
+    // This is added to make testing easier, if no parameter given -> defaults to pinging our frontend.
     // Given parameter can be bogus url to mock offlineness
     if (url === undefined) {
         url = useRuntimeConfig().public.frontendUrl;
