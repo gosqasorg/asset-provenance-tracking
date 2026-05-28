@@ -275,7 +275,7 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
-async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number) {
+async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number, request: string) {
     try {
         let keys = [];
         let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
@@ -289,6 +289,8 @@ async function stashKeysAndRemove(fullUrl: string, stashName: string, request_na
         localStorage.setItem(stashName, keys.toString())
 
     } catch (error) {
+        // If the request can't be formatted properly to stash, then just stash the whole thing in failed
+        localStorage.setItem("gdt-stash-failed", request)
         console.log("Record from localStorage was not able to be stashed: " + error)
     }
 
@@ -323,11 +325,11 @@ export async function emptyStash() {
             if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            stashKeysAndRemove(fullUrl, "gdt-stash-fulfilled", request_name, stash_counter)
+            stashKeysAndRemove(fullUrl, "gdt-stash-fulfilled", request_name, stash_counter, request)
         } catch (error) {
             // If the record fails to create for any reason other than being offline, add it to the failed stash
             if (await(onlineTestFetch())) {
-                stashKeysAndRemove(fullUrl, "gdt-stash-failed", request_name, stash_counter)
+                stashKeysAndRemove(fullUrl, "gdt-stash-failed", request_name, stash_counter, request)
             }
 
             console.log("Record from localStorage failed to create: " + error)
