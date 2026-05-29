@@ -277,8 +277,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         async redirectIfOffline() {
             // If the user is offline navigate to the offline history page instead
             if (!(await onlineTestFetch())) {
-                const frontendUrl = useRuntimeConfig().public.frontendUrl;
-                window.location.assign(`${frontendUrl}/history/offline?key=${this.recordKey}`);
+                await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
             }
         },
         async submitRecord() {

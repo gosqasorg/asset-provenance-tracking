@@ -291,6 +291,9 @@ async mounted() {
             this.isCreating = false;
         });
 
+		// preload the offline history page (so we can navigate to this page if the user goes offline)
+        await import('./offline.vue');
+
         await this.refreshFeed();
 	} catch (error) {
         this.isCreating = false;
