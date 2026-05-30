@@ -1,0 +1,241 @@
+/* 
+offline-edits.css -- styling for the asset provenance history form
+Copyright (C) 2026 GOSQAS Team
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+
+.row {
+    margin-top:32px;
+}
+
+/* For screens smaller than 768px */
+#donate-container{
+    padding: 50px 20px 40px 20px;
+}
+
+.dismiss {
+    margin-bottom: 20px;
+    border-radius: 11px;
+    padding: 12px 16px;
+}
+.status-bubble {
+    grid-row:2; 
+    background-color: #00dc82; 
+    border-radius: 20px; 
+    width: 115px; 
+    color: black; 
+    text-align: center; 
+    display:flex; 
+    justify-content: center; 
+    align-items: center;
+    margin-top: -2px;
+    height: 40px;
+}
+.key-buttons {
+    width: 50%;
+    border-radius: 6px;
+    font-size: 14px;
+    padding-top: 10px;
+    margin-bottom: 5px;
+    justify-self: end;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+.popup-buttons {
+    width: 49%;
+    border-radius: 6px;
+    font-size: 14px;
+    padding-top: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border: solid;
+    border-width: 2px;
+}
+.confirm-dismiss {
+    width: 49%;
+    padding-top: 10px;
+}
+.inner-p {
+    font-size: 15px;
+}
+
+/* Wrap buttons once screen gets below a certain size */
+@media (max-width: 1024px) {
+.dismiss {
+	width: 100% !important;
+}
+.key-box {
+    display:flex !important;
+    flex-direction: column !important;
+}
+.status-bubble {
+    padding: 10px;
+}
+.key-buttons {
+    width: 100% !important;
+    margin-top: auto !important;
+    
+}
+.popup-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 25px;
+    width: 350px;
+    height: auto;
+    border-radius: 15px;
+    gap: 5px;
+}
+.popup-buttons {
+    width: 100%;
+    order: 1;
+    padding: 
+}
+.confirm-dismiss {
+    width: 100%;
+}
+.inner-p {
+    line-height: 1.3;
+}
+}
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    h1 {
+        color: #CCECFD;
+    }
+    p {
+        color: #FFFFFF;
+    }
+    .row {
+        margin-bottom: 30px;
+        color: white;
+    }
+    .btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
+    .btn:hover,
+    .btn:active {
+        background-color: #e6f6ff;
+        color: black;
+    }
+    .key-buttons.bottom:hover,
+    .key-buttons.bottom:active {
+        background-color: #636262 !important;
+    }
+    .popup-buttons:hover,
+    .popup-buttons {
+        background-color: #636262;
+    }
+    .key-box {
+        color: white;
+        padding: 20px;
+        margin-bottom: 14px;
+        margin-top: 14px;
+        border: solid;
+        border-color: #91bdf5;
+        border-radius: 20px;
+        border-width: 2px;
+        word-wrap: break-word;
+        background-color: #383838;
+    }
+    .btn.key-buttons.bottom {
+        grid-row: 2; 
+        border: solid; 
+        border-width: 1px; 
+        border-color: #ffffff; 
+        background-color: #383838; 
+        color: #ffffff
+    }
+    .popup-buttons {
+        background-color: #1e201a;
+        color: white;
+    }
+    .popup-inner {
+        color: white;
+        background-color: #1e201a; 
+        border: solid; 
+        border-color: #CCECFD; 
+        border-width: 2px;
+    }
+    .inner-p {
+        color: white;
+    }
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    h1 {
+        color: #4E3681;
+    }
+    p {
+        color: #1E2019;
+    }
+    .row {
+        margin-bottom: 30px;
+        color: black;
+    }
+    .btn {
+        background-color: #4e3681;
+        border: #4e3681;
+        color: white;
+    }
+    .btn:hover,
+    .btn:active {
+        background-color: #322253 !important;
+        color: white !important;
+    }
+    .key-box {
+        color: white;
+        padding: 20px;
+        margin-bottom: 14px;
+        margin-top: 14px;
+        border: solid;
+        border-color: #bbd7f9;
+        border-radius: 20px;
+        border-width: 2px;
+        word-wrap: break-word;
+        background-color: #f0f3f8;
+    }
+    .key-buttons.bottom {
+        grid-row: 2; 
+        border: solid; 
+        border-width: 2px; 
+        border-color: #322253; 
+        background-color: #f0f3f8; 
+        color: #322253
+    }
+    .popup-inner {
+        color: #322253;
+    }
+    .inner-p {
+        color: black; font-size: 15px
+    }
+    .popup-buttons {
+        background-color: white;
+        border-color: #322253;
+        color: #4b3f64;
+    }
+    .popup-inner {
+        background-color: white; 
+        border: solid; 
+        border-color: #322253; 
+        border-width: 2px;
+    }
+}
