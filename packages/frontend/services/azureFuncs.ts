@@ -16,13 +16,16 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development
-export var offlineModeFeatureFlag = false;
+export var offlineModeFeatureFlag = { flag: false };
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
 
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
+
+// Global url for onlineTestFetch
+export var testOnlineTestUrl = { url: useRuntimeConfig().public.frontendUrl };
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -89,11 +92,12 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     }
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
+    const stashUrl = "/provenance/" + deviceKey;
     try {
         // offline mode feature flag toggle
-        if (offlineModeFeatureFlag) {
+        if (offlineModeFeatureFlag.flag) {
             // Checks to see if user is offline, stashes record if offline
-            const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+            const checkOffline = await offlineDetectAndStash(stashUrl, formData);
             if (checkOffline === 202) {
                 throw new Error('Status 202: User is offline but the record has been stashed')
             } else if (checkOffline === 507) {
@@ -217,7 +221,7 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
     // This is added to make testing easier, if no parameter given -> defaults to pinging Google.
     // Given parameter can be bogus url to mock offlineness
     if (url === undefined) {
-        url = useRuntimeConfig().public.frontendUrl;
+        url = testOnlineTestUrl.url;
     }
 
     try {
@@ -287,9 +291,11 @@ export async function emptyStash() {
             let fullUrl = request[0][1];
             let record = request[1][1];
 
+            // TODO: emptyStash is the problem! below create formData will actually make plaintext when running from the tests
             // Fulfill the request
             const formData = new FormData();
             formData.append('provenanceRecord', record);
+            // TODO: could probably still mock fetch and just ignore the input original gave..?
             let response = await fetchUrl(fullUrl, formData)
             if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
 
