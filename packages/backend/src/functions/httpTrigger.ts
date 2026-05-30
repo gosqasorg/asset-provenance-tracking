@@ -38,45 +38,6 @@ const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
 
-// Generic class for storing data totals
-class dataTotals {
-    public storedTotals: Object;
-
-    constructor() {
-        this.storedTotals = {};
-    }
-
-    public async setStatisticsTotals() {
-        // Get total records, record entries, and attachments
-        const containerExists = await containerClient.exists();
-        let totalRecords = 0
-        let totalAttachments = 0
-        let uniqueRecords = new Set<string>();
-
-        if (containerExists) {
-            for await (const blob of containerClient.listBlobsFlat()) {
-                // Only count blobs that are records or legacy records, skip attachments
-                if (blob.name.includes('prov/')) {
-                    totalRecords++
-                    uniqueRecords.add(findDeviceIdFromName(blob.name))
-                } else {
-                    totalAttachments++
-                }
-            }
-        }
-        this.storedTotals["records"] = totalRecords
-        this.storedTotals["attachments"] = totalAttachments
-        this.storedTotals["devices"] = uniqueRecords.size
-    }
-
-    getStatisticsTotals(): number[] {
-        return [this.storedTotals["records"], this.storedTotals["attachments"], this.storedTotals["devices"]]
-    }
-}
-
-let statisticsTotals = new dataTotals();
-statisticsTotals.setStatisticsTotals();
-
 /*==============  Utils Section  ============*/
 
 interface ProvenanceRecord {
@@ -628,14 +589,79 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     });
     let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
 
-    // Get total statistics counts (refreshes once per day)
-    let [totalRecords, totalAttachments, totalDevices] = statisticsTotals.getStatisticsTotals()
+    // Get total statistics counts (updates once per day)
+    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
+
+    await containerClient.createIfNotExists();
+    const blobName = `statistics/totals`
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const exists = await blobClient.exists();
+
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            totalRecords = parsed?.totalRecords || 0
+            totalAttachments = parsed?.totalAttachments || 0
+            totalDevices = parsed?.totalDevices || 0
+        }
+    }
 
     return {
         jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
         headers: { "Content-Type": "application/json" }
     };
 };
+
+async function setStatisticsTotals() {
+    await containerClient.createIfNotExists();
+    const containerExists = await containerClient.exists();
+    const blobName = `statistics/totals`
+
+    // Get new total records, record entries, and attachments from containerClient
+    let totalRecords = 0
+    let totalAttachments = 0
+    let totalDevices = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))
+            } else if (!(blob.name.includes('statistics/'))) {
+                totalAttachments++
+            }
+        }
+    }
+
+    totalDevices = uniqueRecords.size
+
+    // Update the blob with our new values
+    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    try {
+        await containerClient.uploadBlockBlob(
+            blobName,
+            data,
+            data.length,
+            uploadOptions
+        )
+    } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
+    }
+}
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -1348,10 +1374,6 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
             headers: { "Content-Type": "text/plain" }
         }
     }
-}
-
-async function setStatisticsTotals() {
-    statisticsTotals.setStatisticsTotals()
 }
 
 // Once per day update the total record, record entry, and attachment counts
