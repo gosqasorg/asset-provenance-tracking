@@ -40,9 +40,15 @@ vi.mock('@azure/storage-blob', () => {
       };
     }
     getBlockBlobClient() { return new MockBlockBlobClient(); }
+    getBlobClient() { return new MockBlobClient();}
+  }
+
+  class MockBlobClient {
+    async download() { return 'testString'; }
   }
 
   return {
+    BlobClient : MockBlobClient,
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
     StorageSharedKeyCredential: class {},

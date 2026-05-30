@@ -39,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </p> </div>
 
         <div class="docs-section">
-            <SwaggerUI />
+            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
         </div>
     
         <learn_more></learn_more>

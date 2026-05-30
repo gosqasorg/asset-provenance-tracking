@@ -4,6 +4,11 @@ dist/
 .DS_Store
 coverage/
 .azurite/
+azurite_data
 *.env
 *.ignore
 *.sw*
+*__blobstorage__*
+*azurite_data*
+__azurite_db_*
+*AzuriteConfig*
