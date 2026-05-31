@@ -255,7 +255,7 @@ describe("Tests to see if periodicChecker works", async () => {
     // Make sure the record was removed from the stash and the new key was stored to display later
     expect(localStorage.getItem('stash_counter')).toEqual('0');
     expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
-    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("false");
+    expect(localStorage.getItem('gdt-awaiting-connectivity')).toEqual("false");
 
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
@@ -275,7 +275,7 @@ describe("Tests to see if periodicChecker works", async () => {
     await new Promise((r) => setTimeout(r, 5000));
 
     // Confirm that the checker is still running, even after a few seconds
-    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
+    expect(localStorage.getItem('gdt-awaiting-connectivity')).toEqual("true");
 
     fetchMock.mockRestore();
   });
@@ -292,7 +292,7 @@ describe("Tests to see if periodicChecker works", async () => {
 
     // Confirm the "already running" message was sent and that the first call is still running
     expect(consoleMock).toHaveBeenCalledWith('Instance of periodicChecker is already running, returning');
-    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
+    expect(localStorage.getItem('gdt-awaiting-connectivity')).toEqual("true");
 
     consoleMock.mockRestore();
     fetchMock.mockRestore();
