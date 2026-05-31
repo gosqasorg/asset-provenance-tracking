@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import { LazyButtonsLargeToggle } from "#components";
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development
@@ -23,6 +24,8 @@ export var displayOfflineBanner = false;
 
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
+
+localStorage.setItem('gdt-awaiting-connectivity', 'false')
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -181,7 +184,6 @@ export async function getStatistics() {
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
     const MAX_RETRIES = 3;
-
     for (let i = 1; i <= MAX_RETRIES; i++) {
         try {
             if (typeof formData !== 'undefined') {
@@ -278,7 +280,6 @@ export async function stashRequest(formUrl: string, formData: FormData) {
 export async function emptyStash() {
     // See how many requests are stored, if any
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
-
     for (stash_counter; stash_counter > 0; stash_counter--) {
         try {
             // Get the last request stored
@@ -322,11 +323,13 @@ export async function emptyStash() {
 
 export async function periodicChecker() {
     // Return if a checker is already running
-    if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
+    if (localStorage.getItem('gdt-awaiting-connectivity') == "true") {
         console.log("Instance of periodicChecker is already running, returning")
         return;
     }
-    localStorage.setItem('gdt-awaiting-conectivity', "true");
+
+    // Sets toggle true to prevent multiple instances of connectivityChecker running
+    localStorage.setItem('gdt-awaiting-connectivity', "true");
 
     let stash_empty = false;
     let response = 404
@@ -337,10 +340,10 @@ export async function periodicChecker() {
         response = await emptyStash();
         if (response == 200) {
             stash_empty = true;
+            // Back online, set to false prevent being blocked out in the first block of code in this function
+            localStorage.setItem('gdt-awaiting-connectivity', "false")
         }
     }
-
-    localStorage.setItem('gdt-awaiting-conectivity', "false");
 }
 
 export async function offlineDetectAndStash (formUrl: string, formData: FormData) {
