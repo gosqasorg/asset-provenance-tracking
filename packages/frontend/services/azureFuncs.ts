@@ -16,7 +16,7 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development
-export var offlineModeFeatureFlag = true;
+export var offlineModeFeatureFlag = false;
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
@@ -25,13 +25,6 @@ export var displayOfflineBanner = false;
 export var displayOnlineBanner = false;
 
 localStorage.setItem('gdt-awaiting-connectivity', 'false')
-
-console.log("AT START")
-console.log("STASH_COUNTER: " + localStorage.getItem('stash_counter'))
-console.log("STASH_COUNTER NUMBER TYPE: " + typeof(localStorage.getItem('stash_counter')))
-window.addEventListener("load", () => {
-    console.log("LOADED ON PAGE LOAD")
-})
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -250,7 +243,6 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
 export async function connectivityChecker() {
     // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
     while (!(await onlineTestFetch())) {
-        console.log("INSIDE CONNECTIVITY CHECKER")
         await new Promise((r) => setTimeout(r, 5000));
     }
 
