@@ -9,6 +9,7 @@ async function createRequest (
   description: string
 ): Promise<[string, FormData]> {
   // TODO: backend_url stores /provenance/ as well, so do we want to just store the key??
+    // local DOESN'T store /prov/ but dev and prod do
   const formUrl = '/provenance/' + key;
   const record = {
     blobType: 'deviceInitializer',
@@ -23,6 +24,14 @@ async function createRequest (
   const formData = new FormData();
   formData.append('provenanceRecord', JSON.stringify(record));
   return [formUrl, formData];
+}
+
+function resetStashValues(): void {
+  // reset the values in localStorage to avoid overlap between tests
+  localStorage.setItem('stash_counter', '0');
+  localStorage.setItem('gdt-stash-fulfilled', '');
+  localStorage.setItem('gdt-stash-failed', '');
+  localStorage.setItem('gdt-awaiting-conectivity', 'false');
 }
 
 describe('Tests to see if user is online and offline', () => {
@@ -46,7 +55,7 @@ describe('Tests to see if requests can be stashed', () => {
       'Test record stored in localStorage then created from emptyStash()'
     );
 
-    localStorage.setItem('stash_counter', '0'); // need to reset counter to avoid overlap with other tests
+    resetStashValues();
     stashRequest(formUrl, formData);
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 
@@ -84,7 +93,7 @@ describe('Tests to see if requests can be stashed', () => {
     let [formUrl1, formData1] = await createRequest(key1, 'name', 'description');
     let [formUrl2, formData2] = await createRequest(key2, 'name2', 'slightly longer description');
 
-    localStorage.setItem('stash_counter', '0');
+    resetStashValues();
     stashRequest(formUrl1, formData1);
     stashRequest(formUrl2, formData2);
 
@@ -122,8 +131,7 @@ describe('Tests to see if we can remove from the stash', () => {
     const key = await makeEncodedDeviceKey();
     let [formUrl, formData] = await createRequest(key, 'stored record', 'testing emptyStash');
 
-    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
-    localStorage.setItem('gdt-stash-fulfilled', '');
+    resetStashValues();
     stashRequest(formUrl, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
@@ -158,7 +166,7 @@ describe('Tests to see if we can remove from the stash', () => {
     let [formUrl1, formData1] = await createRequest(key1, 'first stored record', 'this is a test');
     let [formUrl2, formData2] = await createRequest(key2, 'second stored record', 'this is the same test');
 
-    localStorage.setItem('stash_counter', '0');
+    resetStashValues();
     stashRequest(formUrl1, formData1);
     stashRequest(formUrl2, formData2);
     expect(localStorage.getItem('stash_counter')).toEqual('2');
@@ -181,17 +189,16 @@ describe('Tests to see if we can remove from the stash', () => {
     // Make sure all three keys (including the one from the previous test) are stored
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(3);
-    expect(existingKeys[2]).toEqual(key1);
-    expect(existingKeys[1]).toEqual(key2);
+    expect(existingKeys.length).toBe(2);
+    expect(existingKeys[1]).toEqual(key1);
+    expect(existingKeys[0]).toEqual(key2);
 
     fetchMock.mockRestore();
   });
 
   it('Try to emptyStash when nothing is stashed', async () => {
     // Should just return when stash_counter = 0
-    localStorage.setItem('stash_counter', '0');
-    localStorage.setItem('gdt-stash-fulfilled', '');
+    resetStashValues();
     expect(localStorage.getItem('stash_counter')).toEqual('0');
     let statusCode = await emptyStash();
     expect(statusCode).toEqual(200);
@@ -207,8 +214,7 @@ describe('Tests to see if we can remove from the stash', () => {
     const key = await makeEncodedDeviceKey();
     let [formUrl, formData] = await createRequest(key, 'failed record', 'this should fail to post');
 
-    localStorage.setItem('stash_counter', '0');
-    localStorage.setItem('gdt-stash-fulfilled', '');
+    resetStashValues();
     stashRequest(formUrl, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
@@ -241,8 +247,7 @@ describe("Tests to see if periodicChecker works", async () => {
     const key = await makeEncodedDeviceKey();
     let [formUrl, formData] = await createRequest(key, 'stored record', 'testing periodicChecker');
 
-    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
-    localStorage.setItem('gdt-stash-fulfilled', '');
+    resetStashValues();
     stashRequest(formUrl, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
@@ -302,29 +307,47 @@ describe("Tests to see if periodicChecker works", async () => {
 // TODO: ...is this a unit test though..? (look at backend tests and reference that formatting)
 describe("Tests to see if we can create records while offline", async () => {
   it ("Create one record while offline", async () => {
+    // Mock fetch POST requests to not use formData (fails to send from frontend test files)
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const modifiedInit = { ...init };
+        
+        // If we're posting then convert requests to use urlencoded data rather than formData
+        if (modifiedInit.method == "POST") {
+          const headers = new Headers(modifiedInit.headers);
+          headers.set('Content-Type', 'application/x-www-form-urlencoded');
+          modifiedInit.headers = headers;
+
+          const params = new URLSearchParams();
+          params.append("provenanceRecord", JSON.stringify(record));
+          modifiedInit.body = params.toString()
+        }
+        
+        return originalFetch(input, modifiedInit);
+      }
+    )
+
+    const record = {
+      blobType: 'deviceInitializer',
+      deviceName: 'Offline Test Record',
+      description: 'A record created while offline',
+      tags: [],
+      children_key: '',
+      hasParent: false,
+      isReportingKey: false,
+    }
+
     // Go "offline"
     offlineModeFeatureFlag.flag = true  // turn the featureflag on for the duration of the test
     testOnlineTestUrl.url = "https://fakeurltosimulateoffline.org"
 
-    // Create record, confirm it stashed and periodicChecker is running
+    // Create record, confirm it stashed and that periodicChecker is running
     const key = await makeEncodedDeviceKey();
-
-    // TODO: make a function for reseting counters and replace below repetitive code in all tests
-    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
-    localStorage.setItem('gdt-stash-fulfilled', '');
-    localStorage.setItem('gdt-stash-failed', '');
-    localStorage.setItem('gdt-awaiting-conectivity', 'false');
+    resetStashValues();
 
     try {
-      const response = await postProvenance(key, {
-        blobType: 'deviceInitializer',
-        deviceName: 'Offline Record',
-        description: 'A record created while offline',
-        tags: [],
-        children_key: '',
-        hasParent: false,
-        isReportingKey: false,
-      }, []);
+      await postProvenance(key, record, []);
       expect.fail("Create Record Offline: postProvenance failed to stash the record")
     } catch (error) {
       expect(error).toEqual(new Error('Status 202: User is offline but the record has been stashed'))
@@ -335,38 +358,14 @@ describe("Tests to see if we can create records while offline", async () => {
     expect(requestFromStash).not.toEqual({});
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
 
-    // Go "online"
+    // Go "online" and wait for the record to create
     testOnlineTestUrl.url = useRuntimeConfig().public.frontendUrl
-
-    
-    // PROBLEM: formData doesn't work from this file and previously we'd mocked responses
-      // Try making a new test.ts file or reworking to fix? See previous issue (emptyStash) and if you gave a reason why it doesn't work??
-
-    // Mock fetch calls from emptyStash (since formData doesn't work from this file) NOTE: want to actually post the record though
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
-      status: 200,
-    } as Response);
-
-
-    const baseUrl = useRuntimeConfig().public.baseUrl
+    const baseUrl = useRuntimeConfig().public.baseUrl 
     const fullUrl = `${baseUrl}/provenance/${key}`
 
-    // FIX FROM EMPTY STASH: FormData fails from test file (gets read as plaintext in fetch instead of multipart formdata), so we're using a different content type to get around that
-      // TODO: could mock fetchUrl, could mock fetch but only when POSTing, could modify code to allow tests to use formdata
-    // const params = new URLSearchParams();
-    // params.append("provenanceRecord", JSON.stringify(record));
-		// const response = await fetch(`${baseUrl}/provenance/${key}`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/x-www-form-urlencoded"
-    //    },
-    //   body: params.toString(),
-    // });
+    await new Promise((r) => setTimeout(r, 6000));
 
-
-    // Confirm record was created (w/ correct values), removed from stash, and periodicChecker stopped running
-    await new Promise((r) => setTimeout(r, 5500));
-
+    // Confirm that the record was removed from stash, added to fulfilled stash, and that periodicChecker stopped running
     expect(localStorage.getItem('stash_counter')).toEqual('0');
     requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
     expect(requestFromStash).toEqual({});
@@ -377,19 +376,22 @@ describe("Tests to see if we can create records while offline", async () => {
     expect(existingKeys.length).toBe(1);
     expect(existingKeys[0]).toEqual(key);
 
-
-    // TODO: add checks to make sure name, descr, etc match (in progress, working on getting POST to work from tests)
-    console.log("KEY = " + key)
-
+    // Confirm that the record was actually created
     try {
-			let response = await fetch(fullUrl);
-      console.log(response)
-			// response = await response.json();
-		} catch(error) {
+      let response = await (await fetch(fullUrl)).json();
+      let responseString = JSON.parse(JSON.stringify(response[0]));
+
+			expect(JSON.stringify(response)).not.toBe('[]');
+			expect(responseString.record.deviceName).toBe('Offline Test Record');
+			expect(responseString.record.description).toBe('A record created while offline');
+			expect(responseString.record.children_key).toBe('');
+			expect(responseString.record.hasParent).toBe(false);
+			expect(responseString.record.isReportingKey).toBe(false);
+    } catch(error) {
       expect.fail("Create Record Offline: postProvenance failed to stash the record: " + error)
-		}
+    }
 
     offlineModeFeatureFlag.flag = false
-    fetchMock.mockRestore()
+    fetchMock.mockRestore();
   })
 })

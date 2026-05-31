@@ -288,14 +288,13 @@ export async function emptyStash() {
             // Get the last request stored
             let request_name = 'gosqas_offline_stash_' + stash_counter;
             let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-            let fullUrl = request[0][1];
+            const baseUrl = useRuntimeConfig().public.baseUrl; // todo: localhost doesn't include /prov, dev/prod do
+            let fullUrl = baseUrl + request[0][1];
             let record = request[1][1];
 
-            // TODO: emptyStash is the problem! below create formData will actually make plaintext when running from the tests
             // Fulfill the request
             const formData = new FormData();
             formData.append('provenanceRecord', record);
-            // TODO: could probably still mock fetch and just ignore the input original gave..?
             let response = await fetchUrl(fullUrl, formData)
             if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
 
