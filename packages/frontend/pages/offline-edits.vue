@@ -109,10 +109,10 @@ data() {
         dismissAllEditsPopUp: false,
         dismissPublishedEditsPopUp: false,
         dismissSingleEditPopUp: false,
-        offlineKeys: ['laskdfjaslkdfsd'] as string[],
-        fulfilledKeys: ['laskdfjaslkdfsd'] as string[],
-        syncingKeys: ['laskdfjaslkdfsd'] as string[],
-        failedKeys: ['laskdfjaslkdfsd'] as string[],
+        offlineKeys: [] as string[],
+        fulfilledKeys: [] as string[],
+        syncingKeys: [] as string[],
+        failedKeys: [] as string[],
 	}
 },
 
