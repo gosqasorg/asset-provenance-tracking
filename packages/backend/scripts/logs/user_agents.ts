@@ -57,12 +57,67 @@ async function runQuery(label: string, query: string): Promise<void> {
 //     `AppRequests | where Properties contains "user_agent" | project Properties | take 5` 
 // );
 
+// await runQuery(
+//     "Unique Agents",
+//     `AppRequests | extend ua = tostring(parse_json(Properties)["user_agent.original"]) | summarize count() by ua | order by count_ desc`
+// );
+
+// When I look at the unique agents, I see a lot of different user agents that are bots, browsers, and other types of clients. 
+// To make it easier to analyze, I can categorize them into groups like "Bot", "
+// Add display a chart seperately for automated requests, bots etc
+// Edge", "Chrome", "Firefox", "Safari", "DuckDuckGo" were the browsers I saw in the unique agents
 await runQuery(
-    "Unique Agents",
-    `AppRequests | extend ua = tostring(parse_json(Properties)["user_agent.original"]) | summarize count() by ua | order by count_ desc`
+    "User agents sample",
+`AppRequests
+| extend ua = tostring(parse_json(Properties)["user_agent.original"])
+| extend UserBrowsers = case(
+    ua contains "ClaudeBot", "ClaudeBot",
+    ua contains "Googlebot", "Googlebot",
+    ua contains "bingbot", "Bingbot",
+    ua contains "Baiduspider", "Baiduspider",
+    ua contains "bot" or ua contains "crawler" or ua contains "spider", "Other bot",
+    ua contains "curl", "curl",
+    ua contains "node", "Node",
+    ua contains "python" or ua contains "Python", "Python",
+    ua contains "MSIE" or ua contains "Trident", "Internet Explorer",
+    ua contains ".NET", ".NET",
+    ua contains "Edg/", "Edge",
+    ua contains "Chrome", "Chrome",
+    ua contains "Firefox", "Firefox",
+    ua contains "Safari", "Safari",
+    ua contains "DuckDuckGo", "DuckDuckGo",
+    ua == "", "Unknown",
+    "Other"
+)
+| summarize count() by UserBrowsers
+| order by count_ desc`
 );
 
+
+// figure out what the "Other" user agents are 
 // await runQuery(
-//     "User agents sample",
-// `AppRequests | extend ua = tostring(parse_json(Properties)["user_agent.original"]) | extend UserBrowsers = case (ua contains "Edg/", "Edge", ua contains"Chrome", "Chrome", ua contains "Firefox", "Firefox",  ua contains "Safari", "Safari", ua == "", "Unknown", "Other") | project UserBrowsers | summarize count() by UserBrowsers | order by count_ desc`
+//     "Others",
+//     `AppRequests
+// | extend ua = tostring(parse_json(Properties)["user_agent.original"])
+// | extend UserBrowsers = case(
+//     ua contains "ClaudeBot", "ClaudeBot",
+//     ua contains "Googlebot", "Googlebot",
+//     ua contains "bingbot", "Bingbot",
+//     ua contains "Baiduspider", "Baiduspider",
+//     ua contains "bot" or ua contains "crawler" or ua contains "spider", "Other bot",
+//     ua contains "curl", "curl",
+//     ua contains "node", "Node",
+//     ua contains "python" or ua contains "Python", "Python",
+//     ua contains "MSIE" or ua contains "Trident", "IE/.NET",
+//     ua contains ".NET", ".NET",
+//     ua contains "Edg/", "Edge",
+//     ua contains "Chrome", "Chrome",
+//     ua contains "Firefox", "Firefox",
+//     ua contains "Safari", "Safari",
+//     ua contains "DuckDuckGo", "DuckDuckGo",
+//     ua == "", "Unknown",
+//     "Other") 
+// | where UserBrowsers == "Other"
+// | project ua
+// | take 20`
 // );

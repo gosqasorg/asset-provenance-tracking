@@ -1,0 +1,77 @@
+
+===** User agents sample **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "UserBrowsers",
+          "type": "string"
+        },
+        {
+          "name": "count_",
+          "type": "long"
+        }
+      ],
+      "rows": [
+        [
+          "Unknown",
+          34271
+        ],
+        [
+          "Node",
+          4455
+        ],
+        [
+          "curl",
+          887
+        ],
+        [
+          "Chrome",
+          500
+        ],
+        [
+          "Firefox",
+          360
+        ],
+        [
+          "Safari",
+          145
+        ],
+        [
+          "ClaudeBot",
+          69
+        ],
+        [
+          "Googlebot",
+          50
+        ],
+        [
+          "Edge",
+          32
+        ],
+        [
+          "Bingbot",
+          7
+        ],
+        [
+          "Internet Explorer",
+          6
+        ],
+        [
+          "Python",
+          5
+        ],
+        [
+          "Baiduspider",
+          4
+        ],
+        [
+          "Other bot",
+          3
+        ]
+      ]
+    }
+  ]
+}

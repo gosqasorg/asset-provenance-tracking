@@ -358,3 +358,14 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
         }
     }
 }
+
+export async function getBrowserStats() {
+    try {
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/browsers");
+        return await response.json();
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}
