@@ -797,7 +797,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         // TODO: * Change to gosqas.org for deployment;        
         const frontendUrl = 'http://localhost:3000';
-        const verifyLink = `${frontendUrl}/history/${recordKey}/?token=${token}&code=${code}`;
+        const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
         
         const emailResult = await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
@@ -869,14 +869,14 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     if (Date.now() > entity.expiresAt) {
         await tableClient.deleteEntity(entity.partitionKey as string, entity.rowKey as string);
         return {
-            jsonBody: { error: "Invalid or expired code" },
-            status: 404
+            jsonBody: { error: "Expired", recordKey: entity.recordKey as string },
+            status: 410
         }
     }
 
-    // valid - return 200, don't expose code
+    // valid - return 200
     return {
-        jsonBody: { message: "Valid" },
+        jsonBody: { message: "Valid", recordKey: entity.recordKey as string },
         status: 200
     }
 
@@ -933,13 +933,16 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             }
         }
 
+        // TODO: * Mark entity as verified... Ask Vincent some stuff
+        await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
+
+        // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
-        await tableClient.deleteEntity(token, code);
-        // await signupForNotifications(entity.recordKey as string, entity.email as string, JSON.parse(entity.tags as string ?? '[]'))
-        await signupForNotifications(entity.recordKey as string, entity.email as string);
+        //await tableClient.deleteEntity(token, code);
+        //await signupForNotifications(entity.recordKey as string, entity.email as string);
 
         return {
-            jsonBody: {message: "Success"},
+            jsonBody: {message: "Success", recordKey: entity.recordKey as string},
             status: 200
         } 
     } catch(error) {
@@ -1017,8 +1020,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         // TODO: * Change to gosqas for deployment;
         const frontendUrl = 'http://localhost:3000';
-        const deviceKey = entity.recordKey as string;
-        const verifyLink = `${frontendUrl}/history/${deviceKey}/?token=${token}&code=${code}`;
+        const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
 
         await sendEmail(
             "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",

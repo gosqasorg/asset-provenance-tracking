@@ -172,6 +172,10 @@ export async function postVerifyCode(token: string, code: string) {
     if (response.status != 200) {
         throw new Error('postVerifyCode: Failed to verify code')
     }
+
+    const data = await response.json();
+    return data.recordKey as string;
+
 }
 
 export async function getPendingVerification(token: string) {
@@ -179,9 +183,12 @@ export async function getPendingVerification(token: string) {
     const response = await fetch(`${baseUrl}/pendingverification?token=${token}`, {
         method: 'GET',
     });
-    if (response.status != 200) {
-        throw new Error('getPendingVerfication: invalid or expired token')
-    }
+    // if (response.status != 200) {
+    //     throw new Error('getPendingVerfication: invalid or expired token')
+    // }
+    if (response.status === 404) return null;
+    const data = await response.json();
+    return data.recordKey as string ?? null;
 }
 
 export async function postResendCode(token: string) {

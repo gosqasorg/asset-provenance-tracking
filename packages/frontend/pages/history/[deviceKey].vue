@@ -18,6 +18,8 @@ Page will be the forum where users can keep track of the provenance of
 their items.
 -->
 
+<!-- TODO: * Rework auto-token functionality based on new requirements -->
+
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
