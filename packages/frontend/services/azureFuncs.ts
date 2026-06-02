@@ -283,20 +283,21 @@ export async function emptyStash() {
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
 
     for (stash_counter; stash_counter > 0; stash_counter--) {
+        // TODO: move below back into try once tests are passing
+        // Get the last request stored
+        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const currentKey = request[0][1];
+        const record = request[1][1];
+
+        // If the environment is local add /provenance/ to the url
+        let fullUrl = `${baseUrl}${currentKey}`;
+        if (baseUrl.includes('localhost')) {
+            fullUrl = `${baseUrl}/provenance/${currentKey}`;
+        }
+
         try {
-            // Get the last request stored
-            let request_name = 'gosqas_offline_stash_' + stash_counter;
-            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-            const baseUrl = useRuntimeConfig().public.baseUrl;
-            const currentKey = request[0][1];
-            const record = request[1][1];
-
-            // If the environment is local add /provenance/ to the url
-            let fullUrl = `${baseUrl}${currentKey}`;
-            if (baseUrl.includes('localhost')) {
-                fullUrl = `${baseUrl}/provenance/${currentKey}`;
-            }
-
             // Fulfill the request
             const formData = new FormData();
             formData.append('provenanceRecord', record);
@@ -318,7 +319,7 @@ export async function emptyStash() {
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString());
         } catch (error) {
-            console.log("Record from localStorage failed to create: " + error)
+            console.log("Record from localStorage failed to create: " + fullUrl)
             return 404;
         }
     }
