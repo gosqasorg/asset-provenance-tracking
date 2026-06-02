@@ -2,6 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
 import { testOnlineTestUrl, postProvenance, offlineModeFeatureFlag } from '~/services/azureFuncs';
 
+function getFullUrl(key: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl
+    let fullUrl = `${baseUrl}${key}`
+
+    // If the environment is local add /provenance/ to the url
+    if (baseUrl.includes('localhost')) {
+        fullUrl = `${baseUrl}/provenance/${key}`
+    }
+
+    return fullUrl;
+}
+
 function resetStashValues(): void {
   // reset the values in localStorage to avoid overlap between tests
   localStorage.setItem('stash_counter', '0');
@@ -65,8 +77,6 @@ describe("Tests to see if we can create records while offline", async () => {
 
     // Go "online" and wait for the record to create
     testOnlineTestUrl.url = useRuntimeConfig().public.frontendUrl
-    const baseUrl = useRuntimeConfig().public.baseUrl 
-    const fullUrl = `${baseUrl}/provenance/${key}`
 
     await new Promise((r) => setTimeout(r, 6000));
 
@@ -83,6 +93,7 @@ describe("Tests to see if we can create records while offline", async () => {
 
     // Confirm that the record was actually created
     try {
+      const fullUrl = getFullUrl(key);
       let response = await (await fetch(fullUrl)).json();
       let responseString = JSON.parse(JSON.stringify(response[0]));
 
@@ -93,7 +104,7 @@ describe("Tests to see if we can create records while offline", async () => {
 			expect(responseString.record.hasParent).toBe(false);
 			expect(responseString.record.isReportingKey).toBe(false);
     } catch(error) {
-      expect.fail("Create Record Offline: postProvenance failed to stash the record: " + error)
+      expect.fail("Create Record Offline: postProvenance failed to create the record: " + error)
     }
 
     offlineModeFeatureFlag.flag = false
