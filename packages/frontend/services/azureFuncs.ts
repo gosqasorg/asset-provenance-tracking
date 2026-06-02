@@ -321,7 +321,7 @@ export async function emptyStash() {
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString());
         } catch (error) {
-            console.log("Record from localStorage failed to create: " + fullUrl)
+            console.log("Record from localStorage failed to create: " + error)
             return 404;
         }
     }
