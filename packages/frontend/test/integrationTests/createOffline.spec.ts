@@ -1,17 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { testOnlineTestUrl, postProvenance, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { testOnlineTestUrl, postProvenance, offlineModeFeatureFlag, emptyStashBaseUrl } from '~/services/azureFuncs';
 
-function getFullUrl(key: string) {
-    const baseUrl = useRuntimeConfig().public.baseUrl
-    let fullUrl = `${baseUrl}${key}`
+// Functions to allow devs to easily switch between development and local backends
+let frontendUrl = useRuntimeConfig().public.frontendUrl
 
-    // If the environment is local add /provenance/ to the url
-    if (baseUrl.includes('localhost')) {
-        fullUrl = `${baseUrl}/provenance/${key}`
-    }
-
-    return fullUrl;
+function useDevEnvironment() {
+  emptyStashBaseUrl.url = `https://gosqasbe.azurewebsites.net/api/provenance/`;
+  frontendUrl = "https://dev.gosqas.org"
+}
+function useLocalEnvironment() {
+  emptyStashBaseUrl.url = `http://localhost:7071/api`;
 }
 
 function resetStashValues(): void {
@@ -23,14 +22,17 @@ function resetStashValues(): void {
 }
 
 describe("Tests to see if we can create records while offline", async () => {
+  // NOTE: Replace below function call with useLocalEnvironment() to test locally
+  // useLocalEnvironment();
+  useDevEnvironment();
+
   it ("Create one record while offline", async () => {
-    // Mock fetch POST requests to not use formData (fails to send from frontend test files)
+    // For testing we need to mock fetch to use urlencoded data rather than formData (which fails to send from test files)
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const modifiedInit = { ...init };
         
-        // If we're posting then convert requests to use urlencoded data rather than formData
         if (modifiedInit.method == "POST") {
           const headers = new Headers(modifiedInit.headers);
           headers.set('Content-Type', 'application/x-www-form-urlencoded');
@@ -44,6 +46,8 @@ describe("Tests to see if we can create records while offline", async () => {
         return originalFetch(input, modifiedInit);
       }
     )
+
+    resetStashValues();
 
     const record = {
       blobType: 'deviceInitializer',
@@ -61,7 +65,7 @@ describe("Tests to see if we can create records while offline", async () => {
 
     // Create record, confirm it stashed and that periodicChecker is running
     const key = await makeEncodedDeviceKey();
-    resetStashValues();
+    console.log(`Creating record ${key} while offline...`)
 
     try {
       await postProvenance(key, record, []);
@@ -76,9 +80,9 @@ describe("Tests to see if we can create records while offline", async () => {
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
 
     // Go "online" and wait for the record to create
-    testOnlineTestUrl.url = useRuntimeConfig().public.frontendUrl
+    testOnlineTestUrl.url = frontendUrl
 
-    await new Promise((r) => setTimeout(r, 6000));
+    await new Promise((r) => setTimeout(r, 7000));
 
     // Confirm that the record was removed from stash, added to fulfilled stash, and that periodicChecker stopped running
     expect(localStorage.getItem('stash_counter')).toEqual('0');
@@ -93,7 +97,12 @@ describe("Tests to see if we can create records while offline", async () => {
 
     // Confirm that the record was actually created
     try {
-      const fullUrl = getFullUrl(key);
+      const baseUrl = emptyStashBaseUrl.url
+      let fullUrl = `${baseUrl}${key}`;
+      if (baseUrl.includes('localhost')) {
+          fullUrl = `${baseUrl}/provenance/${key}`;
+      }
+
       let response = await (await fetch(fullUrl)).json();
       let responseString = JSON.parse(JSON.stringify(response[0]));
 
