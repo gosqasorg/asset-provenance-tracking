@@ -67,7 +67,7 @@ while offline.
     </div>
 
     <!----------------Published Keys Banner------------------>
-    <div v-for="(key, index) in offlineKeys">
+    <div v-for="(key, index) in fulfilledKeys">
         <div class="key-box" style="border: none; overflow:auto; display:grid; gap:10px; margin-bottom: 10px; margin-top: 0px">
             <p style="grid-row: 1; font-size: 17px; margin-top: -5px; margin-bottom: -5px">{{ key }}</p>      
             <div class="status-bubble">Published</div>
@@ -77,7 +77,7 @@ while offline.
     </div>
 
     <!----------------Syncing Keys Banner-------------------->
-    <div v-for="(key, index) in offlineKeys">
+    <div v-for="(key, index) in syncingKeys">
         <div class="key-box sync" style="border: solid; border-width: 2px; border-color: #efcc9b;">
             <p style="font-size: 17px">{{ key }}</p>
             <div class="status-bubble" style="background-color: #df892a;">Syncing</div>
@@ -85,7 +85,7 @@ while offline.
     </div>
 
     <!------------------Failed Keys Banner------------------->
-    <div v-for="(key, index) in offlineKeys">
+    <div v-for="(key, index) in failedKeys">
         <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
             <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
