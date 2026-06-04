@@ -1022,10 +1022,11 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[]) {
-    const baseUrl = process.env['backend_url'];
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
+
+    n_children = Math.max(0, n_children ?? 0);
 
     // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
@@ -1043,6 +1044,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
     };
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles)
+    if (childKeys.length !== n_children) {
+        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1058,12 +1062,20 @@ async function createGroup(context, name, description, n_children: number = 0, c
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
+
+    for (const attachment of attachments) {
+        groupFormData.append("attachment", attachment.blob, attachment.name);
+    }
     
     const createInitUrl = `${apiUrl}/provenance/${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
     });
+    if (!groupResponse.ok) {
+        const errorBody = await groupResponse.text().catch(() => "");
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1083,19 +1095,36 @@ const GroupCreationOrderSchema = z.object({
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
+        const attachments: NamedBlob[] = [];
+        const formData = await request.formData();
+
+        const recordStr = formData.get("provenanceRecord"); 
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError(
+                "Missing provenanceRecord in form data"
+            );
+        }
+
+        let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({name: value.name || "attachment", blob: value});
+        }
+
         GroupCreationOrderSchema.parse(theRequest)
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
+
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles)
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, attachments)
+
         context.log(theGroupRecordPageUrl)
 
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
-            headers: { "Content-Type": "text/plain" }
+            headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
         context.error('Failed to create group: ', error.message)
