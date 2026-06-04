@@ -98,10 +98,6 @@ while offline.
 </template>
 
 <script lang="ts">
-import { RouterView, useRouter } from 'vue-router';
-
-const router = useRouter();
-
 export default {
 data() {
 	return {
@@ -156,12 +152,17 @@ methods: {
 
     },
     clearAllEdits() {
+        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+        for (stash_counter; stash_counter > 0; stash_counter--) {
+            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            localStorage.removeItem(request_name);
+        }
         localStorage.setItem('stash_counter', '0');
-        localStorage.setItem('gdt-stash-fulfilled', '')
+        localStorage.removeItem('gdt-stash-fulfilled')
         window.location.reload();
     },
     clearPublishedEdits() {
-        localStorage.setItem("gdt-stash-fulfilled", "")
+        localStorage.removeItem("gdt-stash-fulfilled")
         window.location.reload();  
     },
     clearOneEditPrepare(key: string) {
