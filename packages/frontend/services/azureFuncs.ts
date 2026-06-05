@@ -250,7 +250,7 @@ export async function connectivityChecker() {
 
 export async function stashRequest(formUrl: string, formData: FormData) {
     try {
-    // Convert values to string and store them
+        // Convert values to string and store them
         let valuesToStore = [];
         valuesToStore.push(['formUrl', formUrl]);
         valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
@@ -264,7 +264,7 @@ export async function stashRequest(formUrl: string, formData: FormData) {
         localStorage.setItem('stash_counter', stash_counter.toString());
 
         // Store the request at a unique key (gosqas_offline_stash_#)
-        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        let request_name = 'gosqas-offline-stash-' + stash_counter;
         localStorage.setItem(request_name, JSON.stringify(valuesToStore));
     } catch (error: any) {
         // This web API error is thrown when localStorage is full
@@ -275,10 +275,22 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
-async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number, request: string) {
+// TODO: rearrange these new funcs as needed to make them clear
+function removeKey(currentKey: string) {
+    // TODO: error handling
+    // Remove the specified request from the syncing stash stash
+    let synced_stash = (localStorage.getItem("gdt-stash-syncing")?.split(",") || [])
+    const index = synced_stash.indexOf(currentKey);
+    if (index > -1) {
+        synced_stash.splice(index, 1);
+    }
+    localStorage.setItem("gdt-stash-syncing", synced_stash.toString())
+}
+
+function stashKey(currentKey: string, stashName: string, request: string) {
+    // Add the specified key to the specified stash (works for syncing/fulfilled)
     try {
         let keys = [];
-        let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
         let existingKeys = localStorage.getItem(stashName)
         if (existingKeys) {
             for (const key of existingKeys.split(",")) {
@@ -287,16 +299,29 @@ async function stashKeysAndRemove(fullUrl: string, stashName: string, request_na
         }
         keys.push(currentKey)
         localStorage.setItem(stashName, keys.toString())
+        return true
 
     } catch (error) {
-        // If the request can't be formatted properly to stash, then just stash the whole thing in failed
-        localStorage.setItem("gdt-stash-failed", request)
+        stashFailedRequest(request)
+        console.log("Record from localStorage was not able to be stashed: " + error)
+        return false
+    }
+}
+
+function stashFailedRequest(request: string) {
+    try { 
+        let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+        let requests = [];
+        if (JSON.stringify(failedRequests) !== '{}') {
+            for (const key of failedRequests) {
+                requests.push(key);
+            }
+        }
+        requests.push(request)
+        localStorage.setItem("gdt-stash-failed", JSON.stringify(requests))
+    } catch (error) {
         console.log("Record from localStorage was not able to be stashed: " + error)
     }
-
-    // Remove request from stash and update counter
-    localStorage.removeItem(request_name)
-    localStorage.setItem('stash_counter', (stash_counter - 1).toString());
 }
 
 export async function emptyStash() {
@@ -305,7 +330,8 @@ export async function emptyStash() {
 
     for (stash_counter; stash_counter > 0; stash_counter--) {
         // Get the last request stored
-        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        // TODO LAST: updated name below to use - instead of _, update our tests to still pass
+        let request_name = 'gosqas-offline-stash-' + stash_counter;
         let request = JSON.parse(localStorage.getItem(request_name) || '{}');
         if (request === '{}') { 
             localStorage.removeItem(request_name)
@@ -314,7 +340,14 @@ export async function emptyStash() {
         }
         let fullUrl = request[0][1];
         let record = request[1][1];
+        let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
 
+        // Move key into syncing stash and exit the loop on failure
+        if (!stashKey(currentKey, "gdt-stash-syncing", request)) {
+            continue
+        }
+        localStorage.removeItem(request_name);
+        
         try {
             // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
@@ -325,20 +358,28 @@ export async function emptyStash() {
             if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            stashKeysAndRemove(fullUrl, "gdt-stash-fulfilled", request_name, stash_counter, request)
+            stashKey(currentKey, "gdt-stash-fulfilled", request);
+            removeKey(currentKey);
+
         } catch (error) {
-            // If the record fails to create for any reason other than being offline, add it to the failed stash
-            if (await(onlineTestFetch())) {
-                stashKeysAndRemove(fullUrl, "gdt-stash-failed", request_name, stash_counter, request)
+            // If the request fails to create for any reason other than being offline, add it to the failed stash
+            if (!await(onlineTestFetch())) {
+                stashFailedRequest(request)
+                removeKey(currentKey)
             }
 
             console.log("Record from localStorage failed to create: " + error)
         }
 
+        localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+
         if (!await(onlineTestFetch())) {
             return 202;
         }
     }
+
+    // Make sure that stash counter is set to empty now that we're out of the loop
+    localStorage.setItem('stash_counter', '0');
 
     // Disable the offline banner and enable the online banner
     displayOfflineBanner = false;
