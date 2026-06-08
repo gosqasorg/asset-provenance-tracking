@@ -1022,10 +1022,11 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[]) {
-    const baseUrl = process.env['backend_url'];
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
+
+    n_children = Math.max(0, n_children ?? 0);
 
     // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
@@ -1043,6 +1044,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
     };
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles)
+    if (childKeys.length !== n_children) {
+        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1058,12 +1062,20 @@ async function createGroup(context, name, description, n_children: number = 0, c
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
+
+    for (const attachment of attachments) {
+        groupFormData.append("attachment", attachment.blob, attachment.name);
+    }
     
     const createInitUrl = `${apiUrl}/provenance/${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
     });
+    if (!groupResponse.ok) {
+        const errorBody = await groupResponse.text().catch(() => "");
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1083,19 +1095,36 @@ const GroupCreationOrderSchema = z.object({
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
+        const attachments: NamedBlob[] = [];
+        const formData = await request.formData();
+
+        const recordStr = formData.get("provenanceRecord"); 
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError(
+                "Missing provenanceRecord in form data"
+            );
+        }
+
+        let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({name: value.name || "attachment", blob: value});
+        }
+
         GroupCreationOrderSchema.parse(theRequest)
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
+
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles)
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, attachments)
+
         context.log(theGroupRecordPageUrl)
 
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
-            headers: { "Content-Type": "text/plain" }
+            headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
         context.error('Failed to create group: ', error.message)
@@ -1131,14 +1160,133 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+async function createRecord(context, name, description, tags, attachments) {
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const deviceKey = await makeEncodedDeviceKey();
+    const decodedDeviceKey = decodeKey(deviceKey);
+
+    try {
+        const data = {
+            blobType: 'deviceInitializer',
+            deviceName: name,
+            description: description,
+            tags: tags,
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        };
+
+        // use uploadProvenance to post the record and any attachments
+        await containerClient.createIfNotExists();
+        const timestamp = new Date().getTime();
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
+        if (body.oversizedAttachments) {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
+
+        return `${frontendUrl}/record/${deviceKey}`;
+
+    } catch (error) {
+        context.error('createRecord Error: Failed to create record' + error); 
+        return '';
+    }
+}
+
+const RecordCreationOrderSchema = z.object({
+    blobType: z.string().optional(),
+    deviceName: z.string(),
+    description: z.string(),
+    children_key: z.union([z.string(), z.array(z.string())]),
+    children_name: z.array(z.string()).optional(),
+    hasParent: z.boolean().optional(),
+    isReportingKey: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
+        let name = theRequest['provenanceRecord']['deviceName'];
+        let description = theRequest['provenanceRecord']['description'];
+        let tags = theRequest['provenanceRecord']['tags'];
+        let attachment = theRequest['attachment'];
+
+        // if there's an attachment create a blob to add to the record
+        const attachments = new Array<NamedBlob>();
+        if (attachment != "") {
+            attachment = theRequest['attachment']['file'];
+            let attachmentName = theRequest['attachment']['name'];
+            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
+            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
+            if (typeof blob !== 'string') {
+                console.log("attach type: " + typeof(blob))
+                attachments.push({ blob: blob, name: attachmentName });
+            }
+        }
+
+        let recordUrl = await createRecord(context, name, description, tags, attachments)
+        context.log(recordUrl)
+        return {
+            status: 200,
+            jsonBody: { recordUrl: recordUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create record: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+app.post("createRecord", {
+    authLevel: 'anonymous',
+    route: 'createRecord',
+    handler: createRecordHandler
+})
 
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
-    handler: createGroupHandler,
+    handler: createGroupHandler
 })
 
 app.get("emailSignupTestEndpoint", {

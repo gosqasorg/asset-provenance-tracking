@@ -22,15 +22,77 @@ while offline.
 <div class="container-md" id="donate-container">
     <h1>Your Offline Edits</h1>
     <div class="row">
-        <div style="margin-bottom: 30px;">
-            <strong>*Note: This page is still a work in progress.</strong><br><br>
+        <div>
             Your recent offline edits are below. Please review any pending edits to confirm they have synced.
         </div>
     </div>
 
-    <button class="btn purple-btn" @click="clearAllEdits">Dismiss All Edits</button>
+    <button class="btn dismiss all" style="width: 19%; margin-right: 15px" @click="dismissAllEditsPopUp=true">Dismiss all edits</button>
+    <button class="btn dismiss published" style="width: 27%" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
 
-    <div> Records Created: {{ offlineKeys }} </div>
+    <!----------------Dismiss All Edits Popup-------------------->
+    <div class="popup" v-if="dismissAllEditsPopUp">
+        <div class="popup-inner">
+            <h3 style="font-weight: bold">You're dismissing all of your offline edits</h3>
+            <p class="inner-p">Once you dismiss your offline edits, they will no longer be available for review.</p>
+            <button class="popup-buttons" style="float: left;" @click="dismissAllEditsPopUp=false">Go back</button>
+            <button class="btn confirm-dismiss" style="float: right" @click="clearAllEdits(); dismissAllEditsPopUp=false">Dismiss all edits</button>
+        </div>
+    </div>
+
+    <!----------------Dismiss Published Edits Popup-------------->
+    <div class="popup" v-if="dismissPublishedEditsPopUp">
+        <div class="popup-inner">
+            <h3 style="font-weight: bold">You're dismissing your published offline edits</h3>
+            <p class="inner-p">Once you dismiss your published offline edits, they will no longer be available for review.</p>
+            <button class="popup-buttons" style="float: left;" @click="dismissPublishedEditsPopUp=false">Go back</button>
+            <button class="btn confirm-dismiss" style="float: right" @click="clearPublishedEdits()">Dismiss published edits</button>
+        </div>
+    </div>
+    <!----------------Dimiss an Offline Edit Popup--------------->
+    <div class="popup" v-if="dismissSingleEditPopUp">
+        <div class="popup-inner">
+            <h3 style="font-weight: bold">You're dismissing an offline edit</h3>
+            <p class="inner-p">You're dismissing the below edit. Once dismissed, it will no longer be available for review.</p>
+            <button class="popup-buttons" style="float: left;" @click="dismissSingleEditPopUp=false">Go back</button>
+            <button class="btn confirm-dismiss" style="float: right" @click="clearOneEdit()">Dismiss edit</button>
+        </div>
+    </div>
+    <!----------------Queued Keys Banner-------------------->
+    <div v-for="(key, index) in offlineKeys">
+        <div class="key-box">
+            <p style="font-size: 17px;">{{ key }}</p>
+            <div style="background-color: #91bdf5; border-radius: 20px; width: 105px; color: black; text-align: center; height:40px; display:flex; justify-content: center; align-items: center;">Queued</div>
+        </div>
+    </div>
+
+    <!----------------Published Keys Banner------------------>
+    <div v-for="(key, index) in fulfilledKeys">
+        <div class="key-box" style="border: none; overflow:auto; display:grid; gap:10px; margin-bottom: 10px; margin-top: 0px">
+            <p style="grid-row: 1; font-size: 17px; margin-top: -5px; margin-bottom: -5px">{{ key }}</p>      
+            <div class="status-bubble">Published</div>
+            <button class="btn key-buttons" style="grid-row: 1;" @click="$router.push('/history/' + key)">Go to record</button>
+            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(key)">Dismiss edit</button>
+        </div>
+    </div>
+
+    <!----------------Syncing Keys Banner-------------------->
+    <div v-for="(key, index) in syncingKeys">
+        <div class="key-box sync" style="border: solid; border-width: 2px; border-color: #efcc9b;">
+            <p style="font-size: 17px">{{ key }}</p>
+            <div class="status-bubble" style="background-color: #df892a;">Syncing</div>
+        </div>
+    </div>
+
+    <!------------------Failed Keys Banner------------------->
+    <div v-for="(key, index) in failedKeys">
+        <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
+            <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
+            <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
+            <button class="btn key-buttons" style="grid-row: 1;">Retry syncing</button>
+            <button class="btn key-buttons bottom">Edit submission</button>
+        </div>
+    </div>
 
 </div>
 </template>
@@ -39,92 +101,89 @@ while offline.
 export default {
 data() {
 	return {
+        dismissOneKey: '',
+        dismissAllEditsPopUp: false,
+        dismissPublishedEditsPopUp: false,
+        dismissSingleEditPopUp: false,
         offlineKeys: [] as string[],
+        fulfilledKeys: [] as string[],
+        syncingKeys: [] as string[],
+        failedKeys: [] as string[],
 	}
 },
+
 async mounted() {
     try {
-        this.getOfflineKeys()
+        this.getFailedKeys();
+        this.getOfflineKeys();
+        this.getSyncingKeys();
+        this.getFulfilledKeys();
+        this.clearOneEdit();
     } catch (e) {
         console.log("There was an error displaying your offline edits: " + e)
     }
 },
+
 methods: {
     getOfflineKeys() {
-        // Get all keys that were successfully created while offline
-        let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
-        if (existingKeys) {
-            for (const key of existingKeys.split(",")) {
-                this.offlineKeys.push(key)
-            }
+        // Get all keys that were successfully stashed while offline
+        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+        for (stash_counter; stash_counter > 0; stash_counter--) {
+            let test = JSON.parse(localStorage.getItem('gosqas_offline_stash_' + stash_counter) || '{}')
+            let fullUrl = test[0][1]
+            let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
+            this.offlineKeys.push(record)   
         }
     },
-	clearAllEdits() {
-        localStorage.setItem("gdt-stash-fulfilled", "")
+    getFulfilledKeys() {
+        // Get all keys that were fullfilled from the stash
+        let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
+        for (const key of fulfilled.split(",")) {
+            if (key === "{}") {
+                continue
+            }
+            this.fulfilledKeys.push(key)  
+        }
+    },
+    getSyncingKeys() {
+
+    },
+    getFailedKeys() {
+
+    },
+    clearAllEdits() {
+        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
+        for (stash_counter; stash_counter > 0; stash_counter--) {
+            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            localStorage.removeItem(request_name);
+        }
+        localStorage.setItem('stash_counter', '0');
+        localStorage.removeItem('gdt-stash-fulfilled')
         window.location.reload();
-	},
-}
+    },
+    clearPublishedEdits() {
+        localStorage.removeItem("gdt-stash-fulfilled")
+        window.location.reload();  
+    },
+    clearOneEditPrepare(key: string) {
+        this.dismissOneKey = key;
+    },
+    clearOneEdit() {
+        // Removes key from fulfilled array then resets and copies this array to gdt stash fullfilled
+        const index = this.fulfilledKeys.indexOf(this.dismissOneKey);
+        if (index > -1) {
+            this.fulfilledKeys.splice(index, 1);
+            this.dismissOneKey = '';
+            this.dismissSingleEditPopUp = false;
+        }
+        localStorage.setItem('gdt-stash-fulfilled', '')
+        localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
+    },
+    }
 }
 </script>
 
-<style>
-.row {
-    margin-top:32px;
-}
-
-/* For screens smaller than 768px */
-#donate-container{
-    padding: 50px 20px 40px 20px;
-}
-
-.purple-btn {
-    margin-bottom: 20px;
-    padding: 12px 16px;
-}
-
-/* Wrap buttons once screen gets below a certain size */
-@media (max-width: 991px) {
-.purple-btn {
-	width: 100% !important;
-}
-}
-
-/* Dark mode version*/
-@media (prefers-color-scheme: dark) {
-    h1 {
-        color: #CCECFD;
-    }
-    p {
-        color: #FFFFFF;
-    }
-    .purple-btn {
-        background-color: #CCECFD;
-        border: #CCECFD;
-        color: black;
-    }
-    .purple-btn:hover,
-    .purple-btn:active {
-        background-color: #e6f6ff !important;
-    }
-}
-/* Light mode version*/
-@media (prefers-color-scheme: light) {
-    h1 {
-        color: #4E3681;
-    }
-    p {
-        color: #1E2019;
-    }
-    .purple-btn {
-        background-color: #4e3681;
-        border: #4e3681;
-        color: white;
-    }
-
-    .purple-btn:hover,
-    .purple-btn:active {
-        background-color: #322253 !important;
-        color: white !important;
-    }
-}
+<style scoped>
+    @import '../assets/css/history-form.css';
+    @import '../assets/css/offline-edits.css';
 </style>
