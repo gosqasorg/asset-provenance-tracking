@@ -50,7 +50,8 @@ jobs:
       - name: build frontend
         working-directory: packages/frontend
         run: |
-          npm install --include=optional
+          npm install --include=optional --ignore-scripts
+          npx nuxt prepare
           npx nuxi build --preset=azure
           npm run coverage
         env:
