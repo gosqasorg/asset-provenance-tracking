@@ -89,8 +89,8 @@ while offline.
         <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
             <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
-            <button class="btn key-buttons" style="grid-row: 1;">Retry syncing</button>
-            <button class="btn key-buttons bottom">Edit submission</button>
+            <button class="btn key-buttons" style="grid-row: 1;" @click="retrySyncing(key)">Retry syncing</button>
+            <button class="btn key-buttons bottom" @click="editSubmission()">Edit submission</button>
         </div>
     </div>
 
@@ -98,6 +98,8 @@ while offline.
 </template>
 
 <script lang="ts">
+import { postProvenance, stashKey } from "~/services/azureFuncs"
+
 export default {
 data() {
 	return {
@@ -120,7 +122,7 @@ async mounted() {
         this.getFulfilledKeys();
         this.clearOneEdit();
     } catch (e) {
-        console.log("There was an error displaying your offline edits: " + e)
+        console.error("There was an error displaying your offline edits: " + e)
     }
 },
 
@@ -129,7 +131,7 @@ methods: {
         // Get all keys that were successfully stashed while offline
         let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
         for (stash_counter; stash_counter > 0; stash_counter--) {
-            let test = JSON.parse(localStorage.getItem('gosqas_offline_stash_' + stash_counter) || '{}')
+            let test = JSON.parse(localStorage.getItem('gosqas-offline-stash-' + stash_counter) || '{}')
             let fullUrl = test[0][1]
             let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
             this.offlineKeys.push(record)   
@@ -146,19 +148,40 @@ methods: {
         }
     },
     getSyncingKeys() {
-
+        // Get all keys in the stash that are syncing
+        let syncing = (localStorage.getItem('gdt-stash-syncing') || "{}")
+        for (const key of syncing.split(",")) {
+            if (key === "{}") {
+                continue
+            }
+            this.syncingKeys.push(key)  
+        }
     },
     getFailedKeys() {
+        // Get all keys in the stash that failed to create
+        let failed = localStorage.getItem("gdt-stash-failed") || '{}';
+        if (failed == '{}') {
+            return
+        }
 
+        for (const request of JSON.parse(failed)) {
+            if (request === "{}") {
+                continue
+            }
+            let fullUrl = request[0][1];
+            this.failedKeys.push(fullUrl.split("/")[fullUrl.split("/").length - 1]);  
+        }
     },
     clearAllEdits() {
         let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
         for (stash_counter; stash_counter > 0; stash_counter--) {
-            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            let request_name = 'gosqas-offline-stash-' + stash_counter;
             localStorage.removeItem(request_name);
         }
         localStorage.setItem('stash_counter', '0');
-        localStorage.removeItem('gdt-stash-fulfilled')
+        localStorage.removeItem('gdt-stash-syncing');
+        localStorage.removeItem('gdt-stash-fulfilled');
+        localStorage.removeItem('gdt-stash-failed');
         window.location.reload();
     },
     clearPublishedEdits() {
@@ -179,7 +202,84 @@ methods: {
         localStorage.setItem('gdt-stash-fulfilled', '')
         localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
-    }
+    moveFailedToFulfilled(failedRequests: any, failedRequest: any, newRecord: any, newKey: string) {
+        // Add the key to the fulfilled stash and remove it from the failed stash
+        try { 
+            // Add record key to fulfilledRequests
+            // TODO: Handle failedRequest being undefined (watch out for error handling adding twice, though remove should handle that case)
+            let result = stashKey(newKey, "gdt-stash-fulfilled", failedRequest)
+            if (!result) {
+                throw new Error("Record was not able to be added to the published stash")
+            }
+
+            // Remove request from failedRequests
+            let requests = [];
+            for (let i = 0; i < failedRequests.length; i++) {
+                let record = failedRequests[i][1][1];
+                if (record !== JSON.stringify(newRecord)) {
+                    requests.push(failedRequests[i]);
+                }
+            }
+
+            localStorage.setItem("gdt-stash-failed", JSON.stringify(requests))
+
+        } catch (error) {
+            console.error("Record was created successfully but the stash was unable to update: " + error)
+            throw new Error(`Record was created successfully but the stash was unable to update: ${error}`)
+        }
+    },
+    async retrySyncing(key: string) {
+        try {
+            // Get all failed requests
+            let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+            let failedRequest;
+            let stashedRecord;
+
+            // Get the specified record
+            for (let i = 0; i < failedRequests.length; i++) {
+                let fullUrl = failedRequests[i][0][1];
+                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                if (requestKey == key) {
+                    failedRequest = failedRequests[i];
+                    stashedRecord = JSON.parse(failedRequests[i][1][1]);
+                    continue
+                }
+            }
+
+            // Try to post the record and display an error if it fails
+            await postProvenance(key, {
+                blobType: 'deviceInitializer',
+                deviceName: stashedRecord.deviceName,
+                description: stashedRecord.description,
+                tags: stashedRecord.tags,
+                children_key: stashedRecord.children_key,
+                hasParent: stashedRecord.hasParent,
+                isReportingKey: stashedRecord.isReportingKey,
+            }, []);
+
+            // If the record creates successfully, move the key to the fulfilled stash
+            this.moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, key)
+
+            // Reload the page
+            window.location.reload();
+
+        } catch (error) {
+            this.$snackbar.add({
+                type: 'error',
+                text: `Failed to create record: ${error}`
+            });
+        }
+    },
+    editSubmission() {
+        // get record from the failed stash and display to the user (form almost..?)
+            // WE COULD get the info and redirect to the create page and fill in (mindful of groups/adding to existing though)
+                // DEFINITELY THIS WE DON'T WANNA CREATE A WHOLE NEW INTERFACE!
+                // Get record and remove from stash, redirect and fill in information
+
+        // allow user to edit fields and then submit
+
+    },
+}
 }
 </script>
 

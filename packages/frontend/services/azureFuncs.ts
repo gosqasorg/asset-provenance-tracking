@@ -287,7 +287,7 @@ function removeKey(currentKey: string) {
     localStorage.setItem("gdt-stash-syncing", synced_stash.toString())
 }
 
-function stashKey(currentKey: string, stashName: string, request: string) {
+export function stashKey(currentKey: string, stashName: string, request: string) {
     // Add the specified key to the specified stash (works for syncing/fulfilled)
     try {
         let keys = [];
@@ -313,8 +313,8 @@ function stashFailedRequest(request: string) {
         let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
         let requests = [];
         if (JSON.stringify(failedRequests) !== '{}') {
-            for (const key of failedRequests) {
-                requests.push(key);
+            for (const storedRequest of failedRequests) {
+                requests.push(storedRequest);
             }
         }
         requests.push(request)
@@ -330,25 +330,28 @@ export async function emptyStash() {
 
     for (stash_counter; stash_counter > 0; stash_counter--) {
         // Get the last request stored
+        // TODO: what if below fails outside try?
         // TODO LAST: updated name below to use - instead of _, update our tests to still pass
         let request_name = 'gosqas-offline-stash-' + stash_counter;
-        let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+        let request = localStorage.getItem(request_name) || '{}';
         if (request === '{}') { 
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString())
             continue
         }
+        request = JSON.parse(request);
         let fullUrl = request[0][1];
         let record = request[1][1];
         let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
 
-        // Move key into syncing stash and exit the loop on failure
-        if (!stashKey(currentKey, "gdt-stash-syncing", request)) {
-            continue
-        }
-        localStorage.removeItem(request_name);
-        
         try {
+            throw new Error
+            // Move key into syncing stash and exit the loop on failure
+            if (!stashKey(currentKey, "gdt-stash-syncing", request)) {
+                continue
+            }
+            localStorage.removeItem(request_name);
+
             // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
             formData.append('provenanceRecord', record);
@@ -362,8 +365,9 @@ export async function emptyStash() {
             removeKey(currentKey);
 
         } catch (error) {
+            // TODO: problem, if record fails to create while OFFLINE it gets stuck in syncing (need to move back to unfulfilled or just add to failed)
             // If the request fails to create for any reason other than being offline, add it to the failed stash
-            if (!await(onlineTestFetch())) {
+            if (await onlineTestFetch()) {
                 stashFailedRequest(request)
                 removeKey(currentKey)
             }
