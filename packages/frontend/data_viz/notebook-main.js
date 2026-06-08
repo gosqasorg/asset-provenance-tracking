@@ -418,8 +418,8 @@ FileAttachment("recent-requests.json").json()
 
 function _selectedWindow(Inputs){return(
 Inputs.radio(
-  ["1d", "1w", "1m", "3m", "6m", "1y"],
-  {value: "1d", label: "Time window", 
+  ["1y", "6m", "3m", "1m", "1w", "1d"],
+  {value: "1y", label: "Time window", 
    format: x => ({"1d": "1 Day", "1w": "1 Week", "1m": "1 Month", "3m": "3 Months", "6m": "6 Months", "1y": "1 Year"})[x]}
 )
 )}
@@ -495,7 +495,6 @@ function _detailPanel(selectedCity,selectedRegion,selectedCountry,html,selectedW
             <th style="padding: 6px 8px; text-align: left">Status</th>
             <th style="padding: 6px 8px; text-align: left">Duration</th>
             <th style="padding: 6px 8px; text-align: left">Success</th>
-            <th style="padding: 6px 8px; text-align: left">IP</th>
           </tr>
         </thead>
         <tbody>
