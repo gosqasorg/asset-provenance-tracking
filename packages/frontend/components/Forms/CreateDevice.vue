@@ -117,8 +117,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
-import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, moveFailedToFulfilled } from '~/services/azureFuncs';
+import { makeEncodedDeviceKey, validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
@@ -132,13 +132,26 @@ export default {
             description: '',
             tags: [] as string[],
             children_key: '',
-            hasParent: false, // states whether a record is contained within a box/container
+            isReportingKey: false, // states whether this device is a reporting key
+            recordHasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
             notify: false,     // email notification checkbox
             emailInput: '',
+            deviceKey: ''
+        }
+    },
+    mounted() {
+        // TODO: backup for bad/undefined input (do for group as well)
+        // If we're creating a record from the stash fill in the stashed information
+        if (history.state.isGroup == false) {
+            this.isReportingKey = history.state.stashedRecord.isReportingKey
+            this.recordHasParent = history.state.stashedRecord.hasParent
+            this.deviceKey = history.state.key
+            this.name = history.state.stashedRecord.deviceName
+            this.description = history.state.stashedRecord.description
         }
     },
     computed: {
@@ -209,27 +222,52 @@ export default {
             
             this.isSubmitting = true;
             try {
-                const deviceKey = await makeEncodedDeviceKey();
-                const response = await postProvenance(deviceKey, {
+                // Create a new deviceKey if we didn't get one from a stashed record
+                if (!validateKey(this.deviceKey)) {
+                    this.deviceKey = await makeEncodedDeviceKey();
+                }
+                const response = await postProvenance(this.deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags: this.tags,
                     children_key: '',
-                    hasParent: false,
-                    isReportingKey: false,
+                    hasParent: this.recordHasParent,
+                    isReportingKey: this.isReportingKey,
                 }, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
                 }
                 
-                // on successful record creation, subscribe user to notifs if they've opted in
+                // On successful record creation, subscribe user to notifs if they've opted in
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim(); 
-                    await postNotificationEmail(deviceKey,email);
+                    await postNotificationEmail(this.deviceKey, email);
                 } else if (!response && this.notify && this.emailInput) {
                     this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
+                }
+
+                // If the record is being created from the offline edits page move it to the fulfilled stash
+                if (history.state.back == '/offline-edits') {
+                    let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+                    let failedRequest;
+                    let stashedRecord;
+
+                    // Get the record from the failed stash
+                    for (let i = 0; i < failedRequests.length; i++) {
+                        let fullUrl = failedRequests[i][0][1];
+                        let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                        if (requestKey == this.deviceKey) {
+                            failedRequest = failedRequests[i];
+                            stashedRecord = JSON.parse(failedRequests[i][1][1]);
+                            continue
+                        }
+                    }
+
+                    // TODO: confirm the failedRequest isn't empty
+                    // Move the record from the failed stash to the fulfilled stash
+                    moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey)
                 }
 
                 this.$snackbar.add({
@@ -238,7 +276,7 @@ export default {
                 });
 
                 // Navigate to the new record page
-                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${this.deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({

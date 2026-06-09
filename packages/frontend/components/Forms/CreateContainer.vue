@@ -130,7 +130,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, moveFailedToFulfilled } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -146,8 +146,11 @@ export default {
             name: '',
             description: '',
             tags: [] as string[],
-            childrenKeys: 0,
+            childrenKey: [] as string[], // list of children keys
+            childrenName: [] as string[], // list of children names
+            childrenKeys: 0, // number of new children to create
             createReportingKey: false,
+            reportingKey: '',
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
@@ -157,6 +160,18 @@ export default {
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
+            deviceKey: ''
+        }
+    },
+    mounted() {
+        // If we're creating a group from the stash fill in the stashed information
+        if (history.state.isGroup) {
+            this.childrenKey = history.state.stashedRecord.children_key
+            this.childrenName = history.state.stashedRecord.children_name
+            this.reportingKey = history.state.stashedRecord.reportingKey
+            this.deviceKey = history.state.key
+            this.name = history.state.stashedRecord.deviceName
+            this.description = history.state.stashedRecord.description
         }
     },
     computed: {
@@ -259,15 +274,6 @@ export default {
         },
 
         async submitForm() {
-            const deviceKey = await makeEncodedDeviceKey();
-
-            // This code is copied from Judith;
-            // I am going to retain her names even though they are
-            // redundant until I get this workin.
-            const childrenDeviceList = [];
-            const childrenDeviceName = [];
-            let reportingKey;
-     
             // Get all elements from the DOM
             if (this.annotate) {
                 this.tags = (this.tags).concat(['notify_all'])
@@ -289,6 +295,9 @@ export default {
                     }
 
                     try {
+                        this.childrenKey.push(childKey);
+                        this.childrenName.push(childName);
+
                         await postProvenance(childKey, {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
@@ -298,9 +307,6 @@ export default {
                             hasParent: true,
                             isReportingKey: false
                         }, this.pictures || [])
-                        
-                        childrenDeviceList.push(childKey);
-                        childrenDeviceName.push(childName);
                         
                         this.$snackbar.add({
                             type: 'success',
@@ -317,11 +323,17 @@ export default {
 
             if (this.createReportingKey) {
                 // Should be higher up?
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
+                // If a reportingKey already exists in the stash try to post that one instead
+                if (!validateKey(this.reportingKey)) {
+                    this.reportingKey = await makeEncodedDeviceKey();  // reporting key = public key
+                }
                 let tag_set = (this.tags).concat(['reportingkey']);
 
                 try {
-                    await postProvenance(reportingKey, {
+                    this.childrenKey.push(this.reportingKey);
+                    this.childrenName.push(this.name);
+
+                    await postProvenance(this.reportingKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
                         // Is this a proper description? Should it say "reporting key" or something?
@@ -342,22 +354,45 @@ export default {
                         text: `Error creating reporting key: ${error}`
                     })
                 };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(this.name);
             }
 
             try {
-                const response = await postProvenance(deviceKey, {
+                // Create a new deviceKey if we didn't get one from a stashed group
+                if (!validateKey(this.deviceKey)) {
+                    this.deviceKey = await makeEncodedDeviceKey();
+                }
+                const response = await postProvenance(this.deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey, 
-                    children_key: childrenDeviceList,
-                    children_name: childrenDeviceName,
+                    reportingKey: this.reportingKey, 
+                    children_key: this.childrenKey,
+                    children_name: this.childrenName,
                     hasParent: false,
                     isReportingKey: false
                 }, this.pictures || [])
+
+                // If the record is being created from the offline edits page move it to the fulfilled stash
+                if (history.state.back == '/offline-edits') {
+                    let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+                    let failedRequest;
+                    let stashedRecord;
+
+                    // Get the record from the failed stash
+                    for (let i = 0; i < failedRequests.length; i++) {
+                        let fullUrl = failedRequests[i][0][1];
+                        let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                        if (requestKey == this.deviceKey) {
+                            failedRequest = failedRequests[i];
+                            stashedRecord = JSON.parse(failedRequests[i][1][1]);
+                            continue
+                        }
+                    }
+
+                    // Move the record from the failed stash to the fulfilled stash
+                    moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey)
+                }
                 
                 this.$snackbar.add({
                     type: 'success',
@@ -371,13 +406,13 @@ export default {
                 //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();
-                    await postNotificationEmail(deviceKey,email);
+                    await postNotificationEmail(this.deviceKey, email);
                 } else if (!response && this.notify && this.emailInput) {
                     this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 // Navigate to the new group page
-                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${this.deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({

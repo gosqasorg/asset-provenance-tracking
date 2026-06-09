@@ -275,11 +275,11 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
-// TODO: rearrange these new funcs as needed to make them clear
-function removeKey(currentKey: string) {
+// TODO: rearrange these new funcs as needed to make them clear (make remove/add work for all stashes??)
+function removeKey(currentKey: string, stashName: string) {
     // TODO: error handling
-    // Remove the specified request from the syncing stash stash
-    let synced_stash = (localStorage.getItem("gdt-stash-syncing")?.split(",") || [])
+    // Remove the specified key from the specified stash (works for syncing/fulfilled)
+    let synced_stash = (localStorage.getItem(stashName)?.split(",") || [])
     const index = synced_stash.indexOf(currentKey);
     if (index > -1) {
         synced_stash.splice(index, 1);
@@ -305,6 +305,36 @@ export function stashKey(currentKey: string, stashName: string, request: string)
         stashFailedRequest(request)
         console.log("Record from localStorage was not able to be stashed: " + error)
         return false
+    }
+}
+
+export function moveFailedToFulfilled(failedRequests: any, failedRequest: any, newRecord: any, newKey: string) {
+    // Add the key to the fulfilled stash and remove it from the failed stash
+    try { 
+        // Add record key to fulfilledRequests
+        // TODO: Handle failedRequest being undefined (watch out for error handling adding twice, though remove should handle that case)
+        console.log("add to fulfilled")
+        let result = stashKey(newKey, "gdt-stash-fulfilled", failedRequest)
+        if (!result) {
+            throw new Error("Record was not able to be added to the published stash")
+        }
+
+        console.log("remove")
+        // Remove request from failedRequests
+        let requests = [];
+        for (let i = 0; i < failedRequests.length; i++) {
+            let record = failedRequests[i][1][1];
+            if (record !== JSON.stringify(newRecord)) {
+                requests.push(failedRequests[i]);
+            }
+        }
+
+        console.log("set")
+        localStorage.setItem("gdt-stash-failed", JSON.stringify(requests))
+
+    } catch (error) {
+        console.error("Record was created successfully but the stash was unable to update: " + error)
+        throw new Error(`Record was created successfully but the stash was unable to update: ${error}`)
     }
 }
 
@@ -345,6 +375,7 @@ export async function emptyStash() {
         let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
 
         try {
+            // TODO: remove error when done testing
             throw new Error
             // Move key into syncing stash and exit the loop on failure
             if (!stashKey(currentKey, "gdt-stash-syncing", request)) {
@@ -362,14 +393,14 @@ export async function emptyStash() {
 
             // Add created key to a list of successfully created keys to display later
             stashKey(currentKey, "gdt-stash-fulfilled", request);
-            removeKey(currentKey);
+            removeKey(currentKey, "gdt-stash-syncing");
 
         } catch (error) {
             // TODO: problem, if record fails to create while OFFLINE it gets stuck in syncing (need to move back to unfulfilled or just add to failed)
             // If the request fails to create for any reason other than being offline, add it to the failed stash
             if (await onlineTestFetch()) {
-                stashFailedRequest(request)
-                removeKey(currentKey)
+                stashFailedRequest(request);
+                removeKey(currentKey, "gdt-stash-syncing");
             }
 
             console.log("Record from localStorage failed to create: " + error)

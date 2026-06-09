@@ -90,7 +90,7 @@ while offline.
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
             <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
             <button class="btn key-buttons" style="grid-row: 1;" @click="retrySyncing(key)">Retry syncing</button>
-            <button class="btn key-buttons bottom" @click="editSubmission()">Edit submission</button>
+            <button class="btn key-buttons bottom" @click="editSubmission(key)">Edit submission</button>
         </div>
     </div>
 
@@ -98,7 +98,7 @@ while offline.
 </template>
 
 <script lang="ts">
-import { postProvenance, stashKey } from "~/services/azureFuncs"
+import { postProvenance, moveFailedToFulfilled } from "~/services/azureFuncs"
 
 export default {
 data() {
@@ -202,32 +202,6 @@ methods: {
         localStorage.setItem('gdt-stash-fulfilled', '')
         localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
-    moveFailedToFulfilled(failedRequests: any, failedRequest: any, newRecord: any, newKey: string) {
-        // Add the key to the fulfilled stash and remove it from the failed stash
-        try { 
-            // Add record key to fulfilledRequests
-            // TODO: Handle failedRequest being undefined (watch out for error handling adding twice, though remove should handle that case)
-            let result = stashKey(newKey, "gdt-stash-fulfilled", failedRequest)
-            if (!result) {
-                throw new Error("Record was not able to be added to the published stash")
-            }
-
-            // Remove request from failedRequests
-            let requests = [];
-            for (let i = 0; i < failedRequests.length; i++) {
-                let record = failedRequests[i][1][1];
-                if (record !== JSON.stringify(newRecord)) {
-                    requests.push(failedRequests[i]);
-                }
-            }
-
-            localStorage.setItem("gdt-stash-failed", JSON.stringify(requests))
-
-        } catch (error) {
-            console.error("Record was created successfully but the stash was unable to update: " + error)
-            throw new Error(`Record was created successfully but the stash was unable to update: ${error}`)
-        }
-    },
     async retrySyncing(key: string) {
         try {
             // Get all failed requests
@@ -246,19 +220,35 @@ methods: {
                 }
             }
 
-            // Try to post the record and display an error if it fails
-            await postProvenance(key, {
-                blobType: 'deviceInitializer',
-                deviceName: stashedRecord.deviceName,
-                description: stashedRecord.description,
-                tags: stashedRecord.tags,
-                children_key: stashedRecord.children_key,
-                hasParent: stashedRecord.hasParent,
-                isReportingKey: stashedRecord.isReportingKey,
-            }, []);
+            // Try to post the record/group and display an error if it fails
+            if (stashedRecord.children_name) {
+                // Post a group
+                await postProvenance(key, {
+                    blobType: 'deviceInitializer',
+                    deviceName: stashedRecord.deviceName,
+                    description: stashedRecord.description,
+                    tags: stashedRecord.tags,
+                    reportingKey: stashedRecord.reportingKey,
+                    children_name: stashedRecord.childrenName,
+                    children_key: stashedRecord.children_key,
+                    hasParent: stashedRecord.hasParent,
+                    isReportingKey: stashedRecord.isReportingKey,
+                }, []);
+            } else {
+                // Post a record
+                await postProvenance(key, {
+                    blobType: 'deviceInitializer',
+                    deviceName: stashedRecord.deviceName,
+                    description: stashedRecord.description,
+                    tags: stashedRecord.tags,
+                    children_key: stashedRecord.children_key,
+                    hasParent: stashedRecord.hasParent,
+                    isReportingKey: stashedRecord.isReportingKey,
+                }, []);
+            }
 
             // If the record creates successfully, move the key to the fulfilled stash
-            this.moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, key)
+            moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, key);
 
             // Reload the page
             window.location.reload();
@@ -270,14 +260,37 @@ methods: {
             });
         }
     },
-    editSubmission() {
-        // get record from the failed stash and display to the user (form almost..?)
-            // WE COULD get the info and redirect to the create page and fill in (mindful of groups/adding to existing though)
-                // DEFINITELY THIS WE DON'T WANNA CREATE A WHOLE NEW INTERFACE!
-                // Get record and remove from stash, redirect and fill in information
+    editSubmission(key: string) {
+        // TODO: try/catch
+        // TODO: what happens if a user tries to edit and fails again cause of offline (need a stash clause to prevent duplicate keys)
 
-        // allow user to edit fields and then submit
+        // TODO: new func for getting specific record from failed stash? azurefuncs or here??
+        // Get all failed requests
+        let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+        let failedRequest;
+        let stashedRecord;
 
+        // Get the specified record
+        for (let i = 0; i < failedRequests.length; i++) {
+            let fullUrl = failedRequests[i][0][1];
+            let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+            if (requestKey == key) {
+                failedRequest = failedRequests[i];
+                stashedRecord = JSON.parse(failedRequests[i][1][1]);
+                continue
+            }
+        }
+
+        let isGroup = false;
+        if (stashedRecord.children_name) {
+            isGroup = true;
+        }
+
+        // Redirect to the creation page and send the stashedRecord
+        this.$router.push({
+            path: '/gdt',
+            state: { isGroup: isGroup, key: key, stashedRecord: stashedRecord }
+        });
     },
 }
 }

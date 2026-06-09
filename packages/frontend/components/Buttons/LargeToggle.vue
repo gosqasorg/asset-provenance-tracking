@@ -19,7 +19,18 @@
       rightLabel: {
         type: String,
         required: true
+      },
+      rightLabelStart: {
+        type: Boolean,
+        default: false,
+        required: false
       }
+    },
+    mounted() {
+        const checkbox = document.getElementById("toggle") as HTMLInputElement
+        if (checkbox) {
+            checkbox.checked = this.rightLabelStart;
+        }
     },
     methods: {
       toggleView() {

@@ -141,6 +141,26 @@ export default {
       EventBus.on('feedRefresh2', this.refreshFeed);
       createdTags = [];
       storedTags = [];
+
+      // TODO: want on either group or record form (minor)
+      // If we have tags from a redirect update our form to display/store them
+      if (history.state.stashedRecord && history.state.stashedRecord.tags) {
+        history.state.stashedRecord.tags.forEach((tag) => {
+          // Check to make sure the word is clean before creating tag
+          let cleanTag = this.cleanArray([tag]);
+          this.editableValue = '';
+
+          if (tag == cleanTag[0]) {
+            storedTags.push(tag);
+            createdTags.push(tag);
+            createTag();
+          }
+        })
+      }
+
+      // Call set (which updates tags in other files)
+      this.editableValue = "";
+
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;
