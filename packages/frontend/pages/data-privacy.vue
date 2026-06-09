@@ -67,6 +67,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
         </div>
     
+
+        <h1>Impact</h1>
+        <div class="row"> <p>
+            Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
+        </p> </div>
         <learn_more></learn_more>
 
     </div>
