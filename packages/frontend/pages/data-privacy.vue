@@ -48,7 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Explore the example below. These are real, live API requests. 
             </p>
 
-            <h3>Example 1: Make a device key</h3>
+            <h3>Example: Make a device key</h3>
             <p>
                 For example, try this out. Each row is an endpoint. Look at the top row. Tap the blue "GET" button next to "/getNewDeviceKey". This opens the specs for this endpoint. Ignore these for now. At the top right, click the "Try it out" button. This will give you an execute button. Hit our backend services at that endpoint by tapping "Execute". 
             </p>
@@ -56,11 +56,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Scroll down, past the curl and url, until you see "Code" and "Details". Take a look at the response body. Note the seemingly random text that looks something like "F6K6PaqAzwibVohGtcw6HW". That's a new GDT Record Key. 
             </p>
 
-            <h3>Example 2: Create a GDT Record for a shipment</h3>
             <p>
-                Being written
+                Now go ahead and use the interactive spec to create a group: a GDT-labeled case of GDT-labeled items.
             </p>
-
         </div>
 
         <div class="docs-section">
