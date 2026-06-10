@@ -48,7 +48,7 @@ describe('Tests to see if requests can be stashed', () => {
 
     localStorage.setItem('stash_counter', '0'); // need to reset counter to avoid overlap with other tests
     stashRequest(formUrl, formData);
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
 
     // Confirm that the datatypes are the same as they started
     const returnedFormUrl = requestFromStash[0][1];
@@ -75,7 +75,7 @@ describe('Tests to see if requests can be stashed', () => {
     ValidFormData.parse(returnedFormData);
 
     // Remove item from stash
-    localStorage.removeItem('gosqas_offline_stash_1');
+    localStorage.removeItem('gosqas-offline-stash-1');
   });
 
   it('Test to see if we can store multiple requests', async () => {
@@ -88,13 +88,13 @@ describe('Tests to see if requests can be stashed', () => {
     stashRequest(formUrl1, formData1);
     stashRequest(formUrl2, formData2);
 
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     const returnedFormUrl = requestFromStash[0][1];
     const returnedFormData = JSON.parse(requestFromStash[1][1]);
     expect(returnedFormUrl).toEqual(formUrl1);
     expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
 
-    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
+    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas-offline-stash-2') || '{}');
     const returnedFormUrl2 = requestFromStash2[0][1];
     const returnedFormData2 = JSON.parse(requestFromStash2[1][1]);
     expect(returnedFormUrl2).toEqual(formUrl2);
@@ -107,8 +107,8 @@ describe('Tests to see if requests can be stashed', () => {
     expect(returnedFormData2.description).toEqual('slightly longer description');
 
     // Remove items from stash
-    localStorage.removeItem('gosqas_offline_stash_1');
-    localStorage.removeItem('gosqas_offline_stash_2');
+    localStorage.removeItem('gosqas-offline-stash-1');
+    localStorage.removeItem('gosqas-offline-stash-2');
   });
 });
 
@@ -129,7 +129,7 @@ describe('Tests to see if we can remove from the stash', () => {
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Confirm records were stored
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).not.toEqual('{}');
 
     // Empty the stash and confirm it ran successfully
@@ -138,7 +138,7 @@ describe('Tests to see if we can remove from the stash', () => {
 
     // Make sure the record was removed from the stash and the new key was stored to display later
     expect(localStorage.getItem('stash_counter')).toEqual('0');
-    expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
+    expect(localStorage.getItem('gosqas-offline-stash-1')).toEqual(null);
 
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
@@ -166,8 +166,8 @@ describe('Tests to see if we can remove from the stash', () => {
     expect(localStorage.getItem('stash_counter')).toEqual('2');
 
     // Confirm records were stored
-    let requestFromStash1 = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
-    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
+    let requestFromStash1 = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
+    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas-offline-stash-2') || '{}');
     expect(requestFromStash1).not.toEqual('{}');
     expect(requestFromStash2).not.toEqual('{}');
 
@@ -177,8 +177,8 @@ describe('Tests to see if we can remove from the stash', () => {
 
     // Confirm records were removed
     expect(localStorage.getItem('stash_counter')).toEqual('0');
-    expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
-    expect(localStorage.getItem('gosqas_offline_stash_2')).toEqual(null);
+    expect(localStorage.getItem('gosqas-offline-stash-1')).toEqual(null);
+    expect(localStorage.getItem('gosqas-offline-stash-2')).toEqual(null);
 
     // Make sure all three keys (including the one from the previous test) are stored
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
@@ -221,18 +221,18 @@ describe('Tests to see if we can remove from the stash', () => {
     expect(statusCode).toEqual(200);
 
     // Make sure the record is still no longer in the stash
-    const request = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    const request = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(request).toEqual({});
     expect(localStorage.getItem('stash_counter')).toEqual('0');
 
     // Confirm the failed key was added to list of failed requests
-    let existingKeys = (localStorage.getItem('gdt-stash-failed') || '{}').split(',');
-    expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(1);
-    expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
+    let failedRequests = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    expect(failedRequests).not.toEqual(['{}']);
+    expect(failedRequests.length).toBe(1);
+    expect(failedRequests[0][0][1]).toEqual(formUrl);
 
     // Confirm failed key was not added to list of successful requests
-    existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
+    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).toEqual(['{}']);
   }, 200000);
 });
@@ -254,14 +254,14 @@ describe("Tests to see if periodicChecker works", async () => {
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Confirm records were stored
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).not.toEqual('{}');
 
     await periodicChecker();
 
     // Make sure the record was removed from the stash and the new key was stored to display later
     expect(localStorage.getItem('stash_counter')).toEqual('0');
-    expect(localStorage.getItem('gosqas_offline_stash_1')).toEqual(null);
+    expect(localStorage.getItem('gosqas-offline-stash-1')).toEqual(null);
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("false");
 
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');

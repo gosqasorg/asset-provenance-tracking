@@ -144,9 +144,8 @@ export default {
         }
     },
     mounted() {
-        // TODO: backup for bad/undefined input (do for group as well)
         // If we're creating a record from the stash fill in the stashed information
-        if (history.state.isGroup == false) {
+        if (history.state.isGroup == false && history.state.stashedRecord) {
             this.isReportingKey = history.state.stashedRecord.isReportingKey
             this.recordHasParent = history.state.stashedRecord.hasParent
             this.deviceKey = history.state.key
@@ -265,9 +264,10 @@ export default {
                         }
                     }
 
-                    // TODO: confirm the failedRequest isn't empty
-                    // Move the record from the failed stash to the fulfilled stash
-                    moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey)
+                    // If request exists in the failed stash move it to the fulfilled stash
+                    if (failedRequest) {
+                        moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey);
+                    }
                 }
 
                 this.$snackbar.add({

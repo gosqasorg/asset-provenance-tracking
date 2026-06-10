@@ -108,6 +108,10 @@ export default {
       type: String,
       default: ' ',
     },
+    isGroup: {
+      type: Boolean,
+      default: false
+    }
   },
   emits: ['updateTags'],
   data() {
@@ -142,20 +146,21 @@ export default {
       createdTags = [];
       storedTags = [];
 
-      // TODO: want on either group or record form (minor)
       // If we have tags from a redirect update our form to display/store them
       if (history.state.stashedRecord && history.state.stashedRecord.tags) {
-        history.state.stashedRecord.tags.forEach((tag) => {
-          // Check to make sure the word is clean before creating tag
-          let cleanTag = this.cleanArray([tag]);
-          this.editableValue = '';
+        // Display the tags either on the group page or the record page
+        if ((this.isGroup && history.state.isGroup) || (!this.isGroup && !history.state.isGroup)) {
+          history.state.stashedRecord.tags.forEach((tag) => {
+            let cleanTag = this.cleanArray([tag]);
+            this.editableValue = '';
 
-          if (tag == cleanTag[0]) {
-            storedTags.push(tag);
-            createdTags.push(tag);
-            createTag();
-          }
-        })
+            if (tag == cleanTag[0]) {
+              storedTags.push(tag);
+              createdTags.push(tag);
+              createTag();
+            }
+          })
+        }
       }
 
       // Call set (which updates tags in other files)

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" :isGroup="true" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
@@ -165,7 +165,7 @@ export default {
     },
     mounted() {
         // If we're creating a group from the stash fill in the stashed information
-        if (history.state.isGroup) {
+        if (history.state.isGroup && history.state.stashedRecord) {
             this.childrenKey = history.state.stashedRecord.children_key
             this.childrenName = history.state.stashedRecord.children_name
             this.reportingKey = history.state.stashedRecord.reportingKey
@@ -390,8 +390,10 @@ export default {
                         }
                     }
 
-                    // Move the record from the failed stash to the fulfilled stash
-                    moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey)
+                    // If request exists in the failed stash move it to the fulfilled stash
+                    if (failedRequest) {
+                        moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey);
+                    }
                 }
                 
                 this.$snackbar.add({

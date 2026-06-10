@@ -19,18 +19,25 @@
       rightLabel: {
         type: String,
         required: true
-      },
-      rightLabelStart: {
-        type: Boolean,
-        default: false,
-        required: false
+      }
+    },
+    data() {
+      return {
+        rightLabelStart: false
       }
     },
     mounted() {
-        const checkbox = document.getElementById("toggle") as HTMLInputElement
-        if (checkbox) {
-            checkbox.checked = this.rightLabelStart;
-        }
+      // If we're redirecting from offline-edits and the record is a group, go to the group tab on load
+      if (history.state.isGroup) {
+          this.rightLabelStart = true;
+      } else {
+          this.rightLabelStart = false;
+      }
+
+      const checkbox = document.getElementById("toggle") as HTMLInputElement
+      if (checkbox) {
+          checkbox.checked = this.rightLabelStart;
+      }
     },
     methods: {
       toggleView() {

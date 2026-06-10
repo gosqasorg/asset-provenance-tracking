@@ -261,36 +261,40 @@ methods: {
         }
     },
     editSubmission(key: string) {
-        // TODO: try/catch
-        // TODO: what happens if a user tries to edit and fails again cause of offline (need a stash clause to prevent duplicate keys)
-
-        // TODO: new func for getting specific record from failed stash? azurefuncs or here??
+        // TODO: new func for getting specific record from failed stash? azurefuncs or here?? (code repeated in create pages)
         // Get all failed requests
         let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
         let failedRequest;
         let stashedRecord;
-
-        // Get the specified record
-        for (let i = 0; i < failedRequests.length; i++) {
-            let fullUrl = failedRequests[i][0][1];
-            let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
-            if (requestKey == key) {
-                failedRequest = failedRequests[i];
-                stashedRecord = JSON.parse(failedRequests[i][1][1]);
-                continue
-            }
-        }
-
         let isGroup = false;
-        if (stashedRecord.children_name) {
-            isGroup = true;
-        }
 
-        // Redirect to the creation page and send the stashedRecord
-        this.$router.push({
-            path: '/gdt',
-            state: { isGroup: isGroup, key: key, stashedRecord: stashedRecord }
-        });
+        try {
+            // Get the specified record
+            for (let i = 0; i < failedRequests.length; i++) {
+                let fullUrl = failedRequests[i][0][1];
+                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                if (requestKey == key) {
+                    failedRequest = failedRequests[i];
+                    stashedRecord = JSON.parse(failedRequests[i][1][1]);
+                    continue
+                }
+            }
+
+            if (stashedRecord.children_name) {
+                isGroup = true;
+            }
+
+            // Redirect to the creation page and send the stashedRecord
+            this.$router.push({
+                path: '/gdt',
+                state: { isGroup: isGroup, key: key, stashedRecord: stashedRecord }
+            });
+        } catch (error) {
+            this.$snackbar.add({
+                type: 'error',
+                text: `Failed to get stashed information: ${error}`
+            });
+        }
     },
 }
 }

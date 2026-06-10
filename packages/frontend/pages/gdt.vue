@@ -30,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 @toggle-change="toggleView"
                 :left-label="'New Record'"
                 :right-label="'New Group'"
-                :right-label-start=!toggled
             />
 
             <!-- <div>Create a Single Asset:</div> -->
@@ -79,24 +78,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { EventBus } from '~/utils/event-bus';
 import NavButton from '~/components/Buttons/NavButton.vue';
 
-var toggledFromRedirect = true;
-
 export default {
     components: { NavButton },
     data() {
-        // TODO: if statement in data() seems to be bad practice, figure out work-around and do same for createContainer?
-        // If we're redirecting from offline-edits and the record is a group, go to the group tab on load
-        if (history.state.isGroup) {
-            toggledFromRedirect = false;
-        } else {
-            toggledFromRedirect = true;
-        }
         return {
             isLoading: false,
-            toggled: toggledFromRedirect
+            toggled: true
         }
     },
     mounted() {
+        // If we're redirecting from offline-edits and the record is a group, go to the group form on load
+        if (history.state.isGroup) {
+            this.toggled = false;
+        } else {
+            this.toggled = true;
+        }
+
         // switch to loading screen when a form is submitted
         EventBus.on('isLoading', () => {
             if (!this.isLoading) {
