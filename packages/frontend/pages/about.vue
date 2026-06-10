@@ -54,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="ieee-dmdm-block" style="display: flex; flex-direction: column; width: 100%; align-items: center; justify-content: flex-start; gap: 20px;">
             <!------------------IEEE Paper Section---------------->
             <div style="display: flex; flex-direction: row; gap: 30px; margin-top: 25px; overflow: auto; max-width: 100%;">
-                <img style="width: 235px; height: 235px; border-radius: 13px;" class="ieee-image" src="public/IEEE.png">
+                <img style="width: 235px; height: 235px; border-radius: 13px;" class="ieee-image" src="/IEEE.png">
                 <div class="ieee-button-container" style="display: flex; flex-direction: column; margin-left: 40px;">
                     <h class="ieee-header" style="max-width: 100%; font-weight: 600; font-size: 20px; margin-bottom: 12px">GDT Papers Published in the Institute of Electrical and Electronics Engineers</h>
                     <p class="ieee-text" style="margin-bottom: 12px;font-weight: 400; font-size: 20px;">Our paper "Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication" was recently published in the October 2025 publication of IEEE.</p>
