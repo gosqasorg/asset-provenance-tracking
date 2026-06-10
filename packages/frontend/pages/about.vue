@@ -51,15 +51,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <NavButton to="/how-it-works" text="How It Works" fontSize="18px" class="w-100"/>
         
-            <div class="dmdm test" >
-                  <img src="../assets/images/dmdm-lightmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image lightmode-dmdm">
-                 <img src="../assets/images/dmdm-darkmode.svg" style="width: 100%; margin-bottom:20px; margin-top:20px" class="dmdm-image darkmode-dmdm">
-                <div class="dmdm-description" style="max-width: 100%;">
-                    <p class="dmdm-header">Distributed Medical Device Manufacturing (DMDM)</p>
-                    <p class="dmdm-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA–registered Distributed Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process. Explore how the DMDM and GOSQAS partnership expands open-source technology access for medical device compliance and distribution.</p>
+        <div class="ieee-dmdm-block" style="display: flex; flex-direction: column; width: 100%; align-items: center; justify-content: flex-start; gap: 20px;">
+            <!------------------IEEE Paper Section---------------->
+            <div style="display: flex; flex-direction: row; gap: 30px; margin-top: 25px; overflow: auto; max-width: 100%;">
+                <img style="width: 235px; height: 235px; border-radius: 13px;" class="ieee-image" src="public/IEEE.png">
+                <div class="ieee-button-container" style="display: flex; flex-direction: column; margin-left: 40px;">
+                    <h class="ieee-header" style="max-width: 100%; font-weight: 600; font-size: 20px; margin-bottom: 12px">GDT Papers Published in the Institute of Electrical and Electronics Engineers</h>
+                    <p class="ieee-text" style="margin-bottom: 12px;font-weight: 400; font-size: 20px;">Our paper "Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication" was recently published in the October 2025 publication of IEEE.</p>
+                    <button class="ieee-button" style="width: fit-content; height: 65px; white-space: nowrap; padding: 10px 20px; border: solid; flex-shrink: 0; border-width: 2px; border-radius: 10px; margin-top: 10px" @click="getPDF()">Read the paper now</button>
                 </div>
+            </div>
+
+            <div class="dmdm-container" style="display: flex; flex-direction: row; gap: 30px; margin-top: 25px; overflow: auto; max-width: 100%;">
+                    <img class="darkmode-dmdm" src="../assets/images/dmdm-darkmode.svg" style="width: 235px; height: 235px; border-radius: 13px;">
+                    <img class="lightmode-dmdm" src="../assets/images/dmdm-lightmode.svg" style="width: 235px; height: 235px; border-radius: 13px;">
+                    <div class="dmdm-description" style="max-width: 100%;">
+                        <p class="dmdm-header">Distributed Medical Device Manufacturing (DMDM)</p>
+                        <p class="dmdm-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA–registered Distributed Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process. Explore how the DMDM and GOSQAS partnership expands open-source technology access for medical device compliance and distribution.</p>
+                    </div>
+            </div>
+
         </div>
-                
+
             <NavButton to="/dmdm" text="View our pilot program" fontSize="18px" class="w-100"/>
 
         </div>
@@ -100,7 +113,12 @@ export default {
     components: {
         ButtonComponent,
         NavButton
+    },
+    methods: {
+    getPDF() {
+        window.open('/Global_Distributed_Tracking.pdf', '_blank')
     }
+}
 };
 </script>
 
@@ -133,6 +151,13 @@ export default {
         height: auto;
         width: 100%;
         height:390px;
+    }
+    .ieee-image {
+        display: none;
+    }
+    .ieee-button {
+        display: block;
+        margin: 0 auto;
     }
 }
 
@@ -217,6 +242,18 @@ export default {
   .team-desc {
     color: #CCECFD; 
   }
+  .ieee-header {
+    color: #CCECFD;
+  }
+  .ieee-button {
+    background-color: #1E2019;
+    color: white;
+  }
+  .ieee-image {
+    border: solid;
+    border-width: 1px;
+    border-color:#CCECFD
+  }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -264,6 +301,22 @@ export default {
     #video-caption a {
     text-decoration: underline;
     color: #4E3681; 
+    }
+    .ieee-button {
+        background-color: #FFFFFF;
+        border-color: #4E3681;
+        color: #322253
+    }
+    .ieee-image {
+        border: solid;
+        border-color:#4E3681;
+        border-width: 2px;
+    }
+    .ieee-header {
+        color:#4E3681
+    }
+    .dmdm-image {
+        border-color:#4E3681
     }
 }
 
