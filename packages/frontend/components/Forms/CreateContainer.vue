@@ -130,7 +130,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, moveFailedToFulfilled } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -375,25 +375,8 @@ export default {
 
                 // If the record is being created from the offline edits page move it to the fulfilled stash
                 if (history.state.back == '/offline-edits') {
-                    let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
-                    let failedRequest;
-                    let stashedRecord;
-
-                    // Get the record from the failed stash
-                    for (let i = 0; i < failedRequests.length; i++) {
-                        let fullUrl = failedRequests[i][0][1];
-                        let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
-                        if (requestKey == this.deviceKey) {
-                            failedRequest = failedRequests[i];
-                            stashedRecord = JSON.parse(failedRequests[i][1][1]);
-                            continue
-                        }
-                    }
-
-                    // If request exists in the failed stash move it to the fulfilled stash
-                    if (failedRequest) {
-                        moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, this.deviceKey);
-                    }
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
                 
                 this.$snackbar.add({

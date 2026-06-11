@@ -98,7 +98,7 @@ while offline.
 </template>
 
 <script lang="ts">
-import { postProvenance, moveFailedToFulfilled } from "~/services/azureFuncs"
+import { postProvenance, stashOfflineRequest, removeOfflineRequest } from "~/services/azureFuncs"
 
 export default {
 data() {
@@ -141,20 +141,18 @@ methods: {
         // Get all keys that were fullfilled from the stash
         let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
         for (const key of fulfilled.split(",")) {
-            if (key === "{}") {
-                continue
-            }
-            this.fulfilledKeys.push(key)  
+            if (key !== "{}") {
+                this.fulfilledKeys.push(key) 
+            } 
         }
     },
     getSyncingKeys() {
         // Get all keys in the stash that are syncing
         let syncing = (localStorage.getItem('gdt-stash-syncing') || "{}")
         for (const key of syncing.split(",")) {
-            if (key === "{}") {
-                continue
+            if (key !== "{}") {
+                this.syncingKeys.push(key)  
             }
-            this.syncingKeys.push(key)  
         }
     },
     getFailedKeys() {
@@ -165,11 +163,10 @@ methods: {
         }
 
         for (const request of JSON.parse(failed)) {
-            if (request === "{}") {
-                continue
+            if (request !== "{}") {
+                let fullUrl = request[0][1];
+                this.failedKeys.push(fullUrl.split("/")[fullUrl.split("/").length - 1]);
             }
-            let fullUrl = request[0][1];
-            this.failedKeys.push(fullUrl.split("/")[fullUrl.split("/").length - 1]);  
         }
     },
     clearAllEdits() {
@@ -206,17 +203,16 @@ methods: {
         try {
             // Get all failed requests
             let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
-            let failedRequest;
             let stashedRecord;
 
-            // Get the specified record
+            // Get the specified request to retry
             for (let i = 0; i < failedRequests.length; i++) {
                 let fullUrl = failedRequests[i][0][1];
                 let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                // If we find the request store it and exit the loop
                 if (requestKey == key) {
-                    failedRequest = failedRequests[i];
                     stashedRecord = JSON.parse(failedRequests[i][1][1]);
-                    continue
+                    break
                 }
             }
 
@@ -248,7 +244,8 @@ methods: {
             }
 
             // If the record creates successfully, move the key to the fulfilled stash
-            moveFailedToFulfilled(failedRequests, failedRequest, stashedRecord, key);
+            stashOfflineRequest(key, "gdt-stash-fulfilled");
+            removeOfflineRequest(key, "gdt-stash-failed");
 
             // Reload the page
             window.location.reload();
@@ -264,19 +261,18 @@ methods: {
         // TODO: new func for getting specific record from failed stash? azurefuncs or here?? (code repeated in create pages)
         // Get all failed requests
         let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
-        let failedRequest;
         let stashedRecord;
         let isGroup = false;
 
         try {
-            // Get the specified record
+            // Get the specified request to edit
             for (let i = 0; i < failedRequests.length; i++) {
                 let fullUrl = failedRequests[i][0][1];
                 let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                // If we find the request store it and exit the loop
                 if (requestKey == key) {
-                    failedRequest = failedRequests[i];
                     stashedRecord = JSON.parse(failedRequests[i][1][1]);
-                    continue
+                    break
                 }
             }
 

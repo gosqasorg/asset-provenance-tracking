@@ -275,90 +275,90 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
-// TODO: rearrange these new funcs as needed to make them clear (make remove/add work for all stashes??)
-function removeKey(currentKey: string, stashName: string) {
-    // Remove the specified key from the specified stash (works for syncing/fulfilled)
-    let synced_stash = (localStorage.getItem(stashName)?.split(",") || [])
-    if (synced_stash.length == 0) {
-        return
-    }
-
-    const index = synced_stash.indexOf(currentKey);
-    if (index > -1) {
-        synced_stash.splice(index, 1);
-    }
-    localStorage.setItem("gdt-stash-syncing", synced_stash.toString())
-}
-
-export function stashKey(currentKey: string, stashName: string, request: string) {
-    // Add the specified key to the specified stash (works for syncing/fulfilled)
+export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
+    // Function to stash an offline request (works for syncing, fulfilled, and failed stashes)
     try {
-        let keys = [];
-        let existingKeys = localStorage.getItem(stashName)
-        if (existingKeys) {
-            for (const key of existingKeys.split(",")) {
-                keys.push(key)
-            }
-        }
-        keys.push(currentKey)
-        localStorage.setItem(stashName, keys.toString())
-        return true
-
-    } catch (error) {
-        stashFailedRequest(request)
-        console.log("Record from localStorage was not able to be stashed: " + error)
-        return false
-    }
-}
-
-export function moveFailedToFulfilled(failedRequests: any, failedRequest: any, newRecord: any, newKey: string) {
-    // Add the key to the fulfilled stash and remove it from the failed stash
-    try {
-        if (!failedRequest) {
-            throw new Error("Request to stash not provided")
-        }
-
-        // Add record key to fulfilledRequests
-        let result = stashKey(newKey, "gdt-stash-fulfilled", failedRequest)
-        if (!result) {
-            throw new Error("Record was not able to be added to the published stash")
-        }
-
-        // Remove request from failedRequests
         let requests = [];
-        for (let i = 0; i < failedRequests.length; i++) {
-            let record = failedRequests[i][1][1];
-            if (record !== JSON.stringify(newRecord)) {
-                requests.push(failedRequests[i]);
-            }
+        let stash = localStorage.getItem(stashName) || "{}";
+        let existingRequests;
+
+        // Get the previous requests from the stash
+        if (stashName.includes("failed")) {
+            existingRequests = JSON.parse(stash);
+        } else {
+            existingRequests = stash.split(",");
         }
 
-        localStorage.setItem("gdt-stash-failed", JSON.stringify(requests))
+        // If there are no previous requests skip the loop
+        if (JSON.stringify(existingRequests) !== "{}" && JSON.stringify(existingRequests) !== '["{}"]') {
+            for (const storedRequest of existingRequests) {
+                // If new request == existing request, exit without updating the stash
+                if ((request && storedRequest[0][1] == request[0][1]) || storedRequest == request) {
+                    return;
+                }
 
-    } catch (error) {
-        console.error("Record was created successfully but the stash was unable to update: " + error)
-        throw new Error(`Record was created successfully but the stash was unable to update: ${error}`)
-    }
-}
-
-function stashFailedRequest(request: string) {
-    try { 
-        let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
-        let requests = [];
-        if (JSON.stringify(failedRequests) !== '{}') {
-            for (const storedRequest of failedRequests) {
                 requests.push(storedRequest);
+            }
+        }
 
-                // If new request == existing request, exit without updating
-                if (storedRequest[0][1] == request[0][1]) {
-                    throw new Error("Record already exists in the failed stash")
+        // Add the new request and set the new stash value
+        if (stashName.includes("failed")) {
+            requests.push(request);
+            localStorage.setItem(stashName, JSON.stringify(requests));
+        } else {
+            requests.push(currentKey);
+            localStorage.setItem(stashName, requests.toString());
+        }
+
+    } catch (error) {
+        console.log("Failed to Stash: " + error);
+        throw error;
+    }
+}
+
+export function removeOfflineRequest(currentKey: string, stashName: string) {
+    // Function to remove an offline request from the stash (works for syncing, fulfilled, and failed stashes)
+    try {
+        let requests = [];
+        let stash = localStorage.getItem(stashName) || "{}";
+        let existingRequests;
+
+        // Get the previous requests from the stash
+        if (stashName.includes("failed")) {
+            existingRequests = JSON.parse(stash);
+        } else {
+            existingRequests = stash.split(",");
+        }
+
+        // If there are no previous requests exit the function (nothing to remove)
+        if (JSON.stringify(existingRequests) == "{}" || JSON.stringify(existingRequests) == '["{}"]') {
+            return;
+        }
+
+        if (stashName.includes("failed")) {
+            // Remove request from failed stash
+            for (let i = 0; i < existingRequests.length; i++) {
+                let fullUrl = existingRequests[i][0][1];
+                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+
+                // Add back all requests except the one we're removing 
+                if (requestKey != currentKey) {
+                    requests.push(existingRequests[i]);
                 }
             }
+            localStorage.setItem(stashName, JSON.stringify(requests))
+        } else {
+            // Remove key from other stashes (syncing/fulfilled)
+            const index = existingRequests.indexOf(currentKey);
+            if (typeof existingRequests != "string" && index > -1) {
+                existingRequests.splice(index, 1);
+            }
+            localStorage.setItem(stashName, existingRequests.toString())
         }
-        requests.push(request)
-        localStorage.setItem("gdt-stash-failed", JSON.stringify(requests))
+
     } catch (error) {
-        console.log("Failed to Stash: " + error)
+        console.log("Failed to Remove from Stash: " + error);
+        throw error;
     }
 }
 
@@ -387,13 +387,8 @@ export async function emptyStash() {
         }
 
         try {
-            // TODO: remove error when done testing
-            // throw new Error
-
             // Move key into syncing stash and exit the loop on failure
-            if (!stashKey(currentKey, "gdt-stash-syncing", request)) {
-                continue
-            }
+            stashOfflineRequest(currentKey, "gdt-stash-syncing", request);
             localStorage.removeItem(request_name);
 
             // Fulfill the request and confirm it was created (this will throw an error if it fails)
@@ -405,13 +400,13 @@ export async function emptyStash() {
             if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            stashKey(currentKey, "gdt-stash-fulfilled", request);
-            removeKey(currentKey, "gdt-stash-syncing");
+            stashOfflineRequest(currentKey, "gdt-stash-fulfilled", request);
+            removeOfflineRequest(currentKey, "gdt-stash-syncing");
 
         } catch (error) {
             // Move the request to the failed stash
-            stashFailedRequest(request);
-            removeKey(currentKey, "gdt-stash-syncing");
+            stashOfflineRequest(currentKey, "gdt-stash-failed", request);
+            removeOfflineRequest(currentKey, "gdt-stash-syncing");
 
             console.log("Record from localStorage failed to create: " + error)
         }

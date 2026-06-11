@@ -96,6 +96,7 @@ export default {
 
         // switch to loading screen when a form is submitted
         EventBus.on('isLoading', () => {
+            this.toggled = true;
             if (!this.isLoading) {
                 this.isLoading = true;
                 return
@@ -105,6 +106,7 @@ export default {
     },
     beforeUnmount() {
         EventBus.off('isLoading', () => {
+            this.toggled = true;
             if (!this.isLoading) {
                 this.isLoading = true;
                 return
