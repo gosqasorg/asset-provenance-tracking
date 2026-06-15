@@ -30,8 +30,14 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     console.log("Sending email...", message);
     const poller = await emailClient.beginSend(message);
 
-    if (!poller.getOperationState().isStarted) {
-      throw "Poller was not started."
+    // Note: Yes, this seems as though it could be written more simply, and 
+    // without the "as any". However, the underlying library contains an
+    // error: the interface definition for getOperationState disagrees with
+    // the function's implementation. The typedef does not contain isStarted,
+    // but empirically, when run, it does. The Azure documentation is correct:
+    // the library's interface definition is not. 
+    if ((!poller.getOperationState() as any).isStarted) {
+      throw "Poller is not started."
     }
 
     let timeElapsed = 0;

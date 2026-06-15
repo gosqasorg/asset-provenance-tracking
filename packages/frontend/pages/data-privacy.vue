@@ -31,7 +31,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             Only Global Distributed Tracking users, and individuals with whom they share a record key, have access to record history stored 
             within the key.
         </p> </div>
+
+
+        <h1>API Overview</h1>
+        <div class="row"> <p>
+            Global Distributed Tracking exposes our services by API, allowing simple integration with user software systems. 
+        </p> </div>
+
+        <div class="docs-section">
+            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
+        </div>
     
+
+        <h1>Impact</h1>
+        <div class="row"> <p>
+            Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
+        </p> </div>
         <learn_more></learn_more>
 
     </div>

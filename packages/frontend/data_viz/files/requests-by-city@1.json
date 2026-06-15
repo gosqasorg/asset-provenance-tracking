@@ -1,0 +1,248 @@
+[
+  {
+    "city": "Vancouver",
+    "state/province": "British Columbia",
+    "country/region": "Canada",
+    "requests": 1414
+  },
+  {
+    "city": "Tucson",
+    "state/province": "Arizona",
+    "country/region": "United States",
+    "requests": 618
+  },
+  {
+    "city": "Chicago",
+    "state/province": "Illinois",
+    "country/region": "United States",
+    "requests": 564
+  },
+  {
+    "city": "Temecula",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 560
+  },
+  {
+    "city": "Boydton",
+    "state/province": "Virginia",
+    "country/region": "United States",
+    "requests": 428
+  },
+  {
+    "city": "Temple Hills",
+    "state/province": "Maryland",
+    "country/region": "United States",
+    "requests": 359
+  },
+  {
+    "city": "Washington",
+    "state/province": "Virginia",
+    "country/region": "United States",
+    "requests": 312
+  },
+  {
+    "city": "Cheyenne",
+    "state/province": "Wyoming",
+    "country/region": "United States",
+    "requests": 298
+  },
+  {
+    "city": "San Jose",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 216
+  },
+  {
+    "city": "Wakefield",
+    "state/province": "Massachusetts",
+    "country/region": "United States",
+    "requests": 159
+  },
+  {
+    "city": "Des Moines",
+    "state/province": "Iowa",
+    "country/region": "United States",
+    "requests": 145
+  },
+  {
+    "city": "Phoenix",
+    "state/province": "Arizona",
+    "country/region": "United States",
+    "requests": 141
+  },
+  {
+    "city": "Durham",
+    "state/province": "North Carolina",
+    "country/region": "United States",
+    "requests": 141
+  },
+  {
+    "city": "Paris",
+    "state/province": "Paris",
+    "country/region": "France",
+    "requests": 138
+  },
+  {
+    "city": "Nablus",
+    "state/province": "Nablus",
+    "country/region": "State Of Palestine",
+    "requests": 137
+  },
+  {
+    "city": "Raleigh",
+    "state/province": "North Carolina",
+    "country/region": "United States",
+    "requests": 130
+  },
+  {
+    "city": "Wayne",
+    "state/province": "New Jersey",
+    "country/region": "United States",
+    "requests": 127
+  },
+  {
+    "city": "Dallas",
+    "state/province": "Texas",
+    "country/region": "United States",
+    "requests": 97
+  },
+  {
+    "city": "Mountain View",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 78
+  },
+  {
+    "city": "Quincy",
+    "state/province": "Massachusetts",
+    "country/region": "United States",
+    "requests": 67
+  },
+  {
+    "city": "Peabody",
+    "state/province": "Massachusetts",
+    "country/region": "United States",
+    "requests": 58
+  },
+  {
+    "city": "Los Angeles",
+    "state/province": "California",
+    "country/region": "United States",
+    "requests": 48
+  },
+  {
+    "city": "Beaumont",
+    "state/province": "Texas",
+    "country/region": "United States",
+    "requests": 45
+  },
+  {
+    "city": "Nablus",
+    "state/province": "Nablus",
+    "country/region": "Occupied Palestinian Territory",
+    "requests": 44
+  },
+  {
+    "city": "Singapore",
+    "state/province": "Central Singapore",
+    "country/region": "Singapore",
+    "requests": 28
+  },
+  {
+    "city": "Quincy",
+    "state/province": "Washington",
+    "country/region": "United States",
+    "requests": 25
+  },
+  {
+    "city": "London",
+    "state/province": "Ontario",
+    "country/region": "Canada",
+    "requests": 16
+  },
+  {
+    "city": "Savigny-Le-Temple",
+    "state/province": "Seine-Et-Marne",
+    "country/region": "France",
+    "requests": 12
+  },
+  {
+    "city": "New York",
+    "state/province": "New York",
+    "country/region": "United States",
+    "requests": 9
+  },
+  {
+    "city": "Austin",
+    "state/province": "Texas",
+    "country/region": "United States",
+    "requests": 9
+  },
+  {
+    "city": "Orsay",
+    "state/province": "Essonne",
+    "country/region": "France",
+    "requests": 7
+  },
+  {
+    "city": "Gif-Sur-Yvette",
+    "state/province": "Essonne",
+    "country/region": "France",
+    "requests": 7
+  },
+  {
+    "city": "Columbus",
+    "state/province": "Ohio",
+    "country/region": "United States",
+    "requests": 7
+  },
+  {
+    "city": "Las Vegas",
+    "state/province": "Nevada",
+    "country/region": "United States",
+    "requests": 5
+  },
+  {
+    "city": "Gaza",
+    "state/province": "Gaza",
+    "country/region": "State Of Palestine",
+    "requests": 5
+  },
+  {
+    "city": "Saint-Ave",
+    "state/province": "Morbihan",
+    "country/region": "France",
+    "requests": 5
+  },
+  {
+    "city": "Villejuif",
+    "state/province": "Val-De-Marne",
+    "country/region": "France",
+    "requests": 5
+  },
+  {
+    "city": "Seynod",
+    "state/province": "Haute-Savoie",
+    "country/region": "France",
+    "requests": 5
+  },
+  {
+    "city": "Ramsey",
+    "state/province": "New Jersey",
+    "country/region": "United States",
+    "requests": 3
+  },
+  {
+    "city": "Florence",
+    "state/province": "Colorado",
+    "country/region": "United States",
+    "requests": 3
+  },
+  {
+    "city": "Koeln",
+    "state/province": "Nordrhein-Westfalen",
+    "country/region": "Germany",
+    "requests": 2
+  }
+]

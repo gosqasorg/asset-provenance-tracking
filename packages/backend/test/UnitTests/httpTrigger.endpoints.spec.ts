@@ -11,14 +11,20 @@ vi.mock('@azure/storage-blob', () => {
     async getProperties() {
       return { metadata: { gdtsalt: '0102030405060708090a0b0c0d0e0f10', gdttimestamp: '123', gdtcontenttype: 'application/octet-stream', gdtname: '' } };
     }
-    async downloadToBuffer() { return new Uint8Array(16); }
+    async downloadToBuffer() {  
+      const json = JSON.stringify({ email: ["old@email.com"], tags: [] });
+      return Buffer.from(json, "utf8");
+    }
     async exists() { return true; }
   }
 
   class MockContainerClient {
     async exists() { return true; }
     async createIfNotExists() { return true; }
-    async uploadBlockBlob() { return true; }
+    async uploadBlockBlob() { 
+      return { response: { _response: { status: 200 } } };
+    }
+    
     listBlobsFlat(opts?: any) {
       let called = false;
       return {
@@ -36,9 +42,15 @@ vi.mock('@azure/storage-blob', () => {
       };
     }
     getBlockBlobClient() { return new MockBlockBlobClient(); }
+    getBlobClient() { return new MockBlobClient();}
+  }
+
+  class MockBlobClient {
+    async download() { return 'testString'; }
   }
 
   return {
+    BlobClient : MockBlobClient,
     BlockBlobClient: MockBlockBlobClient,
     ContainerClient: MockContainerClient,
     StorageSharedKeyCredential: class {},
@@ -69,6 +81,27 @@ vi.mock('@azure/data-tables', () => ({
     })),
     AzureNamedKeyCredential: vi.fn().mockImplementation(() => ({})),
 }));
+
+vi.mock('@azure/communication-email', () => {
+    const mockBeginSend = vi.fn().mockResolvedValue({
+        getOperationState: vi.fn().mockReturnValue({ isStarted: true }),
+        isDone: vi.fn().mockReturnValue(true),
+        poll: vi.fn(),
+        getResult: vi.fn().mockReturnValue({ status: 'Succeeded', id: 'test-id' })
+    });
+
+    return {
+        EmailClient: vi.fn().mockImplementation(() => {
+            return {
+                beginSend: mockBeginSend
+            };
+        }),
+        KnownEmailSendStatus: {
+            Succeeded: 'Succeeded'
+        }
+    };
+});
+
 
 vi.mock('../../src/functions/sendEmail.js', () => ({
     sendEmail: vi.fn().mockResolvedValue(undefined),

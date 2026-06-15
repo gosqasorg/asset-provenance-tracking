@@ -5,7 +5,7 @@
   "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions-core --external:net --external:http --external:https --external:tls --external:util --external:os --external:fs --external:path --external:crypto --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
@@ -13,6 +13,7 @@
     "start": "func start",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
     "test": "vitest",
+    "microtest": "npx vitest run test/UnitTests/microtest",
     "unittest": "npx vitest run test/UnitTests",
     "api_integration_tests": "npx vitest run test/IntegrationTests",
     "coverage": "vitest run --coverage"
@@ -30,10 +31,11 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@types/node": "20.16.5",
+    "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^2.1.1",
     "azure-functions-core-tools": "^4.0.5530",
     "commander": "^12.1.0",
+    "esbuild": "^0.28.0",
     "mime-types": "^2.1.35",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",

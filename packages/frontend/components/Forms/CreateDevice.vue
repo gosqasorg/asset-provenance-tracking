@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
-    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit.prevent="submitForm">
+    <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500">  
+            <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500" @keydown.enter.prevent>  
             <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
             <div style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
@@ -34,12 +34,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
+
+            <!-- Subscribe to notifications -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
+                        Receive email notifications for this record
+                </h4>
+
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+            </div>
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
-                    <input v-model="isChecked" type="checkbox" class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
+                    <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
                 <div v-if="isChecked">
                     <!-- TODO: API call function -->
@@ -47,26 +65,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         type="text"
                         class="form-control"
                         v-model="textInput"
-                        placeholder="Email"
+                        required placeholder="Email"
                         @keyup.enter=""
+                        @keydown.enter.prevent
                     />
                 </div>
             </div>
 
-            <!-- Notification Subscription -->
-            <h4 class="p-1">
-                <input v-model="subscribeChecked" type="checkbox" class="form-check-input"/> Subscribe to notifications for this record
-            </h4>
+            <!-- Offline Banner -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+                </div>
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
+                </div> 
+            </Banner>
 
-            <div v-if="subscribeChecked">
-                <input
-                    type="text"
-                    class="form-control"
-                    v-model="subscribeEmail"
-                    placeholder="Email"
-                />
-            </div>
+            <!-- Banner to Offline History Create Page -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
 
+            <!-- Back Online Banner -->
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
+				</div>
+            </Banner>
         </div>
  
         <div class="d-grid">
@@ -89,13 +117,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
-
+import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 
+//TODO: add const for max limit of notification subscriptions
 export default {
     data() {
         return {
@@ -108,8 +137,6 @@ export default {
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
-            subscribeChecked: false,
-            subscribeEmail: '',
         }
     },
     computed: {
@@ -119,7 +146,24 @@ export default {
         },
         isButtonDisabled() {
             return !this.isFormValid || this.isSubmitting;
-        }
+        },
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
+        displayBanner() {
+            if (displayOfflineBanner === true) {
+                return true;
+            }
+            else{
+                return false;
+            }
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+            } else {
+                return false;
+            }
+        },
     },
     methods: {
         handleUpdateTags(tags: string[]) {
@@ -178,21 +222,6 @@ export default {
                     await postEmail(this.textInput);
                 }
 
-                if (response && this.subscribeChecked && this.subscribeEmail) {
-                    try {
-                        await postNotificationEmail(this.subscribeEmail, deviceKey, this.tags);
-                        this.$snackbar.add({
-                            type: 'success',
-                            text: 'Check your email to verify your notification subscription.'
-                        });
-                    } catch (error) {
-                        this.$snackbar.add({
-                            type: 'error',
-                            text: `Failed to send verification email: ${error}`
-                        });
-                    }
-                }
-
                 this.$snackbar.add({
                     type: 'success',
                     text: 'Successfully created the record'
@@ -213,6 +242,7 @@ export default {
                     type: 'error',
                     text: `Failed to create record: ${error}`
                 });
+                EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
             }
@@ -294,6 +324,9 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
+    .banner-link {
+        color: #CCECFD;
+    }
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -314,6 +347,9 @@ export default {
     }
     #record-button:hover { 
         background-color: #322253;
+    }
+    .banner-link {
+        color: #4E3681;
     }
 }
 
