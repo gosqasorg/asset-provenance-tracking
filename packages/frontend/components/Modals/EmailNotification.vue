@@ -1,10 +1,3 @@
-# TODO: * add loading states to buttons - DONE
-# TODO: * add error states to email input field - DONE
-# TODO: * Modify coolder to submit. 10 -> 10 -> 10 -> 30 -> 60 etc - DONE
-# TODO: * add state for email already verfied, incase user tries to sign up with an email that's already subscribed.
-# Note: ask vincent if emails that are subscribed to multiple records need to be verified each time - YES THEY DO
-
-
 <template>
     <!-- Email notifications modal -->
     <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
@@ -55,7 +48,6 @@
                     maxlength="6"
                     :class="{ 'input-error': error && verifyCooldownRemaining > 0 }"
                 />
-                <!-- <p v-if="error && verifyCooldownRemaining > 0" class="text-danger" role="alert">Invalid code.</p> -->
             </div>
             <div class="footer">
                 <div class="btn-container">
@@ -227,7 +219,6 @@
                 return minutes * 60 * 1000;
             },
 
-            // 30s, 60s, 120s, 240s, 480s, 600s 
             getVerifyCooldownMs(): number {
                 if (this.resendCount <= 3) return 10 * 1000; // 10s for first 3 attempts
                 const seconds = Math.min(30 * Math.pow(2, this.invalidAttempts - 4), 600); // starts at 30s on 4th attempt, doubles each time, maxes out at 10m
@@ -239,18 +230,17 @@
                 const m = Math.floor(totalSeconds / 60);
                 const s = totalSeconds % 60;
                 return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                // return `${s}s`;
             },
 
             async verifyCode() {
-                // button should be disabled if cooldown is active, but just in case
+                // Button should be disabled if cooldown is active
                 if (!this.code || this.verifyCooldownRemaining > 0) return;
                 this.isSubmitting = true;
                 this.error = null;
                 try {
                     const token = this.token as string;
                     if (!localStorage.getItem(`${token}_verified`)) {
-                        // if this token is not already verfied- so we don't hit the api unless necessary
+                        // If token is not already verfied no need to hit the api
                         await postVerifyCode(token, this.code);
                     }
                     this.step = 'success';
@@ -268,7 +258,7 @@
             },
 
             async resendCode() {
-                // button should be disabled if cooldown is active, but double checking here just in case
+                // Button should be disabled if cooldown is active
                 if (this.resendCooldownRemaining > 0) return;
                 this.isResending = true;
                 try {
@@ -310,8 +300,7 @@
                     this.step = "expired";
                 }
 
-                // openning the modal programmatically 
-                // using bootstrap
+                // opening the modal programmatically using bootstrap
                 const { Modal } = await import('bootstrap');
                 const notifModal = document.getElementById('notifModal');
                 if (notifModal) {                    

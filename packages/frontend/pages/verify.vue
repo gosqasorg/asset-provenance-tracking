@@ -1,3 +1,9 @@
+<!-- 
+ Redirection page for users auto-verify link contained in their emails. 
+ Redirects user to their record  history page if the token and code are valid, 
+ otherwise redirects to home page. 
+-->
+
 <script setup lang="ts">
 import { getPendingVerification } from '../services/azureFuncs';
 

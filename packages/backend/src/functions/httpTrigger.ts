@@ -1,7 +1,3 @@
-// TODO: * Rework Pending Email Verification Email Schema - DONE
-// Note: Partition Key becoems the token and RowKey become the code. Add column for verified state. Keep Email Column, Expired Column, Record Key and Timestamp.
-// TODO: * Rework link sent to emails to no longer have the record key in it. Obtain record key from the token instead.
-
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -699,7 +695,6 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-/* -----Email Verification Functions Zone ----- */
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -734,12 +729,10 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         }
     } catch(error) {
         console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
-        // Deliberate lack of error message to client
     }
 }
 
-// need to gen a code
-// have a table to hold pending verifications (email, code, deviceKey, tags)
+
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
 
@@ -760,7 +753,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         context.log("Received signup for " + email)
 
         // Pending Verifications Table (copied from postEmail - will refactor later)
-        // TODO: * Refactor Table creation
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
@@ -773,13 +765,10 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         // generate code
-        // salt ??= crypto.getRandomValues(new Uint8Array(16)); + clamp to 6 digits (ask vincent if prefferened amount)
         const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
         const token = Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString('base64url');
 
         // store email, code, rec and tags in table
-        // upsert incase of code resend
-        // include expiration for code (10 mins for now i think)
         const codeExpiration = 10 * 60 * 1000;
         const entity = {
             partitionKey: token,
@@ -795,8 +784,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        // TODO: * Change to gosqas.org for deployment;        
-        const frontendUrl = 'http://localhost:3000';
+        const frontendUrl = 'https://gosqas.org/';
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
         
         const emailResult = await sendEmail(
@@ -905,7 +893,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             }
         }
 
-        // get the pendingemailver table
+        // get the PendingVerifications table
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
@@ -933,7 +921,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             }
         }
 
-        // TODO: * Mark entity as verified... Ask Vincent some stuff
         await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
 
         // Proof of concept 
@@ -1017,9 +1004,8 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         await tableClient.createEntity(updatedEntity);
 
         // sendEmail() with the code attached
-        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        // TODO: * Change to gosqas for deployment;
-        const frontendUrl = 'http://localhost:3000';
+        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string;
+        const frontendUrl = 'https://gosqas.org/';
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
 
         await sendEmail(
@@ -1030,7 +1016,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             "GOSQAS Notification"
         )
 
-        // Return Success (for now, but eventually we will want to return errors if email is malformed, etc)
+        // Return Success (frontend has checks for properly formed email)
         return {
             jsonBody: {message: "Success" },
             status: 200
@@ -1046,8 +1032,6 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
     }
 }
 
-
-// Not currently called anywhere...might be able to condense?
 async function signupForNotifications(deviceKey: string, email: string) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
@@ -1108,40 +1092,6 @@ async function signupForNotifications(deviceKey: string, email: string) {
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
-
-// ======== EMAIL STUFF =============/
-
-app.post('postResendCode', {
-    authLevel: 'anonymous',
-    route: 'resendCode',
-    handler: postResendCode,
-})
-
-app.get("emailSignupTestEndpoint", {
-    authLevel: 'anonymous',
-    route: 'emailSignupTestEndpoint',
-    handler: emailSignupTestEndpoint
-})
-
-app.post("postNotificationEmail", {
-    authLevel: 'anonymous',
-    route: 'notificationSubscription',
-    handler: postNotificationEmail
-})
-
-app.get('getPendingVerification', {
-    authLevel: 'anonymous',
-    route: 'pendingVerification',
-    handler: getPendingVerification,
-})
-
-app.post("postVerifyCode", {
-    authLevel: 'anonymous',
-    route: 'verifyCode',
-    handler: postVerifyCode
-})
-
-// ==================================/
 
 app.get("getProvenance", {
     authLevel: 'anonymous',
@@ -1207,4 +1157,34 @@ app.post('recallChildren', {
     authLevel: 'anonymous',
     route: 'provenance/recall/{deviceKey}',
     handler: recallChildren,
+})
+
+app.post('postResendCode', {
+    authLevel: 'anonymous',
+    route: 'resendCode',
+    handler: postResendCode,
+})
+
+app.get("emailSignupTestEndpoint", {
+    authLevel: 'anonymous',
+    route: 'emailSignupTestEndpoint',
+    handler: emailSignupTestEndpoint
+})
+
+app.post("postNotificationEmail", {
+    authLevel: 'anonymous',
+    route: 'notificationSubscription',
+    handler: postNotificationEmail
+})
+
+app.get('getPendingVerification', {
+    authLevel: 'anonymous',
+    route: 'pendingVerification',
+    handler: getPendingVerification,
+})
+
+app.post("postVerifyCode", {
+    authLevel: 'anonymous',
+    route: 'verifyCode',
+    handler: postVerifyCode
 })
