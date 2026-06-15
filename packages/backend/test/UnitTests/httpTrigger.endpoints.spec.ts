@@ -370,15 +370,15 @@ describe('getPendingVerification', () => {
         expect(res.status).toBe(404);
     });
 
-    // should delete entity when expired token / code
-    it('returns 404 and deletes entity when token is expired', async () => {
+    // Expect entity to have been deleted after expired token is accessed
+    it('returns 410 and deletes entity when token is expired', async () => {
         const entity = makeValidEntity({ expiresAt: Date.now() - 1000 });
         mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
         const req = makeQueryRequest({ token: entity.token });
 
         const res = await httpTrigger.getPendingVerification(req, ctx);
 
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(410);
         expect(mockTable.deleteEntity).toHaveBeenCalledWith('PendingVerification', entity.rowKey);
     });
 
