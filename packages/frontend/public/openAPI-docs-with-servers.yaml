@@ -146,9 +146,6 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: string
-                    example: "Error: Internal server error."
                   recordUrl:
                     type: string
                     example: "{'recordUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
