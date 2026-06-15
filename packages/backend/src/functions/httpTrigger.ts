@@ -451,7 +451,7 @@ async function notifySubscribers(  deviceKey: string, context: InvocationContext
         return;
     }
 
-    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
+    const from_address: string = "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net";
     const subject: string = 'Tracking update'; 
     const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
     const displayName: string = from_address;
@@ -704,75 +704,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
 
-async function retrieveNotifEmails(key: string) {
-    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
-    const deviceID = await calculateDeviceID(key);
-    const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}/`
-
-    try {
-        const blobClient = containerClient.getBlobClient(blobName);
-        const downloadResponse = await blobClient.download();
-        const downloaded = await streamToString(downloadResponse.readableStreamBody);
-        console.log('Downloaded blob content:', downloaded.toString());
-
-        return {
-            jsonBody: { message: downloaded},
-            status: 200
-        }
-    } catch(error) {
-        return {
-            jsonBody: {message: error.message},
-            status: status,
-        }
-    } 
-}
-
-async function streamToString(readableStream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        readableStream.on("data", (data) => {
-            chunks.push(data.toString());
-        });
-        readableStream.on("end", () => {
-            resolve(chunks.join(""));
-        });
-        readableStream.on("error", reject);
-    });
-}
-
-async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    /* How this pseudo-smoketest works:
-       1. Put a string into blobstore
-       2. Get it back out
-       3. Hand both responses back
-     */
-
-    try {
-        const key = await makeEncodedDeviceKey()
-
-        // Add it
-        const putResponse = await signupForNotifications(key, "email@email.foo")
-
-        // Access it
-        const getResponse = await retrieveNotifEmails(key)
-
-        return {
-            jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
-            status: 200,
-        }
-
-    } catch(error) {
-
-        console.log(error)
-        
-        return {
-            jsonBody: {message: error.message},
-            status: 500,
-        }
-    }
-}
-
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -963,6 +894,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const body = await request.json() as any;
         const token = body.token;
         const code = body.code;
+        const tags = []
 
         if (!token || !code) {
             return {
@@ -1003,12 +935,8 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
-        //await tableClient.deleteEntity(token, code);
-        //await signupForNotifications(entity.recordKey as string, entity.email as string);
-
-        // TODO: * ensure signup for notifs works
-        // await containerClient.createIfNotExists();
-        // const response = await signupForNotifications(recordKey, email, tags);
+        await containerClient.createIfNotExists();
+        await signupForNotifications(entity.recordKey, entity.email, tags);
         // return response
 
         return {
@@ -1115,7 +1043,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
     }
 }
 
-async function signupForNotifications(deviceKey: string, email: string) {
+async function signupForNotifications(deviceKey: string, email: string, tags: string[]) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
@@ -1287,7 +1215,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await signupForNotifications(key, "email@email.foo")
+        const putResponse = await signupForNotifications(key, "email@email.foo", [])
 
         // Access it
         const getResponse = await retrieveNotifEmails(key)
@@ -1635,18 +1563,6 @@ app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
     handler: createGroupHandler
-})
-
-app.get("emailSignupTestEndpoint", {
-    authLevel: 'anonymous',
-    route: 'emailSignupTestEndpoint',
-    handler: emailSignupTestEndpoint
-})
-
-app.post("postNotificationEmail", {
-    authLevel: 'anonymous',
-    route: 'notificationSubscription',
-    handler: postNotificationEmail
 })
 
 app.get("getProvenance", {

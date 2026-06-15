@@ -37,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
             <!-- Subscribe to notifications -->
-            <div class="my-3">
+            <!-- <div class="my-3">
                 <h4>
                     <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
                         Receive email notifications for this record
@@ -52,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         @keyup.enter=""
                 />
                 </div>
-            </div>
+            </div> -->
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">

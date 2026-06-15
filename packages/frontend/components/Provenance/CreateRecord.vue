@@ -64,7 +64,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     Recall all children
             </h4>
 
-            <h4 class="p-1 mt-0">
+            <!-- <h4 class="p-1 mt-0">
                 <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
                     Receive email notifications for this record
             </h4>
@@ -77,7 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     placeholder="Email"
                     @keyup.enter=""
                 />
-            </div>
+            </div> -->
         </div>
         
         <!-- Offline Banner Bottom-->
