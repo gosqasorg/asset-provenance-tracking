@@ -7,8 +7,6 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { sendEmail } from './sendEmail.js';
-
  
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -796,15 +794,22 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         const frontendUrl = 'https://gosqas.org/';
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
         
-        const emailResult = await sendEmail(
-            "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
-            email,
-            "GOSQAS Verification Code",
-            `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-            "GOSQAS Notification"
-        )
+        try {
+            const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+            
+            const emailResult = await sendEmail(
+                "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
+                email,
+                "GOSQAS Verification Code",
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification"
+            )
 
-        context.log('Email send result:', emailResult);
+            context.log('Email send result:', emailResult);
+
+        } catch (error) {
+            context.log("Error sending email: " + error);   
+        }
 
         // Return Success (frontend checks for properly formed email)
         return {
@@ -1019,13 +1024,22 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         const frontendUrl = 'https://gosqas.org/';
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
 
-        await sendEmail(
-            "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
-            entity.email as string,
-            "GOSQAS Verification Code",
-            `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-            "GOSQAS Notification"
-        )
+        try {
+            const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+            
+            const emailResult = await sendEmail(
+                "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
+                entity.email as string,
+                "GOSQAS Verification Code",
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification"
+            )
+
+            context.log('Email resend results:', emailResult);
+
+        } catch (error) {
+            context.log("Error sending email: " + error);   
+        }
 
         // Return Success (frontend has checks for properly formed email)
         return {
