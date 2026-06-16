@@ -89,7 +89,7 @@ const recordHasParent = hasParent(provenance);
 			class="left-col">
 
 			<!-- Offline Banner Top-->
-			<Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+			<Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
 				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
 				</div>
 				<div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
@@ -97,11 +97,21 @@ const recordHasParent = hasParent(provenance);
 				</div> 
 			</Banner>
 
-			<!-- Back Online Banner -->
-			<Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-				<div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+			<!-- Banner to Offline History Create Page -->
+			<Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">offline creation page</RouterLink>.
 				</div>
 			</Banner>
+
+			<!-- Back Online Banner -->
+			<Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
+				</div>
+            </Banner>
 
 			<section id="device-details" class="details-container">
 			<div class="record-description">
@@ -135,18 +145,18 @@ const recordHasParent = hasParent(provenance);
 			<div class="buttons-container">
 			<button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-              <ProvenanceShareDropdown 
+			<ProvenanceShareDropdown 
                 :deviceName="deviceRecord.deviceName" 
                 :description="deviceRecord.description"
                 :fontSize="20"
                 :height="66">
-              </ProvenanceShareDropdown>
+			</ProvenanceShareDropdown>
 
-              <EmailNotificationSignup
-                :recordKey="_recordKey"
+			<EmailNotificationSignup
+            	:recordKey="_recordKey"
                 :fontSize="20"
                 :height="66">
-              </EmailNotificationSignup>
+			</EmailNotificationSignup>
               
             </div>
             <section id="recalled">
@@ -241,7 +251,7 @@ data() {
         hasReportingKey: false,
         childKeys: [] as string[],
         _recordKey: "",
-        valid: false
+        valid: false,
 	}
 },
 computed: {
@@ -252,7 +262,7 @@ computed: {
 		} else {
 			return false;
 		}
-		},
+	},
     // Controls the visibility of online banner based on global variable displayOnlineBanner
     onlineBannerToggle() {
         if (displayOnlineBanner === true) {
@@ -292,7 +302,7 @@ async mounted() {
         console.log(error)
 	}
 },
-beforeDestroy() {
+beforeUnmount() {
 	EventBus.off('feedRefresh', this.refreshFeed);
 	EventBus.off('isCreating', () => {
 	if (!this.isCreating) {
@@ -303,6 +313,12 @@ beforeDestroy() {
 	});
 },
 methods: {
+	sendRecordKey() {
+		this.$router.push({
+			path: '/history/offline',
+			query: { key: this._recordKey }
+		})
+	},
 	downloadQRCode() {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
@@ -459,8 +475,8 @@ methods: {
 }
 
 .download-btn {
-  margin-top: 0;
-  flex: 1 1 300px;
+    margin-top: 0;
+    flex: 1 1 300px;
 }
 
 .btn-primary {
@@ -741,17 +757,10 @@ h1 {
 	background-color: white;
 	color: black;
 }
-.banner {
-	background-color: #3e231c;
-	border-color: #fe9c9e;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: white;
-	}
+
+.banner-link {
+	color: #CCECFD;
+}
 }
 
 /* Light mode version*/
@@ -814,16 +823,9 @@ h1 {
 .download-btn:hover {
 	background-color: #e6f6ff !important;
 }
-.banner {
-	background-color: #ffe3e2;
-	border-color: #fa9e9f;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: black;
-	}
+
+.banner-link {
+	color: #4E3681;
+}
 }
 </style>

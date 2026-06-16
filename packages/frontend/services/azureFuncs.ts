@@ -15,6 +15,9 @@
 
 import { validateKey } from "~/utils/keyFuncs";
 
+// Feature flag to turn ON/OFF Offline Mode features while in development
+export var offlineModeFeatureFlag = false;
+
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
 
@@ -87,12 +90,15 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
-        // Checks to see if user is offline, stashes record if offline
-        const checkOffline = await offlineDetectAndStash(fullUrl, formData);
-        if (checkOffline === 202) {
-            throw new Error('Status 202: User is offline but the record has been stashed')
-        } else if (checkOffline === 507) {
-            throw new Error('Storage limit has been reached, record not stashed')
+        // offline mode feature flag toggle
+        if (offlineModeFeatureFlag) {
+            // Checks to see if user is offline, stashes record if offline
+            const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+            if (checkOffline === 202) {
+                throw new Error('Status 202: User is offline but the record has been stashed')
+            } else if (checkOffline === 507) {
+                throw new Error('Storage limit has been reached, record not stashed')
+            }
         }
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
@@ -210,7 +216,12 @@ export async function getStatistics() {
     const response = await fetch(`${baseUrl}/statistics`, {
         method: "GET",
     });
-    return await response.json() as { record: string, timestamp: number }[];
+    
+    return await response.json() as { 
+        records: { record: string, timestamp: number }[];
+        totalRecords: number;
+        totalDevices: number;
+    };
 }
 
 async function fetchUrl(url: string, formData?: FormData) {
@@ -256,7 +267,7 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
     }
 
     try {
-        let response = await fetch(url);
+        let response = await fetch(url, { cache: 'no-store'});
         if (response.status !== 200) {
             result = false;
 

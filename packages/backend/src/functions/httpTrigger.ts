@@ -8,7 +8,7 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import {encode as base58encode } from '@urlpack/base58';
-
+import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -58,7 +58,7 @@ interface NamedBlob {
     blob: Blob,
 }
 
-const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -508,43 +508,173 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    // TODO: need to create below env variables for this code to work, in testing it runs
+    const directory_id = process.env['AZURE_TENANT_ID'];
+    const app_registration_id = process.env['AZURE_CLIENT_ID'];
+    const secret_value = process.env['AZURE_CLIENT_SECRET'];
+    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
+    let client_id = app_registration_id
+    let client_secret = secret_value
 
-    // Build up a JSON return value
-    // NOTE: We seem to have to read the properties of the blob to get the
-    // metadata.  There is a field called "metadata" on the blob itself
-    // which does not contain our metadata. I don't know if this is terribly
-    // expensive, or if we could improve it. I insist we should not worry about
-    // performance until we measure it to be a problem, but this is an "orang flag"--
-    // some caution around this issue is warranted.
-    var records = [];
-    for await (const blob of containerClient.listBlobsFlat()) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const props = await blobClient.getProperties();
-        const metadata = props.metadata;
-        // now we want to build up an object that we can return as statistics
-        // that inlcudes the id and the timestamp, though really the timestamp
-        // is enough. We would like to distinguish the additon of a device
-        // from the addition of new provenance, I supoose.
-        const id = findDeviceIdFromName(blob.name);
-        // We could do some sorting in this function, but that is more or less
-        // easily done by whomever is using this. So I think it better to just
-        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
-        // Eventually, this function may have to only look back X days or X hours,
-        // but until it gets unwieldy we can return everything.
-        // I think the proper way to test this is to build a test program that
-        // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
+    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
+    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
+    let token = tokenResponse.token;
+
+    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
+    let valsAtTimes = [0, 0, 0]
+
+    // Get time-based record entry counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let records1h = valsAtTimes[0]
+    let records24h = valsAtTimes[1]
+    let records7d = valsAtTimes[2]
+
+    // Get time-based unique record counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let devices1h = valsAtTimes[0]
+    let devices24h = valsAtTimes[1]
+    let devices7d = valsAtTimes[2]
+
+    const d = new Date()
+    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
+    let minutes = d.getMinutes() / 60
+    let hours = d.getHours() + minutes
+    let counted = 0
+    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
+
+    // Get record entries per day (last 7 days) for the graph
+    for (let i = 0; i <= today; i++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
+        });
+        let recent = (await logs.json()).tables[0].rows[0][0];
+        
+        // Add the records we found to the current day, subtracting records we already counted
+        recordsPerDayY[today - i] = recent - counted
+        counted = recent
+        hours += 24
     }
 
-    const contentType = "application/json";
+    // Get record entries per hour (last 7 days, time in UTC) for the graph
+    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let hour = 0; hour < 24; hour++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created in the last 7 days at 'hour'
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
+        });
+        let hourly = (await logs.json()).tables[0].rows[0][0];
+        recordsPerHourY[hour] = hourly
+    }
+
+    // Get number of calls to postProvenance that failed in the last 3 months
+    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
+    });
+    let totalFailures = (await logs.json()).tables[0].rows[0][0];
+
+    // Get number of calls to postProvenance that succeeded in the last 3 months
+    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
+    });
+    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
+
+    // Get total statistics counts (updates once per day)
+    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
+
+    await containerClient.createIfNotExists();
+    const blobName = `statistics/totals`
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const exists = await blobClient.exists();
+
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            totalRecords = parsed?.totalRecords || 0
+            totalAttachments = parsed?.totalAttachments || 0
+            totalDevices = parsed?.totalDevices || 0
+        }
+    }
 
     return {
-        jsonBody: records,
-        headers: { "Content-Type": contentType }
+        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
+        headers: { "Content-Type": "application/json" }
     };
 };
+
+async function setStatisticsTotals() {
+    await containerClient.createIfNotExists();
+    const containerExists = await containerClient.exists();
+    const blobName = `statistics/totals`
+
+    // Get new total records, record entries, and attachments from containerClient
+    let totalRecords = 0
+    let totalAttachments = 0
+    let totalDevices = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))
+            } else if (!(blob.name.includes('statistics/'))) {
+                totalAttachments++
+            }
+        }
+    }
+
+    totalDevices = uniqueRecords.size
+
+    // Update the blob with our new values
+    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    try {
+        await containerClient.uploadBlockBlob(
+            blobName,
+            data,
+            data.length,
+            uploadOptions
+        )
+    } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
+    }
+}
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -1047,7 +1177,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, tags: string[] = []) {
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1057,15 +1187,15 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     */ 
 
     try {
-        //const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const baseUrl = 'http://localhost:7071/api'
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // const baseUrl = 'http://localhost:7071/api'
         const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
         
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
-            deviceName: "",
+            deviceName: custom_title,
             description: "",
             tags: tags,
             hasParent: true,
@@ -1088,14 +1218,17 @@ async function createChild(context: InvocationContext, tags: string[] = []) {
     }
 }
 
-async function createChildren(context, number_of_children, tags?) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], tags?) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    for (let i = 0; i <= 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, tags))) {
+    let j = 0;
+    
+    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
+        if(!(thisChild = await createChild(context, custom_child_titles[j], tags))) {
             continue;
         }
 
+        j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
             break;
@@ -1105,13 +1238,31 @@ async function createChildren(context, number_of_children, tags?) {
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children) {
-    const baseUrl = process.env['backend_url'];
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const apiUrl = process.env['api_url'];
 
+    n_children = Math.max(0, n_children ?? 0);
+
+    // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
+    if (!Array.isArray(custom_child_titles)) {
+        custom_child_titles = []
+        for (let i = 0; i < n_children; i++) {
+                custom_child_titles.push(`${name} #${i + 1}`)
+        }
+    };
+
+    let customLen = custom_child_titles.length
+    if (n_children > customLen) {
+        for (let i = 0; i < n_children - customLen; i++) {
+            custom_child_titles.push("")
+        }
+    };
     // Create children first
-    let childKeys = await createChildren(context, n_children)
+    let childKeys = await createChildren(context, n_children, custom_child_titles)
+    if (childKeys.length !== n_children) {
+        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1120,17 +1271,27 @@ async function createGroup(context, name, description, n_children) {
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
+        number_of_children: n_children,
         children_key: childKeys,  // Note: this is what turns a record into a group
+        children_name: custom_child_titles,
         tags: [],            
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
+
+    for (const attachment of attachments) {
+        groupFormData.append("attachment", attachment.blob, attachment.name);
+    }
     
     const createInitUrl = `${apiUrl}/provenance/${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
     });
+    if (!groupResponse.ok) {
+        const errorBody = await groupResponse.text().catch(() => "");
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1143,25 +1304,43 @@ const GroupCreationOrderSchema = z.object({
     description: z.string(),
     tags: z.array(z.string()).optional(),
     number_of_children: z.number().optional(),
-    custom_record_titles: z.array(z.string()).optional(),
+    children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
 });
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
+        const attachments: NamedBlob[] = [];
+        const formData = await request.formData();
+
+        const recordStr = formData.get("provenanceRecord"); 
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError(
+                "Missing provenanceRecord in form data"
+            );
+        }
+
+        let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({name: value.name || "attachment", blob: value});
+        }
+
         GroupCreationOrderSchema.parse(theRequest)
-        let title = theRequest['title']
+        let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children)
+
+        let custom_child_titles = theRequest['children_name']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, attachments)
+
         context.log(theGroupRecordPageUrl)
 
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
-            headers: { "Content-Type": "text/plain" }
+            headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
         context.error('Failed to create group: ', error.message)
@@ -1197,14 +1376,139 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+async function createRecord(context, name, description, tags, attachments) {
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const deviceKey = await makeEncodedDeviceKey();
+    const decodedDeviceKey = decodeKey(deviceKey);
+
+    try {
+        const data = {
+            blobType: 'deviceInitializer',
+            deviceName: name,
+            description: description,
+            tags: tags,
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        };
+
+        // use uploadProvenance to post the record and any attachments
+        await containerClient.createIfNotExists();
+        const timestamp = new Date().getTime();
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
+        if (body.oversizedAttachments) {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
+
+        return `${frontendUrl}/record/${deviceKey}`;
+
+    } catch (error) {
+        context.error('createRecord Error: Failed to create record' + error); 
+        return '';
+    }
+}
+
+const RecordCreationOrderSchema = z.object({
+    blobType: z.string().optional(),
+    deviceName: z.string(),
+    description: z.string(),
+    children_key: z.union([z.string(), z.array(z.string())]),
+    children_name: z.array(z.string()).optional(),
+    hasParent: z.boolean().optional(),
+    isReportingKey: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
+        let name = theRequest['provenanceRecord']['deviceName'];
+        let description = theRequest['provenanceRecord']['description'];
+        let tags = theRequest['provenanceRecord']['tags'];
+        let attachment = theRequest['attachment'];
+
+        // if there's an attachment create a blob to add to the record
+        const attachments = new Array<NamedBlob>();
+        if (attachment != "") {
+            attachment = theRequest['attachment']['file'];
+            let attachmentName = theRequest['attachment']['name'];
+            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
+            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
+            if (typeof blob !== 'string') {
+                console.log("attach type: " + typeof(blob))
+                attachments.push({ blob: blob, name: attachmentName });
+            }
+        }
+
+        let recordUrl = await createRecord(context, name, description, tags, attachments)
+        context.log(recordUrl)
+        return {
+            status: 200,
+            jsonBody: { recordUrl: recordUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create record: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+// Once per day update the total record, record entry, and attachment counts
+app.timer('updateRecordCounts', {
+    schedule: `0 0 * * *`,
+    handler: setStatisticsTotals
+})
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+app.post("createRecord", {
+    authLevel: 'anonymous',
+    route: 'createRecord',
+    handler: createRecordHandler
+})
 
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
-    handler: createGroupHandler,
+    handler: createGroupHandler
 })
 
 app.get("emailSignupTestEndpoint", {

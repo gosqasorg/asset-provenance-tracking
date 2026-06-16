@@ -44,7 +44,7 @@ export default defineNuxtConfig({
       gitCommit: process.env.GIT_COMMIT
     }
   },
-  modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@scalar/nuxt', '@vite-pwa/nuxt'],
+  modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@vite-pwa/nuxt'],
   snackbar: {
     bottom: true,
     duration: 5000
@@ -89,14 +89,6 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     devOptions: {
       enabled: false
     }
-  },
-  scalar: {
-    url: '/openAPI-docs-with-servers.json',
-    darkMode: true,
-    metaData: {
-      title: 'GOSQAS API Documentation'
-    },
-    showSidebar: true
   },
   compatibilityDate: '2024-11-12'
 });

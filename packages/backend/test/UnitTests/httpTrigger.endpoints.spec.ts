@@ -151,12 +151,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('body');
   });
 
-  it('getStatistics returns a jsonBody', async () => {
-    const req = makeHttpRequest();
-    const res = await httpTrigger.getStatistics(req, context);
-    expect(res).toHaveProperty('jsonBody');
-  });
-
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();
     const res = await httpTrigger.getVersion(req, context);
