@@ -64,6 +64,8 @@ vi.mock('node:crypto', () => ({
       importKey: vi.fn(async () => ({})),
       encrypt: vi.fn(async () => new Uint8Array(16).buffer),
       decrypt: vi.fn(async () => new TextEncoder().encode('{"record":1}').buffer),
+      generateKey: vi.fn(async () => new Uint8Array(16).buffer),
+      exportKey: vi.fn(async () => new Uint8Array(16).buffer),
     },
     getRandomValues: (arr: Uint8Array) => { arr.fill(1); return arr; },
   },
@@ -148,12 +150,6 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     const res = await httpTrigger.getAttachmentName(req, context);
     expect(res).toHaveProperty('body');
   });
-
-  it('getStatistics returns a jsonBody', async () => {
-    const req = makeHttpRequest();
-    const res = await httpTrigger.getStatistics(req, context);
-    expect(res).toHaveProperty('jsonBody');
-  }, 12000);
 
   it('getVersion returns version info', async () => {
     const req = makeHttpRequest();

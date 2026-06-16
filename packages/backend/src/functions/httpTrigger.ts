@@ -8,6 +8,8 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { rateLimiterHandler } from './rateLimiterHandler.js';
+import {encode as base58encode } from '@urlpack/base58';
+import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -57,7 +59,7 @@ interface NamedBlob {
     blob: Blob,
 }
 
-const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -467,10 +469,13 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     return { jsonBody: body ?? { converted: true}};
 }
 
-async function notifySubscribers(  deviceKey: string, context: InvocationContext): Promise<HttpResponseInit>{
+async function notifySubscribers(deviceKey: string, context: InvocationContext): Promise<HttpResponseInit> {
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
-    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    const extractedEmails = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    const emailSet = extractedEmails[0] || new Set<string>();
+    const emailIDArray = extractedEmails[1] || [];
+
     if (emailSet.size === 0) {
         context.log("No subscribers found for this record.");
         return;
@@ -483,15 +488,24 @@ async function notifySubscribers(  deviceKey: string, context: InvocationContext
 
     const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
     const subject: string = 'Tracking update'; 
-    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
+    const baseUrl = process.env['frontend_url'];
     const displayName: string = from_address;
+    let index = 0;
     try {
         const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
-            await sendEmail(from_address, to_email, subject, email_body, displayName);
+            const unsubscribe_page: string = `${baseUrl}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
+            const email_body: string = `Hi, you are receiving this message because you signed up for record updates. If you wish to unsubscribe then click the link below: ${unsubscribe_page}`;
+            index++
+
+            let result = await sendEmail(from_address, to_email, subject, email_body, displayName);
+
+            if (result.status !== "Succeeded") {
+                throw result.message
+            }
         }
     } catch (error) {
-        context.log("Error sending email: " + error);   
+        context.error("Error sending email: " + error);   
     }
 }
 
@@ -543,43 +557,173 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         }
     }
 
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    // TODO: need to create below env variables for this code to work, in testing it runs
+    const directory_id = process.env['AZURE_TENANT_ID'];
+    const app_registration_id = process.env['AZURE_CLIENT_ID'];
+    const secret_value = process.env['AZURE_CLIENT_SECRET'];
+    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
+    let client_id = app_registration_id
+    let client_secret = secret_value
 
-    // Build up a JSON return value
-    // NOTE: We seem to have to read the properties of the blob to get the
-    // metadata.  There is a field called "metadata" on the blob itself
-    // which does not contain our metadata. I don't know if this is terribly
-    // expensive, or if we could improve it. I insist we should not worry about
-    // performance until we measure it to be a problem, but this is an "orang flag"--
-    // some caution around this issue is warranted.
-    var records = [];
-    for await (const blob of containerClient.listBlobsFlat()) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const props = await blobClient.getProperties();
-        const metadata = props.metadata;
-        // now we want to build up an object that we can return as statistics
-        // that inlcudes the id and the timestamp, though really the timestamp
-        // is enough. We would like to distinguish the additon of a device
-        // from the addition of new provenance, I supoose.
-        const id = findDeviceIdFromName(blob.name);
-        // We could do some sorting in this function, but that is more or less
-        // easily done by whomever is using this. So I think it better to just
-        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
-        // Eventually, this function may have to only look back X days or X hours,
-        // but until it gets unwieldy we can return everything.
-        // I think the proper way to test this is to build a test program that
-        // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
+    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
+    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
+    let token = tokenResponse.token;
+
+    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
+    let valsAtTimes = [0, 0, 0]
+
+    // Get time-based record entry counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let records1h = valsAtTimes[0]
+    let records24h = valsAtTimes[1]
+    let records7d = valsAtTimes[2]
+
+    // Get time-based unique record counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let devices1h = valsAtTimes[0]
+    let devices24h = valsAtTimes[1]
+    let devices7d = valsAtTimes[2]
+
+    const d = new Date()
+    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
+    let minutes = d.getMinutes() / 60
+    let hours = d.getHours() + minutes
+    let counted = 0
+    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
+
+    // Get record entries per day (last 7 days) for the graph
+    for (let i = 0; i <= today; i++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
+        });
+        let recent = (await logs.json()).tables[0].rows[0][0];
+        
+        // Add the records we found to the current day, subtracting records we already counted
+        recordsPerDayY[today - i] = recent - counted
+        counted = recent
+        hours += 24
     }
 
-    const contentType = "application/json";
+    // Get record entries per hour (last 7 days, time in UTC) for the graph
+    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let hour = 0; hour < 24; hour++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created in the last 7 days at 'hour'
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
+        });
+        let hourly = (await logs.json()).tables[0].rows[0][0];
+        recordsPerHourY[hour] = hourly
+    }
+
+    // Get number of calls to postProvenance that failed in the last 3 months
+    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
+    });
+    let totalFailures = (await logs.json()).tables[0].rows[0][0];
+
+    // Get number of calls to postProvenance that succeeded in the last 3 months
+    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
+    });
+    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
+
+    // Get total statistics counts (updates once per day)
+    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
+
+    await containerClient.createIfNotExists();
+    const blobName = `statistics/totals`
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const exists = await blobClient.exists();
+
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            totalRecords = parsed?.totalRecords || 0
+            totalAttachments = parsed?.totalAttachments || 0
+            totalDevices = parsed?.totalDevices || 0
+        }
+    }
 
     return {
-        jsonBody: records,
-        headers: { "Content-Type": contentType }
+        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
+        headers: { "Content-Type": "application/json" }
     };
 };
+
+async function setStatisticsTotals() {
+    await containerClient.createIfNotExists();
+    const containerExists = await containerClient.exists();
+    const blobName = `statistics/totals`
+
+    // Get new total records, record entries, and attachments from containerClient
+    let totalRecords = 0
+    let totalAttachments = 0
+    let totalDevices = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))
+            } else if (!(blob.name.includes('statistics/'))) {
+                totalAttachments++
+            }
+        }
+    }
+
+    totalDevices = uniqueRecords.size
+
+    // Update the blob with our new values
+    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    try {
+        await containerClient.uploadBlockBlob(
+            blobName,
+            data,
+            data.length,
+            uploadOptions
+        )
+    } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
+    }
+}
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const rateLimitHit = await rateLimit('postEmailLimitReached');
@@ -818,13 +962,13 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         }
     }
 
-    try{
+    try {
         const body = await request.json() as any;
         const email = body.email;
         const recordKey = body.recordKey;
         const tags: string[] = [];
 
-        if (!email || !recordKey){
+        if (!email || !recordKey) {
             return {
                 jsonBody: {error: "Error: email and record key required"},
                 status: 400
@@ -832,22 +976,50 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         }
 
         await containerClient.createIfNotExists();
-        const response = await signupForNotifications(recordKey, email, tags);
+        const response = await updateNotifications(recordKey, email, tags, true);
 
-        console.log("Received signup for " + email);
+        context.log("Received signup for " + email);
         return response;
         
-    }catch(error){
-        console.error(error.message);
+    } catch(error) {
+        context.error(error.message);
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
-
         }
     }
 }
 
-async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
+export async function deleteNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const body = await request.json() as any;
+        const emailID = body.id;
+        const recordKey = body.recordKey;
+        const tags: string[] = [];
+
+        if (!emailID || !recordKey) {
+            return {
+                jsonBody: {error: "Error: email id and record key required"},
+                status: 400
+            }
+        }
+
+        await containerClient.createIfNotExists();
+        const response = await updateNotifications(recordKey, emailID, tags, false);
+
+        context.log("Unsubscribed from the record");
+        return response;
+        
+    } catch(error) {
+        context.error(error.message);
+        return {
+            jsonBody: {message: "Internal Server Error"},
+            status: 500,
+        }
+    }
+}
+
+async function updateNotifications(deviceKey: string, emailInfo: string, tags: string[] = [], subscribing: boolean) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
@@ -867,17 +1039,13 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
     // 2 Setup blob name & id
     const type = 'notificationSignups'
     const blobName = `${type}/${deviceID}`
-
     const blobClient = containerClient.getBlockBlobClient(blobName);
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Ignored empty email" }, status: 200 };
-    }
 
-    // 3 Update blob content：read existing content, merge email list, write back
+    // 3 Update blob content：read existing content, update email list, write back
     const exists = await blobClient.exists();
 
     let existingEmails: string[] = [];
+    let existingEmailIDs: string[] = [];
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
         const text = buffer.toString("utf8");
@@ -890,7 +1058,29 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
                     return typeof email === "string";
                 });
             }
+
+            const emailIDsFromBlob = parsed?.email_id;
+            if (Array.isArray(emailIDsFromBlob)) {
+                existingEmailIDs = emailIDsFromBlob.filter(id => {
+                    return typeof id === "string";
+                });
+            }
         }
+    }
+
+    let emailID = "";
+    let email = emailInfo;
+
+    // If we're unsubscribing convert the emailID to email
+    if (!subscribing) {
+        emailID = emailInfo;
+        const emailIndex = existingEmailIDs.indexOf(emailID);
+        email = existingEmails[emailIndex];
+    }
+
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) {
+        return { jsonBody: { message: "Email not found in the database" }, status: 200 };
     }
 
     const emailSet = new Set(
@@ -899,17 +1089,44 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
         .filter(Boolean)
     );
 
-    const sizeBeforeAdding = emailSet.size;
-    emailSet.add(normalized);
+    const emailIDSet = new Set(
+        existingEmailIDs
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
 
-    if (exists && emailSet.size === sizeBeforeAdding) {
+    const sizeBeforeUpdating = emailSet.size;
+    if (subscribing) {
+        emailSet.add(normalized);
+    } else {
+        emailSet.delete(normalized);
+        emailIDSet.delete(emailID);
+    }
+
+    // Generate a unique string id to represent the new email (only if we're subscribing, skips if unsubscribing)
+    for (let i = emailIDSet.size; i < emailSet.size; i++) {
+        const uniqueString = await crypto.subtle.generateKey(
+            {
+            name: "AES-CBC",
+            length: 256
+            },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+        const uniqueEmailString = base58encode(new Uint8Array(buffer));
+        emailIDSet.add(uniqueEmailString)
+    }
+
+    if (exists && emailSet.size === sizeBeforeUpdating) {
         return {
         jsonBody: { message: "Success", name: blobName },
         status: 200,
         };
     }
 
-    const payloadObj = { email: Array.from(emailSet), tags};
+    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
     const data = JSON.stringify(payloadObj);
 
     const uploadOptions = {
@@ -940,10 +1157,9 @@ async function signupForNotifications(deviceKey: string, email: string, tags: st
             // TODO: have frontend display in snackbar for status 4xx
             // This means nothing for now since we're not validating that what we're being handed is an email. 
         } else {
-            throw Error('Failed to store email')
+            throw Error('Failed to update email')
         }
     } catch(error) {
-        const msg = error instanceof Error ? error.message : String(error);
         return {
             jsonBody: {message: error.message},
             status: 500,
@@ -989,22 +1205,22 @@ async function streamToString(readableStream) {
 }
 
 
-function extractEmailsFromResponse(response: any): Set<string> {
+function extractEmailsFromResponse(response: any) {
     const emailSet = new Set<string>();
+    const emailIDArray = new Array<string>();
     if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
         return emailSet;
     }
     try {
         const parsed = JSON.parse(response.jsonBody.message);
-        if (parsed.email && Array.isArray(parsed.email)) {
-            parsed.email.forEach((e: string) => emailSet.add(e));
-        } else if (parsed.key?.email) {
-            emailSet.add(parsed.key.email);
-        }
+        let emails = parsed.email
+        let emailIDs = parsed.email_id
+        emails.forEach((e: string) => emailSet.add(e));
+        emailIDs.forEach((e: string) => emailIDArray.push(e));
     } catch (error) {
-        console.log("Fail to extract emails:", error.message)
+        console.log("Failed to extract emails:", error.message)
     }
-    return emailSet;
+    return [emailSet, emailIDArray];
 }
 
 
@@ -1028,7 +1244,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await signupForNotifications(key, "email@email.foo")
+        const putResponse = await updateNotifications(key, "email@email.foo", [], true)
 
         // Access it
         const getResponse = await retrieveNotifEmails(key)
@@ -1372,6 +1588,12 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
+// Once per day update the total record, record entry, and attachment counts
+app.timer('updateRecordCounts', {
+    schedule: `0 0 * * *`,
+    handler: setStatisticsTotals
+})
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
@@ -1397,6 +1619,12 @@ app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
+})
+
+app.post('deleteNotificationEmail', {
+    authLevel: 'anonymous',
+    route: 'notificationUnsubscribe',
+    handler: deleteNotificationEmail,
 })
 
 app.get("getProvenance", {
