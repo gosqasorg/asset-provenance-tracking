@@ -41,8 +41,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
+                <img v-if="attachment.isImage" :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
                     data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                
+                <div v-else class="file-attachment">
+                    <div class="file-name">{{"File: " + attachment.fileName }}</div>
+                </div>
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">Download File</a>
             </div>
 
@@ -76,11 +80,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" 
+                <img v-if="attachment.isImage"
+                :src="attachment.url" 
                 :alt="attachment.fileName" 
                 class="thumbnail"
                 @click="onThumbClick(attachment)">
 
+                <div v-else class="file-attachment">
+                    <div class="file-name">{{ "File: " + attachment.fileName }}</div>
+                </div>
 
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">
                     Download File
@@ -159,7 +167,8 @@ export default {
                     // Create object URLs for attachments and include filenames
                     const urls = attachments.map(attachment => ({
                         url: URL.createObjectURL(attachment.blob),
-                        fileName: attachment.fileName
+                        fileName: attachment.fileName,
+                        isImage: attachment.blob.type?.startsWith("image/")
                     }));
 
                     this.attachmentURLs[index.toString()] = urls;

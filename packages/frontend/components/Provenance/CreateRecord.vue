@@ -239,7 +239,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;
+            const maxFileSize = 5242880; // 5MB
 
             let validFileSize = true;
 

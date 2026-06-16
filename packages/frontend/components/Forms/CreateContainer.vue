@@ -209,7 +209,7 @@ export default {
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;  // aka 2MB
+            const maxFileSize = 5242880;  // aka 5MB
 
             let validFileSize = true;
 

@@ -1,15 +1,18 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { ContainerClient } from "@azure/storage-blob";
+import { encode as base58encode } from '@urlpack/base58';
 
 const NOTIFICATION_TYPE = 'notificationSignups';
 const FROM_ADDRESS = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
 const SUBJECT = 'Tracking update';
-const EMAIL_BODY = 'Hi, you are receiving this message because you signed up for record updates.';
+const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, context: InvocationContext): Promise<HttpResponseInit> {
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey);
-    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    const extractedEmails = extractEmailsFromResponse(retrieveNotifEmailResponse);
+    const emailSet = extractedEmails[0] || new Set<string>();
+    const emailIDArray = extractedEmails[1] || [];
     if (emailSet.size === 0) {
         context.log("No subscribers found for this record.");
         return;
@@ -21,17 +24,25 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     }
 
     const displayName: string = FROM_ADDRESS;
+    let index = 0;
     try {
         const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
-            await sendEmail(FROM_ADDRESS, to_email, SUBJECT, EMAIL_BODY, displayName);
+            const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
+            const email_body: string = `Hi, you are receiving this message because you signed up for record updates. If you wish to unsubscribe then click the link below: ${unsubscribe_page}`;
+            index++
+            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT, email_body, displayName);
+
+            if (result.status !== "Succeeded") {
+                throw result.message
+            }
         }
     } catch (error) {
-        context.log("Error sending email: " + error);
+        context.error("Error sending email: " + error);
     }
 }
 
-export async function signupForNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
+export async function updateNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailInfo: string, tags: string[] = [], subscribing: boolean) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
@@ -50,17 +61,13 @@ export async function signupForNotifications(containerClient: ContainerClient, c
 
     // 2 Setup blob name & id
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
-
     const blobClient = containerClient.getBlockBlobClient(blobName);
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Ignored empty email" }, status: 200 };
-    }
 
     // 3 Update blob content：read existing content, merge email list, write back
     const exists = await blobClient.exists();
 
     let existingEmails: string[] = [];
+    let existingEmailIDs: string[] = [];
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
         const text = buffer.toString("utf8");
@@ -73,7 +80,29 @@ export async function signupForNotifications(containerClient: ContainerClient, c
                     return typeof email === "string";
                 });
             }
+
+            const emailIDsFromBlob = parsed?.email_id;
+            if (Array.isArray(emailIDsFromBlob)) {
+                existingEmailIDs = emailIDsFromBlob.filter(id => {
+                    return typeof id === "string";
+                });
+            }
         }
+    }
+
+    let emailID = "";
+    let email = emailInfo;
+
+    // If we're unsubscribing convert the emailID to email
+    if (!subscribing) {
+        emailID = emailInfo;
+        const emailIndex = existingEmailIDs.indexOf(emailID);
+        email = existingEmails[emailIndex];
+    }
+
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) {
+        return { jsonBody: { message: "Email not found in the database" }, status: 404 };
     }
 
     const emailSet = new Set(
@@ -82,8 +111,35 @@ export async function signupForNotifications(containerClient: ContainerClient, c
         .filter(Boolean)
     );
 
+    const emailIDSet = new Set(
+        existingEmailIDs
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
+
     const sizeBeforeAdding = emailSet.size;
-    emailSet.add(normalized);
+    if (subscribing) {
+        emailSet.add(normalized);
+    } else {
+        emailSet.delete(normalized);
+        emailIDSet.delete(emailID);
+    }
+
+    // Generate a unique string id to represent the new email (only if we're subscribing, skips if unsubscribing)
+    for (let i = emailIDSet.size; i < emailSet.size; i++) {
+        const uniqueString = await crypto.subtle.generateKey(
+            {
+            name: "AES-CBC",
+            length: 256
+            },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+        const uniqueEmailString = base58encode(new Uint8Array(buffer));
+        emailIDSet.add(uniqueEmailString)
+    }
 
     if (exists && emailSet.size === sizeBeforeAdding) {
         return {
@@ -92,7 +148,7 @@ export async function signupForNotifications(containerClient: ContainerClient, c
         };
     }
 
-    const payloadObj = { email: Array.from(emailSet), tags};
+    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
     const data = JSON.stringify(payloadObj);
 
     const uploadOptions = {
@@ -123,7 +179,7 @@ export async function signupForNotifications(containerClient: ContainerClient, c
             // TODO: have frontend display in snackbar for status 4xx
             // This means nothing for now since we're not validating that what we're being handed is an email.
         } else {
-            throw Error('Failed to store email')
+            throw Error('Failed to update email')
         }
     } catch(error) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -170,20 +226,20 @@ async function streamToString(readableStream) {
     });
 }
 
-export function extractEmailsFromResponse(response: any): Set<string> {
+export function extractEmailsFromResponse(response: any) {
     const emailSet = new Set<string>();
+    const emailIDArray = new Array<string>();
     if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
         return emailSet;
     }
     try {
         const parsed = JSON.parse(response.jsonBody.message);
-        if (parsed.email && Array.isArray(parsed.email)) {
-            parsed.email.forEach((e: string) => emailSet.add(e));
-        } else if (parsed.key?.email) {
-            emailSet.add(parsed.key.email);
-        }
+        let emails = parsed.email
+        let emailIDs = parsed.email_id
+        emails.forEach((e: string) => emailSet.add(e));
+        emailIDs.forEach((e: string) => emailIDArray.push(e));
     } catch (error) {
-        console.log("Fail to extract emails:", error.message)
+        console.log("Failed to extract emails:", error.message)
     }
-    return emailSet;
+    return [emailSet, emailIDArray];
 }
