@@ -170,6 +170,47 @@ export async function postNotificationEmail(deviceKey: string, email: string, ta
     }
 }
 
+export async function removeNotificationEmail(deviceKey: string, emailID: string) {
+    if (!validateKey(deviceKey)) {
+        throw new Error("Bad key provided.");
+    }
+    if (!emailID || typeof emailID !== 'string') {
+        throw new Error("Bad emailID provided.");
+    }
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    
+    const payload = {
+        id: emailID,
+        recordKey: deviceKey,
+    };
+
+    // match backend json format 
+    const response = await fetch(`${baseUrl}/notificationUnsubscribe`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (response.status !== 200) {
+        let errorMessage = 'removeNotificationEmail: Failed to remove email';
+        // Identify specific error message so we can know what went wrong.
+        try {
+            const responseData = await response.json();
+            if (responseData.error) {
+                errorMessage = `removeNotificationEmail: ${responseData.error}`;
+            } else if (responseData.message) {
+                errorMessage = `removeNotificationEmail: ${responseData.message}`;
+            }
+        } catch (e) {
+            errorMessage = `removeNotificationEmail: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+    }
+}
+
 export async function getStatistics() {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/statistics`, {
