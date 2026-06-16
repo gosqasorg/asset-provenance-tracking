@@ -7,6 +7,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -494,43 +495,173 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    // TODO: need to create below env variables for this code to work, in testing it runs
+    const directory_id = process.env['AZURE_TENANT_ID'];
+    const app_registration_id = process.env['AZURE_CLIENT_ID'];
+    const secret_value = process.env['AZURE_CLIENT_SECRET'];
+    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
+    let client_id = app_registration_id
+    let client_secret = secret_value
 
-    // Build up a JSON return value
-    // NOTE: We seem to have to read the properties of the blob to get the
-    // metadata.  There is a field called "metadata" on the blob itself
-    // which does not contain our metadata. I don't know if this is terribly
-    // expensive, or if we could improve it. I insist we should not worry about
-    // performance until we measure it to be a problem, but this is an "orang flag"--
-    // some caution around this issue is warranted.
-    var records = [];
-    for await (const blob of containerClient.listBlobsFlat()) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const props = await blobClient.getProperties();
-        const metadata = props.metadata;
-        // now we want to build up an object that we can return as statistics
-        // that inlcudes the id and the timestamp, though really the timestamp
-        // is enough. We would like to distinguish the additon of a device
-        // from the addition of new provenance, I supoose.
-        const id = findDeviceIdFromName(blob.name);
-        // We could do some sorting in this function, but that is more or less
-        // easily done by whomever is using this. So I think it better to just
-        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
-        // Eventually, this function may have to only look back X days or X hours,
-        // but until it gets unwieldy we can return everything.
-        // I think the proper way to test this is to build a test program that
-        // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
+    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
+    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
+    let token = tokenResponse.token;
+
+    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
+    let valsAtTimes = [0, 0, 0]
+
+    // Get time-based record entry counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let records1h = valsAtTimes[0]
+    let records24h = valsAtTimes[1]
+    let records7d = valsAtTimes[2]
+
+    // Get time-based unique record counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let devices1h = valsAtTimes[0]
+    let devices24h = valsAtTimes[1]
+    let devices7d = valsAtTimes[2]
+
+    const d = new Date()
+    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
+    let minutes = d.getMinutes() / 60
+    let hours = d.getHours() + minutes
+    let counted = 0
+    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
+
+    // Get record entries per day (last 7 days) for the graph
+    for (let i = 0; i <= today; i++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
+        });
+        let recent = (await logs.json()).tables[0].rows[0][0];
+        
+        // Add the records we found to the current day, subtracting records we already counted
+        recordsPerDayY[today - i] = recent - counted
+        counted = recent
+        hours += 24
     }
 
-    const contentType = "application/json";
+    // Get record entries per hour (last 7 days, time in UTC) for the graph
+    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let hour = 0; hour < 24; hour++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created in the last 7 days at 'hour'
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
+        });
+        let hourly = (await logs.json()).tables[0].rows[0][0];
+        recordsPerHourY[hour] = hourly
+    }
+
+    // Get number of calls to postProvenance that failed in the last 3 months
+    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
+    });
+    let totalFailures = (await logs.json()).tables[0].rows[0][0];
+
+    // Get number of calls to postProvenance that succeeded in the last 3 months
+    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
+    });
+    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
+
+    // Get total statistics counts (updates once per day)
+    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
+
+    await containerClient.createIfNotExists();
+    const blobName = `statistics/totals`
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const exists = await blobClient.exists();
+
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            totalRecords = parsed?.totalRecords || 0
+            totalAttachments = parsed?.totalAttachments || 0
+            totalDevices = parsed?.totalDevices || 0
+        }
+    }
 
     return {
-        jsonBody: records,
-        headers: { "Content-Type": contentType }
+        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
+        headers: { "Content-Type": "application/json" }
     };
 };
+
+async function setStatisticsTotals() {
+    await containerClient.createIfNotExists();
+    const containerExists = await containerClient.exists();
+    const blobName = `statistics/totals`
+
+    // Get new total records, record entries, and attachments from containerClient
+    let totalRecords = 0
+    let totalAttachments = 0
+    let totalDevices = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))
+            } else if (!(blob.name.includes('statistics/'))) {
+                totalAttachments++
+            }
+        }
+    }
+
+    totalDevices = uniqueRecords.size
+
+    // Update the blob with our new values
+    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    try {
+        await containerClient.uploadBlockBlob(
+            blobName,
+            data,
+            data.length,
+            uploadOptions
+        )
+    } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
+    }
+}
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -1273,6 +1404,12 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         }
     }
 }
+
+// Once per day update the total record, record entry, and attachment counts
+app.timer('updateRecordCounts', {
+    schedule: `0 0 * * *`,
+    handler: setStatisticsTotals
+})
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
