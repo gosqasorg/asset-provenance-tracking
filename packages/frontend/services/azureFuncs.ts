@@ -321,44 +321,71 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
+async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number, request: string) {
+    try {
+        let keys = [];
+        let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+        let existingKeys = localStorage.getItem(stashName)
+        if (existingKeys) {
+            for (const key of existingKeys.split(",")) {
+                keys.push(key)
+            }
+        }
+        keys.push(currentKey)
+        localStorage.setItem(stashName, keys.toString())
+
+    } catch (error) {
+        // If the request can't be formatted properly to stash, then just stash the whole thing in failed
+        localStorage.setItem("gdt-stash-failed", request)
+        console.log("Record from localStorage was not able to be stashed: " + error)
+    }
+
+    // Remove request from stash and update counter
+    localStorage.removeItem(request_name)
+    localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+}
+
 export async function emptyStash() {
     // See how many requests are stored, if any
     let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
 
     for (stash_counter; stash_counter > 0; stash_counter--) {
-        try {
-            // Get the last request stored
-            let request_name = 'gosqas_offline_stash_' + stash_counter;
-            let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-            let fullUrl = request[0][1];
-            let record = request[1][1];
+        // Get the last request stored
+        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        let request = JSON.parse(localStorage.getItem(request_name) || '{}');
+        if (request === '{}') { 
+            localStorage.removeItem(request_name)
+            localStorage.setItem('stash_counter', (stash_counter - 1).toString())
+            continue
+        }
+        let fullUrl = request[0][1];
+        let record = request[1][1];
 
-            // Fulfill the request
+        try {
+            // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
             formData.append('provenanceRecord', record);
-            let response = await fetchUrl(fullUrl, formData)
-            if (response.status != 200) { throw new Error(`Fetch failed with error code ${response.status}`) }
+
+            await fetchUrl(fullUrl, formData);  // fetchUrl POST handles retries/errors
+            let response = await fetchUrl(fullUrl);  // fetchUrl GET returns [] if no record is found
+            if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            let keysCreated = [];
-            let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1]
-            let existingKeys = localStorage.getItem("gdt-stash-fulfilled")
-            if (existingKeys) {
-                for (const key of existingKeys.split(",")) {
-                    keysCreated.push(key)
-                }
-            }
-            keysCreated.push(currentKey)
-            localStorage.setItem("gdt-stash-fulfilled", keysCreated.toString())
-
-            // Remove request from stash and update counter
-            localStorage.removeItem(request_name)
-            localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+            stashKeysAndRemove(fullUrl, "gdt-stash-fulfilled", request_name, stash_counter, request)
         } catch (error) {
+            // If the record fails to create for any reason other than being offline, add it to the failed stash
+            if (await(onlineTestFetch())) {
+                stashKeysAndRemove(fullUrl, "gdt-stash-failed", request_name, stash_counter, request)
+            }
+
             console.log("Record from localStorage failed to create: " + error)
-            return 404;
+        }
+
+        if (!await(onlineTestFetch())) {
+            return 202;
         }
     }
+
     // Disable the offline banner and enable the online banner
     displayOfflineBanner = false;
     // Online banner currently doesn't have a way to be disabled, so we'll avoid enabling it until that is implemented
