@@ -20,9 +20,14 @@ const route = useRoute();
 const recordKey = route.params.deviceKey;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
 
-const provenance = await getProvenance(String(recordKey));
-
-const recordHasParent = hasParent(provenance);
+let provenance: any[] = [];
+let recordHasParent = false;
+try {
+	provenance = await getProvenance(String(recordKey));
+	recordHasParent = hasParent(provenance);
+} catch (e) {
+	provenance = [];
+}
 
 </script>
 
@@ -43,7 +48,7 @@ const recordHasParent = hasParent(provenance);
 
                             <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-                            <div class="h5" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord?.isReportingKey">Reporting Key: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
@@ -174,10 +179,11 @@ export default {
             this.childKeys = deviceRecord.children_key;
             this.isLoading = false;
         } catch (error) {
+            this.isLoading = false;
             this.recordKeyFound = false;
             this.$snackbar.add({
                 type: 'error',
-                text: 'No record found'
+                text: <string>error
             });
         }
     }
