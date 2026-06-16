@@ -57,7 +57,7 @@ interface NamedBlob {
     blob: Blob,
 }
 
-const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
