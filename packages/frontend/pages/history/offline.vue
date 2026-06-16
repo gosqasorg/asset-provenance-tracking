@@ -156,7 +156,6 @@ async mounted() {
         const route = useRoute();
         this.recordKey = route.query.key as string;
         
-
         EventBus.on('feedRefresh', this.refreshFeed);
 
         await this.refreshFeed();
@@ -250,6 +249,7 @@ methods: {
                 type: 'error',
                 text: `Error creating record: ${error}`
             });
+            this.refresh()
             this.isCreating = false;
         }
     },

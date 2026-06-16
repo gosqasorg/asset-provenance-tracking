@@ -117,7 +117,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
@@ -206,10 +206,10 @@ export default {
             EventBus.emit('isLoading');
 
             if (this.isSubmitting) return;
-            
             this.isSubmitting = true;
+
+            const deviceKey = await makeEncodedDeviceKey();
             try {
-                const deviceKey = await makeEncodedDeviceKey();
                 const response = await postProvenance(deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
@@ -248,10 +248,17 @@ export default {
 
                 }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                if (!(await onlineTestFetch())) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                }
+
                 this.$snackbar.add({
                     type: 'error',
                     text: `Failed to create record: ${error}`
                 });
+
+                // Otherwise just return to the /gdt page
                 EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
