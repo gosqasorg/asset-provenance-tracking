@@ -788,25 +788,37 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
  export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
 
+    // dev
+    let counter = 0
+    context.log(++counter)
+
     try {
         const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
+
+    context.log(++counter)
 
         if (records[0].record.tags.includes("recall")) {
             let length = Object.keys(records).length;
             let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 
+    context.log(++counter)
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
+                let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
+
+    context.log(++counter)
 
                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
                 if (!keyProvenance[0].record.isReportingKey) {
+
+    context.log(++counter)
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
+    context.log(++counter)
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
                         uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
                     }
@@ -821,7 +833,9 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/${key}`, {
+
+    context.log(++counter)
+                    let response = await fetch(`${baseUrl}${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
@@ -835,7 +849,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        console.error(`Error notifying children: ${error}`);
+        console.error(`Error recalling children: ${error}`);
         return {
             status: 500
         }
@@ -946,10 +960,9 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     */ 
 
     try {
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        // const baseUrl = 'http://localhost:7071/api'
-        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
-        
+        const baseUrl = process.env['backend_url'];
+        const childKey = await makeEncodedDeviceKey();
+
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
@@ -962,7 +975,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
-        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+        const theResponse = await fetch(`${baseUrl}${childKey}`, {
             method: "POST",
             body: childFormData,
         });
@@ -999,7 +1012,7 @@ async function createChildren(context, number_of_children: number, custom_child_
 
 async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
-    const apiUrl = process.env['api_url'];
+    const backendUrl = process.env['backend_url'];
 
     n_children = Math.max(0, n_children ?? 0);
 
@@ -1042,7 +1055,12 @@ async function createGroup(context, name, description, n_children: number = 0, c
         groupFormData.append("attachment", attachment.blob, attachment.name);
     }
     
-    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const createInitUrl = `${backendUrl}${groupKey}`
+    context.log(createInitUrl)
+    context.log(createInitUrl)
+    context.log(createInitUrl)
+    context.log(createInitUrl)
+    context.log(createInitUrl)
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
