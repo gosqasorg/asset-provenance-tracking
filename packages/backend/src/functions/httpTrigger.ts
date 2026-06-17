@@ -788,7 +788,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
 
     const updateData = {
       blobType: 'deviceRecord',
-      description: "Adding record with tags",
+      description: description || "Adding record with tags",
       tags: tags,
       children_key: '',
     };
