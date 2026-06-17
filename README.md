@@ -35,6 +35,7 @@ All source code is in the packages/ directory.
 - Install the project dependencies as documented in the backend and frontend README.md.
 - Open a terminal in the packages/backend and packages/frontend directories.
 - Run `npm install` in both terminals.
+- In the backend terminal only, run ./install-azurite.sh
 - Start the backend with `npm start`
 - Start the frontend with `npm run dev`
 

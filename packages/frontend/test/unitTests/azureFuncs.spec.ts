@@ -117,6 +117,7 @@ describe('Tests to see if we can remove from the stash', () => {
     // Mock fetch calls from emptyStash (since formData doesn't work from this file)
     const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
       status: 200,
+      json: () => Promise.resolve({ record: "mockRecord" }),
     } as Response);
 
     const key = await makeEncodedDeviceKey();
@@ -151,6 +152,7 @@ describe('Tests to see if we can remove from the stash', () => {
   it('Create and remove two requests', async () => {
     const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
       status: 200,
+      json: () => Promise.resolve({ record: "mockRecord" }),
     } as Response);
 
     const key1 = await makeEncodedDeviceKey();
@@ -203,31 +205,34 @@ describe('Tests to see if we can remove from the stash', () => {
     expect(statusCode).toEqual(200);
   });
 
-  it("Make sure record isn't removed from localStorage when post fails", async () => {
+  it("Make sure record is added to failed stash when post fails", async () => {
     const key = await makeEncodedDeviceKey();
     let [formUrl, formData] = await createRequest(key, 'failed record', 'this should fail to post');
 
     localStorage.setItem('stash_counter', '0');
     localStorage.setItem('gdt-stash-fulfilled', '');
+    localStorage.setItem('gdt-stash-failed', '');
     stashRequest(formUrl, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Empty the stash without mocking (so it will fail to post since formData cannot be posted from this file)
     console.log('Attempting a failed fetch to check error handling...');
     let statusCode = await emptyStash();
-    expect(statusCode).toEqual(404);
+    expect(statusCode).toEqual(200);
 
-    // Make sure the record is still in the stash and the counter still = 1
+    // Make sure the record is still no longer in the stash
     const request = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
-    expect(request).not.toEqual(null);
-    expect(request[0][1]).toEqual(formUrl);
-    expect(JSON.parse(request[1][1]).deviceName).toEqual('failed record');
-    expect(JSON.parse(request[1][1]).description).toEqual('this should fail to post');
-    expect(request[1][1]).toStrictEqual(formData.get('provenanceRecord'));
-    expect(localStorage.getItem('stash_counter')).toEqual('1');
+    expect(request).toEqual({});
+    expect(localStorage.getItem('stash_counter')).toEqual('0');
+
+    // Confirm the failed key was added to list of failed requests
+    let existingKeys = (localStorage.getItem('gdt-stash-failed') || '{}').split(',');
+    expect(existingKeys).not.toEqual(['{}']);
+    expect(existingKeys.length).toBe(1);
+    expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
 
     // Confirm failed key was not added to list of successful requests
-    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
+    existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).toEqual(['{}']);
   }, 200000);
 });
@@ -236,6 +241,7 @@ describe("Tests to see if periodicChecker works", async () => {
   it ("Create a record from periodicChecker", async () => {
     const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
       status: 200,
+      json: () => Promise.resolve({ record: "mockRecord" }),
     } as Response);
 
     const key = await makeEncodedDeviceKey();
@@ -243,6 +249,7 @@ describe("Tests to see if periodicChecker works", async () => {
 
     localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
     localStorage.setItem('gdt-stash-fulfilled', '');
+    localStorage.setItem('gdt-stash-failed', '');
     stashRequest(formUrl, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
