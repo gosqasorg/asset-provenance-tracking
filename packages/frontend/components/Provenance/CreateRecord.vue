@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
    This component is a form. The form is used to create a new record that we will track the
    providence for.
    Resourses:
-   https://test-utils.fvuejs.org/guide/essentials/forms
+   https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
 <template>
@@ -78,21 +78,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     @keyup.enter=""
                 />
             </div>
-
         </div>
         
         <!-- Offline Banner Bottom-->
-        <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
-            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+        <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px; color: #fe9c9e;">&#9888;
             </div>
-            <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+            <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
             </div> 
         </Banner>
 
         <!-- Back Online Banner -->
-        <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+        <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+            <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
             <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-            <RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+            <RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
             </div>
         </Banner>
 
@@ -147,7 +147,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -239,7 +239,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;
+            const maxFileSize = 5242880; // 5MB
 
             let validFileSize = true;
 
@@ -274,6 +274,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.annotatePopUp = false;
             this.recallPopUp = false;
         },
+        async redirectIfOffline() {
+            // If the user is offline navigate to the offline history page instead
+            if (!(await onlineTestFetch())) {
+                await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
+            }
+        },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
@@ -283,6 +289,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
+                this.redirectIfOffline()
                 EventBus.emit('isCreating');
             }
 
@@ -303,6 +310,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
                     } catch (error) {
                         console.error('Error adding to group:', error);
+                        this.redirectIfOffline()
                         this.$snackbar.add({
                             type: 'error',
                             text: `Error adding to group: ${error}`
@@ -341,6 +349,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     }
                 }
             } catch (error: any) {
+                console.error('Error adding children:', error);
+                this.redirectIfOffline()
                 const badKeys = error.message.split(",");
                 
                 if (error.message.split(" ").length > badKeys.length) {
@@ -377,7 +387,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
 
-                const response =await postProvenance(this.recordKey, record, this.pictures || []);
+                await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
@@ -389,6 +399,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     const email = this.emailInput.trim(); 
                     await postNotificationEmail(this.recordKey,email);
                 }
+
                 // Refresh CreateRecord component
                 this.refresh();
 
@@ -396,6 +407,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
+                this.redirectIfOffline()
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating record: ${error}`
@@ -407,213 +419,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <style scoped>
-form {
-    border-radius: 6px;
-    display: block;
-    margin-bottom: 70px;
-}
-
-#submit-button {
-    margin-top: 24px;
-}
-
-#provenance-description {
-    padding: 5px;
-    margin: 5px;
-    display: flex;
-    margin-left: auto;
-    margin-right:auto;
-    border-radius: 5px;
-    width: 100%;
-    border-radius: 7px;
-    width: 100%;
-    outline: none;
-    border: none;
-    padding-left: 14px;
-}
-
-#provenance-description::placeholder{
-        color: black;
-}
-
-input {
-    border: 0;
-}
-
-input[type=text] {
-    height: 36px;
-    font-size: 18px;
-}
-
-input[type=checkbox] {
-    margin-right: 10px;
-}
-
-#provenanceTag {
-    /* height: 36px; */
-    border-radius: 6px;
-    width: 100%;
-    font-size: 18px;
-}
-
-.popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 99;
-    background-color: rgba(0, 0, 0, 0.2);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .popup-inner {
-    background: white;
-    padding: 32px 32px 32px 32px;
-    width: 665px;
-    height: auto;
-    border-radius: 20px;
-  }
-
-  .confirmBtn {
-    display: inline-block;
-    width: 48%;
-  }
-
-
-/*  For screens smaller than 768px */
-@media (max-width: 768px) {
-    h5 {
-        margin-top: 20px;
-    }
-
-    input[type=text] {
-        margin-top: 12px;
-    }
-
-    form {
-        padding: 2px 17px 17px 17px;
-    }
-
-    .popup-inner {
-        width: auto;
-        margin: 0px 20px 0px 20px;
-    }
-    .confirmBtn {
-        width: 100%;
-    }
-    #continueBtn {
-        margin-top: 10px !important;
-    }
-}
-
-/* For screens larger than 768px */
-@media (min-width: 768px) {
-    h5 {
-        margin-top: 24px;
-    }
-
-    input[type=text] {
-        margin-top: 16px;
-    }
-
-    form {
-        padding: 2px 20px 20px 20px;
-    }
-}
-
-/* Dark mode version*/
-@media (prefers-color-scheme: dark) {
-    .record-form {
-        background-color: #4B4D47;
-    }
-
-    h5 {
-        color: #FFFFFF;
-    }
-
-    h4 {
-        color: #FFFFFF;
-    }
-
-    .record-button {
-        background-color: #CCECFD;
-        color: black;
-        border-color: #CCECFD;
-    }
-
-    input[type="file"]::file-selector-button {
-        background-color: #CCECFD;
-        color: black;
-    }
-
-    input[type="file"]::file-selector-button-hover {
-        background-color: #67b0d7 !important;
-        color: black;
-    }
-
-    input[type="file"]::-webkit-file-upload-button:hover {
-        background-color: #0056b3;
-    }
-    .record-button:hover { 
-        background-color: #e6f6ff;
-    }
-    input[type="file"]:hover::file-selector-button {
-        background-color: #e6f6ff !important;
-    }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
-    }
-}
-
-/* Light mode version*/
-@media (prefers-color-scheme: light) {
-    .record-form {
-        background-color: #E6F6FF;
-    }
-
-    h5 {
-        color: #4E3681;
-    }
-
-    h4 {
-        color: #4E3681;
-    }
-
-    .record-button {
-        background-color: #4E3681;
-        color: white;
-        border-color: #4E3681;
-    }
-
-    input[type="file"]::file-selector-button {
-        background-color: #4E3681;
-        color: white;
-    }
-    .record-button:hover { 
-        background-color: #322253;
-    }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
-    }
-}
+    @import '../../assets/css/history-form.css';
 </style>

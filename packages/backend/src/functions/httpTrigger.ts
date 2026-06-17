@@ -7,6 +7,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
+import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -56,7 +58,7 @@ interface NamedBlob {
     blob: Blob,
 }
 
-const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -430,37 +432,9 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         }
     }
 
-    await notifySubscribers(request.params.deviceKey, context);
+    await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, context);
     
     return { jsonBody: body ?? { converted: true}};
-}
-
-async function notifySubscribers(  deviceKey: string, context: InvocationContext): Promise<HttpResponseInit>{
-    // Notify users who subscribed to this record.
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(deviceKey);
-    const emailSet = extractEmailsFromResponse(retrieveNotifEmailResponse);
-    if (emailSet.size === 0) {
-        context.log("No subscribers found for this record.");
-        return;
-    }
-
-    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
-        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
-        return;
-    }
-
-    const from_address: string = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net";
-    const subject: string = 'Tracking update'; 
-    const email_body: string = 'Hi, you are receiving this message because you signed up for record updates.';
-    const displayName: string = from_address;
-    try {
-        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-        for (const to_email of emailSet) {
-            await sendEmail(from_address, to_email, subject, email_body, displayName);
-        }
-    } catch (error) {
-        context.log("Error sending email: " + error);   
-    }
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -494,43 +468,173 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    // TODO: need to create below env variables for this code to work, in testing it runs
+    const directory_id = process.env['AZURE_TENANT_ID'];
+    const app_registration_id = process.env['AZURE_CLIENT_ID'];
+    const secret_value = process.env['AZURE_CLIENT_SECRET'];
+    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
+    let client_id = app_registration_id
+    let client_secret = secret_value
 
-    // Build up a JSON return value
-    // NOTE: We seem to have to read the properties of the blob to get the
-    // metadata.  There is a field called "metadata" on the blob itself
-    // which does not contain our metadata. I don't know if this is terribly
-    // expensive, or if we could improve it. I insist we should not worry about
-    // performance until we measure it to be a problem, but this is an "orang flag"--
-    // some caution around this issue is warranted.
-    var records = [];
-    for await (const blob of containerClient.listBlobsFlat()) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const props = await blobClient.getProperties();
-        const metadata = props.metadata;
-        // now we want to build up an object that we can return as statistics
-        // that inlcudes the id and the timestamp, though really the timestamp
-        // is enough. We would like to distinguish the additon of a device
-        // from the addition of new provenance, I supoose.
-        const id = findDeviceIdFromName(blob.name);
-        // We could do some sorting in this function, but that is more or less
-        // easily done by whomever is using this. So I think it better to just
-        // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
-        // Eventually, this function may have to only look back X days or X hours,
-        // but until it gets unwieldy we can return everything.
-        // I think the proper way to test this is to build a test program that
-        // puts 1000s of objects into the database and see where performance becomes a problem.
-        records.push({ timestamp: metadata.gdttimestamp, deviceID: id });
+    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
+    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
+    let token = tokenResponse.token;
+
+    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
+    let valsAtTimes = [0, 0, 0]
+
+    // Get time-based record entry counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let records1h = valsAtTimes[0]
+    let records24h = valsAtTimes[1]
+    let records7d = valsAtTimes[2]
+
+    // Get time-based unique record counts
+    for (let v in timesToCheck) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
+        });
+        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+    }
+    let devices1h = valsAtTimes[0]
+    let devices24h = valsAtTimes[1]
+    let devices7d = valsAtTimes[2]
+
+    const d = new Date()
+    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
+    let minutes = d.getMinutes() / 60
+    let hours = d.getHours() + minutes
+    let counted = 0
+    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
+
+    // Get record entries per day (last 7 days) for the graph
+    for (let i = 0; i <= today; i++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
+        });
+        let recent = (await logs.json()).tables[0].rows[0][0];
+        
+        // Add the records we found to the current day, subtracting records we already counted
+        recordsPerDayY[today - i] = recent - counted
+        counted = recent
+        hours += 24
     }
 
-    const contentType = "application/json";
+    // Get record entries per hour (last 7 days, time in UTC) for the graph
+    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let hour = 0; hour < 24; hour++) {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            // Gets number of records created in the last 7 days at 'hour'
+            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
+        });
+        let hourly = (await logs.json()).tables[0].rows[0][0];
+        recordsPerHourY[hour] = hourly
+    }
+
+    // Get number of calls to postProvenance that failed in the last 3 months
+    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
+    });
+    let totalFailures = (await logs.json()).tables[0].rows[0][0];
+
+    // Get number of calls to postProvenance that succeeded in the last 3 months
+    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
+    });
+    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
+
+    // Get total statistics counts (updates once per day)
+    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
+
+    await containerClient.createIfNotExists();
+    const blobName = `statistics/totals`
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const exists = await blobClient.exists();
+
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
+
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            totalRecords = parsed?.totalRecords || 0
+            totalAttachments = parsed?.totalAttachments || 0
+            totalDevices = parsed?.totalDevices || 0
+        }
+    }
 
     return {
-        jsonBody: records,
-        headers: { "Content-Type": contentType }
+        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
+        headers: { "Content-Type": "application/json" }
     };
 };
+
+async function setStatisticsTotals() {
+    await containerClient.createIfNotExists();
+    const containerExists = await containerClient.exists();
+    const blobName = `statistics/totals`
+
+    // Get new total records, record entries, and attachments from containerClient
+    let totalRecords = 0
+    let totalAttachments = 0
+    let totalDevices = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))
+            } else if (!(blob.name.includes('statistics/'))) {
+                totalAttachments++
+            }
+        }
+    }
+
+    totalDevices = uniqueRecords.size
+
+    // Update the blob with our new values
+    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    try {
+        await containerClient.uploadBlockBlob(
+            blobName,
+            data,
+            data.length,
+            uploadOptions
+        )
+    } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
+    }
+}
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -679,14 +783,47 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
  
- // Recall: Pin and send new record entry to all children
- export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
+    let theUrl = `${baseUrl}${deviceKey}`;
+
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: description || "Adding record with tags",
+      tags: tags,
+      children_key: '',
+    };
+    
+    const updateFormData = new FormData();
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+    
+    return await fetch(theUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+}
+
+// Recall: Pin and send new record entry to all children
+export async function recall(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const baseUrl = process.env['backend_url'];
+    const deviceKey = request.params.deviceKey;
+
+    const formData = await request.formData();
+    const recordStr = formData.get("provenanceRecord"); 
+    const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
+
+    record.tags ??= [];
+    if (!record.tags.includes("recall")) record.tags.push("recall");
+    const tags = record.tags
+    
+    const description = record.description || "";
+
+    await addRecordWithTags(baseUrl, deviceKey, tags, description)
 
     try {
-        const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
+
 
         if (records[0].record.tags.includes("recall")) {
             let length = Object.keys(records).length;
@@ -695,13 +832,14 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
+                let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
+
 
                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
                 if (!keyProvenance[0].record.isReportingKey) {
-                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
                         uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
                     }
@@ -716,7 +854,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/${key}`, {
+                    let response = await fetch(`${baseUrl}${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
@@ -730,21 +868,21 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        console.error(`Error notifying children: ${error}`);
+        console.error(`Error recalling children: ${error}`);
         return {
             status: 500
         }
     }
- }
+}
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try{
+    try {
         const body = await request.json() as any;
         const email = body.email;
         const recordKey = body.recordKey;
         const tags: string[] = [];
 
-        if (!email || !recordKey){
+        if (!email || !recordKey) {
             return {
                 jsonBody: {error: "Error: email and record key required"},
                 status: 400
@@ -752,181 +890,49 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         }
 
         await containerClient.createIfNotExists();
-        const response = await signupForNotifications(recordKey, email, tags);
+        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, email, tags, true);
 
-        console.log("Received signup for " + email);
+        context.log("Received signup for " + email);
         return response;
         
-    }catch(error){
-        console.error(error.message);
+    } catch(error) {
+        context.error(error.message);
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
-
         }
     }
 }
 
-async function signupForNotifications(deviceKey: string, email: string, tags: string[] = []) {
-    /*
-       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists. 
-       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email. 
 
-       Master docs here:
-       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-
-       * The BlockBlobUploadOptions Interface is where storage tier is set. 
-         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
-    */ 
-
-    // 0: setup id
-    const deviceID = await calculateDeviceID(deviceKey);
-
-    // 1: setup data
-
-    // 2 Setup blob name & id
-    const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}`
-
-    const blobClient = containerClient.getBlockBlobClient(blobName);
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Ignored empty email" }, status: 200 };
-    }
-
-    // 3 Update blob content：read existing content, merge email list, write back
-    const exists = await blobClient.exists();
-
-    let existingEmails: string[] = [];
-    if (exists) {
-        const buffer = await blobClient.downloadToBuffer();
-        const text = buffer.toString("utf8");
-
-        if (text) {
-            const parsed = JSON.parse(text) as any;
-            const emailsFromBlob = parsed?.email;
-            if (Array.isArray(emailsFromBlob)) {
-                existingEmails = emailsFromBlob.filter(email => {
-                    return typeof email === "string";
-                });
-            }
-        }
-    }
-
-    const emailSet = new Set(
-        existingEmails
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    const sizeBeforeAdding = emailSet.size;
-    emailSet.add(normalized);
-
-    if (exists && emailSet.size === sizeBeforeAdding) {
-        return {
-        jsonBody: { message: "Success", name: blobName },
-        status: 200,
-        };
-    }
-
-    const payloadObj = { email: Array.from(emailSet), tags};
-    const data = JSON.stringify(payloadObj);
-
-    const uploadOptions = {
-        tier: "Cool",
-        blobHTTPHeaders: {
-            blobContentType: "application/json; charset=utf-8",
-        },
-    };
-
+export async function deleteNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        // Note: do not reformat; leave as commented
-        let status = (await containerClient.uploadBlockBlob(
-                        blobName,   // 1. Blob name
-                        data,       // 2. body (can be a string)
-                        data.length, // 3. length of body in bytes (or Buffer.byteLength(data))
-                        // 4. optional options
-                        // nothing for now
-                        // we need to set BlockBlobUploadOptions to set usage tier
-                        uploadOptions
-        )).response._response.status
+        const body = await request.json() as any;
+        const emailID = body.id;
+        const recordKey = body.recordKey;
+        const tags: string[] = [];
 
-        if (status < 300 && status >= 200) {
+        if (!emailID || !recordKey) {
             return {
-                jsonBody: { message: "Success",
-                            name: blobName }, 
-                status: 200
+                jsonBody: {error: "Error: email id and record key required"},
+                status: 400
             }
-            // TODO: have frontend display in snackbar for status 4xx
-            // This means nothing for now since we're not validating that what we're being handed is an email. 
-        } else {
-            throw Error('Failed to store email')
         }
+
+        await containerClient.createIfNotExists();
+        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false);
+
+        context.log("Unsubscribed from the record");
+        return response;
+        
     } catch(error) {
-        const msg = error instanceof Error ? error.message : String(error);
+        context.error(error.message);
         return {
-            jsonBody: {message: error.message},
+            jsonBody: {message: "Internal Server Error"},
             status: 500,
         }
     }
 }
-
-async function retrieveNotifEmails(key: string) {
-    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
-    const deviceID = await calculateDeviceID(key);
-    const type = 'notificationSignups'
-    const blobName = `${type}/${deviceID}`
-
-    try {
-        const blobClient = containerClient.getBlobClient(blobName);
-        const downloadResponse = await blobClient.download();
-        const downloaded = await streamToString(downloadResponse.readableStreamBody);
-        console.log('Downloaded blob content:', downloaded.toString());
-
-        return {
-            jsonBody: { message: downloaded},
-            status: 200
-        }
-    } catch(error) {
-        return {
-            jsonBody: {message: error.message},
-            status: 500,
-        }
-    } 
-}
-
-async function streamToString(readableStream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        readableStream.on("data", (data) => {
-            chunks.push(data.toString());
-        });
-        readableStream.on("end", () => {
-            resolve(chunks.join(""));
-        });
-        readableStream.on("error", reject);
-    });
-}
-
-
-function extractEmailsFromResponse(response: any): Set<string> {
-    const emailSet = new Set<string>();
-    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
-        return emailSet;
-    }
-    try {
-        const parsed = JSON.parse(response.jsonBody.message);
-        if (parsed.email && Array.isArray(parsed.email)) {
-            parsed.email.forEach((e: string) => emailSet.add(e));
-        } else if (parsed.key?.email) {
-            emailSet.add(parsed.key.email);
-        }
-    } catch (error) {
-        console.log("Fail to extract emails:", error.message)
-    }
-    return emailSet;
-}
-
 
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /* How this pseudo-smoketest works:
@@ -939,10 +945,11 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await signupForNotifications(key, "email@email.foo")
+        const putResponse = await updateNotifications(containerClient, calculateDeviceID, key, "email@email.foo", [], true)
 
         // Access it
-        const getResponse = await retrieveNotifEmails(key)
+        const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
+
 
         return {
             jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
@@ -971,10 +978,9 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     */ 
 
     try {
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        // const baseUrl = 'http://localhost:7071/api'
-        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
-        
+        const baseUrl = process.env['backend_url'];
+        const childKey = await makeEncodedDeviceKey();
+
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
@@ -987,15 +993,17 @@ async function createChild(context: InvocationContext, custom_title: string, tag
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
-        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+        const theResponse = await fetch(`${baseUrl}${childKey}`, {
             method: "POST",
             body: childFormData,
         });
+
         const theJson = await theResponse.json()
         const dataUrl = theResponse.url.split('/')
         const theRecordKey = dataUrl[dataUrl.length - 1]
         context.log(theRecordKey)
         return theRecordKey
+
     } catch(e) {
         context.log('createChild Error: Failed to create child record')
         return '';
@@ -1030,10 +1038,11 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasReportingKey, tags) {
-    const baseUrl = process.env['backend_url'];
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasReportingKey, tags, attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
-    const apiUrl = process.env['api_url'];
+    const backendUrl = process.env['backend_url'];
+
+    n_children = Math.max(0, n_children ?? 0);
 
     // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
@@ -1051,6 +1060,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
     };
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles, hasReportingKey, tags)
+    if (childKeys.length !== n_children) {
+        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
@@ -1072,12 +1084,20 @@ async function createGroup(context, name, description, n_children: number = 0, c
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
+
+    for (const attachment of attachments) {
+        groupFormData.append("attachment", attachment.blob, attachment.name);
+    }
     
-    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const createInitUrl = `${backendUrl}${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
     });
+    if (!groupResponse.ok) {
+        const errorBody = await groupResponse.text().catch(() => "");
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1100,7 +1120,22 @@ const GroupCreationOrderSchema = z.object({
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
+        const attachments: NamedBlob[] = [];
+        const formData = await request.formData();
+
+        const recordStr = formData.get("provenanceRecord"); 
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError(
+                "Missing provenanceRecord in form data"
+            );
+        }
+
+        let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({name: value.name || "attachment", blob: value});
+        }
+
         GroupCreationOrderSchema.parse(theRequest)
         let title = theRequest['deviceName']
         let description = theRequest['description']
@@ -1108,13 +1143,13 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasReportingKey = theRequest['hasReportingKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasReportingKey, tags)
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasReportingKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
-            headers: { "Content-Type": "text/plain" }
+            headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
         context.error('Failed to create group: ', error.message)
@@ -1150,14 +1185,139 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+async function createRecord(context, name, description, tags, attachments) {
+    const baseUrl = process.env['backend_url'];
+    const frontendUrl = process.env['frontend_url'];
+    const deviceKey = await makeEncodedDeviceKey();
+    const decodedDeviceKey = decodeKey(deviceKey);
+
+    try {
+        const data = {
+            blobType: 'deviceInitializer',
+            deviceName: name,
+            description: description,
+            tags: tags,
+            children_key: '',
+            hasParent: false,
+            isReportingKey: false,
+        };
+
+        // use uploadProvenance to post the record and any attachments
+        await containerClient.createIfNotExists();
+        const timestamp = new Date().getTime();
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
+        if (body.oversizedAttachments) {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
+
+        return `${frontendUrl}/record/${deviceKey}`;
+
+    } catch (error) {
+        context.error('createRecord Error: Failed to create record' + error); 
+        return '';
+    }
+}
+
+const RecordCreationOrderSchema = z.object({
+    blobType: z.string().optional(),
+    deviceName: z.string(),
+    description: z.string(),
+    children_key: z.union([z.string(), z.array(z.string())]),
+    children_name: z.array(z.string()).optional(),
+    hasParent: z.boolean().optional(),
+    isReportingKey: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
+export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        let theRequest = await request.json()
+        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
+        let name = theRequest['provenanceRecord']['deviceName'];
+        let description = theRequest['provenanceRecord']['description'];
+        let tags = theRequest['provenanceRecord']['tags'];
+        let attachment = theRequest['attachment'];
+
+        // if there's an attachment create a blob to add to the record
+        const attachments = new Array<NamedBlob>();
+        if (attachment != "") {
+            attachment = theRequest['attachment']['file'];
+            let attachmentName = theRequest['attachment']['name'];
+            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
+            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
+            if (typeof blob !== 'string') {
+                console.log("attach type: " + typeof(blob))
+                attachments.push({ blob: blob, name: attachmentName });
+            }
+        }
+
+        let recordUrl = await createRecord(context, name, description, tags, attachments)
+        context.log(recordUrl)
+        return {
+            status: 200,
+            jsonBody: { recordUrl: recordUrl },
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        context.error('Failed to create record: ', error.message)
+        let message;
+
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        if (error instanceof SyntaxError) {
+            message = 'Error: Check json structure.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        message = 'Error: Internal server error.'
+        context.error(message)
+        return {
+            status: 500,
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
+// Once per day update the total record, record entry, and attachment counts
+app.timer('updateRecordCounts', {
+    schedule: `0 0 * * *`,
+    handler: setStatisticsTotals
+})
+
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+app.post("createRecord", {
+    authLevel: 'anonymous',
+    route: 'createRecord',
+    handler: createRecordHandler
+})
 
 app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
-    handler: createGroupHandler,
+    handler: createGroupHandler
 })
 
 app.get("emailSignupTestEndpoint", {
@@ -1170,6 +1330,12 @@ app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
+})
+
+app.post('deleteNotificationEmail', {
+    authLevel: 'anonymous',
+    route: 'notificationUnsubscribe',
+    handler: deleteNotificationEmail,
 })
 
 app.get("getProvenance", {
@@ -1232,10 +1398,10 @@ app.post('annotateChildren', {
     handler: notifyChildren,
 })
 
-app.post('recallChildren', {
+app.post('recall', {
     authLevel: 'anonymous',
-    route: 'provenance/recall/{deviceKey}',
-    handler: recallChildren,
+    route: 'recall/{deviceKey}',
+    handler: recall,
 })
 
 
