@@ -783,7 +783,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
  
-async function addRecordWithTags(baseUrl, deviceKey, tags) {
+async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     let theUrl = `${baseUrl}${deviceKey}`;
 
     const updateData = {
@@ -806,9 +806,9 @@ async function addRecordWithTags(baseUrl, deviceKey, tags) {
 export async function recall(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+    const description = request.params.description || "recalling record";
 
-
-    await addRecordWithTags(baseUrl, deviceKey, ['recall'])
+    await addRecordWithTags(baseUrl, deviceKey, ['recall'], description)
 
     try {
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
