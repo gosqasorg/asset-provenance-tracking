@@ -88,13 +88,13 @@ paths:
                     type: string
                     example: "Invalid input parameters"
 
-  /provenance/recall/{deviceKey}:
+  /recall/{deviceKey}:
     post:
       tags:
         - GDT API
       summary: Propagate a recall to all descendant devices
-      description: Recursively posts a recall record to all descendant devices. Requires the parent's most recent record to have the "recall" tag.
-      operationId: recallChildren
+      description: Recalls a group record and its child records.
+      operationId: recall
       parameters:
         - name: deviceKey
           in: path
