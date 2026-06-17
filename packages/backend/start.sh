@@ -2,6 +2,6 @@
 
 ./stop.sh
 
-npm i
+#npm i
 ./scripts/start-azurite.sh &
 ./scripts/start-shell.sh &
