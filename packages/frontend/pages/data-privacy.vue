@@ -48,6 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Explore the example below. These are real, live API requests. 
             </p>
 
+<!--
             <h3>Example: Make a device key</h3>
             <p>
                 For example, try this out. Each row is an endpoint. Look at the top row. Tap the blue "GET" button next to "/getNewDeviceKey". This opens the specs for this endpoint. Ignore these for now. At the top right, click the "Try it out" button. This will give you an execute button. Hit our backend services at that endpoint by tapping "Execute". 
@@ -59,6 +60,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <p>
                 Now go ahead and use the interactive spec to create a group: a GDT-labeled case of GDT-labeled items.
             </p>
+-->
+
         </div>
 
         <div class="docs-section">
