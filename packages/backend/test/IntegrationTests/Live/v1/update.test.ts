@@ -159,25 +159,6 @@ describe("Record Update Tests", () => {
 
     let updateResponse = await addRecordWithTags(baseUrl, deviceKey, ['updated', 'test', 'tags'])
 
-    /*
-    const updateData = {
-      blobType: 'deviceRecord',
-      description: "Testing tag updates",
-      tags: ['updated', 'test', 'tags'],
-      children_key: '',
-    };
-    
-    const updateFormData = new FormData();
-    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
-    
-    const updateResponse = await fetch(fullUrl, {
-      method: "POST",
-      body: updateFormData,
-    });
-    */
-
-
-
     // === End Section 2/3: Update Tags === //
 
     // === Start Section 3/3: Validate Update Operation === //
