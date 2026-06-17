@@ -56,12 +56,12 @@ let baseTestName;
 
 });
 
-async function updateTags(baseUrl, deviceKey, tags) {
+async function addRecordWithTags(baseUrl, deviceKey, tags) {
     let theUrl = `${baseUrl}${deviceKey}`;
 
     const updateData = {
       blobType: 'deviceRecord',
-      description: "Testing tag updates",
+      description: "Adding record with tags",
       tags: tags,
       children_key: '',
     };
@@ -157,7 +157,7 @@ describe("Record Update Tests", () => {
 
     // === Start Section 2/3: Update Tags === //
 
-    let updateResponse = await updateTags(baseUrl, deviceKey, ['updated', 'test', 'tags'])
+    let updateResponse = await addRecordWithTags(baseUrl, deviceKey, ['updated', 'test', 'tags'])
 
     /*
     const updateData = {
