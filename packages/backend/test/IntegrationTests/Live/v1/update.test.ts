@@ -23,9 +23,12 @@ describe("Group of tests", () => {
 
 */
 let timeout= 30000;
+const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+
 // question for Vincent why put create a variable, is it to clean code?
+// from Vincent: the question is unclear, rephrase?
 let baseTestName;
-describe(baseTestName = 'Group + Record History Update Tests', () => {
+  describe(baseTestName = 'Group + Record History Update Tests', () => {
 	let testName;
 
 	// Placeholder
@@ -53,8 +56,26 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 
 });
 
+async function updateTags(baseUrl, deviceKey, tags) {
+    let theUrl = `${baseUrl}${deviceKey}`;
+
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: "Testing tag updates",
+      tags: tags,
+      children_key: '',
+    };
+    
+    const updateFormData = new FormData();
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+    
+    return await fetch(theUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+}
+
 describe("Record Update Tests", () => {
-  const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
   // updating a record
   it("Update descriptions", async () => {
@@ -110,11 +131,12 @@ describe("Record Update Tests", () => {
 
   // Update with tags
   it("Update record tags", async () => {
-    // Create initial record
+
+    // === Start Section 1/3: Create Initial Record === //
+
     const deviceKey = await makeEncodedDeviceKey();
     let fullUrl = `${baseUrl}${deviceKey}`;
-	  console.log("Update Test with tags: " + deviceKey);
-    
+
     const initialData = {
       blobType: 'deviceInitializer',
       deviceName: "Tag Test Record",
@@ -129,8 +151,15 @@ describe("Record Update Tests", () => {
     setupFormData.append("provenanceRecord", JSON.stringify(initialData));
     
     await fetch(fullUrl, { method: "POST", body: setupFormData });
+    console.log("Update Test with tags: " + deviceKey);
 
-    // updating tags
+    // === End Section 1/3: Create Initial Record === //
+
+    // === Start Section 2/3: Update Tags === //
+
+    let updateResponse = await updateTags(baseUrl, deviceKey, ['updated', 'test', 'tags'])
+
+    /*
     const updateData = {
       blobType: 'deviceRecord',
       description: "Testing tag updates",
@@ -145,6 +174,13 @@ describe("Record Update Tests", () => {
       method: "POST",
       body: updateFormData,
     });
+    */
+
+
+
+    // === End Section 2/3: Update Tags === //
+
+    // === Start Section 3/3: Validate Update Operation === //
 
     // Check if update worked
     expect(updateResponse.ok).toBe(true);
@@ -154,6 +190,8 @@ describe("Record Update Tests", () => {
     
     expect(record.record.tags.length).toBe(3);
     expect(JSON.stringify(record.record.tags)).toBe('["updated","test","tags"]');
+
+    // === End Section 3/3: Validate Update Operation === //
   });
 
   //  Update with attachment
