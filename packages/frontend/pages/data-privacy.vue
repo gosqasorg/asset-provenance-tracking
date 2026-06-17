@@ -33,10 +33,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </p> </div>
 
 
-        <h1>API Overview</h1>
-        <div class="row"> <p>
-            Global Distributed Tracking exposes our services by API, allowing simple integration with user software systems. 
-        </p> </div>
+        <h1>API</h1>
+        <div class="row"> 
+            <h2>Overview</h2>
+            <p>
+                Integrating GDT into your product is easy. We offer API access to our services. This API is completely open. You don't even need an API key. 
+            </p>
+            <p>
+                The full docs and openAPI spec are on our <a href="/docs">docs</a> page.
+            </p>            
+
+            <h2>Interactive API Examples</h2>
+            <p>
+                Explore the example below. These are real, live API requests. 
+            </p>
+
+<!--
+            <h3>Example: Make a device key</h3>
+            <p>
+                For example, try this out. Each row is an endpoint. Look at the top row. Tap the blue "GET" button next to "/getNewDeviceKey". This opens the specs for this endpoint. Ignore these for now. At the top right, click the "Try it out" button. This will give you an execute button. Hit our backend services at that endpoint by tapping "Execute". 
+            </p>
+            <p>
+                Scroll down, past the curl and url, until you see "Code" and "Details". Take a look at the response body. Note the seemingly random text that looks something like "F6K6PaqAzwibVohGtcw6HW". That's a new GDT Record Key. 
+            </p>
+
+            <p>
+                Now go ahead and use the interactive spec to create a group: a GDT-labeled case of GDT-labeled items.
+            </p>
+-->
+
+        </div>
 
         <div class="docs-section">
             <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />

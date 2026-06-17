@@ -266,7 +266,7 @@ describe("Group Creation Tests", () => {
 			method: "POST",
 			body: recallFormData,
 		});
-		const recallResponse = await fetch(`${baseUrl}/provenance/recall/${groupKey}`, {
+		const recallResponse = await fetch(`${baseUrl}/recall/${groupKey}`, {
 			method: "POST",
 			body: recallFormData,
 		});
