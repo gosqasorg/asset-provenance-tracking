@@ -437,7 +437,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     return { jsonBody: body ?? { converted: true}};
 }
 
-
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const body = await convertLegacyProvenance(containerClient, deviceKey);
@@ -784,14 +783,47 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
  
- // Recall: Pin and send new record entry to all children
- export async function recallChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
+    let theUrl = `${baseUrl}${deviceKey}`;
+
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: description || "Adding record with tags",
+      tags: tags,
+      children_key: '',
+    };
+    
+    const updateFormData = new FormData();
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+    
+    return await fetch(theUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+}
+
+// Recall: Pin and send new record entry to all children
+export async function recall(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
     const baseUrl = process.env['backend_url'];
+    const deviceKey = request.params.deviceKey;
+
+    const formData = await request.formData();
+    const recordStr = formData.get("provenanceRecord"); 
+    const record = JSON5.parse(formData.get("provenanceRecord") as string);
+
+    record.tags ??= [];
+    if (!record.tags.includes("recall")) record.tags.push("recall");
+    const tags = record.tags
+    
+    const description = record.description || "";
+
+    await addRecordWithTags(baseUrl, deviceKey, tags, description)
 
     try {
-        const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
+
 
         if (records[0].record.tags.includes("recall")) {
             let length = Object.keys(records).length;
@@ -800,13 +832,14 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
+                let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
+
 
                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
                 if (!keyProvenance[0].record.isReportingKey) {
-                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
+                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
                         uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
                     }
@@ -821,7 +854,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/${key}`, {
+                    let response = await fetch(`${baseUrl}${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
@@ -835,12 +868,12 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        console.error(`Error notifying children: ${error}`);
+        console.error(`Error recalling children: ${error}`);
         return {
             status: 500
         }
     }
- }
+}
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -901,7 +934,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
     }
 }
 
-
 async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /* How this pseudo-smoketest works:
        1. Put a string into blobstore
@@ -935,7 +967,6 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-
 async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
@@ -946,10 +977,9 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     */ 
 
     try {
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        // const baseUrl = 'http://localhost:7071/api'
-        const childKey = await (await fetch(`${baseUrl}/getNewDeviceKey`)).text(); // TODO: call function directly 
-        
+        const baseUrl = process.env['backend_url'];
+        const childKey = await makeEncodedDeviceKey();
+
         // Create child and group records
         const childFormData = new FormData();
         childFormData.append("provenanceRecord", JSON.stringify({
@@ -962,15 +992,17 @@ async function createChild(context: InvocationContext, custom_title: string, tag
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
-        const theResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+        const theResponse = await fetch(`${baseUrl}${childKey}`, {
             method: "POST",
             body: childFormData,
         });
+
         const theJson = await theResponse.json()
         const dataUrl = theResponse.url.split('/')
         const theRecordKey = dataUrl[dataUrl.length - 1]
         context.log(theRecordKey)
         return theRecordKey
+
     } catch(e) {
         context.log('createChild Error: Failed to create child record')
         return '';
@@ -999,7 +1031,7 @@ async function createChildren(context, number_of_children: number, custom_child_
 
 async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
-    const apiUrl = process.env['api_url'];
+    const backendUrl = process.env['backend_url'];
 
     n_children = Math.max(0, n_children ?? 0);
 
@@ -1042,7 +1074,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         groupFormData.append("attachment", attachment.blob, attachment.name);
     }
     
-    const createInitUrl = `${apiUrl}/provenance/${groupKey}`
+    const createInitUrl = `${backendUrl}${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
         body: groupFormData,
@@ -1348,10 +1380,10 @@ app.post('annotateChildren', {
     handler: notifyChildren,
 })
 
-app.post('recallChildren', {
+app.post('recall', {
     authLevel: 'anonymous',
-    route: 'provenance/recall/{deviceKey}',
-    handler: recallChildren,
+    route: 'recall/{deviceKey}',
+    handler: recall,
 })
 
 
