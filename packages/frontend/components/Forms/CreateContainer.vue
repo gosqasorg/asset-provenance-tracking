@@ -130,7 +130,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -209,7 +209,7 @@ export default {
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;  // aka 2MB
+            const maxFileSize = 5242880;  // aka 5MB
 
             let validFileSize = true;
 
@@ -386,10 +386,17 @@ export default {
                     })
                 }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                if (!(await onlineTestFetch())) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                }
+
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating the group: ${error}`
                 })
+
+                // Otherwise just return to the /gdt page
                 EventBus.emit('isLoading')
             }
 

@@ -48,6 +48,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row second-row" >
           <h3>Global Distributed Tracking</h3>
           <p style="font-weight: 400; padding-bottom: 15px">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
+          <div style="display: flex; flex-direction: row; gap: 40px">
+            <img style="width: 184px; height: 184px" class="ieee-image" src="/IEEE.png">
+            <div class="ieee-button-container" style="display: flex; flex-direction: column;">
+                <h3 style="">GDT Papers Published in the Institute of Electrical and Electronics Engineers</h3>
+                <p style="font-size: 20px; font-weight: 400; margin-top: -5px">Our paper "Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication" was recently published in the October 2025 publication of IEEE.</p>
+                <button class="ieee-button" style="width: fit-content; height: 65px; white-space: nowrap; padding: 10px 20px; border: solid; border-width: 2px; border-radius: 10px;" @click="getPDF()">Read the paper now</button>
+            </div>
+          </div>
                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                     style="width: 100%; display: block; aspect-ratio: 7 / 4;"
                     frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
@@ -111,7 +119,13 @@ export default {
     return {
     trackDivVisible: false
     }
+    },
+
+methods: {
+    getPDF() {
+        window.open('/Global_Distributed_Tracking.pdf', '_blank')
     }
+}
 }
 </script>
 
@@ -137,6 +151,11 @@ justify-content: space-around;
   margin-right: 15px;
 
   border: 2px solid #4E3681;
+}
+
+.ieee-image {
+    width: 100px;
+    height: auto;
 }
 
 #flexright {
@@ -192,6 +211,13 @@ max-width: 70%;
     #first-row-col {
         width: 100% !important;
     }
+    .ieee-image {
+        display: none;
+    }
+    .ieee-button {
+        display: block; 
+        margin: 0 auto;
+    }
 }
 
 /* For screens less than 768px */
@@ -224,6 +250,9 @@ max-width: 70%;
     #createRecordButton {
         order: 1;
         margin-top: 0px !important;
+    }
+    .ieee-button {
+        text-align: center;
     }
 }
 
@@ -317,7 +346,11 @@ max-width: 70%;
     :deep(#dmdm-button:hover) {
         background-color: white;
         color: #4E3681;
-
+    }
+    .ieee-button {
+        background-color: #4E3681; 
+        border-color: white; 
+        color: white
     }
 }
 /* Light mode version of second row */
@@ -352,6 +385,10 @@ max-width: 70%;
     :deep(#dmdm-button:hover) {
         background-color: #4E3681;
         color: white;
+    }
+    .ieee-button {
+        background-color: #E6F6FF;
+        color: #322253;
     }
 }
 

@@ -147,7 +147,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -239,7 +239,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;
+            const maxFileSize = 5242880; // 5MB
 
             let validFileSize = true;
 
@@ -274,6 +274,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.annotatePopUp = false;
             this.recallPopUp = false;
         },
+        async redirectIfOffline() {
+            // If the user is offline navigate to the offline history page instead
+            if (!(await onlineTestFetch())) {
+                await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
+            }
+        },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
@@ -283,6 +289,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
+                this.redirectIfOffline()
                 EventBus.emit('isCreating');
             }
 
@@ -303,6 +310,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
                     } catch (error) {
                         console.error('Error adding to group:', error);
+                        this.redirectIfOffline()
                         this.$snackbar.add({
                             type: 'error',
                             text: `Error adding to group: ${error}`
@@ -341,6 +349,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     }
                 }
             } catch (error: any) {
+                console.error('Error adding children:', error);
+                this.redirectIfOffline()
                 const badKeys = error.message.split(",");
                 
                 if (error.message.split(" ").length > badKeys.length) {
@@ -397,6 +407,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
+                this.redirectIfOffline()
                 this.$snackbar.add({
                     type: 'error',
                     text: `Error creating record: ${error}`

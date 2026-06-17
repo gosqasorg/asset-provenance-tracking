@@ -15,14 +15,14 @@
     "packages/legacy"
   ],
   "dependencies": {
-    "@azure/communication-email": "^1.0.0"
+    "@azure/communication-email": "^1.0.0",
+    "vitest": "^4.1.9"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.6",
     "lint-staged": "^16.2.1"
   },
   "lint-staged": {
-    "**/*.{js,ts,vue,json,css,yml}": [
-    ]
+    "**/*.{js,ts,vue,json,css,yml}": []
   }
 }
