@@ -87,3 +87,73 @@ paths:
                   error:
                     type: string
                     example: "Invalid input parameters"
+  /createRecord:
+    post:
+      tags:
+        - GDT API
+      summary: Create a new record
+      description: This endpoint creates a new record and returns a unique record URL.
+      operationId: createRecord
+      requestBody:
+        description: Record creation parameters in postProvenance
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provenanceRecord
+              properties:
+                provenanceRecord:
+                  type: object
+                  required:
+                    - deviceName
+                    - description
+                    - children_key
+                  properties:
+                    deviceName:
+                      type: string
+                      example: "Record Title"
+                    description:
+                      type: string
+                      example: "Record Description"
+                    children_key:
+                      type: string
+                      description: Group key for grouped records, or empty string for standalone records.
+                      example: ""
+                attachment:
+                  oneOf:
+                    - type: string
+                      example: ""
+                    - type: object
+                      required:
+                        - file
+                        - name
+                      properties:
+                        file:
+                          type: string
+                          description: Base64-encoded attachment content
+                        name:
+                          type: string
+                          example: "photo.jpg"
+      responses:
+        '200':
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recordUrl:
+                    type: string
+                    example: "{'recordUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid input parameters"
