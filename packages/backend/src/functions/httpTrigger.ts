@@ -810,7 +810,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
-    const record = JSON5.parse(formData.get("provenanceRecord") as string);
+    const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
 
     record.tags ??= [];
     if (!record.tags.includes("recall")) record.tags.push("recall");
