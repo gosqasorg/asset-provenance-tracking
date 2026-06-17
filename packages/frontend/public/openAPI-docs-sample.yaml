@@ -6,10 +6,10 @@ info:
 servers:
   - url: http://localhost:7071/api
     description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
-  - url: https://gdtprodbackend.azurewebsites.net/api
-    description: Production server
+#  - url: https://gosqasbe.azurewebsites.net/api
+#    description: Staging server
+# - url: https://gdtprodbackend.azurewebsites.net/api
+#    description: Production server
 paths:
   /getNewDeviceKey:
     get:
@@ -26,33 +26,46 @@ paths:
                 type: object
         '404':
           description: Not Found
+
   /createGroup:
     post:
       tags:
         - GDT API
       summary: Create a new group
-      description: This endpoint creates a group and returns a unique group URL.
+      description: This endpoint creates a group and returns a unique group URL via multipart/form-data.
       operationId: createGroup
       requestBody:
-        description: Group creation parameters
+        description: Group creation parameters and attachments
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
-                - deviceName
-                - description
+                - provenanceRecord
               properties:
-                deviceName:
-                  type: string
-                  example: "Group Title"
-                description:
-                  type: string
-                  example: "Group Description"
-                number_of_children:
-                  type: integer
-                  example: 5
+                provenanceRecord:
+                  type: object
+                  description: JSON object containing the group metadata.
+                  required:
+                    - deviceName
+                    - description
+                  properties:
+                    deviceName:
+                      type: string
+                      example: "Group Title"
+                    description:
+                      type: string
+                      example: "Group Description"
+                    number_of_children:
+                      type: integer
+                      example: 5
+                attachments:
+                  type: array
+                  description: Optional binary files attached to the form data.
+                  items:
+                    type: string
+                    format: binary      
       responses:
         '200':
           description: Successful creation
@@ -74,7 +87,3 @@ paths:
                   error:
                     type: string
                     example: "Invalid input parameters"
-
-
-
-          
