@@ -35,7 +35,7 @@ paths:
       description: This endpoint creates a group and returns a unique group URL via multipart/form-data.
       operationId: createGroup
       requestBody:
-        description: Group creation parameters. Send as `multipart/form-data`; omit the `attachment` field for groups with no attachments.
+        description: Group creation parameters and attachments
         required: true
         content:
           multipart/form-data:
@@ -66,7 +66,6 @@ paths:
                   items:
                     type: string
                     format: binary      
-
       responses:
         '200':
           description: Successful creation
@@ -79,7 +78,7 @@ paths:
                     type: string
                     example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
         '400':
-          description: Bad Request. For example,`provenanceRecord` is missing, contains invalid JSON, or has fields that fail schema validation.
+          description: Bad Request
           content:
             application/json:
               schema:
