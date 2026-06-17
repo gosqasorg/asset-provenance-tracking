@@ -24,6 +24,7 @@ describe("Group of tests", () => {
 */
 let timeout= 30000;
 const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+const apiUrl = "https://gosqasbe.azurewebsites.net/api/";
 
 // question for Vincent why put create a variable, is it to clean code?
 // from Vincent: the question is unclear, rephrase?
@@ -307,7 +308,7 @@ describe("Record Update Tests", () => {
     });
 
     // Call the recall function to send recalled record to all the children and grandchildren
-    const recallResponse = await fetch(`${baseUrl}recall/${groupKey}`, {
+    const recallResponse = await fetch(`${apiUrl}recall/${groupKey}`, {
       method: "POST",
       body: updateFormData,
     });
