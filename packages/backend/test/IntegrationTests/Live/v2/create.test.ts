@@ -126,6 +126,7 @@ describe("Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children);
     }, 6000);
+});
 
 
 describe("Group Creation v2 tests", () => {
