@@ -928,7 +928,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
-        const frontendUrl = 'https://gosqas.org/';
+        const frontendUrl = process.env['frontend_url'];
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
         
         try {
@@ -1079,7 +1079,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        const response = await updateNotifications(entity.recordKey as string, entity.email as string, tags, true);
+        await updateNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags, true);
         // return response
 
         return {
@@ -1159,7 +1159,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         // sendEmail() with the code attached
         // from_address: string, to_address: string, subject: string, plainText: string, displayName: string;
-        const frontendUrl = 'https://gosqas.org/';
+        const frontendUrl = process.env['frontend_url'];
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
 
         try {
@@ -1171,7 +1171,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
                 "GOSQAS Verification Code",
                 `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
                 "GOSQAS Notification"
-            )
+            ) 
 
             context.log('Email resend results:', emailResult);
 

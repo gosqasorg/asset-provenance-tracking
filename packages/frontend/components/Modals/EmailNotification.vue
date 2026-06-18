@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
             <div class="footer">
                 <div class="btn-container">
-                    <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal">Go Back</button>
+                    <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal" @click="email = ''">Go Back</button>
                     <button type="button" class="btn btn-primary" @click="sendCode" :disabled="isSubmitting || !email">{{ emailLabel }}</button>
                 </div>
             </div>
@@ -67,7 +67,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
             <div class="footer">
                 <div class="btn-container">
-                    <button type="button" class="btn btn-tertiary" @click="step = 'signup'">Go Back</button>
+                    <button type="button" class="btn btn-tertiary" @click="step = 'signup'; code = ''">Go Back</button>
                     <button type="button" class="btn btn-primary" @click="verifyCode" :disabled="verifyDisabled || !code">{{verifyLabel}}</button>
                 </div>
                 <div class="resend-container">
