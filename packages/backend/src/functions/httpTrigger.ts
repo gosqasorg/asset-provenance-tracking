@@ -1042,7 +1042,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
-    // n_children = Math.max(0, n_children ?? 0);
+    n_children = Math.max(0, n_children ?? 0);
 
     // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
