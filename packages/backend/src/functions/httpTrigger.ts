@@ -1042,7 +1042,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
-    n_children = Math.max(0, n_children ?? 0);
+    // n_children = Math.max(0, n_children ?? 0);
 
     // determines if parent deviceName + record number, custom titles, or a blank title to be used for child deviceName
     if (!Array.isArray(custom_child_titles)) {
@@ -1060,8 +1060,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
     };
     // Create children first
     let childKeys = await createChildren(context, n_children, custom_child_titles, hasReportingKey, tags)
-    if (childKeys.length !== n_children) {
-        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    let totalChildren = n_children + (hasReportingKey ? 1 : 0)
+    if (childKeys.length !== totalChildren) {
+        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
     }
 
     const groupKey = await makeEncodedDeviceKey()

@@ -36,11 +36,13 @@ describe("Group Creation Tests", () => {
 			tags: [],
 		};
 
-		const groupResponse = await fetch(`${baseUrl}/createGroup`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(groupPayload),
-		});
+		const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(groupPayload));
+        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
+
 
 		expect(groupResponse.ok).toBe(true);
 		expect(groupResponse.status).toBe(200);
@@ -65,7 +67,7 @@ describe("Group Creation Tests", () => {
 		expect(groupRecord.description).toBe(groupPayload.description);
 
 		const childKeys: string[] = groupRecord.children_key;
-		expect(childKeys.length - 1).toBe(groupPayload.number_of_children);
+		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
 
 		// Verify reporting key
 		const reportingKey = groupRecord.reportingKey as string;
@@ -80,7 +82,7 @@ describe("Group Creation Tests", () => {
 
 	it("should create a group record with tags", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-		
+        
 		const groupPayload = {
 			deviceName: "group_record_with_tags",
 			title: "group_record_with_tags",
@@ -90,11 +92,12 @@ describe("Group Creation Tests", () => {
 			tags: ["integration_test", "record_tags"],
 		};
 
-		const groupResponse = await fetch(`${baseUrl}/createGroup`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(groupPayload),
-		});
+		const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(groupPayload));
+        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
 
 		expect(groupResponse.ok).toBe(true);
 		expect(groupResponse.status).toBe(200);
