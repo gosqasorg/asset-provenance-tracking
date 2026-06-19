@@ -392,7 +392,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
                 } else if (this.annotateAll) {
-                    notifyChildren(this.recordKey, this.tags);
+                    notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
                 if (this.notify && this.emailInput) {
