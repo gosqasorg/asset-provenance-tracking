@@ -117,7 +117,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey, validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
@@ -193,7 +193,7 @@ export default {
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;  // aka 2MB
+            const maxFileSize = 5242880;  // aka 5MB
 
             let validFileSize = true;
 
@@ -222,7 +222,6 @@ export default {
             EventBus.emit('isLoading');
 
             if (this.isSubmitting) return;
-            
             this.isSubmitting = true;
             let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
 
@@ -277,10 +276,17 @@ export default {
 
                 }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                if (!(await onlineTestFetch())) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                }
+
                 this.$snackbar.add({
                     type: 'error',
                     text: `Failed to create record: ${error}`
                 });
+
+                // Otherwise just return to the /gdt page
                 EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;

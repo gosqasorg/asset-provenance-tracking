@@ -2,4 +2,4 @@
 
 export BACKEND_URL=http://localhost:7071/api
 
-npm run dev
+npm i && npm run dev

@@ -266,6 +266,7 @@ methods: {
                 type: 'error',
                 text: `Error creating record: ${error}`
             });
+            this.refresh()
             this.isCreating = false;
         }
 

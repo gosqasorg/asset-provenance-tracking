@@ -232,7 +232,7 @@ describe('Tests to see if we can remove from the stash', () => {
     expect(failedRequests[0][0][1]).toEqual(formUrl);
 
     // Confirm failed key was not added to list of successful requests
-    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
+    existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).toEqual(['{}']);
   }, 200000);
 });

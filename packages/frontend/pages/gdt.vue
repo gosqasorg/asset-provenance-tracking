@@ -86,7 +86,7 @@ export default {
             toggled: true
         }
     },
-    mounted() {
+    async mounted() {
         // If we're redirecting from offline-edits and the record is a group, go to the group form on load
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
 
@@ -105,6 +105,9 @@ export default {
             }
             this.isLoading = false;
         })
+
+        // preload the offline history page (so we can navigate to this page if the user goes offline)
+        await import('./history/offline.vue');
     },
     beforeUnmount() {
         EventBus.off('isLoading', () => {
