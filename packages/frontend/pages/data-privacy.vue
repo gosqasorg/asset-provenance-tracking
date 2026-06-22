@@ -22,13 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="data-privacy-container">
-
-    <!-- TODO: move this to the offline history page once it exists -->
-    <!-- <video ref="video" preload="auto" autoplay playsinline></video>
-    <canvas ref="canvas" hidden ></canvas>
-    <p>Key from scanned QR: {{qrKey}}</p>
-    <input type="button" @click="qrCameraOffline" accept="image/*" capture="environment" /> -->
-
         <h1>Data & Privacy</h1>
         <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
@@ -40,15 +33,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </p> </div>
 
 
-        <h1>API Overview</h1>
-        <div class="row"> <p>
-            Global Distributed Tracking exposes our services by API, allowing simple integration with user software systems. 
-        </p> </div>
+        <h1>API</h1>
+        <div class="row"> 
+            <h2>Overview</h2>
+            <p>
+                Integrating GDT into your product is easy. We offer API access to our services. This API is completely open. You don't even need an API key. 
+            </p>
+            <p>
+                The full docs and openAPI spec are on our <a href="/docs">docs</a> page.
+            </p>            
+
+            <h2>Interactive API Examples</h2>
+            <p>
+                Explore the example below. These are real, live API requests. 
+            </p>
+
+<!--
+            <h3>Example: Make a device key</h3>
+            <p>
+                For example, try this out. Each row is an endpoint. Look at the top row. Tap the blue "GET" button next to "/getNewDeviceKey". This opens the specs for this endpoint. Ignore these for now. At the top right, click the "Try it out" button. This will give you an execute button. Hit our backend services at that endpoint by tapping "Execute". 
+            </p>
+            <p>
+                Scroll down, past the curl and url, until you see "Code" and "Details". Take a look at the response body. Note the seemingly random text that looks something like "F6K6PaqAzwibVohGtcw6HW". That's a new GDT Record Key. 
+            </p>
+
+            <p>
+                Now go ahead and use the interactive spec to create a group: a GDT-labeled case of GDT-labeled items.
+            </p>
+-->
+
+        </div>
 
         <div class="docs-section">
-            <SwaggerUI />
+            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
         </div>
     
+
+        <h1>Impact</h1>
+        <div class="row"> <p>
+            Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
+        </p> </div>
         <learn_more></learn_more>
 
     </div>
@@ -56,78 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
-import jsQR from 'jsqr';
-import { ref } from 'vue'
-
-const video = ref()
-const canvas = ref()
-var qrKey = ref()
-let qrdata = null
-
-export default {
-
-methods: {
-    qrCameraOffline () {
-        // Constraints of video screen to fit on most mobile devices
-        const constraints = {
-            video: {
-                width: {ideal: 1280},
-                height: {ideal: 720},
-                facingMode: "environment",
-                aspectRatio: {ideal: 1.777777778}
-            }
-        }
-        try {
-            // Get user permission to use camera then display camera view once readyState is 4 or 'loadedmetadata'
-            navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-                video.value.srcObject = stream;
-                video.value.load();
-                video.value.addEventListener('loadedmetadata', () => {
-                    video.value.play()
-                    requestAnimationFrame(this.tick)
-                })
-            })
-        } 
-        catch (error) {
-            alert(error);
-        }
-        },
-    tick () {
-        // Draw video elements onto canvas to get image data
-        canvas.value.width = video.value.videoWidth;
-        canvas.value.height = video.value.videoHeight; 
-        var ctx = canvas.value.getContext('2d');
-        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
-        var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
-
-        // Parse ImageData using jsQR to extract deviceKey
-        qrdata = jsQR(imageData.data, imageData.width, imageData.height);
-        var toRegEx = qrdata?.data;
-
-        // Use RegEx to extract the deviceKey to display to user
-        if (toRegEx) {
-            var deviceKey = toRegEx.match('([^/]*)$');
-            qrKey.value = deviceKey[1];
-            alert('QR Code Scanned');
-
-            // Close the video stream when done
-            const stream = video.value.srcObject;
-            if(stream){
-                const tracks = stream.getTracks();
-
-                tracks.forEach((track) => {
-                    track.stop()
-                })
-            video.value.srcObject = null
-            }
-        }
-        // Loop to keep scanning for qr code
-        requestAnimationFrame(this.tick);
-            }
-        }
-        }
-
-
+import Learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <style scoped>
