@@ -258,7 +258,6 @@ methods: {
         }
     },
     editSubmission(key: string) {
-        // TODO: new func for getting specific record from failed stash? azurefuncs or here?? (code repeated in create pages)
         // Get all failed requests
         let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
         let stashedRecord;
@@ -280,11 +279,24 @@ methods: {
                 isGroup = true;
             }
 
-            // Redirect to the creation page and send the stashedRecord
-            this.$router.push({
-                path: '/gdt',
-                state: { isGroup: isGroup, key: key, stashedRecord: stashedRecord }
-            });
+            // Store the record in sessionStorage so the create pages have access to it
+            sessionStorage.setItem("gdt-redirect-record", JSON.stringify(stashedRecord));
+            sessionStorage.setItem("gdt-redirect-isGroup", isGroup.toString());
+            sessionStorage.setItem("gdt-redirect-key", key);
+                                                             
+            // Redirect to the specified creation page
+            if (!stashedRecord.deviceName) {
+                // If the record doesn't have a name then it is part of an existing record
+                this.$router.push({
+                    path: '/history/offline'
+                });
+            } else {
+                // Otherwise it is either a new record or group
+                this.$router.push({
+                    path: '/gdt'
+                });
+            }
+
         } catch (error) {
             this.$snackbar.add({
                 type: 'error',

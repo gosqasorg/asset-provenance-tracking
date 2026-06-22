@@ -293,7 +293,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         if (JSON.stringify(existingRequests) !== "{}" && JSON.stringify(existingRequests) !== '["{}"]') {
             for (const storedRequest of existingRequests) {
                 // If new request == existing request, exit without updating the stash
-                if ((request && storedRequest[0][1] == request[0][1]) || storedRequest == request) {
+                if ((request && storedRequest[0][1] == request[0][1]) || storedRequest == currentKey) {
                     return;
                 }
 

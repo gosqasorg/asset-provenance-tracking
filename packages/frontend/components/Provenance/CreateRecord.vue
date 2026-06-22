@@ -147,7 +147,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, offlineDetectAndStash } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -278,6 +278,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
+            // Define the new record to post
+            const record = {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+            };
+
             // Get a refreshed copy of the records
             let records;
             try {
@@ -287,9 +295,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             }
 
             if (!records || records.length === 0) {
+                let errorMessage = 'No provenance record found'
+
+                // If we're offline stash the record and display the snackbar
+                const baseUrl = useRuntimeConfig().public.baseUrl;
+                const fullUrl = baseUrl + "/provenance/" + this.recordKey;
+
+                const formData = new FormData();
+                formData.append("provenanceRecord", JSON.stringify(record));
+                const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+
+                if (checkOffline === 202) {
+                    errorMessage = 'Status 202: User is offline but the record has been stashed'
+                } else if (checkOffline === 507) {
+                    errorMessage = 'Storage limit has been reached, record not stashed'
+                }
+                
+                // Otherwise the record doesn't exist
                 this.$snackbar.add({
                     type: 'error',
-                    text: 'No provenance record found'
+                    text: errorMessage
                 })
                 return;
             }
@@ -370,13 +395,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             // Append the record to the records.
             try {
-                const record = {
-                    blobType: 'deviceRecord',
-                    description: this.description,
-                    tags: this.tags,
-                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
-                };
-
                 await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {

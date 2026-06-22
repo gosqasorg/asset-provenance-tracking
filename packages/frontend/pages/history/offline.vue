@@ -110,7 +110,7 @@ their items while offline.
 </template>
 
 <script lang="ts">
-import { postProvenance, displayOfflineBanner, displayOnlineBanner } from '~/services/azureFuncs';
+import { postProvenance, displayOfflineBanner, displayOnlineBanner, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import jsQR from 'jsqr';
@@ -153,9 +153,19 @@ computed: {
 },
 async mounted() {
 	try {
+        // If we're redirecting from a banner get key from query params
         const route = useRoute();
         this.recordKey = route.query.key as string;
-        
+
+        // If we're redirecting from the offline edits page fill in the stashed information
+        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        if (isGroup === "false" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.recordKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.description = stashedRecord.description;
+        }
 
         EventBus.on('feedRefresh', this.refreshFeed);
 
@@ -229,6 +239,8 @@ methods: {
         } else {
             this.isCreating = false;
         }
+
+        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
         
         // Append the record to the records.
         try {
@@ -241,9 +253,13 @@ methods: {
 
             await postProvenance(this.recordKey, record, this.pictures || []);
 
-            // Refresh CreateRecord component
-            this.refresh();
-            this.refreshFeed();
+            // If the record came from a redirect then move it to the fulfilled stash
+            let key = sessionStorage.getItem("gdt-redirect-key") || '';
+
+            if (JSON.stringify(stashedRecord) !== '{}' && this.recordKey == key) {
+                stashOfflineRequest(this.recordKey, "gdt-stash-fulfilled");
+                removeOfflineRequest(this.recordKey, "gdt-stash-failed");
+            }
 
         } catch (error) {
             this.$snackbar.add({
@@ -252,6 +268,17 @@ methods: {
             });
             this.isCreating = false;
         }
+
+        // If we were redirected to this page then remove stored record
+        if (JSON.stringify(stashedRecord) !== '{}') {
+            sessionStorage.removeItem("gdt-redirect-record");
+            sessionStorage.removeItem("gdt-redirect-isGroup");
+            sessionStorage.removeItem("gdt-redirect-key");
+        }
+
+        // Refresh CreateRecord component
+        this.refresh();
+        this.refreshFeed();
     },
     async qrCameraOffline () {
         // Prevent spam clicking/reloading of the camera

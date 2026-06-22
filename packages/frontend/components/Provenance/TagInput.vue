@@ -147,10 +147,14 @@ export default {
       storedTags = [];
 
       // If we have tags from a redirect update our form to display/store them
-      if (history.state.stashedRecord && history.state.stashedRecord.tags) {
+      let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+      let recordIsGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+      const previousUrl = window.history.state.back;
+
+      if (JSON.stringify(stashedRecord) !== '{}' && stashedRecord.tags.length !== 0 && previousUrl === "/offline-edits") {
         // Display the tags either on the group page or the record page
-        if ((this.isGroup && history.state.isGroup) || (!this.isGroup && !history.state.isGroup)) {
-          history.state.stashedRecord.tags.forEach((tag) => {
+        if ((this.isGroup && recordIsGroup === "true") || (!this.isGroup && recordIsGroup === "false")) {
+          stashedRecord.tags.forEach((tag) => {
             let cleanTag = this.cleanArray([tag]);
             this.editableValue = '';
 

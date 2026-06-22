@@ -165,13 +165,17 @@ export default {
     },
     mounted() {
         // If we're creating a group from the stash fill in the stashed information
-        if (history.state.isGroup && history.state.stashedRecord) {
-            this.childrenKey = history.state.stashedRecord.children_key
-            this.childrenName = history.state.stashedRecord.children_name
-            this.reportingKey = history.state.stashedRecord.reportingKey
-            this.deviceKey = history.state.key
-            this.name = history.state.stashedRecord.deviceName
-            this.description = history.state.stashedRecord.description
+        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        if (isGroup === "true" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.childrenKey = stashedRecord.children_key
+            this.childrenName = stashedRecord.children_name
+            this.reportingKey = stashedRecord.reportingKey
+            this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.name = stashedRecord.deviceName
+            this.description = stashedRecord.description
         }
     },
     computed: {
@@ -356,6 +360,9 @@ export default {
                 };
             }
 
+            // Get stashed group if we're creating a group from the stash
+            let stashedGroup = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+
             try {
                 // Create a new deviceKey if we didn't get one from a stashed group
                 if (!validateKey(this.deviceKey)) {
@@ -373,8 +380,10 @@ export default {
                     isReportingKey: false
                 }, this.pictures || [])
 
-                // If the record is being created from the offline edits page move it to the fulfilled stash
-                if (history.state.back == '/offline-edits') {
+                // If the group is being created from the offline edits page move it to the fulfilled stash
+                const previousUrl = window.history.state.back;
+                
+                if (JSON.stringify(stashedGroup) !== '{}' && previousUrl === "/offline-edits") {
                     stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
@@ -413,6 +422,12 @@ export default {
                 EventBus.emit('isLoading')
             }
 
+            // If we were redirected to this page then remove stored record
+            if (JSON.stringify(stashedGroup) !== '{}') {
+                sessionStorage.removeItem("gdt-redirect-record");
+                sessionStorage.removeItem("gdt-redirect-isGroup");
+                sessionStorage.removeItem("gdt-redirect-key");
+            }
             
         },
     }

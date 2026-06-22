@@ -145,12 +145,16 @@ export default {
     },
     mounted() {
         // If we're creating a record from the stash fill in the stashed information
-        if (history.state.isGroup == false && history.state.stashedRecord) {
-            this.isReportingKey = history.state.stashedRecord.isReportingKey
-            this.recordHasParent = history.state.stashedRecord.hasParent
-            this.deviceKey = history.state.key
-            this.name = history.state.stashedRecord.deviceName
-            this.description = history.state.stashedRecord.description
+        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        if (isGroup === "false" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.isReportingKey = stashedRecord.isReportingKey
+            this.recordHasParent = stashedRecord.hasParent
+            this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.name = stashedRecord.deviceName
+            this.description = stashedRecord.description
         }
     },
     computed: {
@@ -220,6 +224,8 @@ export default {
             if (this.isSubmitting) return;
             
             this.isSubmitting = true;
+            let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+
             try {
                 // Create a new deviceKey if we didn't get one from a stashed record
                 if (!validateKey(this.deviceKey)) {
@@ -248,7 +254,9 @@ export default {
                 }
 
                 // If the record is being created from the offline edits page move it to the fulfilled stash
-                if (history.state.back == '/offline-edits') {
+                const previousUrl = window.history.state.back;
+                
+                if (JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
                     stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
@@ -276,6 +284,13 @@ export default {
                 EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
+            }
+
+            // If we were redirected to this page then remove stored record
+            if (JSON.stringify(stashedRecord) !== '{}') {
+                sessionStorage.removeItem("gdt-redirect-record");
+                sessionStorage.removeItem("gdt-redirect-isGroup");
+                sessionStorage.removeItem("gdt-redirect-key");
             }
         },
     }
