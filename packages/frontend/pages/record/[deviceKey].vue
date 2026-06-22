@@ -48,7 +48,7 @@ const recordHasParent = hasParent(provenance);
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
                             <div class="mb-3">
-                                <span id="desc" v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
+                                <span id="desc" v-html="clickableLink(deviceRecord?.description)" style="white-space: pre-wrap;"></span>
                             </div>
                         </div>
 

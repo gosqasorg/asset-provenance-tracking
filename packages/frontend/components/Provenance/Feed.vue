@@ -70,7 +70,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <div class="text"
                 style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
-                <span v-html="clickableLink(report.record?.description)" style="word-break: break-word;"></span>
+                <span v-html="clickableLink(report.record?.description)" style="white-space: pre-wrap;"></span>
             </div>
 
             <div class="mb-1 tag-container">
