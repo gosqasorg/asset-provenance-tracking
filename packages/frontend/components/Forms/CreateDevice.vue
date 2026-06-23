@@ -249,7 +249,7 @@ export default {
                 }
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
-                if (!(await onlineTestFetch()) && offlineModeFeatureFlag) {
+                if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
                     await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
                 }
 

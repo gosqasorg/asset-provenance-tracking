@@ -16,7 +16,7 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development
-export var offlineModeFeatureFlag = false;
+export var offlineModeFeatureFlag = { flag: false };
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
@@ -91,7 +91,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         // offline mode feature flag toggle
-        if (offlineModeFeatureFlag) {
+        if (offlineModeFeatureFlag.flag) {
             // Checks to see if user is offline, stashes record if offline
             const checkOffline = await offlineDetectAndStash(fullUrl, formData);
             if (checkOffline === 202) {
@@ -271,14 +271,14 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
         if (response.status !== 200) {
             result = false;
 
-            if (offlineModeFeatureFlag) { displayOfflineBanner = true; }
+            if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
         } 
 
 
     } catch (error) {
         console.log("Fetch attempt failed: " + error);
         result = false;
-        if (offlineModeFeatureFlag) { displayOfflineBanner = true; }
+        if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
     }
 
     return result

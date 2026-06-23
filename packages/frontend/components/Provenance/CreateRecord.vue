@@ -276,7 +276,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         async redirectIfOffline() {
             // If the user is offline navigate to the offline history page instead
-            if (!(await onlineTestFetch()) && offlineModeFeatureFlag) {
+            if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
                 await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
             }
         },
