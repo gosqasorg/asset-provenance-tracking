@@ -185,3 +185,36 @@ paths:
                   error:
                     type: string
                     example: "Invalid input parameters"
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      tags:
+        - GDT API
+      summary: Retrieve an attachment by device key and attachment ID
+      description: This endpoint retrieves an attachment associated with a specific device key and attachment ID.
+      operationId: getAttachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID to retrieve
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Successful retrieval 
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found
