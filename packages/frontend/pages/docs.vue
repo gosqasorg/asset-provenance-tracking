@@ -13,15 +13,23 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
-const fullSpecUrl = '/openAPI-docs-with-servers.yaml'
+const fullSpecUrl = '/GDT-OpenAPI-Spec.yaml'
 </script>
 
 <template>
   <div class="container-fluid" id="api-docs-container">
+
     <h1>API documentation</h1>
-    <div class="row">
-    </div>
+
+    <p>
+      OpenAPI Spec <a href="/GDT-OpenAPI-Spec.yaml">here</a>.
+    </p>
+
     <SwaggerUI :spec-url="fullSpecUrl" variant="page" />
+
     <learn_more />
+    
   </div>
 </template>
+
+

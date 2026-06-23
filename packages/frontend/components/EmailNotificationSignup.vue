@@ -1,6 +1,6 @@
 <template>
     <button class="btn px-3 notify-btn device-btn" :style="btnStyles" @click="openDialog">
-      Get email notifications
+      Sign up for Email Notifications
     </button>
 
     <div v-if="showDialog" class="email-dialog-overlay" @click.self="closeDialog">
