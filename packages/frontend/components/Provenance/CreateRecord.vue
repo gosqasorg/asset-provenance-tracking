@@ -147,7 +147,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -276,7 +276,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         async redirectIfOffline() {
             // If the user is offline navigate to the offline history page instead
-            if (!(await onlineTestFetch())) {
+            if (!(await onlineTestFetch()) && offlineModeFeatureFlag) {
                 await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
             }
         },
