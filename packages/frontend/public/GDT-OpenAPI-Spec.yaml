@@ -84,9 +84,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  data:
                     type: string
                     example: "Invalid input parameters"
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Error: Internal server error."
 
   /recall/{deviceKey}:
     post:
