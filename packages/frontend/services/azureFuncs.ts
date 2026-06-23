@@ -335,7 +335,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
             existingRequests = stash.split(",");
         }
 
-        // If there are no previous requests skip the loop
+        // Get the existing stashed requests, skip the loop if there are none
         if (JSON.stringify(existingRequests) !== "{}" && JSON.stringify(existingRequests) !== '["{}"]') {
             for (const storedRequest of existingRequests) {
                 // If new request == existing request, exit without updating the stash
@@ -420,6 +420,7 @@ export async function emptyStash() {
         let record;
         let currentKey;
 
+        // If the request can't be parsed then remove it, needs to be parsed to add to failed stash
         try {
             request = JSON.parse(request);
             fullUrl = request[0][1];
@@ -433,9 +434,9 @@ export async function emptyStash() {
         }
 
         try {
-            // Move key into syncing stash and exit the loop on failure
-            stashOfflineRequest(currentKey, "gdt-stash-syncing", request);
+            // Move key into the syncing stash
             localStorage.removeItem(request_name);
+            stashOfflineRequest(currentKey, "gdt-stash-syncing", request);
 
             // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
@@ -451,12 +452,12 @@ export async function emptyStash() {
 
         } catch (error) {
             // Move the request to the failed stash
+            console.log("Record from localStorage failed to create: " + error);
             stashOfflineRequest(currentKey, "gdt-stash-failed", request);
             removeOfflineRequest(currentKey, "gdt-stash-syncing");
-
-            console.log("Record from localStorage failed to create: " + error)
         }
 
+        // Update the stash counter
         localStorage.setItem('stash_counter', (stash_counter - 1).toString());
 
         if (!await(onlineTestFetch())) {

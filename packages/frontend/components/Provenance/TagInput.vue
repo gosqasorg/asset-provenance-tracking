@@ -167,9 +167,6 @@ export default {
         }
       }
 
-      // Call set (which updates tags in other files)
-      this.editableValue = "";
-
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;

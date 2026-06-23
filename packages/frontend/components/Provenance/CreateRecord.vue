@@ -304,7 +304,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (!records || records.length === 0) {
                 let errorMessage = 'No provenance record found'
 
-                // If we're offline stash the record and display the snackbar
+                // If we're offline stash the record and display the stashed message
                 const baseUrl = useRuntimeConfig().public.baseUrl;
                 const fullUrl = baseUrl + "/provenance/" + this.recordKey;
 

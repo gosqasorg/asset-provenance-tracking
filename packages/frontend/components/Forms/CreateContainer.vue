@@ -169,6 +169,7 @@ export default {
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
         const previousUrl = window.history.state.back;
 
+        // Only fill in stashed information if we redirected from the offline edits page
         if (isGroup === "true" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
             this.childrenKey = stashedRecord.children_key
             this.childrenName = stashedRecord.children_name
@@ -327,10 +328,7 @@ export default {
 
             if (this.createReportingKey) {
                 // Should be higher up?
-                // If a reportingKey already exists in the stash try to post that one instead
-                if (!validateKey(this.reportingKey)) {
-                    this.reportingKey = await makeEncodedDeviceKey();  // reporting key = public key
-                }
+                this.reportingKey = await makeEncodedDeviceKey();  // reporting key = public key
                 let tag_set = (this.tags).concat(['reportingkey']);
 
                 try {
@@ -383,7 +381,10 @@ export default {
                 // If the group is being created from the offline edits page move it to the fulfilled stash
                 const previousUrl = window.history.state.back;
                 
-                if (JSON.stringify(stashedGroup) !== '{}' && previousUrl === "/offline-edits") {
+                // Only update the stash if the stashed request is a group
+                let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+
+                if (JSON.stringify(stashedGroup) !== '{}' && isGroup == "true" && previousUrl === "/offline-edits") {
                     stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
@@ -417,7 +418,7 @@ export default {
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
                 if (!(await onlineTestFetch())) {
-                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
                 }
 
                 this.$snackbar.add({
@@ -429,7 +430,7 @@ export default {
                 EventBus.emit('isLoading')
             }
 
-            // If we were redirected to this page then remove stored record
+            // If we were redirected to this page then remove the stashed record
             if (JSON.stringify(stashedGroup) !== '{}') {
                 sessionStorage.removeItem("gdt-redirect-record");
                 sessionStorage.removeItem("gdt-redirect-isGroup");

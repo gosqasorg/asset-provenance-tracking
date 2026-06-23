@@ -270,14 +270,14 @@ methods: {
             this.isCreating = false;
         }
 
-        // If we were redirected to this page then remove stored record
+        // If we were redirected to this page then remove the stashed record
         if (JSON.stringify(stashedRecord) !== '{}') {
             sessionStorage.removeItem("gdt-redirect-record");
             sessionStorage.removeItem("gdt-redirect-isGroup");
             sessionStorage.removeItem("gdt-redirect-key");
         }
 
-        // Refresh CreateRecord component
+        // Refresh offline component
         this.refresh();
         this.refreshFeed();
     },

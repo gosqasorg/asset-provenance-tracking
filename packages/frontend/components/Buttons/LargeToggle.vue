@@ -41,7 +41,7 @@
 
       const checkbox = document.getElementById("toggle") as HTMLInputElement
       if (checkbox) {
-          checkbox.checked = this.rightLabelStart;
+        checkbox.checked = this.rightLabelStart;
       }
     },
     methods: {

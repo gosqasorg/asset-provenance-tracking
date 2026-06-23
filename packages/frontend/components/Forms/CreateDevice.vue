@@ -149,6 +149,7 @@ export default {
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
         const previousUrl = window.history.state.back;
 
+        // Only fill in stashed information if we redirected from the offline edits page
         if (isGroup === "false" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
             this.isReportingKey = stashedRecord.isReportingKey
             this.recordHasParent = stashedRecord.hasParent
@@ -255,7 +256,10 @@ export default {
                 // If the record is being created from the offline edits page move it to the fulfilled stash
                 const previousUrl = window.history.state.back;
                 
-                if (JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+                // Only update the stash if the stashed request is a record
+                let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+
+                if (JSON.stringify(stashedRecord) !== '{}' && isGroup == "false" && previousUrl === "/offline-edits") {
                     stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
@@ -278,7 +282,7 @@ export default {
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
                 if (!(await onlineTestFetch())) {
-                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
                 }
 
                 this.$snackbar.add({
@@ -292,7 +296,7 @@ export default {
                 this.isSubmitting = false;
             }
 
-            // If we were redirected to this page then remove stored record
+            // If we were redirected to this page then remove the stashed record
             if (JSON.stringify(stashedRecord) !== '{}') {
                 sessionStorage.removeItem("gdt-redirect-record");
                 sessionStorage.removeItem("gdt-redirect-isGroup");
