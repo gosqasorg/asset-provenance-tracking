@@ -267,3 +267,12 @@ describe("Group Creation v2 tests", () => {
 	// More tests
 
 });
+
+describe("Group Update v2 tests", () => {
+	it("Updates group records", () => {
+		// var val = do_thing();
+		expect(0).toBe(0);
+	});
+
+	// More tests
+})
