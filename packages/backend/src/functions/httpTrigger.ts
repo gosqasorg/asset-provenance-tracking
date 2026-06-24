@@ -1282,7 +1282,16 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try{} catch{}
+    try{
+        let theRequest = await request.json()
+        return {
+            status: 200
+        }
+    } catch{
+        return {
+            status: 400
+        }
+    }
 }
 
 // Once per day update the total record, record entry, and attachment counts
@@ -1392,7 +1401,7 @@ app.post('recall', {
 
 app.post('addEntry', {
     authLevel: 'anonymous',
-    // route: '',
+    route: 'addEntry/{deviceKey}',
     handler: addEntryHandler
 })
 
