@@ -935,7 +935,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
             const emailResult = await sendEmail(
-                //"DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 email,
                 "GOSQAS Verification Code",
@@ -1167,7 +1166,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
             const emailResult = await sendEmail(
-                "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net",
+                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 entity.email as string,
                 "GOSQAS Verification Code",
                 `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
