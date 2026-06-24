@@ -3,7 +3,7 @@ import { ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
 
 const NOTIFICATION_TYPE = 'notificationSignups';
-const FROM_ADDRESS = "DoNotReply@091bd21c-5093-45ed-9479-ad92fef9d66e.azurecomm.net";
+const FROM_ADDRESS = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
 const SUBJECT = 'Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
