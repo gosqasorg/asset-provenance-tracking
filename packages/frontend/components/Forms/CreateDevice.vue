@@ -39,8 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <!-- Subscribe to notifications -->
             <div class="my-3">
                 <h4>
-                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
-                        Receive email notifications for this record
+                    <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
                 </h4>
 
                 <div v-if="notify">
@@ -52,6 +51,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         @keyup.enter=""
                 />
                 </div>
+            </div>
+
+            <!-- Subscribe to tag notifications -->
+            <div class="my-3">
+                <h4>
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
+
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="tagsEmailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+
+                <!-- TODO: replace tag components with TagInput and SuggestedTags (reduce repeat code)..? -->
+                <ProvenanceTagInputField v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags"/>
+
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
             </div>
 
             <!-- Volunteer Feedback Email -->
@@ -131,6 +152,7 @@ export default {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
@@ -138,7 +160,9 @@ export default {
             isChecked: false,
             textInput: '',
             notify: false,     // email notification checkbox
+            notifyTags: false,     // email tag notification checkbox
             emailInput: '',
+            tagsEmailInput: '',  // email for specified tag signup
         }
     },
     computed: {
@@ -170,6 +194,9 @@ export default {
     methods: {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -314,12 +341,17 @@ export default {
 
     }
 
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #record-button {
@@ -350,7 +382,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #record-button {

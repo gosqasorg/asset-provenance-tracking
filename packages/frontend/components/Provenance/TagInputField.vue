@@ -1,5 +1,5 @@
 <!--
-TagInput.vue -- Analyzing User Tag
+TagInputField.vue -- Tag Input field without the Suggested Tags
 Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -17,28 +17,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
   <div>
-    <ul id="tagsList" class="ulTagsList"><input ref="inputField" type="text" id="tagInp" class="form-control" placeholder="Record Tag" @input="updateTags" :value="editableValue" /></ul>
+    <ul id ="emailTagsList" class="ulTagsList"><input ref="emailInputField" type="text" id="emailTagInp" class="form-control" placeholder="Record Tag" @input="updateTags" :value="emailEditableValue" /></ul>
 
     <!-- UI Toolkit (for x icon on tags) -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
-
-    <h5 class="mt-3 mb-1">Suggested Tags</h5>
-    <div class="tag-container mb-2">
-      <button class="tag" type="button" v-for="tag in TagName" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'" 
-      @click="moveTagToForm(tag)">{{ tag }}</button>
-    </div>
   </div>
 </template>
 
 <script>
 import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
-import { TagName } from "~/utils/tags";
 import { EventBus } from '~/utils/event-bus';
 
 let storedTags = [];  // only tags in bubbles
 let createdTags = [];  // all tags in input field
 
-function removeTag(inputField, tag) {
+function removeTag(emailInputField, tag) {
   // Remove tag from screen and storedList
   if (storedTags.includes(tag)) {
     storedTags.forEach((item, index) => {
@@ -54,12 +47,12 @@ function removeTag(inputField, tag) {
 
   // Updates tags in other files
   const event = new Event('input');
-  inputField.dispatchEvent(event);
+  emailInputField.dispatchEvent(event);
 }
 
 function createTag() {
-  let ul = document.getElementById("tagsList");
-  let input = document.getElementById("tagInp");
+  let ul = document.getElementById("emailTagsList");
+  let input = document.getElementById("emailTagInp");
 
   ul.querySelectorAll("li").forEach(li => li.remove());
   
@@ -88,7 +81,7 @@ function createTag() {
 }
 
 export default {
-  name: 'TagInput',
+  name: 'TagInputField',
   props: {
     modelValue: {
       type: Array,
@@ -106,7 +99,7 @@ export default {
     };
   },
   computed: {
-    editableValue: {
+    emailEditableValue: {
       get() {
         return this.tags.join(this.separator);
       },
@@ -147,17 +140,6 @@ export default {
         const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
         return cleanedArray;
     },
-    moveTagToForm(tag) {
-      // Store the value that was clicked
-      if (!storedTags.includes(tag)) {
-        storedTags.push(tag);
-        createdTags.splice(createdTags.length - 1, 0, tag);
-      }
-
-      this.$emit ('updateTags', createdTags);  // update tags in other files
-      
-      createTag();
-    },
     updateTags(event) {
       let tag = event.target.value;
 
@@ -168,7 +150,7 @@ export default {
         // Check to make sure the word is clean before creating tag
         tag = tag.substring(0, tag.length - 1);
         let cleanTag = this.cleanArray([tag]);
-        this.editableValue = '';
+        this.emailEditableValue = '';
 
         if (tag == cleanTag[0]) {
           storedTags.push(tag);
@@ -179,8 +161,9 @@ export default {
           event.target.value = "";
         }
       }
+
       // Call set (which updates tags in other files)
-      this.editableValue = event.target.value;
+      this.emailEditableValue = event.target.value;
     },
   },
 };
