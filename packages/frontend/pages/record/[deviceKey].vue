@@ -61,7 +61,7 @@ const recordHasParent = hasParent(provenance);
                         <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
                         <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
-                        <EmailNotificationSignup :recordKey="_recordKey" :fontSize="18" :height="61"></EmailNotificationSignup>
+                        <EmailNotification :recordKey="_recordKey" :fontSize="18" :height="61"></EmailNotification>
                     </div>
 
                     <!-- QR -->
