@@ -13,9 +13,10 @@ describe("Backend Record Creation Tests", () => {
             hasParent: false,
             isReportingKey: false,
         }
-        const postValues = { "provenanceRecord": record, "attachment": [] }
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -52,9 +53,10 @@ describe("Backend Record Creation Tests", () => {
             hasParent: false,
             isReportingKey: false,
         }
-        const postValues = { "provenanceRecord": record, "attachment": [] }
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -91,16 +93,12 @@ describe("Backend Record Creation Tests", () => {
             isReportingKey: false,
         }
 
-        // read the file and convert it to base64 string
         const buffer = await readFile('./test/attachments/a200.jpg');
-        let base64string = buffer.toString("base64");
-        const attachment = {
-            name: "kirby.jpg",
-            file: base64string
-        }
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
+        formData.append("kirby.jpg", new Blob([new Uint8Array(buffer)], { type: 'image/jpeg' }), "kirby.jpg");
 
-        const postValues = { "provenanceRecord": record, "attachment": attachment }
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200);
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -150,8 +148,9 @@ describe("Backend Record Creation Tests", () => {
             isReportingKey: false,
         }
 
-        const postValues = { "provenanceRecord": record, "attachment": [] }
-        let recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const formData1 = new FormData();
+        formData1.append("provenanceRecord", JSON.stringify(record));
+        let recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData1 });
         expect(recordResponse.status).toBe(400);
 
         // create a record that's missing an optional field and confirm it succeeds (blobType)
@@ -164,8 +163,9 @@ describe("Backend Record Creation Tests", () => {
             isReportingKey: false,
         }
 
-        const postValues2 = { "provenanceRecord": record2, "attachment": [] }
-        recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues2) });
+        const formData2 = new FormData();
+        formData2.append("provenanceRecord", JSON.stringify(record2));
+        recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData2 });
         expect(recordResponse.status).toBe(200);
 
         let recordUrl = (await recordResponse.json()).recordUrl;
