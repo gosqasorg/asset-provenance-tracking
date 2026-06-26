@@ -4,10 +4,10 @@ info:
   version: 1.0.0
   description: Auto-generated OpenAPI specification
 servers:
-#  - url: http://localhost:7071/api
+ - url: http://localhost:7071/api
 #    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
+  # - url: https://gosqasbe.azurewebsites.net/api
+  #   description: Staging server
 #  - url: https://gdtprodbackend.azurewebsites.net/api
 #    description: Production server
 paths:
@@ -136,7 +136,7 @@ paths:
         description: Record creation parameters in postProvenance
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
@@ -160,20 +160,11 @@ paths:
                       description: Group key for grouped records, or empty string for standalone records.
                       example: ""
                 attachment:
-                  oneOf:
-                    - type: string
-                      example: ""
-                    - type: object
-                      required:
-                        - file
-                        - name
-                      properties:
-                        file:
-                          type: string
-                          description: Base64-encoded attachment content
-                        name:
-                          type: string
-                          example: "photo.jpg"
+                  type: array
+                  description: Optional binary files attached to the form data.
+                  items:
+                    type: string
+                    format: binary 
       responses:
         '200':
           description: Successful creation
