@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
-            <div v-else>
+            <div v-if="!isChild">
                 <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey"
                     placeholder="Add to Group (key, optional)" />
             </div>
@@ -149,7 +149,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  <script lang="ts">
  import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
- import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
+ import { addChildKeys, addToGroup, hasParent, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
  import Banner from '../Banner.vue';
@@ -209,6 +209,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 return false;
             }
         },
+        // Checks whether record is a child, disables 'Add to Group' field if is a child
+        isChild(): boolean {
+            return Boolean(this.deviceRecord?.hasParent)
+        }
     },
     methods: {
         closePopUpA() {
