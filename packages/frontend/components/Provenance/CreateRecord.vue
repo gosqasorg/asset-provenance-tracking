@@ -64,9 +64,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     Recall all children
             </h4>
 
+            <!-- Subscribe to notifications -->
             <h4 class="p-1 mt-0">
-                <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
-                    Receive email notifications for this record
+                <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
             </h4>
 
             <div v-if="notify">
@@ -78,6 +78,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     @keyup.enter=""
                 />
             </div>
+
+            <!-- Subscribe to tag notifications -->
+            <h4 class="p-1 my-0">
+                <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+            </h4>
+
+            <div v-if="notifyTags">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    required placeholder="Email"
+                    @keyup.enter=""
+            />
+            </div>
+
+            <ProvenanceTagInputEmail v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags"/>
+            <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
         </div>
         
         <!-- Offline Banner Bottom-->
@@ -160,6 +178,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
+            emailTags: [] as string[],
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
@@ -168,6 +187,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             annotatePopUp: false,
             recallPopUp: false,
             notify: false,
+            notifyTags: false,
             emailInput: ''
         }
     },
@@ -232,6 +252,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;

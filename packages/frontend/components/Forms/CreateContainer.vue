@@ -53,7 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
-            <!-- Sign up for email notifications-->
+            <!-- Subscribe to notifications-->
             <h4 class="p-1 my-0">
                 <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
             </h4>
@@ -66,7 +66,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     required placeholder="Email"
                     @keyup.enter=""
                 />
-                </div>
+            </div>
+
+            <!-- Subscribe to tag notifications -->
+            <h4 class="p-1 my-0">
+                <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+            </h4>
+
+            <div v-if="notifyTags">
+                <input
+                    type="email"
+                    class="form-control"
+                    v-model="emailInput"
+                    required placeholder="Email"
+                    @keyup.enter=""
+            />
+            </div>
+
+            <ProvenanceTagInputEmail v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags"/>
+            <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
 
             <!-- Volunteer Feedback Email --> 
             <h4 class="p-1">
@@ -146,11 +164,13 @@ export default {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             childrenKeys: 0,
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
+            notifyTags: false,      // email tag notification checkbox
             emailInput: '',
             isChecked: false,
             textInput: '',
@@ -202,6 +222,9 @@ export default {
 
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -457,13 +480,17 @@ export default {
         border:5px;
         border-color:red;
     }
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #group-button {
@@ -494,7 +521,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #group-button {
