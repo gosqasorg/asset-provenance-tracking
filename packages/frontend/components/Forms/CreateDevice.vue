@@ -69,8 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 />
                 </div>
 
-                <!-- TODO: replace tag components with TagInput and SuggestedTags (reduce repeat code)..? -->
-                <ProvenanceTagInputField v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags"/>
+                <ProvenanceTagInputEmail v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags"/>
 
                 <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
             </div>

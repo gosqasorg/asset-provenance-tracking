@@ -1,5 +1,5 @@
 <!--
-TagInput.vue -- Analyzing User Tag
+TagInputField.vue -- Tag Input field without the Suggested Tags
 Copyright (C) 2024 Nora Moor, Katie Pryal, and GOSQAS
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -17,29 +17,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
   <div>
-    <ul id="tagsList" class="ulTagsList"><input ref="inputField" type="text" id="tagInp" class="form-control" placeholder="Record Tag" @input="updateTagsWithInput" :value="editableValue" /></ul>
+    <ul id ="emailTagsList" class="ulTagsList"><input ref="emailInputField" type="text" id="emailTagInp" class="form-control" placeholder="Tag(s) for Notifications" @input="updateTagsWithInput" :value="emailEditableValue" /></ul>
 
     <!-- UI Toolkit (for x icon on tags) -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
-
-    <h5 class="mt-3 mb-1">Suggested Tags</h5>
-    <div class="tag-container mb-2">
-      <button class="tag" type="button" v-for="tag in TagName" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'" 
-      @click="moveTagToForm(tag)">{{ tag }}</button>
-    </div>
   </div>
 </template>
 
 <script>
-import { TagName } from "~/utils/tags";
 import { EventBus } from '~/utils/event-bus';
-import { createTag, updateTags, cleanArray } from "../../utils/tagFuncs.js";
+import { updateTags, cleanArray } from "../../utils/tagFuncs.js";
 
+// TODO: confirm these fields are properly updated now that remove/create are in a diff. file (should be fine since post works)
 let storedTags = [];  // only tags in bubbles
 let createdTags = [];  // all tags in input field
 
 export default {
-  name: 'TagInput',
+  name: 'TagInputField',
   props: {
     modelValue: {
       type: Array,
@@ -57,7 +51,7 @@ export default {
     };
   },
   computed: {
-    editableValue: {
+    emailEditableValue: {
       get() {
         return this.tags.join(this.separator);
       },
@@ -95,21 +89,10 @@ export default {
   methods: {
     updateTagsWithInput() {
       // Get our most recent changes to the tags input field
-      this.editableValue = document.getElementById("tagInp").value;
+      this.emailEditableValue = document.getElementById("emailTagInp").value;
 
       // Update the stored tags (the colorful ones) in our input section
-      this.editableValue = updateTags(storedTags, createdTags, this.editableValue, "tagsList", "tagInp", "Record Tag");
-    },
-    moveTagToForm(tag) {
-      // Store the value that was clicked
-      if (!storedTags.includes(tag)) {
-        storedTags.push(tag);
-        createdTags.splice(createdTags.length - 1, 0, tag);
-      }
-
-      this.$emit ('updateTags', createdTags);  // update tags in other files
-      
-      createTag(storedTags, createdTags, "tagsList", "tagInp", "Record Tag");
+      this.emailEditableValue = updateTags(storedTags, createdTags, this.emailEditableValue, "emailTagsList", "emailTagInp", "Tag(s) for Notifications");
     },
   },
 };
