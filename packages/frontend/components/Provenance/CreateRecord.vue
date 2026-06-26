@@ -210,8 +210,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             }
         },
         // Checks whether record is a child, disables 'Add to Group' field if is a child
-        isChild(): boolean {
-            return Boolean(this.deviceRecord?.hasParent)
+        isChild() {
+            return this.deviceRecord?.hasParent
         }
     },
     methods: {
