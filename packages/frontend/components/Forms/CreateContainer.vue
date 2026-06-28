@@ -414,9 +414,17 @@ export default {
                     await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
                 }
 
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Error creating the group: ${error}`
+                    text: `Error creating the group: ${errorMessage}`
                 })
 
                 // Otherwise just return to the /gdt page

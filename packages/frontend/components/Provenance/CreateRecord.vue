@@ -431,9 +431,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             } catch (error) {
                 this.redirectIfOffline()
+
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Error creating record: ${error}`
+                    text: `Error creating record: ${errorMessage}`
                 });
             }
         }
