@@ -28,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { EventBus } from '~/utils/event-bus';
 import { updateTags, cleanArray } from "../../utils/tagFuncs.js";
 
-// TODO: confirm these fields are properly updated now that remove/create are in a diff. file (should be fine since post works)
 let storedTags = [];  // only tags in bubbles
 let createdTags = [];  // all tags in input field
 
@@ -89,10 +88,13 @@ export default {
   methods: {
     updateTagsWithInput() {
       // Get our most recent changes to the tags input field
-      this.emailEditableValue = document.getElementById("emailTagInp").value;
+      let tagInput = document.getElementById("emailTagInp").value;
 
       // Update the stored tags (the colorful ones) in our input section
-      this.emailEditableValue = updateTags(storedTags, createdTags, this.emailEditableValue, "emailTagsList", "emailTagInp", "Tag(s) for Notifications");
+      this.emailEditableValue = updateTags(storedTags, createdTags, tagInput, "emailTagsList", "emailTagInp");
+
+      // Hide the placeholder if any tags are stored
+      updatePlaceholder(storedTags, "emailTagInp", "Tag(s) for Notifications");
     },
   },
 };

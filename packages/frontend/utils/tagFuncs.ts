@@ -15,8 +15,7 @@
 
 import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
 
-// TODO: can we reduce the number of parameters?
-function removeTag(inputField: HTMLInputElement, tag: string, storedTags: string[], createdTags: string[], tagsListID: string, tagInputID: string, placeholder: string) {
+function removeTag(tag: string, storedTags: string[], createdTags: string[], tagsListID: string, tagInputID: string) {
 	// Remove tag from the screen
 	if (storedTags.includes(tag)) {
 		storedTags.forEach((item, index) => {
@@ -28,20 +27,18 @@ function removeTag(inputField: HTMLInputElement, tag: string, storedTags: string
 	}
 
 	// Redraw visible tags
-	createTag(storedTags, createdTags, tagsListID, tagInputID, placeholder);
+	redrawTags(storedTags, createdTags, tagsListID, tagInputID);
 
 	// Update tags in other files
 	const event = new Event('input');
+	let inputField = document.getElementById(tagInputID) as HTMLInputElement;
 	inputField.dispatchEvent(event);
 }
 
-// TODO: would redrawTags be more or less confusing? (since this function adds and removes tags)
-export function createTag(storedTags: string[], createdTags: string[], tagsListID: string, tagInputID: string, placeholder: string) {
+export function redrawTags(storedTags: string[], createdTags: string[], tagsListID: string, tagInputID: string) {
 	// Get the page elements to update
 	let ul = document.getElementById(tagsListID);
-	let input = document.getElementById(tagInputID) as HTMLInputElement;
 
-	// TODO: make cleaner?
 	// Remove all the tags on the screen
 	if (ul) {
 		ul.querySelectorAll("li").forEach(li => li.remove());
@@ -57,7 +54,7 @@ export function createTag(storedTags: string[], createdTags: string[], tagsListI
 
 		// Create event listener for click
 		liTag.addEventListener('click', function () {
-			removeTag(input, tag, storedTags, createdTags, tagsListID, tagInputID, placeholder);
+			removeTag(tag, storedTags, createdTags, tagsListID, tagInputID);
 		});
 
 		// Add tag to the screen
@@ -65,13 +62,6 @@ export function createTag(storedTags: string[], createdTags: string[], tagsListI
 			ul.insertAdjacentElement("afterbegin", liTag);
 		}
 	});
-
-	// If there's no text or tags on the screen show the placeholder text
-	if (storedTags.length == 0 && input) {
-		input.placeholder = placeholder;
-	} else if (input) {
-		input.placeholder = "";
-	}
 }
 
 export function cleanArray(array: string[]) {
@@ -81,7 +71,7 @@ export function cleanArray(array: string[]) {
 	return cleanedArray;
 }
 
-export function updateTags(storedTags: string[], createdTags: string[], editableValue: string, tagsListID: string, tagInputID: string, placeholder: string) {
+export function updateTags(storedTags: string[], createdTags: string[], editableValue: string, tagsListID: string, tagInputID: string) {
 	// Get the last char of a str, if it's a space then remove the space and add the tag to the list
 	if (storedTags.includes(editableValue.substring(0, editableValue.length - 1)) || editableValue == ' ') {
 		editableValue = "";
@@ -93,8 +83,7 @@ export function updateTags(storedTags: string[], createdTags: string[], editable
 		if (tag == cleanTag[0]) {
 			storedTags.push(tag);
 			createdTags.push(tag);
-			// TODO: don't want to hardcode IDs!
-			createTag(storedTags, createdTags, tagsListID, tagInputID, placeholder);
+			redrawTags(storedTags, createdTags, tagsListID, tagInputID);
 		}
 
 		// Remove the text from the input field
@@ -102,4 +91,14 @@ export function updateTags(storedTags: string[], createdTags: string[], editable
 	}
 
 	return editableValue;
+}
+
+export function updatePlaceholder(storedTags: string[], tagInputID: string, placeholder: string) {
+	// Only show the placeholder text if no tags are stored
+	let input = document.getElementById(tagInputID) as HTMLInputElement;
+	if (storedTags.length == 0 && input) {
+		input.placeholder = placeholder;
+	} else if (input) {
+		input.placeholder = "";
+	}
 }

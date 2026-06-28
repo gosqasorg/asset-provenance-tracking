@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script>
 import { TagName } from "~/utils/tags";
 import { EventBus } from '~/utils/event-bus';
-import { createTag, updateTags, cleanArray } from "../../utils/tagFuncs.js";
+import { redrawTags, updateTags, cleanArray, updatePlaceholder } from "../../utils/tagFuncs.js";
 
 let storedTags = [];  // only tags in bubbles
 let createdTags = [];  // all tags in input field
@@ -95,10 +95,13 @@ export default {
   methods: {
     updateTagsWithInput() {
       // Get our most recent changes to the tags input field
-      this.editableValue = document.getElementById("tagInp").value;
+      let tagInput = document.getElementById("tagInp").value;
 
       // Update the stored tags (the colorful ones) in our input section
-      this.editableValue = updateTags(storedTags, createdTags, this.editableValue, "tagsList", "tagInp", "Record Tag");
+      this.editableValue = updateTags(storedTags, createdTags, tagInput, "tagsList", "tagInp");
+
+      // Hide the placeholder if any tags are stored
+      updatePlaceholder(storedTags, "tagInp", "Record Tag");
     },
     moveTagToForm(tag) {
       // Store the value that was clicked
@@ -107,9 +110,10 @@ export default {
         createdTags.splice(createdTags.length - 1, 0, tag);
       }
 
+      updatePlaceholder(storedTags, "tagInp", "Record Tag");  // hide placeholder if tags are stored
       this.$emit ('updateTags', createdTags);  // update tags in other files
       
-      createTag(storedTags, createdTags, "tagsList", "tagInp", "Record Tag");
+      redrawTags(storedTags, createdTags, "tagsList", "tagInp", "Record Tag");
     },
   },
 };
