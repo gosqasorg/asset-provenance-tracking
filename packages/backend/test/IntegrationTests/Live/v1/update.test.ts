@@ -440,7 +440,7 @@ describe("Record Update Tests", () => {
       expect(childRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
       expect(childRecord.record.description).toBe("Updated with annotate");
 
-      const getGrandchildResponse = await fetch(`${baseUrl}${childKey}`);
+      const getGrandchildResponse = await fetch(`${baseUrl}${grandchildKey}`);
       const grandchildData = await getGrandchildResponse.json();
       const grandchildRecord = JSON.parse(JSON.stringify(grandchildData[0]));
 
