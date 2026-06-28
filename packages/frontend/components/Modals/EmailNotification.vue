@@ -1,0 +1,612 @@
+<!-- EmailNotification.vue -- validation of email
+Copyright (C) 2024 GOSQAS
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
+
+<template>
+    <!-- Email notifications modal -->
+    <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered dialog">
+
+        <!-- email input state --> 
+        <div v-if="step === 'signup'" class="modal-content content">
+            <h5 class="modal-title title" id="notifModalLabel">Turn on email notifications</h5>
+            <div class="body">
+                <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
+                <input
+                    class="form-control"
+                    v-model="email"
+                    @input="emailError = null"
+                    placeholder="Email"
+                    aria-label="Email address"
+                    :class="{ 'input-error': emailError }"
+                />
+                <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
+            </div>
+            <div class="footer">
+                <div class="btn-container">
+                    <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal" @click="email = ''">Go Back</button>
+                    <button type="button" class="btn btn-primary" @click="sendCode" :disabled="isSubmitting || !email">{{ emailLabel }}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- code verify state -->
+        <div v-if="step === 'verify'" class="modal-content content">
+            <h5 v-if="error"class="modal-title title" id="notifModalLabel">Incorrect Code</h5>
+            <h5 v-else class="modal-title title" id="notifModalLabel">Check your email</h5>
+
+
+            <div class="body">
+                <p v-if="error" style="line-height: 30px; margin-bottom: 0;" id="code-error" aria-describedby="code-error">
+                    That code is incorrect or has expired. Please try again or request a new code to be sent to <strong>{{ email }}</strong>.
+                </p>
+                <p v-else style="line-height: 30px; margin-bottom: 0;">
+                    A 6-digit verification code was sent to <strong>{{ email }}</strong>. It will expire in 10 minutes.
+                </p>
+                <input 
+                    type="tel"
+                    class="form-control" 
+                    v-model="code" 
+                    placeholder="Verification Code"
+                    aria-label="Verification Code"
+                    maxlength="6"
+                    :class="{ 'input-error': error && verifyCooldownRemaining > 0 }"
+                />
+            </div>
+            <div class="footer">
+                <div class="btn-container">
+                    <button type="button" class="btn btn-tertiary" @click="step = 'signup'; code = ''">Go Back</button>
+                    <button type="button" class="btn btn-primary" @click="verifyCode" :disabled="verifyDisabled || !code">{{verifyLabel}}</button>
+                </div>
+                <div class="resend-container">
+                    <p style="line-height: 30px; margin-bottom: 0;">Didn't receive a code?</p>
+                    <button class="btn-link" @click="resendCode" :disabled="resendDisabled">{{ resendLabel }}</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- success state -->
+        <div v-if="step === 'success'" class="modal-content content">
+            <h5 class="modal-title title" id="notifModalLabel">Email Verified</h5>
+            <div class="body">
+                <p style="line-height: 30px; margin-bottom: 0;">You're now subscribed to notifications for this record. You can unsubscribe at any time through the link in your notification emails.</p>
+            </div>
+            <div class="footer">
+                <div class="btn-container">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @click="step = 'signup'">Go back to record</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- expired code state -->
+         <div v-if="step === 'expired'" class="modal-content content">
+            <h5 class="modal-title title" id="notifModalLabel">This link is no longer valid</h5>
+            <div class="body">
+                <p style="line-height: 30px; margin-bottom: 0;">This verification link has expired or is no longer active. Please request a new code to complete your verification.</p>
+            </div>
+            <div class="footer">
+                <div class="btn-container">
+                    <button type="button" class="btn btn-tertiary" data-bs-dismiss="modal">Go Back</button>
+                    <button type="button" class="btn btn-primary" @click="resendCode, step = 'signup'" :disabled="isSubmitting">{{ requestCodeLabel }}</button>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+</template>
+
+
+<script lang="ts">
+    import { getPendingVerification, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
+
+    export default {
+        data() {
+            return {
+                step: 'signup' as 'signup' | 'verify' | 'success' | 'expired',
+                email: '',
+                code: '',
+                error: null as string | null,
+                emailError: null as string | null,
+                isSubmitting: false,
+                isResending: false,
+                token: '',
+
+                // resend cooldown: 3 free resends, then 1m wait time /2m /4m. 8m. 15m
+                resendCount: 0,
+                resendCooldownUntil: 0,
+                resendCooldownRemaining: 0,
+
+                // invalid code cooldown, scales: 30s / 1m / 2m / 4m / 8m / 15m
+                invalidAttempts: 0,
+                verifyCooldownUntil: 0,
+                verifyCooldownRemaining: 0,
+
+                _cooldownInterval: undefined as ReturnType<typeof setInterval> | undefined,
+            }
+        },
+
+        props: {
+            autoToken: { type: String, default: '' },
+            autoCode:  { type: String, default: '' },
+        },
+
+        computed: {
+            resendDisabled(): boolean {
+                return this.isResending || this.resendCooldownRemaining > 0;
+            },
+            verifyDisabled(): boolean {
+                return this.isSubmitting || this.verifyCooldownRemaining > 0;
+            },
+            resendLabel(): string {
+                if (this.isResending) return 'Sending...';
+                if (this.resendCooldownRemaining > 0) {
+                    return `Resend Code (${this.formatTime(this.resendCooldownRemaining)})`;
+                }
+                return 'Resend Code'; 
+            },
+            verifyLabel(): string {
+                if (this.isSubmitting) return 'Verifying...';
+                // try again w/ countdown 
+                if (this.error && this.verifyCooldownRemaining > 0) {
+                    return `Try again (${this.formatTime(this.verifyCooldownRemaining)})`;
+                }
+                // if error occured display try again, otherwise default to verify
+                if (this.error) {
+                    return 'Try again';
+                }
+                return 'Submit Code';
+            },
+            emailLabel(): string {
+                if (this.isSubmitting) return 'Sending Code...';
+                return 'Turn on notifications';
+            },
+            requestCodeLabel(): string {
+                if (this.isSubmitting) return 'Sending Code...';
+                return 'Request a new code';
+            }
+        },
+
+        async mounted() {
+            // remove prev mount cause no code attach to url
+            if (this.autoToken && this.autoCode) {
+                await this.autoVerify();
+            } 
+        },
+
+        methods: {
+            async sendCode() {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
+                if (!this.email || !emailRegex.test(this.email)) {
+                    this.emailError = 'Please enter a valid email address.';
+                    return;
+                } 
+
+                this.isSubmitting = true;
+                this.error = null;
+                this.emailError = null;
+                try {
+                    const deviceKey = this.$route.params.deviceKey as string;
+                    this.token = await postNotificationEmail(this.email, deviceKey);
+                    this.step = 'verify';
+                } catch(error) {
+                    this.$snackbar.add({ 
+                        type: 'error', 
+                        text: `Failed to send code: ${error}` 
+                    });
+                } finally {
+                    this.isSubmitting = false;
+                }
+            }, 
+
+            startCooldownTimer() {
+                if (this._cooldownInterval) return;
+                this._cooldownInterval = setInterval(() => {
+                    const now = Date.now();
+                    this.resendCooldownRemaining = Math.max(0, Math.ceil((this.resendCooldownUntil - now) / 1000));
+                    this.verifyCooldownRemaining = Math.max(0, Math.ceil((this.verifyCooldownUntil - now) / 1000));
+
+                    if (this.resendCooldownRemaining === 0 && this.verifyCooldownRemaining === 0) {
+                        clearInterval(this._cooldownInterval);
+                        this._cooldownInterval = undefined;
+                    }
+                }, 1000);
+            },
+
+            // after 3 free resends: 1m, 2m, 4m, 8m, 15m 
+            getResendCooldownMs(): number {
+                if (this.resendCount <= 3) return 0;
+                const extra = this.resendCount - 3; // 1-indexed 
+                const minutes = Math.min(Math.pow(2, extra - 1), 15);
+                return minutes * 60 * 1000;
+            },
+
+            getVerifyCooldownMs(): number {
+                if (this.resendCount <= 3) return 10 * 1000; // 10s for first 3 attempts
+                const seconds = Math.min(30 * Math.pow(2, this.invalidAttempts - 4), 600); // starts at 30s on 4th attempt, doubles each time, maxes out at 10m
+                return seconds * 1000;
+            },
+
+            // format time for the buttons as mm:ss
+            formatTime(totalSeconds: number): string {
+                const m = Math.floor(totalSeconds / 60);
+                const s = totalSeconds % 60;
+                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            },
+
+            async verifyCode() {
+                // Button should be disabled if cooldown is active
+                if (!this.code || this.verifyCooldownRemaining > 0) return;
+                this.isSubmitting = true;
+                this.error = null;
+                try {
+                    const token = this.token as string;
+                    if (!localStorage.getItem(`${token}_verified`)) {
+                        // If token is not already verfied no need to hit the api
+                        await postVerifyCode(token, this.code);
+                    }
+                    this.step = 'success';
+                    localStorage.setItem(`${token}_verified`, 'true');
+                } catch {
+                    this.invalidAttempts++;
+                    const cooldownMs = this.getVerifyCooldownMs();
+                    this.verifyCooldownUntil = Date.now() + cooldownMs;
+                    this.verifyCooldownRemaining = Math.ceil(cooldownMs / 1000);
+                    this.startCooldownTimer();
+                    this.error = `Invalid or expired code. Try again in ${this.formatTime(this.verifyCooldownRemaining)}.`;
+                } finally {
+                    this.isSubmitting = false;
+                }
+            },
+
+            async resendCode() {
+                // Button should be disabled if cooldown is active
+                if (this.resendCooldownRemaining > 0) return;
+                this.isResending = true;
+                try {
+                    const token = this.token as string;
+                    await postResendCode(token);
+                    this.resendCount++;
+                    const cooldownMs = this.getResendCooldownMs();
+                    if (cooldownMs > 0) {
+                        this.resendCooldownUntil = Date.now() + cooldownMs;
+                        this.resendCooldownRemaining = Math.ceil(cooldownMs / 1000);
+                        this.startCooldownTimer();
+                    }
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Code resent! Check your email.'
+                    });
+                } catch(error) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Failed to resend code: ${error}`
+                    });
+                } finally {
+                    this.isResending = false;
+                }
+            },
+
+            async autoVerify() {
+                this.token = this.autoToken;
+                this.code = this.autoCode;
+
+                try {
+                    if (!localStorage.getItem(`${this.token}_verified`)) {
+                        // if this token is not already verfied- so we don't hit the api unless necessary
+                        await postVerifyCode(this.token, this.code);
+                    }
+                    this.step = 'success';
+                    localStorage.setItem(`${this.token}_verified`, 'true');
+                } catch (error) {
+                    this.step = "expired";
+                }
+
+                // opening the modal programmatically using bootstrap
+                const { Modal } = await import('bootstrap');
+                const notifModal = document.getElementById('notifModal');
+                if (notifModal) {                    
+                    new Modal(notifModal).show();
+                }
+            }
+        }
+    }
+     
+</script>
+
+
+<style scoped>
+
+.content {
+  border-radius: 20px;
+  border: none;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.header {
+    border-bottom: none;
+    padding-bottom: 0px;
+}
+
+.title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 40px;
+    font-weight: 500;
+    line-height: 60px;
+    border-bottom: none;
+    padding-bottom: 0px;
+}
+
+.dialog {
+    max-width: 669px;
+}
+
+.body {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  
+  /* text-wrap: balance; */
+}
+
+.form-control {
+    border: 1px solid #CBD5E1;
+    font-size: 18px;;
+}
+
+.footer {
+    display: flex;
+    border-top: none;
+    gap: 10px;
+    justify-content: center;
+    flex: 1 1 0;
+    padding: 0;
+    flex-direction: column;
+}
+
+.btn {
+  box-sizing: border-box;
+  height: 58px;
+  padding: 14px auto;
+  /*     margin: 5px;*/
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+   width: 100%;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.btn-link:disabled {
+    cursor: not-allowed;
+    opacity: 0.41;
+    pointer-events: none;
+}
+
+.btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.33;
+    pointer-events: none;
+}
+
+.btn-tertiary:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn-container{
+    display: flex;
+    flex: 1 1 0;
+    gap: 14px;
+   
+}
+
+.resend-container {
+    display: flex;
+    justify-content: center;
+}
+
+
+
+.text-danger {
+    color: #DC2626;
+    font-size: 20px;
+    /* margin-top: -10px; */
+    margin-bottom: 0px;
+}
+
+.form-control.input-error {
+    border-color: #DC2626;
+    box-shadow: 0 0 0 3px #DC2626;
+}
+
+@media (prefers-color-scheme: dark) {
+    /* // modal background, text color, button colors, border colors */
+    .content {
+        background-color: #353535;
+        border: 2px solid #CCECFD;
+    }
+
+    .title {
+        color: #E6F6FF;
+    }
+
+    .body{
+        color: #FFFFFF;
+    }
+
+    .btn-link {
+        color: #CCECFD
+    }
+
+    .btn-link:disabled {
+        color: #CCECFD;
+        opacity: 0.33;
+    }
+
+    .btn-primary {
+        background-color: #CCECFD;
+        color: #1E2019;
+    }
+
+    .btn-primary:disabled {
+        background-color: #CCECFD;
+        color: #1E2019;
+        opacity: 0.33;
+    }
+
+    .btn-primary:hover {
+        background-color: #E6F6FF;
+    }
+
+    .btn-primary:active {
+        color: #1E2019;
+    }
+
+    .btn-tertiary {
+        background-color: #353535;
+        color: #FFFFFF;
+        border: 2px solid #FFFFFF;
+    }    
+
+    .btn-tertiary:hover {
+        background-color: #FFFFFF;
+        color: #353535;
+    }
+    
+    .resend-container p {
+        color: #FFFFFF
+    }
+
+}
+
+@media (prefers-color-scheme: light) {
+     content {
+        border: 2px solid #4E3681;
+        background-color: #F1F5F9;
+    }
+
+    .title {
+        color: #322253;
+    }
+
+    .body{
+        color: #1E2019;
+    }
+
+    .btn-link {
+        color: #4E3681;
+    }
+
+    .btn-link:disabled {
+        color: #4E3681;
+        cursor: not-allowed;
+        opacity: 0.41;
+        pointer-events: none;
+    }
+
+    .btn-primary {
+        background-color: #4E3681;
+        color: #FFFFFF;
+    }
+
+    .btn-tertiary {
+        background-color: #F1F5F9;
+        color: #322253;
+        border: 2px solid #4E3681;
+    }
+
+    .btn-primary:hover {
+        background-color: #322253;
+    }
+
+    .btn-tertiary:hover {
+        background-color: #4E3681;
+        color: #FFFFFF;
+    }
+
+    .resend-container p {
+        color: #1E2019
+    }
+}
+
+@media (max-width: 1140px) {
+  .dialog {
+    width: 340px;
+  }
+
+  .title {
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 42px;
+  }
+
+  .btn {
+  height: 48px;
+  padding: 12px auto;
+  border-radius: 10px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.body p {
+  font-size: 18px !important; 
+  line-height: 27px !important;
+}
+
+.form-control {
+    border: 1px solid #CBD5E1;
+    font-size: 16px;
+    height: 36px;
+}
+
+
+  .resend-container {
+    flex-direction: column;
+  }
+
+  .resend-container p {
+    align-self: center;
+    font-size: 18px;
+  }
+
+  .btn-container {
+    flex-direction: column-reverse;
+  }
+
+  .btn-link {
+    font-size: 18px;
+  }
+}
+
+</style>
