@@ -125,52 +125,19 @@ export async function postEmail(email: string) {
 //TODO: update function call parameters in createDevice.vue, createContainer.vue, and test/postNotificationEmail.spec.ts
 //TODO: find file with field for already created record
 
-
-export async function postNotificationEmail(deviceKey: string, email: string, tags: string[] = []) {
-    //TODO: implement tags
-
-    if (!validateKey(deviceKey)) {
-        throw new Error("Bad key provided.");
-    }
-    if (!email || typeof email !== 'string') {
-        throw new Error("Bad email provided.");
-    }
-
+export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    
-    const payload = {
-        email: email,
-        recordKey: deviceKey,  // bckend expects 'recordKey'?
-        tags: tags             
-    };
-
-    //match backend json format
-    try {
-        const response = await fetch(`${baseUrl}/notificationSubscription`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        if (response.status !== 200) {
-           let errorMessage = 'postNotificationEmail: Failed to save email';
-            //Identify specific error message so we can see more than just 'failed to save' and know what went wrong.
-            try {
-                const responseData = await response.json();
-                if (responseData.error) {
-                    errorMessage = `postNotificationEmail: ${responseData.error}`;
-                } else if (responseData.message) {
-                    errorMessage = `postNotificationEmail: ${responseData.message}`;
-                }
-            } catch (e) {
-                errorMessage = `postNotificationEmail: ${response.status} ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
-        }
-    } catch(error) {
-        throw new Error(`postNotificationEmail: Failed to save email`);
+    const response = await fetch(`${baseUrl}/notificationsubscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, recordKey }),
+    });
+    console.log('postNotificationEmail status:', response.status);
+    if (response.status != 200) {
+        throw new Error('postNotificationEmail: Failed to send verification code')
     }
+    const data = await response.json();
+    return data.token as string;
 }
 
 export async function removeNotificationEmail(deviceKey: string, emailID: string) {
@@ -438,5 +405,65 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
         else {
           console.log('Error in offlineDetectAndStash: ' + error)
         }
+    }
+}
+
+
+export async function postNotificationEmail(email:string, recordKey: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/notificationsubscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, recordKey }),
+    });
+
+    console.log('postNotificationEmail status:', response.status);
+
+    if (response.status != 200) {
+        throw new Error('postNotificationEmail: Failed to send verification code')
+    }
+
+    const data = await response.json();
+    return data.token as string;
+}
+
+export async function postVerifyCode(token: string, code: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/verifycode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, code }),
+    });
+    if (response.status != 200) {
+        throw new Error('postVerifyCode: Failed to verify code')
+    }
+
+    const data = await response.json();
+    return data.recordKey as string;
+
+}
+
+export async function getPendingVerification(token: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/pendingverification?token=${token}`, {
+        method: 'GET',
+    });
+    // if (response.status != 200) {
+    //     throw new Error('getPendingVerfication: invalid or expired token')
+    // }
+    if (response.status === 404) return null;
+    const data = await response.json();
+    return data.recordKey as string ?? null;
+}
+
+export async function postResendCode(token: string) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/resendcode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+    });
+    if (response.status !== 200) {
+        throw new Error('postResendCode: Failed to resend code')
     }
 }

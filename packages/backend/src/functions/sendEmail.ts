@@ -42,7 +42,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
 
     let timeElapsed = 0;
     while (!poller.isDone()) {
-      poller.poll();
+      await poller.poll();
 
       await new Promise(resolve => setTimeout(resolve, POLLER_WAIT_TIME * 1000));
       timeElapsed += 10;
@@ -66,4 +66,3 @@ export async function sendEmail(from_address: string, to_address: string, subjec
   }
 
 }
-

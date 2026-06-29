@@ -37,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
             <!-- Subscribe to notifications -->
-            <div class="my-3">
+            <!-- <div class="my-3">
                 <h4>
                     <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
                 </h4>
@@ -51,7 +51,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         @keyup.enter=""
                 />
                 </div>
-            </div>
+            </div> -->
 
             <!-- Subscribe to tag notifications -->
             <div class="my-3">
@@ -249,14 +249,6 @@ export default {
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
-                }
-                
-                // on successful record creation, subscribe user to notifs if they've opted in
-                if (response && this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); 
-                    await postNotificationEmail(deviceKey,email);
-                } else if (!response && this.notify && this.emailInput) {
-                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 this.$snackbar.add({

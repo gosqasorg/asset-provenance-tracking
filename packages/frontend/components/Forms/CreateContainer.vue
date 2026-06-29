@@ -92,7 +92,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="p-1">
                 <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
-    
+
             <div v-if="isChecked">
                 <!-- TODO: API call function -->
                 <input style="margin-bottom: 18px;"
@@ -176,6 +176,8 @@ export default {
             emailInput: '',
             isChecked: false,
             textInput: '',
+            subscribeChecked: false,
+            subscribeEmail: '',
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
@@ -409,6 +411,21 @@ export default {
                         type: 'error',
                         text: `Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`
                     })
+                }
+
+                if (response && this.subscribeChecked && this.subscribeEmail) {
+                    try {
+                        await postNotificationEmail(this.subscribeEmail, deviceKey, this.tags);
+                        this.$snackbar.add({
+                            type: 'success',
+                            text: 'Check your email to verify your notification subscription.'
+                        });
+                    } catch (error) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Failed to send verification email: ${error}`
+                        });
+                    }
                 }
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
