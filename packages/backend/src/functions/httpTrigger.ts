@@ -1258,7 +1258,8 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
+
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isReportingKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1279,7 +1280,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
             description: "",
             tags: tags,
             hasParent: true,
-            isReportingKey: false
+            isReportingKey: isReportingKey
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
@@ -1300,7 +1301,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     }
 }
 
-async function createChildren(context, number_of_children: number, custom_child_titles: string[], tags?) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], hasReportingKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     let j = 0;
@@ -1313,6 +1314,14 @@ async function createChildren(context, number_of_children: number, custom_child_
         j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
+            // ReportingKey is itself a record that is part of a group
+            if(hasReportingKey){
+                const reportingTags = [...tags, "reportingkey"]
+                if(!(thisChild = await createChild(context,"Reporting Key", reportingTags, true))) {
+                    continue;
+                }
+                childrenKeys.push(thisChild)
+            }
             break;
         }
     }
@@ -1320,7 +1329,7 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasReportingKey, tags, attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1341,22 +1350,29 @@ async function createGroup(context, name, description, n_children: number = 0, c
         }
     };
     // Create children first
-    let childKeys = await createChildren(context, n_children, custom_child_titles)
-    if (childKeys.length !== n_children) {
-        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    let childKeys = await createChildren(context, n_children, custom_child_titles, hasReportingKey, tags)
+    let totalChildren = n_children + (hasReportingKey ? 1 : 0)
+    if (childKeys.length !== totalChildren) {
+        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
     }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
+
+    let reporting_key = '';
+    if(hasReportingKey){
+        reporting_key = childKeys.at(-1);
+    }
 
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
         number_of_children: n_children,
-        children_key: childKeys,  // Note: this is what turns a record into a group
+        children_key: childKeys,   
         children_name: custom_child_titles,
-        tags: [],            
+        ...(reporting_key ? { reportingKey: reporting_key } : {}), // only gets added if reporting key is present
+        tags: tags,         
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
@@ -1385,7 +1401,10 @@ const GroupCreationOrderSchema = z.object({
     deviceName: z.string(),
     description: z.string(),
     tags: z.array(z.string()).optional(),
+    reportingKey: z.string().optional(),
     number_of_children: z.number().optional(),
+    hasReportingKey: z.boolean().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
     children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
@@ -1413,10 +1432,10 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-
+        let hasReportingKey = theRequest['hasReportingKey']
+        let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, attachments)
-
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasReportingKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
