@@ -144,29 +144,32 @@ export async function postNotificationEmail(deviceKey: string, email: string, ta
         tags: tags             
     };
 
-    //match backend json format 
-    const response = await fetch(`${baseUrl}/notificationSubscription`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-    });
-
-    if (response.status !== 200) {
-        let errorMessage = 'postNotificationEmail: Failed to save email';
-        //Identify specific error message so we can see more than just 'failed to save' and know what went wrong.
-        try {
-            const responseData = await response.json();
-            if (responseData.error) {
-                errorMessage = `postNotificationEmail: ${responseData.error}`;
-            } else if (responseData.message) {
-                errorMessage = `postNotificationEmail: ${responseData.message}`;
+    //match backend json format
+    try {
+        const response = await fetch(`${baseUrl}/notificationSubscription`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (response.status !== 200) {
+           let errorMessage = 'postNotificationEmail: Failed to save email';
+            //Identify specific error message so we can see more than just 'failed to save' and know what went wrong.
+            try {
+                const responseData = await response.json();
+                if (responseData.error) {
+                    errorMessage = `postNotificationEmail: ${responseData.error}`;
+                } else if (responseData.message) {
+                    errorMessage = `postNotificationEmail: ${responseData.message}`;
+                }
+            } catch (e) {
+                errorMessage = `postNotificationEmail: ${response.status} ${response.statusText}`;
             }
-        } catch (e) {
-            errorMessage = `postNotificationEmail: ${response.status} ${response.statusText}`;
+            throw new Error(errorMessage);
         }
-        throw new Error(errorMessage);
+    } catch(error) {
+        throw new Error(`postNotificationEmail: Failed to save email`);
     }
 }
 
@@ -199,7 +202,7 @@ export async function removeNotificationEmail(deviceKey: string, emailID: string
         // Identify specific error message so we can know what went wrong.
         try {
             const responseData = await response.json();
-            if (responseData.error) {
+            if  (responseData.error) {
                 errorMessage = `removeNotificationEmail: ${responseData.error}`;
             } else if (responseData.message) {
                 errorMessage = `removeNotificationEmail: ${responseData.message}`;
