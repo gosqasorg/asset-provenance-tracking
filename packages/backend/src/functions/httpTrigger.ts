@@ -393,10 +393,13 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    context.log(`Context:`, context);
+    context.log(`Request:`, request);
 
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+    context.log(`FormData:`, formData);
     if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
@@ -781,7 +784,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 500
         }
     }
- }
+}
  
 async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     let theUrl = `${baseUrl}${deviceKey}`;
@@ -1281,7 +1284,16 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
+// just a wrapper fxn for postProvenance
 export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log(`addEntry Req:`, request);
+    context.log(`addEntry cont:`, context);
+    
+    // const wrappedRequest
+    // const wrappedContext
+
+    // return await postProvenance(wrappedRequest, wrappedContext)
+
     try{
         let theRequest = await request.json()
         return {

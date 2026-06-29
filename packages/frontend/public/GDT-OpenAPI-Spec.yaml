@@ -198,3 +198,26 @@ paths:
 
   /addEntry/{deviceKey}:
     post:
+      tags:
+        - GDT API
+      summary: Add new entry to a provenance
+      description: Adds a new entry with a description, optional attachments, and optional tags to an existing provenance.
+      operationId: addEntry
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key
+          schema:
+            type: string
+            example: "UTup36GAwwMBXeso3TyufF"
+      requestBody:
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
