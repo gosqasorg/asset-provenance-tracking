@@ -65,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </h4>
 
             <!-- Subscribe to notifications -->
-            <h4 class="p-1 mt-0">
+            <!-- <h4 class="p-1 mt-0">
                 <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
             </h4>
 
@@ -77,7 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     placeholder="Email"
                     @keyup.enter=""
                 />
-            </div>
+            </div> -->
 
             <!-- Subscribe to tag notifications -->
             <h4 class="p-1 my-0">

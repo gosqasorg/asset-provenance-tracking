@@ -53,21 +53,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
-            <!-- Subscribe to notifications-->
-            <h4 class="p-1 my-0">
-                <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
-            </h4>
-
-            <div v-if="notify">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    required placeholder="Email"
-                    @keyup.enter=""
-                />
-            </div>
-
             <!-- Subscribe to tag notifications -->
             <h4 class="p-1 my-0">
                 <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
@@ -415,7 +400,7 @@ export default {
 
                 if (response && this.subscribeChecked && this.subscribeEmail) {
                     try {
-                        await postNotificationEmail(this.subscribeEmail, deviceKey, this.tags);
+                        await postNotificationEmail(this.subscribeEmail, deviceKey);
                         this.$snackbar.add({
                             type: 'success',
                             text: 'Check your email to verify your notification subscription.'
