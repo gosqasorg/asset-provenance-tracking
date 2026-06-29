@@ -1,4 +1,4 @@
-// tagFuncs.ts -- Creates, Updates, and Removes Tags
+// tagFuncs.ts -- Redraws and Removes Tags
 // Copyright (C) 2024 GOSQAS Team
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -12,8 +12,6 @@
 
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
 
 function removeTag(tag: string, storedTags: string[], createdTags: string[], tagsListID: string, tagInputID: string) {
 	// Remove tag from the screen
@@ -62,43 +60,4 @@ export function redrawTags(storedTags: string[], createdTags: string[], tagsList
 			ul.insertAdjacentElement("afterbegin", liTag);
 		}
 	});
-}
-
-export function cleanArray(array: string[]) {
-	// Remove any tags with forbidden words in them
-	const forbiddenWords = getDecipheredForbiddenTags();
-	const cleanedArray = array.filter(tagName => !forbiddenWords.includes(tagName.toLowerCase()));
-	return cleanedArray;
-}
-
-export function updateTags(storedTags: string[], createdTags: string[], editableValue: string, tagsListID: string, tagInputID: string) {
-	// Get the last char of a str, if it's a space then remove the space and add the tag to the list
-	if (storedTags.includes(editableValue.substring(0, editableValue.length - 1)) || editableValue == ' ') {
-		editableValue = "";
-	} else if (editableValue[editableValue.length - 1] == ' ') {
-		// Check to make sure the word is clean before creating tag
-		let tag = editableValue.substring(0, editableValue.length - 1);
-		let cleanTag = cleanArray([tag]);
-
-		if (tag == cleanTag[0]) {
-			storedTags.push(tag);
-			createdTags.push(tag);
-			redrawTags(storedTags, createdTags, tagsListID, tagInputID);
-		}
-
-		// Remove the text from the input field
-		editableValue = "";
-	}
-
-	return editableValue;
-}
-
-export function updatePlaceholder(storedTags: string[], tagInputID: string, placeholder: string) {
-	// Only show the placeholder text if no tags are stored
-	let input = document.getElementById(tagInputID) as HTMLInputElement;
-	if (storedTags.length == 0 && input) {
-		input.placeholder = placeholder;
-	} else if (input) {
-		input.placeholder = "";
-	}
 }
