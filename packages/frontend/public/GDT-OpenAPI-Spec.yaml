@@ -190,8 +190,8 @@ paths:
     get:
       tags:
         - GDT API
-      summary: Retrieve an attachment by device key and attachment ID
-      description: This endpoint retrieves an attachment associated with a specific device key and attachment ID.
+      summary: Retrieve an attachment 
+      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
       operationId: getAttachment
       parameters:
         - name: deviceKey
@@ -204,13 +204,13 @@ paths:
         - name: attachmentID
           in: path
           required: true
-          description: The attachment ID to retrieve
+          description: The attachment ID from the record's attachment array
           schema:
             type: string
             example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
       responses:
         '200':
-          description: Successful retrieval 
+          description: Success
           content:
             application/octet-stream:
               schema:
