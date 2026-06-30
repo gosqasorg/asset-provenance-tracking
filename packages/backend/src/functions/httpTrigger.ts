@@ -1286,8 +1286,11 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 
 // just a wrapper fxn for postProvenance
 export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`addEntry Req:`, request);
     context.log(`addEntry cont:`, context);
+    context.log(`addEntry Req:`, request);
+
+    const formData = await request.formData();
+    context.log(`FormData:`, formData);
     
     // const wrappedRequest
     // const wrappedContext
