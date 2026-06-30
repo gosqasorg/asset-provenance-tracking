@@ -130,7 +130,7 @@ const recordHasParent = hasParent(provenance);
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
-				<span v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
+				<span v-html="clickableLink(deviceRecord?.description)" style="white-space: pre-wrap;"></span>
 				</div>
 
 				<section ref="section" id="priority-notices">
@@ -144,7 +144,9 @@ const recordHasParent = hasParent(provenance);
 			</section>
 
             <div class="action-buttons">
-              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+              <div v-if="onDev">
+	              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+	          </div>
 
               <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
@@ -217,11 +219,12 @@ const recordHasParent = hasParent(provenance);
 </template>
 
 <script lang="ts">
-import { getProvenance, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
+import { getProvenance, displayOnlineBanner, displayOfflineBanner, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
 import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
+import { useRuntimeConfig } from '#app';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -246,6 +249,7 @@ components: {
 	InvalidHistoryKey,
 },
 data() {
+    const config = useRuntimeConfig()
 	return {
         isCreating: false,
         isLoading: true,
@@ -257,12 +261,13 @@ data() {
         // for email verification
         autoToken: '' as string,
         autoCode: '' as string,
+        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
 	}
 },
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
 			return true;
 		} else {
 			return false;

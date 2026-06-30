@@ -721,7 +721,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                     const keyFormData = new FormData();
                     keyFormData.append("provenanceRecord", JSON.stringify({
                         blobType: 'deviceRecord',
-                        description: "Annotated by admin",
+                        description: records[0].record.description || "Annotated by Group",
                         children_key: '',
                         tags: records[0].record.tags,
                     }));
