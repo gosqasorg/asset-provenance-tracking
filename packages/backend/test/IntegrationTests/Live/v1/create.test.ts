@@ -308,7 +308,7 @@ describe("Group Creation Tests", () => {
 
 		expect(childRecord[1].record.description).toBe("Updated only the child with recall");
 		expect(childRecord[1].record.tags).toStrictEqual(['recall', 'reporting-test']);
-		expect(childRecord[0].record.description).toBe("Annotated by admin");
+		expect(childRecord[0].record.description).toBe("Updated only the child with annotate");
 		expect(childRecord[0].record.tags).toStrictEqual(['annotate', 'reporting-test', 'test-2']);
 
 		expect(reportingRecord.length).toBe(1);

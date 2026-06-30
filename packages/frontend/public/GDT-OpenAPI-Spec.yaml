@@ -84,9 +84,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  data:
                     type: string
                     example: "Invalid input parameters"
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Error: Internal server error."
 
   /recall/{deviceKey}:
     post:
@@ -126,7 +136,7 @@ paths:
         description: Record creation parameters in postProvenance
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
@@ -150,20 +160,11 @@ paths:
                       description: Group key for grouped records, or empty string for standalone records.
                       example: ""
                 attachment:
-                  oneOf:
-                    - type: string
-                      example: ""
-                    - type: object
-                      required:
-                        - file
-                        - name
-                      properties:
-                        file:
-                          type: string
-                          description: Base64-encoded attachment content
-                        name:
-                          type: string
-                          example: "photo.jpg"
+                  type: array
+                  description: Optional binary files attached to the form data.
+                  items:
+                    type: string
+                    format: binary 
       responses:
         '200':
           description: Successful creation
@@ -186,3 +187,81 @@ paths:
                     type: string
                     example: "Invalid input parameters"
 
+  /upgrade/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Upgrade a legacy record
+      description: This endpoint takes a legacy record and converts it to a provenance record.
+      operationId: upgradeProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a legacy record to upgrade.
+          schema:
+            type: string
+            example: "VvaaGvt5UoyMT9iCQuncre"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+              examples:
+                SuccessfullyUpgraded:
+                  summary: Key Successfully Upgraded
+                  description: Returned when the legacy record is found and successfully recreated as a provenance record.
+                  value:
+                    recordID: "6494deafa4390304169fffbd1ad737de0c8eff1634be0550c0baa9d505e4c0a6"
+                    attachments: []
+                    oversizedAttachments: undefined
+                KeyAlreadyUpgraded:
+                  summary: Key Already Upgraded
+                  description: Returned when the key is already a provenance record.
+                  value:
+                    already-converted: true
+                KeyDoesntExist:
+                  summary: Key Doesn't Exist
+                  description: Returned when the key has valid format but does not exist in our storage.
+                  value: []
+                InvalidLegacyJSON:
+                  summary: Invalid Legacy JSON
+                  description: Returned when the legacy record exists but is not valid JSON.
+                  value:
+                    status: 404
+        '500':
+          description: Internal Server Error
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      tags:
+        - GDT API
+      summary: Retrieve an attachment 
+      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID from the record's attachment array
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found

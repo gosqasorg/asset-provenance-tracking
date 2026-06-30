@@ -3,7 +3,7 @@
 This folder contains the GOSQAS GDT backend services, implemented using Azure
 [Functions](https://azure.microsoft.com/en-us/products/functions/) and 
 [Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs/).
-To run this GDT functions locally, you will need:
+To run this GDT functions locally, you will need: 
 
 * [NodeJS](https://nodejs.org/) v20 or later
   * Latest NodeJS LTS version preferred. 
