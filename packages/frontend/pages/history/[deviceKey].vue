@@ -18,6 +18,7 @@ Page will be the forum where users can keep track of the provenance of
 their items.
 -->
 
+
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 import { hasParent } from '~/utils/descendantList';
@@ -142,23 +143,24 @@ const recordHasParent = hasParent(provenance);
 			</div>
 			</section>
 
-			<div class="buttons-container">
-			<button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
+            <div class="action-buttons">
+              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
-			<ProvenanceShareDropdown 
-                :deviceName="deviceRecord.deviceName" 
-                :description="deviceRecord.description"
-                :fontSize="20"
-                :height="66">
-			</ProvenanceShareDropdown>
+              <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-			<EmailNotificationSignup
-            	:recordKey="_recordKey"
-                :fontSize="20"
-                :height="66">
-			</EmailNotificationSignup>
-              
+                <ProvenanceShareDropdown
+                  :deviceName="deviceRecord.deviceName"
+                  :description="deviceRecord.description"
+                  :fontSize="20"
+                  :height="66"
+                  :width="33"
+                  >
+                </ProvenanceShareDropdown>
             </div>
+
+            <!-- Email notifications modal -->
+            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode"/>
+
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
             </section>
@@ -252,6 +254,9 @@ data() {
         childKeys: [] as string[],
         _recordKey: "",
         valid: false,
+        // for email verification
+        autoToken: '' as string,
+        autoCode: '' as string,
 	}
 },
 computed: {
@@ -276,6 +281,16 @@ computed: {
 async mounted() {
 	try {
         const route = useRoute();
+
+        // grab token and code from params for email verif
+        const token = route.query.token as string;
+        const code = route.query.code as string;
+        if (token && code) {
+            this.autoToken = token;
+            this.autoCode = code;
+            this.$router.replace({query: {}}); // remove the token and code from the url after grabbing them- to prevent user from spam reloading.
+        }
+
         this._recordKey = route.params.deviceKey as string;
         const response = await getProvenance(this._recordKey);
         deviceRecord = response[response.length - 1].record;
@@ -448,15 +463,17 @@ methods: {
     justify-content: space-between;
 }
 
-.buttons-container {
+/* .buttons-container */
+.action-buttons {
   margin-bottom: 20px;
   display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 16px;
+  justify-content: space-between; /* gone */
+  align-items: stretch; /* gone */
+  gap: 16px; /* 12px */
   flex-wrap: wrap;
 }
 
+/* 
 .buttons-container > :deep(.notify-btn) {
   margin-left: 0 !important;
   margin-top: 0 !important;
@@ -475,11 +492,12 @@ methods: {
 
 .buttons-container :deep(.share-btn) {
     width: 100%;
-}
+} */
 
+.notif-btn,
 .download-btn {
-    margin-top: 0;
-    flex: 1 1 300px;
+  flex: 1 1 0;
+  margin-top: 20px;
 }
 
 .btn-primary {
@@ -517,10 +535,12 @@ methods: {
 }
 
 /* Wrap buttons once screen gets below a certain size */
-@media (max-width: 991px) {
-.download-btn {
-	width: 100% !important;
-}
+@media (max-width: 1140px) {
+  .notif-btn,
+  .download-btn
+  {
+    flex: 1 1 100%;
+  }
 }
 
 #item-link {
@@ -650,16 +670,17 @@ a:visited {
 }
 
 .btn {
-    height: 66px;
-    padding: 18px 22px;
-    /*     margin: 5px;*/
-    border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 20px;
-    font-weight: 400;
-    text-align: center;
-    cursor: pointer;
-    border: none;
+  box-sizing: border-box;
+  height: 66px;
+  padding: 18px 22px;
+  /*     margin: 5px;*/
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  border: none;
 }
 
 /* Dark mode version*/
@@ -733,11 +754,17 @@ h1 {
 	color: black;
 }
 
-.download-btn {
-	background-color: #1E2019;
-	border: 2px solid #FFFFFF;
-	color: white;
-}
+  .download-btn {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
+    color: white;
+  }
+
+  .notif-btn {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
+    color: white;
+  }
 
 .share-btn {
 	background-color: #1E2019;
@@ -745,10 +772,15 @@ h1 {
 	color: white;
 }
 
-.download-btn:hover {
-	background-color: white;
-	color: black;
-}
+  .download-btn:hover {
+    background-color: white;
+    color: black;
+  }
+
+  .notif-btn:hover {
+    background-color: white;
+    color: black;
+  }
 
 .btn-secondary {
 	background-color: #1E2019;
@@ -825,6 +857,16 @@ h1 {
 
 .download-btn:hover {
 	background-color: #e6f6ff !important;
+}
+
+.notif-btn {
+  background-color: #CCECFD;
+  border: #CCECFD;
+  color: black;
+}
+
+.notif-btn:hover {
+  background-color: #e6f6ff !important;
 }
 
 .banner-link {
