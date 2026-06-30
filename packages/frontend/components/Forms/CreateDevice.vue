@@ -146,10 +146,12 @@ import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
+import { useRuntimeConfig } from '#app';
 
 //TODO: add const for max limit of notification subscriptions
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
@@ -165,7 +167,7 @@ export default {
             notifyTags: false,  // email tag notification checkbox
             emailInput: '',
             tagsEmailInput: '', // email for specified tag signup
-            onDev: useRuntimeConfig().public.baseUrl.includes('gosqasbe') || useRuntimeConfig().public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     computed: {

@@ -175,9 +175,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
  import Banner from '../Banner.vue';
+ import { useRuntimeConfig } from '#app';
 
  export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             description: '',
             pictures: [] as File[] | null,
@@ -193,7 +195,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             notify: false,
             notifyTags: false,
             emailInput: '',
-            onDev: useRuntimeConfig().public.baseUrl.includes('gosqasbe') || useRuntimeConfig().public.baseUrl.includes('local') 
+            config: useRuntimeConfig(),
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     props: {

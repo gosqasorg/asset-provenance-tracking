@@ -146,9 +146,11 @@ import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
 import Banner from '../Banner.vue';
+import { useRuntimeConfig } from '#app';
 
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
@@ -168,7 +170,7 @@ export default {
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
-            onDev: useRuntimeConfig().public.baseUrl.includes('gosqasbe') || useRuntimeConfig().public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
 
         }
     },
