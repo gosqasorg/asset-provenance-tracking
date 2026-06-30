@@ -29,7 +29,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
         const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
             const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
-            const email_body: string = `Hi, you are receiving this message because you signed up for record updates. If you wish to unsubscribe then click the link below: ${unsubscribe_page}`;
+            const email_body: string = `<div>Hi, you are receiving this message because you signed up for record updates.</div><br><div style="font-size:12px">Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.</div>`;
             index++
             let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT, email_body, displayName);
 
