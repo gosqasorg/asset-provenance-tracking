@@ -65,39 +65,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </h4>
 
             <!-- Subscribe to notifications -->
-            <!-- <h4 class="p-1 mt-0">
-                <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
-            </h4>
+            <div v-if="onDev">
+                <h4 class="p-1 mt-0">
+                    <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
+                </h4>
 
-            <div v-if="notify">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    placeholder="Email"
-                    @keyup.enter=""
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+                </div>
+
+                <!-- Subscribe to tag notifications -->
+                <h4 class="p-1 my-0">
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
+
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
                 />
-            </div> -->
+                </div>
 
-            <!-- Subscribe to tag notifications -->
-            <h4 class="p-1 my-0">
-                <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
-            </h4>
+                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
 
-            <div v-if="notifyTags">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    required placeholder="Email"
-                    @keyup.enter=""
-            />
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
             </div>
-
-            <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
-                tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
-
-            <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
         </div>
         
         <!-- Offline Banner Bottom-->
@@ -190,7 +192,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             recallPopUp: false,
             notify: false,
             notifyTags: false,
-            emailInput: ''
+            emailInput: '',
+            onDev: useRuntimeConfig().public.baseUrl.includes('gosqasbe') || useRuntimeConfig().public.baseUrl.includes('local') 
         }
     },
     props: {

@@ -54,25 +54,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div> -->
 
             <!-- Subscribe to tag notifications -->
-            <div class="my-3">
-                <h4>
-                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
-                </h4>
+            <div v-if="onDev">
+                <div class="my-3">
+                    <h4>
+                        <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                    </h4>
 
-                <div v-if="notifyTags">
-                    <input
-                        type="email"
-                        class="form-control"
-                        v-model="tagsEmailInput"
-                        required placeholder="Email"
-                        @keyup.enter=""
-                />
+                    <div v-if="notifyTags">
+                        <input
+                            type="email"
+                            class="form-control"
+                            v-model="tagsEmailInput"
+                            required placeholder="Email"
+                            @keyup.enter=""
+                    />
+                    </div>
+
+                    <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                        tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+
+                    <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
                 </div>
-
-                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
-                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
-
-                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
             </div>
 
             <!-- Volunteer Feedback Email -->
@@ -159,10 +161,11 @@ export default {
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
-            notify: false,     // email notification checkbox
-            notifyTags: false,     // email tag notification checkbox
+            notify: false,      // email notification checkbox
+            notifyTags: false,  // email tag notification checkbox
             emailInput: '',
-            tagsEmailInput: '',  // email for specified tag signup
+            tagsEmailInput: '', // email for specified tag signup
+            onDev: useRuntimeConfig().public.baseUrl.includes('gosqasbe') || useRuntimeConfig().public.baseUrl.includes('local') 
         }
     },
     computed: {
