@@ -4,10 +4,10 @@ info:
   version: 1.0.0
   description: Auto-generated OpenAPI specification
 servers:
-#  - url: http://localhost:7071/api
+  - url: http://localhost:7071/api
 #    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-  #   description: Staging server
+#  - url: https://gosqasbe.azurewebsites.net/api
+#    description: Staging server
 #  - url: https://gdtprodbackend.azurewebsites.net/api
 #    description: Production server
 paths:
@@ -186,7 +186,7 @@ paths:
                   error:
                     type: string
                     example: "Invalid input parameters"
-  
+
   /upgrade/{deviceKey}:
     get:
       tags:
@@ -232,3 +232,36 @@ paths:
                     status: 404
         '500':
           description: Internal Server Error
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      tags:
+        - GDT API
+      summary: Retrieve an attachment 
+      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID from the record's attachment array
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found
