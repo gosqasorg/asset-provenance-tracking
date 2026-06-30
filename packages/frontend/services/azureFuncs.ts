@@ -232,14 +232,14 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
         if (response.status !== 200) {
             result = false;
 
-            displayOfflineBanner = true;
+            if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
         } 
 
 
     } catch (error) {
         console.log("Fetch attempt failed: " + error);
         result = false;
-        displayOfflineBanner = true;
+        if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
     }
 
     return result

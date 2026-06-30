@@ -219,7 +219,7 @@ const recordHasParent = hasParent(provenance);
 </template>
 
 <script lang="ts">
-import { getProvenance, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
+import { getProvenance, displayOnlineBanner, displayOfflineBanner, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
@@ -267,7 +267,7 @@ data() {
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
 			return true;
 		} else {
 			return false;
