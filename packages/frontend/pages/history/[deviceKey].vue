@@ -144,7 +144,9 @@ const recordHasParent = hasParent(provenance);
 			</section>
 
             <div class="action-buttons">
-              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+              <div v-if="onDev">
+	              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+	          </div>
 
               <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
@@ -222,6 +224,7 @@ import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
 import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
+import { useRuntimeConfig } from '#app';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -246,6 +249,7 @@ components: {
 	InvalidHistoryKey,
 },
 data() {
+    const config = useRuntimeConfig()
 	return {
         isCreating: false,
         isLoading: true,
@@ -257,6 +261,7 @@ data() {
         // for email verification
         autoToken: '' as string,
         autoCode: '' as string,
+        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
 	}
 },
 computed: {

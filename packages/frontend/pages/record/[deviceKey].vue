@@ -60,8 +60,13 @@ const recordHasParent = hasParent(provenance);
                     <div class="buttons-container">
                         <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
                         <button class="btn px-3 device-btn secondary-btn" @click="downloadQRCode">Download QR Code</button>
-                        <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
-                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+                        <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
+                        </ProvenanceShareDropdown>
+
+                        <div v-if="onDev">
+                            <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Email notifications modal -->
@@ -118,6 +123,7 @@ import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 import clickableLink from '~/utils/clickableLink';
 import QRCode from '@/components/QRCode.vue';
+import { useRuntimeConfig } from '#app';
 
 let deviceRecord: any;
 
@@ -135,6 +141,7 @@ export default {
         KeyList,
     },
     data() {
+        const config = useRuntimeConfig()
         return {
             isLoading: true,
             recordKeyFound: true,
@@ -142,6 +149,7 @@ export default {
             childKeys: [] as string[],
             loadingKey: 0,
             _recordKey: "",
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     methods: {
