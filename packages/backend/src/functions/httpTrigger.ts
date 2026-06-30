@@ -1530,24 +1530,23 @@ const RecordCreationOrderSchema = z.object({
 
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
-        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
-        let name = theRequest['provenanceRecord']['deviceName'];
-        let description = theRequest['provenanceRecord']['description'];
-        let tags = theRequest['provenanceRecord']['tags'];
-        let attachment = theRequest['attachment'];
+        const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord");
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError("Missing provenanceRecord in form data");
+        }
+
+        let theRequest = JSON.parse(recordStr);
+        RecordCreationOrderSchema.parse(theRequest);
+        let name = theRequest['deviceName'];
+        let description = theRequest['description'];
+        let tags = theRequest['tags'];
 
         // if there's an attachment create a blob to add to the record
         const attachments = new Array<NamedBlob>();
-        if (attachment != "") {
-            attachment = theRequest['attachment']['file'];
-            let attachmentName = theRequest['attachment']['name'];
-            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
-            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
-            if (typeof blob !== 'string') {
-                console.log("attach type: " + typeof(blob))
-                attachments.push({ blob: blob, name: attachmentName });
-            }
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({ name: value.name || "attachment", blob: value });
         }
 
         let recordUrl = await createRecord(context, name, description, tags, attachments)
