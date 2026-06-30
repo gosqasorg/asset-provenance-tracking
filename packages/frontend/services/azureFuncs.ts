@@ -16,13 +16,19 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development
-export var offlineModeFeatureFlag = false;
+export var offlineModeFeatureFlag = { flag: false };
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
 
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
+
+// Global url for onlineTestFetch
+export var testOnlineTestUrl = { url: useRuntimeConfig().public.frontendUrl };
+
+// Global base url for emptyStash
+export var emptyStashBaseUrl = { url: useRuntimeConfig().public.baseUrl };
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -91,9 +97,9 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         // offline mode feature flag toggle
-        if (offlineModeFeatureFlag) {
+        if (offlineModeFeatureFlag.flag) {
             // Checks to see if user is offline, stashes record if offline
-            const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+            const checkOffline = await offlineDetectAndStash(deviceKey, formData);
             if (checkOffline === 202) {
                 throw new Error('Status 202: User is offline but the record has been stashed')
             } else if (checkOffline === 507) {
@@ -218,7 +224,7 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
     // This is added to make testing easier, if no parameter given -> defaults to pinging our frontend.
     // Given parameter can be bogus url to mock offlineness
     if (url === undefined) {
-        url = useRuntimeConfig().public.frontendUrl;
+        url = testOnlineTestUrl.url;
     }
 
     try {
@@ -249,11 +255,11 @@ export async function connectivityChecker() {
     return;
 }
 
-export async function stashRequest(formUrl: string, formData: FormData) {
+export async function stashRequest(recordKey: string, formData: FormData) {
     try {
     // Convert values to string and store them
         let valuesToStore = [];
-        valuesToStore.push(['formUrl', formUrl]);
+        valuesToStore.push(['recordKey', recordKey]);
         valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
         // Get stash_counter and add 1 to it
@@ -276,10 +282,9 @@ export async function stashRequest(formUrl: string, formData: FormData) {
     }
 }
 
-async function stashKeysAndRemove(fullUrl: string, stashName: string, request_name: string, stash_counter: number, request: string) {
+async function stashKeysAndRemove(currentKey: string, stashName: string, request_name: string, stash_counter: number, request: string) {
     try {
         let keys = [];
-        let currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
         let existingKeys = localStorage.getItem(stashName)
         if (existingKeys) {
             for (const key of existingKeys.split(",")) {
@@ -308,16 +313,23 @@ export async function emptyStash() {
         // Get the last request stored
         let request_name = 'gosqas_offline_stash_' + stash_counter;
         let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-        if (request === '{}') { 
+        if (JSON.stringify(request) === '{}') { 
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString())
             continue
         }
-        let fullUrl = request[0][1];
+        let baseUrl = emptyStashBaseUrl.url;
+        let currentKey = request[0][1];
         let record = request[1][1];
 
+        // If the environment is local add /provenance/ to the url
+        let fullUrl = `${baseUrl}${currentKey}`;
+        if (baseUrl.includes('localhost')) {
+            fullUrl = `${baseUrl}/provenance/${currentKey}`;
+        }
+
         try {
-            // Fulfill the request and confirm it was created (this will throw an error if it fails)
+            // Fulfill the request
             const formData = new FormData();
             formData.append('provenanceRecord', record);
 
@@ -326,13 +338,10 @@ export async function emptyStash() {
             if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            stashKeysAndRemove(fullUrl, "gdt-stash-fulfilled", request_name, stash_counter, request)
+            stashKeysAndRemove(currentKey, "gdt-stash-fulfilled", request_name, stash_counter, request)
         } catch (error) {
-            // If the record fails to create for any reason other than being offline, add it to the failed stash
-            if (await(onlineTestFetch())) {
-                stashKeysAndRemove(fullUrl, "gdt-stash-failed", request_name, stash_counter, request)
-            }
-
+            // Add the request to the failed stash
+            stashKeysAndRemove(currentKey, "gdt-stash-failed", request_name, stash_counter, request)
             console.log("Record from localStorage failed to create: " + error)
         }
 
@@ -371,13 +380,13 @@ export async function periodicChecker() {
     localStorage.setItem('gdt-awaiting-conectivity', "false");
 }
 
-export async function offlineDetectAndStash (formUrl: string, formData: FormData) {
+export async function offlineDetectAndStash (recordKey: string, formData: FormData) {
     try {
         // Check if the user is online or offline. Stash the request if the user is offline
         if ((await(onlineTestFetch()))) {
             return 200;
         } else {
-            await stashRequest(formUrl, formData);
+            await stashRequest(recordKey, formData);
             // Intentionally left unawaited
             periodicChecker();
             return 202;
