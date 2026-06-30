@@ -585,7 +585,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     return {
         jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
         headers: { "Content-Type": "application/json" }
-    };
+    }; 
 };
 
 async function setStatisticsTotals() {
@@ -635,43 +635,7 @@ async function setStatisticsTotals() {
         const msg = error instanceof Error ? error.message : String(error);
     }
 }
-
-export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try {
-        const tableUrl = accountName === "devstoreaccount1"
-            ? `http://127.0.0.1:10002/devstoreaccount1`
-            : `https://${accountName}.table.core.windows.net`;
-
-        let table = 'UserFeedbackEmails'
-        const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
-        await tableClient.createTable();  // Create if not exist, no error if it does
-
-        const formData = await request.formData();
-        let email; if (typeof (email = formData.get('email')) !== 'string') {
-            throw new Error('postEmail: Unexpected non-string value received')
-            return { status: 404 };
-        }
-
-        const entity = {
-            partitionKey: 'UserFeedbackVolunteers',
-            rowKey: email,
-        }
-
-        const response = await tableClient.createEntity(entity);
-        console.log(response)
-
-        console.log('postEmail: Added feedback volunteer contact info')
-        return {
-            status: 200,
-            body: "Created",
-            headers: { "Content-Type": "text/plain" }
-        }
-    } catch(error) {
-        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
-        // Deliberate lack of error message to client
-    }
-}
+ 
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
@@ -757,7 +721,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                     const keyFormData = new FormData();
                     keyFormData.append("provenanceRecord", JSON.stringify({
                         blobType: 'deviceRecord',
-                        description: "Annotated by admin",
+                        description: records[0].record.description || "Annotated by Group",
                         children_key: '',
                         tags: records[0].record.tags,
                     }));
@@ -875,12 +839,53 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     }
 }
 
+
+export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        let table = 'UserFeedbackEmails'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
+        const formData = await request.formData();
+        let email; if (typeof (email = formData.get('email')) !== 'string') {
+            throw new Error('postEmail: Unexpected non-string value received')
+            return { status: 404 };
+        }
+
+        const entity = {
+            partitionKey: 'UserFeedbackVolunteers',
+            rowKey: email,
+        }
+
+        const response = await tableClient.createEntity(entity);
+        console.log(response)
+
+        console.log('postEmail: Added feedback volunteer contact info')
+        return {
+            status: 200,
+            body: "Created",
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+    }
+}
+
+
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
+
+        // parse email, recordKey and tags from body
         const body = await request.json() as any;
+        context.log('body:', body);
         const email = body.email;
         const recordKey = body.recordKey;
-        const tags: string[] = [];
+        // const tags = body.tags ?? [];
 
         if (!email || !recordKey) {
             return {
@@ -889,11 +894,65 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
         }
 
-        await containerClient.createIfNotExists();
-        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, email, tags, true);
+        context.log("Received signup for " + email)
 
-        context.log("Received signup for " + email);
-        return response;
+        // Pending Verifications Table (copied from postEmail - will refactor later)
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
+
+        let table = 'PendingEmailVerifications'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
+        // generate code
+        const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
+        const token = Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString('base64url');
+
+        // store email, code, rec and tags in table
+        const codeExpiration = 10 * 60 * 1000;
+        const entity = {
+            partitionKey: token,
+            rowKey: code,
+            email: email,
+            verified: false,
+            expiresAt: Date.now() + codeExpiration,
+            recordKey: recordKey,
+            // tags: JSON.stringify(tags),
+        };
+
+        await tableClient.upsertEntity(entity);
+
+        // sendEmail() with the code attached
+        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
+        const frontendUrl = process.env['frontend_url'];
+        const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
+        
+        try {
+            const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+            
+            const emailResult = await sendEmail(
+                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
+                email,
+                "GOSQAS Verification Code",
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification"
+            )
+
+            context.log('Email send result:', emailResult);
+
+        } catch (error) {
+            context.log("Error sending email: " + error);   
+        }
+
+        // Return Success (frontend checks for properly formed email)
+        return {
+            jsonBody: {message: "Success", token: token },
+            status: 200
+        } 
         
     } catch(error) {
         context.error(error.message);
@@ -901,6 +960,238 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             jsonBody: {message: "Internal Server Error"},
             status: 500,
         }
+ 
+    }
+}
+
+
+export async function getPendingVerification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const token = request.query.get('token');   
+ 
+        if (!token) { 
+            return {
+                jsonBody: { error: "Token required" }, 
+                status: 400
+            }
+        }
+
+    const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1` 
+            : `https://${accountName}.table.core.windows.net`;
+
+        // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
+
+    const credential = new AzureNamedKeyCredential(accountName, accountKey);
+    const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
+
+    // query by partitionKey (token)
+    const entities = tableClient.listEntities({
+        queryOptions: { filter: `PartitionKey eq '${token}'` }
+    });
+
+    // get first match
+    let entity = null;
+    for await (const e of entities) {
+        entity = e;
+        break;
+    }
+
+    // not found
+    if (!entity) {
+        return {
+            jsonBody: { error: "Invalid or expired code" },
+            status: 404
+        }
+    }
+
+    // expired - delete and return 404
+    if (Date.now() > entity.expiresAt) {
+        await tableClient.deleteEntity(entity.partitionKey as string, entity.rowKey as string);
+        return {
+            jsonBody: { error: "Expired", recordKey: entity.recordKey as string },
+            status: 410
+        }
+    }
+
+    // valid - return 200
+    return {
+        jsonBody: { message: "Valid", recordKey: entity.recordKey as string },
+        status: 200
+    }
+
+    } catch(error) {
+        console.error(error.message);
+        return {
+            jsonBody: { message: "Internal Error" },
+            status: 500
+        }
+    }
+}
+
+// setup TableClient for PendingVerifications
+// on success should call signupForNotifications - cause email is now verfies
+export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        // get email and code
+        const body = await request.json() as any;
+        const token = body.token;
+        const code = body.code;
+        const tags = []
+
+        if (!token || !code) {
+            return {
+                jsonBody: { error: "Token and code required" },
+                status: 400
+            }
+        }
+
+        // get the PendingVerifications table
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1`
+            : `https://${accountName}.table.core.windows.net`;
+
+        // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
+        let table = 'PendingEmailVerifications'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        await tableClient.createTable();  // Create if not exist, no error if it does
+
+
+        // look up directly by partitionKey (token) and rowKey (code)
+        let entity = null;
+        try {
+            entity = await tableClient.getEntity(token, code);
+        } catch {
+            // not found
+        }
+
+        // not found, expired - same generic msg
+        if (!entity || Date.now() > entity.expiresAt) {
+            return {
+                jsonBody: { error: "Invalid or expired code" },
+                status: 400
+            }
+        }
+
+        await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
+
+        // Proof of concept 
+        // on success, delete pending entity and call signupForNotifications
+        await containerClient.createIfNotExists();
+        await updateNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags, true);
+        // return response
+
+        return {
+            jsonBody: {message: "Success", recordKey: entity.recordKey as string},
+            status: 200
+        } 
+    } catch(error) {
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Error"},
+            status: 500,
+        }  
+    }
+} 
+
+// Additional helper function to resend code using the token instead of the email
+// keeping the email out of the url is better for privacy
+export async function postResendCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try {
+        const body = await request.json() as any;   
+        const token = body.token;
+
+        if (!token) {
+            return {
+                jsonBody: {error: "Token required"},
+                status: 400
+            }
+        }
+
+        // get the pendingemailver table
+        const tableUrl = accountName === "devstoreaccount1"
+             ? `http://127.0.0.1:10002/devstoreaccount1`
+             : `https://${accountName}.table.core.windows.net`;
+
+        //const tableUrl =  `https://gdtteststorage.table.core.windows.net`
+
+        let table = 'PendingEmailVerifications'
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+
+        // find the old entity by partitionKey (token)
+        const entities = tableClient.listEntities({
+            queryOptions: {filter: `PartitionKey eq '${token}'`}
+        });
+
+        let entity = null;
+        for await (const e of entities) {
+            entity = e;
+            break;
+        }
+
+        // not found
+        if (!entity) {
+            return {
+                jsonBody: { error: "Invalid or expired code" },
+                status: 404
+            }
+        }
+
+        // gen new code
+        const code = (crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).toString().padStart(6, "0");
+
+        // delete old entity (token, oldCode) and create new (token, newCode)
+        const codeExpiration = 10 * 60 * 1000;
+        await tableClient.deleteEntity(token, entity.rowKey as string);
+        const updatedEntity = {
+            partitionKey: token,
+            rowKey: code,
+            email: entity.email as string,
+            verified: false,
+            expiresAt: Date.now() + codeExpiration,
+            recordKey: entity.recordKey as string,
+            // tags: entity.tags as string ?? '[]'
+        };
+
+        await tableClient.createEntity(updatedEntity);
+
+        // sendEmail() with the code attached
+        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string;
+        const frontendUrl = process.env['frontend_url'];
+        const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
+
+        try {
+            const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+            
+            const emailResult = await sendEmail(
+                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
+                entity.email as string,
+                "GOSQAS Verification Code",
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification"
+            ) 
+
+            context.log('Email resend results:', emailResult);
+
+        } catch (error) {
+            context.log("Error sending email: " + error);   
+        }
+
+        // Return Success (frontend has checks for properly formed email)
+        return {
+            jsonBody: {message: "Success" },
+            status: 200
+        } 
+        
+    } catch(error) {
+        console.error(error.message);
+        return {
+            jsonBody: {message: "Internal Server Error"},
+            status: 500,
+        }
+
     }
 }
 
@@ -920,7 +1211,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
 
         await containerClient.createIfNotExists();
-        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false);
+        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false); 
 
         context.log("Unsubscribed from the record");
         return response;
@@ -967,7 +1258,8 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
+
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isReportingKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -988,7 +1280,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
             description: "",
             tags: tags,
             hasParent: true,
-            isReportingKey: false
+            isReportingKey: isReportingKey
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
@@ -1009,7 +1301,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     }
 }
 
-async function createChildren(context, number_of_children: number, custom_child_titles: string[], tags?) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], hasReportingKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     let j = 0;
@@ -1022,6 +1314,14 @@ async function createChildren(context, number_of_children: number, custom_child_
         j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
+            // ReportingKey is itself a record that is part of a group
+            if(hasReportingKey){
+                const reportingTags = [...tags, "reportingkey"]
+                if(!(thisChild = await createChild(context,"Reporting Key", reportingTags, true))) {
+                    continue;
+                }
+                childrenKeys.push(thisChild)
+            }
             break;
         }
     }
@@ -1029,7 +1329,7 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasReportingKey, tags, attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1050,22 +1350,29 @@ async function createGroup(context, name, description, n_children: number = 0, c
         }
     };
     // Create children first
-    let childKeys = await createChildren(context, n_children, custom_child_titles)
-    if (childKeys.length !== n_children) {
-        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    let childKeys = await createChildren(context, n_children, custom_child_titles, hasReportingKey, tags)
+    let totalChildren = n_children + (hasReportingKey ? 1 : 0)
+    if (childKeys.length !== totalChildren) {
+        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
     }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
+
+    let reporting_key = '';
+    if(hasReportingKey){
+        reporting_key = childKeys.at(-1);
+    }
 
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
         number_of_children: n_children,
-        children_key: childKeys,  // Note: this is what turns a record into a group
+        children_key: childKeys,   
         children_name: custom_child_titles,
-        tags: [],            
+        ...(reporting_key ? { reportingKey: reporting_key } : {}), // only gets added if reporting key is present
+        tags: tags,         
         hasParent: false,
         isReportingKey: false
     })); context.log(groupFormData)
@@ -1094,7 +1401,10 @@ const GroupCreationOrderSchema = z.object({
     deviceName: z.string(),
     description: z.string(),
     tags: z.array(z.string()).optional(),
+    reportingKey: z.string().optional(),
     number_of_children: z.number().optional(),
+    hasReportingKey: z.boolean().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
     children_name: z.array(z.string()).optional(),
     create_reporting_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
@@ -1122,10 +1432,10 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-
+        let hasReportingKey = theRequest['hasReportingKey']
+        let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, attachments)
-
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasReportingKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1220,24 +1530,23 @@ const RecordCreationOrderSchema = z.object({
 
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
-        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
-        let name = theRequest['provenanceRecord']['deviceName'];
-        let description = theRequest['provenanceRecord']['description'];
-        let tags = theRequest['provenanceRecord']['tags'];
-        let attachment = theRequest['attachment'];
+        const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord");
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError("Missing provenanceRecord in form data");
+        }
+
+        let theRequest = JSON.parse(recordStr);
+        RecordCreationOrderSchema.parse(theRequest);
+        let name = theRequest['deviceName'];
+        let description = theRequest['description'];
+        let tags = theRequest['tags'];
 
         // if there's an attachment create a blob to add to the record
         const attachments = new Array<NamedBlob>();
-        if (attachment != "") {
-            attachment = theRequest['attachment']['file'];
-            let attachmentName = theRequest['attachment']['name'];
-            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
-            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
-            if (typeof blob !== 'string') {
-                console.log("attach type: " + typeof(blob))
-                attachments.push({ blob: blob, name: attachmentName });
-            }
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({ name: value.name || "attachment", blob: value });
         }
 
         let recordUrl = await createRecord(context, name, description, tags, attachments)
@@ -1300,18 +1609,6 @@ app.post("createGroup", {
     authLevel: 'anonymous',
     route: 'createGroup',
     handler: createGroupHandler
-})
-
-app.get("emailSignupTestEndpoint", {
-    authLevel: 'anonymous',
-    route: 'emailSignupTestEndpoint',
-    handler: emailSignupTestEndpoint
-})
-
-app.post("postNotificationEmail", {
-    authLevel: 'anonymous',
-    route: 'notificationSubscription',
-    handler: postNotificationEmail
 })
 
 app.post('deleteNotificationEmail', {
@@ -1386,4 +1683,32 @@ app.post('recall', {
     handler: recall,
 })
 
+app.post('postResendCode', {
+    authLevel: 'anonymous',
+    route: 'resendCode',
+    handler: postResendCode,
+})
 
+app.get("emailSignupTestEndpoint", {
+    authLevel: 'anonymous',
+    route: 'emailSignupTestEndpoint',
+    handler: emailSignupTestEndpoint
+})
+
+app.post("postNotificationEmail", {
+    authLevel: 'anonymous',
+    route: 'notificationSubscription',
+    handler: postNotificationEmail
+})
+
+app.get('getPendingVerification', {
+    authLevel: 'anonymous',
+    route: 'pendingVerification',
+    handler: getPendingVerification,
+})
+
+app.post("postVerifyCode", {
+    authLevel: 'anonymous',
+    route: 'verifyCode',
+    handler: postVerifyCode
+})

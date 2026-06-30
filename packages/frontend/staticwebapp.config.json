@@ -9,7 +9,11 @@
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/GDT-OpenAPI-Spec.yaml"]
+  },
+  "mimeTypes": {
+    ".yaml": "text/yaml"
   },
   "platform": {
     "apiRuntime": "node:20"
