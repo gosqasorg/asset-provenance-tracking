@@ -53,7 +53,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
             </h4>
 
-            <!-- Volunteer Feedback Email -->
+            <!-- Subscribe to tag notifications -->
+            <div v-if="onDev">
+                <h4 class="p-1 my-0">
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
+
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+
+                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+                    
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
+            </div>            
+
+            <!-- Volunteer Feedback Email --> 
             <h4 class="p-1">
                 <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
@@ -124,18 +146,22 @@ import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
 import Banner from '../Banner.vue';
+import { useRuntimeConfig } from '#app';
 
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             childrenKeys: 0,
             createReportingKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
+            notifyTags: false,      // email tag notification checkbox
             emailInput: '',
             isChecked: false,
             textInput: '',
@@ -144,6 +170,8 @@ export default {
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+
         }
     },
     computed: {
@@ -189,6 +217,9 @@ export default {
 
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -375,7 +406,7 @@ export default {
 
                 if (response && this.subscribeChecked && this.subscribeEmail) {
                     try {
-                        await postNotificationEmail(this.subscribeEmail, deviceKey, this.tags);
+                        await postNotificationEmail(this.subscribeEmail, deviceKey);
                         this.$snackbar.add({
                             type: 'success',
                             text: 'Check your email to verify your notification subscription.'
@@ -393,9 +424,17 @@ export default {
                     await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
                 }
 
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Error creating the group: ${error}`
+                    text: `Error creating the group: ${errorMessage}`
                 })
 
                 // Otherwise just return to the /gdt page
@@ -459,13 +498,17 @@ export default {
         border:5px;
         border-color:red;
     }
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #group-button {
@@ -496,7 +539,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #group-button {

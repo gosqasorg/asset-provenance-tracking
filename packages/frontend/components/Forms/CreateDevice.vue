@@ -39,8 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <!-- Subscribe to notifications -->
             <!-- <div class="my-3">
                 <h4>
-                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
-                        Receive email notifications for this record
+                    <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
                 </h4>
 
                 <div v-if="notify">
@@ -53,6 +52,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 />
                 </div>
             </div> -->
+
+            <!-- Subscribe to tag notifications -->
+            <div v-if="onDev">
+                <div class="my-3">
+                    <h4>
+                        <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                    </h4>
+
+                    <div v-if="notifyTags">
+                        <input
+                            type="email"
+                            class="form-control"
+                            v-model="tagsEmailInput"
+                            required placeholder="Email"
+                            @keyup.enter=""
+                    />
+                    </div>
+
+                    <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                        tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+
+                    <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
+                </div>
+            </div>
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
@@ -117,26 +140,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, onlineTestFetch } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
+import { useRuntimeConfig } from '#app';
 
 //TODO: add const for max limit of notification subscriptions
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
+            notify: false,      // email notification checkbox
+            notifyTags: false,  // email tag notification checkbox
+            emailInput: '',
+            tagsEmailInput: '', // email for specified tag signup
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     computed: {
@@ -168,6 +199,9 @@ export default {
     methods: {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -243,9 +277,17 @@ export default {
                     await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
                 }
 
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Failed to create record: ${error}`
+                    text: `Failed to create record: ${errorMessage}`
                 });
 
                 // Otherwise just return to the /gdt page
@@ -304,12 +346,17 @@ export default {
 
     }
 
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #record-button {
@@ -340,7 +387,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #record-button {

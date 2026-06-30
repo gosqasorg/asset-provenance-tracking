@@ -64,20 +64,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     Recall all children
             </h4>
 
-            <!-- <h4 class="p-1 mt-0">
-                <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
-                    Receive email notifications for this record
-            </h4>
+            <!-- Subscribe to notifications -->
+            <div v-if="onDev">
+                <h4 class="p-1 mt-0">
+                    <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
+                </h4>
 
-            <div v-if="notify">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    placeholder="Email"
-                    @keyup.enter=""
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+                </div>
+
+                <!-- Subscribe to tag notifications -->
+                <h4 class="p-1 my-0">
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
+
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
                 />
-            </div> -->
+                </div>
+
+                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
+            </div>
         </div>
         
         <!-- Offline Banner Bottom-->
@@ -153,13 +175,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
  import Banner from '../Banner.vue';
+ import { useRuntimeConfig } from '#app';
 
  export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
+            emailTags: [] as string[],
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
@@ -168,7 +193,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             annotatePopUp: false,
             recallPopUp: false,
             notify: false,
-            emailInput: ''
+            notifyTags: false,
+            emailInput: '',
+            config: useRuntimeConfig(),
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     props: {
@@ -236,6 +264,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -412,9 +443,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             } catch (error) {
                 this.redirectIfOffline()
+
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Error creating record: ${error}`
+                    text: `Error creating record: ${errorMessage}`
                 });
             }
         }
