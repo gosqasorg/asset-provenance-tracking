@@ -4,10 +4,10 @@ info:
   version: 1.0.0
   description: Auto-generated OpenAPI specification
 servers:
-  - url: http://localhost:7071/api
+#  - url: http://localhost:7071/api
 #    description: Local development server
-#  - url: https://gosqasbe.azurewebsites.net/api
-#    description: Staging server
+  - url: https://gosqasbe.azurewebsites.net/api
+    description: Staging server
 #  - url: https://gdtprodbackend.azurewebsites.net/api
 #    description: Production server
 paths:
@@ -32,7 +32,7 @@ paths:
       tags:
         - GDT API
       summary: Create a new group
-      description: This endpoint creates a group and returns a unique group URL via multipart/form-data.
+      description: This endpoint creates a group (and specified number of children), then returns a unique group URL via multipart/form-data.
       operationId: createGroup
       requestBody:
         description: Group creation parameters and attachments
@@ -60,6 +60,12 @@ paths:
                     number_of_children:
                       type: integer
                       example: 5
+                    tags:
+                      type: string array
+                      example: ["tag1", "tag2"]
+                    hasReportingKey:
+                      type: boolean
+                      example: true
                 attachments:
                   type: array
                   description: Optional binary files attached to the form data.
@@ -76,7 +82,7 @@ paths:
                 properties:
                   groupUrl:
                     type: string
-                    example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
+                    example: "{'groupUrl':'https://dev.gosqas.org/history/K7bdog8uVf3c9zTGuBVQqL'}"
         '400':
           description: Bad Request
           content:
