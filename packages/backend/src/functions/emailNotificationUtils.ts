@@ -4,10 +4,13 @@ import { encode as base58encode } from '@urlpack/base58';
 
 const NOTIFICATION_TYPE = 'notificationSignups';
 const FROM_ADDRESS = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net"
-const SUBJECT = 'Tracking update';
+const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
-export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, context: InvocationContext): Promise<HttpResponseInit> {
+export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entered notifySubscribers')
+    const description = JSON.parse(formData.get('provenanceRecord')).description
+
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey);
     const extractedEmails = extractEmailsFromResponse(retrieveNotifEmailResponse);
@@ -29,9 +32,16 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
         const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
             const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
-            const email_body: string = `<div>Hi, you are receiving this message because you signed up for record updates.</div><br><div style="font-size:12px">Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.</div>`;
+            let email_body: string;
+            if(description) {
+                // Non-blank description
+                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+            } else {
+                // Blank description
+                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+            }
             index++
-            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT, email_body, displayName);
+            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT + ` for record ${deviceKey}`, email_body, displayName);
 
             if (result.status !== "Succeeded") {
                 throw result.message

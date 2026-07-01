@@ -393,10 +393,11 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
+ 
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+
     if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
@@ -432,8 +433,8 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         }
     }
 
-    await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, context);
-    
+    await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+  
     return { jsonBody: body ?? { converted: true}};
 }
 
