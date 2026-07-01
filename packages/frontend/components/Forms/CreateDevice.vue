@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
-
+ 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
@@ -35,23 +35,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
-
-            <!-- Subscribe to notifications -->
-            <!-- <div class="my-3">
-                <h4>
-                    <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
-                </h4>
-
-                <div v-if="notify">
-                    <input
-                        type="email"
-                        class="form-control"
-                        v-model="emailInput"
-                        required placeholder="Email"
-                        @keyup.enter=""
-                />
-                </div>
-            </div> -->
 
             <!-- Subscribe to tag notifications -->
             <div v-if="onDev">
