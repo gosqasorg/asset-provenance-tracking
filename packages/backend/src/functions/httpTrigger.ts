@@ -1289,13 +1289,20 @@ export async function addEntryHandler(request:HttpRequest, context: InvocationCo
     context.log(`addEntry cont:`, context);
     context.log(`addEntry Req:`, request);
 
-    const formData = await request.formData();
-    context.log(`FormData:`, formData);
+    // consumes the body and request can't be used in that state
+    // const formData = await request.formData();
+    // context.log(`addEntry FormData:`, formData);
+
+    // works but a few things may have fallen through the cracks
+    const temp = await postProvenance(request, context)
+    context.log("temp:", temp)
+    context.log(temp.jsonBody)
     
     // const wrappedRequest
     // const wrappedContext
 
     // return await postProvenance(wrappedRequest, wrappedContext)
+    return temp
 
     try{
         let theRequest = await request.json()
