@@ -14,7 +14,7 @@
   },
   "mimeTypes": {
     ".yaml": "text/yaml",
-    ".pdf": "text/pdf"
+    ".pdf": "application/pdf"
   },
   "platform": {
     "apiRuntime": "node:20"
