@@ -4,10 +4,10 @@ info:
   version: 1.0.0
   description: Auto-generated OpenAPI specification
 servers:
-#  - url: http://localhost:7071/api
-#    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
+ - url: http://localhost:7071/api
+   description: Local development server
+  # - url: https://gosqasbe.azurewebsites.net/api
+    # description: Staging server
 #  - url: https://gdtprodbackend.azurewebsites.net/api
 #    description: Production server
 paths:
@@ -26,6 +26,53 @@ paths:
                 type: object
         '404':
           description: Not Found
+  
+  /provenance/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Gets the device provenance history
+      description: Retrieves the decrypted provenance history for a device, sorted by newest to oldest.
+      operationId: getProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a record whose provenance history is to be retrieved.
+          schema:
+            type: string
+            example: "6TzAdg1bei6QDNxJN1KnoV"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              examples:
+                RecordsFound:
+                  summary: Provenance record found
+                  description: Provenance record for the device, sorted by the newest first.
+                  value:
+                    - record: { description: "example record", children_key: "" }
+                NoRecords:
+                  summary: No record / container missing
+                  description: Returned when the storage container does not exist yet.
+                  value: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Invalid json stored in provenance"
+        '500':
+          description: Internal Server Error
 
   /createGroup:
     post:
