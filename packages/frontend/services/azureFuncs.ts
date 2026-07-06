@@ -461,3 +461,20 @@ export async function postResendCode(token: string) {
         throw new Error('postResendCode: Failed to resend code')
     }
 }
+
+export async function changeHasParent(deviceKey: string) {
+    try {
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const fullUrl = baseUrl + "/editrecordparent/" + deviceKey;
+
+        let response = await fetch(`${fullUrl}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            });
+        
+    } catch (error) {
+        console.log(`Key not found: ${deviceKey}`);
+        console.log(error);
+        throw error;
+    }
+}

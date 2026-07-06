@@ -138,16 +138,21 @@ export default {
         filteredProvenance(){
             return this.provenance.filter(item => item.record.blobType != 'deviceInitializer')
         },
-        filteredProvenanceDeviceInit(){
-            return this.provenance.filter(item => item.record.blobType === 'deviceInitializer')
-        }
-    },
+        filteredProvenanceDeviceInit() {
+            if (this.parentChanged === true) {
+                return this.provenance.filter(item => item.record.blobType === 'deviceInitializer' && item.record.hasParent === true)
+            } else {
+                return this.provenance.filter(item => item.record.blobType === 'deviceInitializer' && item.record.hasParent === false)
+            }
+            
+    }},
     data() {
         return {
             attachmentURLs: {},
             modalImage: "",
             recalledRecord: false,
-            showModal: false
+            showModal: false,
+            parentChanged: false
         };
     },
     mounted() {
@@ -188,6 +193,12 @@ export default {
         onThumbClick(attachment) {
             this.modalImage = attachment.url;
             this.showModal = true;
+        },
+        gatherDeviceInits() {
+            if (this.provenance.record.hasParent === true) {
+                this.parentChanged = true;
+            }
+                
         }
     },
 };
