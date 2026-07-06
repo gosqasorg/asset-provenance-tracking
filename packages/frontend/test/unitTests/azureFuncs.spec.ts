@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { stashRequest, emptyStash, onlineTestFetch, periodicChecker, testOnlineTestUrl, postProvenance, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { stashRequest, emptyStash, onlineTestFetch, periodicChecker } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,

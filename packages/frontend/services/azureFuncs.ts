@@ -15,8 +15,12 @@
 
 import { validateKey } from "~/utils/keyFuncs";
 
-// Feature flag to turn ON/OFF Offline Mode features while in development
+// Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
+// If we're not on prod turn offline features on
 export var offlineModeFeatureFlag = { flag: false };
+if (!(useRuntimeConfig().public.baseUrl).includes("gdtprodbackend")) {
+    offlineModeFeatureFlag.flag = true;
+}
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
