@@ -773,11 +773,8 @@ async function editRecordParent(request: HttpRequest, context: InvocationContext
         } catch (error) {
             console.log(error)
         }
-
-
     }
 }
-
 
 async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     let theUrl = `${baseUrl}${deviceKey}`;
