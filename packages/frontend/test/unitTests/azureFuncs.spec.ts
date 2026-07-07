@@ -15,7 +15,7 @@ async function createRequest (
     tags: [],
     children_key: '',
     hasParent: false,
-    isReportingKey: false
+    isPublicKey: false
   };
 
   const formData = new FormData();
@@ -75,7 +75,7 @@ describe('Tests to see if requests can be stashed', () => {
       tags: z.array(z.string()),
       children_key: z.union([z.string(), z.array(z.string())]),
       hasParent: z.boolean().optional(),
-      isReportingKey: z.boolean().optional()
+      isPublicKey: z.boolean().optional()
     });
     ValidFormData.parse(returnedFormData);
 

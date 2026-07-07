@@ -110,7 +110,7 @@ paths:
                     tags:
                       type: string array
                       example: ["tag1", "tag2"]
-                    hasReportingKey:
+                    hasPublicKey:
                       type: boolean
                       example: true
                 attachments:
