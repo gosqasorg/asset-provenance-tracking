@@ -380,9 +380,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
-        const parsed_json = JSON.parse(json);
-        if (!(await validateJSON(parsed_json.record))) { return { status: 400 }; }
-        const provRecord = parsed_json as ProvenanceRecord;
+       if (!validateJSON(json)) { return { status: 404 }; }
+        const provRecord = JSON.parse(json) as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
