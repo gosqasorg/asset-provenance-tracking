@@ -283,9 +283,6 @@ export default {
             let publicKey;
      
             // Get all elements from the DOM
-            if (this.annotate) {
-                this.tags = (this.tags).concat(['notify_all'])
-            } 
             
             // Emit an event to notify the gdt.vue page to display loading screen
             EventBus.emit('isLoading');
