@@ -41,7 +41,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
                 email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
             }
             index++
-            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT + ` for record ${deviceKey}`, email_body, displayName);
+            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT + ` for record ${deviceKey}`, email_body, displayName, context);
 
             if (result.status !== "Succeeded") {
                 throw result.message
@@ -49,6 +49,9 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
         }
     } catch (error) {
         context.error("Error sending email: " + error);
+        context.error(error.statusCode)
+        context.error(error)
+        throw error
     }
 }
 
@@ -171,13 +174,10 @@ export async function updateNotifications(containerClient: ContainerClient, calc
     try {
         // Note: do not reformat; leave as commented
         let status = (await containerClient.uploadBlockBlob(
-                        blobName,   // 1. Blob name
-                        data,       // 2. body (can be a string)
-                        data.length, // 3. length of body in bytes (or Buffer.byteLength(data))
-                        // 4. optional options
-                        // nothing for now
-                        // we need to set BlockBlobUploadOptions to set usage tier
-                        uploadOptions
+                        blobName,        // 1. Blob name
+                        data,           // 2. body (can be a string)
+                        data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
+                        uploadOptions // 4. optional options
         )).response._response.status
 
         if (status < 300 && status >= 200) {
