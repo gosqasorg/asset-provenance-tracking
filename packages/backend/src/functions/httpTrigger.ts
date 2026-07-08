@@ -747,7 +747,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
  
-async function editRecordParent(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function editRecordParentStatus(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -1742,8 +1742,8 @@ app.post("postVerifyCode", {
     handler: postVerifyCode
 })
 
-app.post('editRecordParent',{
+app.post('editRecordParentStatus',{
     authLevel: 'anonymous',
-    route: 'editrecordparent/{deviceKey}',
-    handler: editRecordParent
+    route: 'editrecordparentstatus/{deviceKey}',
+    handler: editRecordParentStatus
 })

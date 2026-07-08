@@ -2,7 +2,7 @@
 // devices (children, grandchildren, great granchildren, so on) given a key
 // or the list of direct descendants (children only) given a key 
 
-import { changeHasParent, getProvenance, postProvenance } from '~/services/azureFuncs';
+import { changeHasParentStatus, getProvenance, postProvenance } from '~/services/azureFuncs';
 import type { Provenance } from '~/utils/types';
 import { InternalTagName } from './tags';
 
@@ -118,7 +118,7 @@ export async function addChildKeys(recordKey: any, record: any, childKeys: strin
                 console.log(`Child record ${childKey} could not be added.`);
                 badRecords.push(childKey);
             } else {
-                await changeHasParent(childKey)
+                await changeHasParentStatus(childKey)
                 const response = await postProvenance(childKey, {
                     blobType: 'deviceRecord',
                     description:  "Added to group",

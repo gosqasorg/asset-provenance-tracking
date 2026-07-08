@@ -462,10 +462,10 @@ export async function postResendCode(token: string) {
     }
 }
 
-export async function changeHasParent(deviceKey: string) {
+export async function changeHasParentStatus(deviceKey: string) {
     try {
         const baseUrl = useRuntimeConfig().public.baseUrl;
-        const fullUrl = baseUrl + "/editrecordparent/" + deviceKey;
+        const fullUrl = baseUrl + "/editrecordparentstatus/" + deviceKey;
 
         let response = await fetch(`${fullUrl}`, {
             method: 'POST',
