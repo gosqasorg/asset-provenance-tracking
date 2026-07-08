@@ -1356,11 +1356,10 @@ async function createChildren(context, number_of_children: number, custom_child_
         childrenKeys.push(thisChild)
     }
 
-    if (hasReportingKey){
-        const reportingTags = [...tags, "publickey"]
-        thisChild = await createChild(context,"Public Key", reportingTags, true)
-
-        if(thisChild){ // checks to see that reporting key was made.
+    if (hasPublicKey){
+        const publicTags = [...tags, "publickey"]
+        thisChild = await createChild(context,"Public Key", publicTags, true)
+        if(thisChild){ // checks to see that public key was made.
             childrenKeys.push(thisChild)
         }
     }
