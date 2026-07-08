@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <template>
-    <div class="container-fluid" id="data-privacy-container">
+    <div class="container-fluid" id="features-container">
         <h1>Data & Privacy</h1>
         <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
@@ -40,7 +40,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Integrating GDT into your product is easy. We offer API access to our services. This API is completely open. You don't even need an API key. 
             </p>
             <p>
-                The full docs and openAPI spec are on our <a href="/docs">docs</a> page.
+                <strong>
+                    The full docs and OpenAPI spec are available on our <a href="/docs">docs</a> page.
+                </strong>
             </p>            
 
             <h2>Interactive API Examples</h2>
@@ -69,6 +71,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     
 
+        <h1>Notification System</h1>
+        <div class="row">
+            <p>
+                GDT is rolling out a Notification System, whereby users can receive email notifications whenever a record
+                is updated. In any record or group, simply click the "Get Email Notifications" button. The process is easy:
+            </p>
+            <ol>
+                <li>
+                    First, a six digit code is sent to your email. Enter this into the dialog, and you're signed up!
+                </li>
+                <li>
+                    Then, when the record receives an update, you'll receive an email.
+                </li>
+                <li>
+                    Finally, if you wish to no longer receive updates, simply click the unsubscribe link in the email.
+                </li>
+            </ol>
+            <p>
+                Note as of July 8th: we temporarily have limited email capacity, and are actively expanding over the next two weeks. 
+            </p>
+        </div>
+    
+
         <h1>Impact</h1>
         <div class="row"> <p>
             Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
@@ -86,7 +111,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 <style scoped>
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
-    #data-privacy-container{
+    #features-container{
         padding: 20px 20px 40px 20px;
     }
     .row{
@@ -98,7 +123,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 
 /* For screens larger than 768px */
 @media (min-width: 768px) {
-    #data-privacy-container{
+    #features-container{
         padding: 80px 200px 100px 200px;
     }
     .row{
@@ -109,7 +134,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #data-privacy-container {
+    #features-container {
         background-color: #1E2019;
     }
     h1 {
@@ -122,7 +147,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-    #data-privacy-container {
+    #features-container {
         background-color: #FFFFFF;
     }
     h1 {
@@ -131,6 +156,10 @@ import Learn_more from '~/layouts/learn_more.vue';
     p {
         color: #1E2019;
     }
+}
+
+ol {
+  list-style-position: inside;
 }
 
 </style>

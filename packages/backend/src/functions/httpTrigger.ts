@@ -380,8 +380,10 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
-        if (!validateJSON(json)) { return { status: 404 }; }
-        const provRecord = JSON.parse(json) as ProvenanceRecord;
+        // if (!(await validateJSON(json))) { return { status: 400 }; }
+        // validateJSON is broken
+        const parsed_json = JSON.parse(json);
+        const provRecord = parsed_json as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
@@ -393,10 +395,11 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
+ 
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+
     if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
@@ -432,8 +435,17 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         }
     }
 
-    await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, context);
-    
+    try {
+        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+    } catch(error) {
+        return {
+            status: error.statusCode,
+            jsonBody: {
+                error: 'Failed to send email'
+            }
+        }
+    }
+  
     return { jsonBody: body ?? { converted: true}};
 }
 
@@ -672,7 +684,7 @@ export async function validateJSON(json: any) {
         description: z.string(),
         deviceName: z.string().optional(),
         hasParent: z.boolean().optional(),
-        isReportingKey: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
     });
 
@@ -708,8 +720,8 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                 let getKey = await fetch(`${baseUrl}/${key}`);
                 const keyProvenance = await getKey.json();
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
-                if (!keyProvenance[0].record.isReportingKey) {
+                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
@@ -721,7 +733,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                     const keyFormData = new FormData();
                     keyFormData.append("provenanceRecord", JSON.stringify({
                         blobType: 'deviceRecord',
-                        description: "Annotated by admin",
+                        description: records[0].record.description || "Annotated by Group",
                         children_key: '',
                         tags: records[0].record.tags,
                     }));
@@ -800,8 +812,8 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                 const keyProvenance = await getKey.json();
 
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
-                if (!keyProvenance[0].record.isReportingKey) {
+                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                if (!keyProvenance[0].record.isPublicKey) {
 
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
@@ -945,7 +957,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             context.log('Email send result:', emailResult);
 
         } catch (error) {
-            context.log("Error sending email: " + error);   
+            context.log("Error sending email: " + error); 
+            throw error  
         }
 
         // Return Success (frontend checks for properly formed email)
@@ -1177,6 +1190,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         } catch (error) {
             context.log("Error sending email: " + error);   
+            throw error
         }
 
         // Return Success (frontend has checks for properly formed email)
@@ -1258,7 +1272,8 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-async function createChild(context: InvocationContext, custom_title: string, tags: string[] = []) {
+
+async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1279,7 +1294,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
             description: "",
             tags: tags,
             hasParent: true,
-            isReportingKey: false
+            isPublicKey: isPublicKey
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
@@ -1300,7 +1315,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     }
 }
 
-async function createChildren(context, number_of_children: number, custom_child_titles: string[], tags?) {
+async function createChildren(context, number_of_children: number, custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     let j = 0;
@@ -1313,6 +1328,14 @@ async function createChildren(context, number_of_children: number, custom_child_
         j++;
         childrenKeys.push(thisChild)
         if(childrenKeys.length == number_of_children) { 
+            // PublicKey is itself a record that is part of a group
+            if(hasPublicKey){
+                const publicTags = [...tags, "publickey"]
+                if(!(thisChild = await createChild(context,"public key", publicTags, true))) {
+                    continue;
+                }
+                childrenKeys.push(thisChild)
+            }
             break;
         }
     }
@@ -1320,7 +1343,7 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], attachments: NamedBlob[] = []) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey, tags, attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1341,24 +1364,31 @@ async function createGroup(context, name, description, n_children: number = 0, c
         }
     };
     // Create children first
-    let childKeys = await createChildren(context, n_children, custom_child_titles)
-    if (childKeys.length !== n_children) {
-        throw new Error(`Failed to create all child records: expected ${n_children}, got ${childKeys.length}`);
+    let childKeys = await createChildren(context, n_children, custom_child_titles, hasPublicKey, tags)
+    let totalChildren = n_children + (hasPublicKey ? 1 : 0)
+    if (childKeys.length !== totalChildren) {
+        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
     }
 
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
+
+    let public_key = '';
+    if(hasPublicKey){
+        public_key = childKeys.at(-1);
+    }
 
     groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: name,
         description: description,
         number_of_children: n_children,
-        children_key: childKeys,  // Note: this is what turns a record into a group
+        children_key: childKeys,   
         children_name: custom_child_titles,
-        tags: [],            
+        ...(public_key ? { publicKey: public_key } : {}), // only gets added if public key is present
+        tags: tags,         
         hasParent: false,
-        isReportingKey: false
+        isPublicKey: false
     })); context.log(groupFormData)
 
     for (const attachment of attachments) {
@@ -1385,9 +1415,12 @@ const GroupCreationOrderSchema = z.object({
     deviceName: z.string(),
     description: z.string(),
     tags: z.array(z.string()).optional(),
+    publicKey: z.string().optional(),
     number_of_children: z.number().optional(),
+    hasPublicKey: z.boolean().optional(),
+    custom_record_titles: z.array(z.string()).optional(),
     children_name: z.array(z.string()).optional(),
-    create_reporting_key: z.boolean().optional(),
+    create_public_key: z.boolean().optional(),
     annotate: z.boolean().optional(),
 });
 
@@ -1413,10 +1446,10 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-
+        let hasPublicKey = theRequest['hasPublicKey']
+        let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, attachments)
-
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1472,7 +1505,7 @@ async function createRecord(context, name, description, tags, attachments) {
             tags: tags,
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         };
 
         // use uploadProvenance to post the record and any attachments
@@ -1505,30 +1538,29 @@ const RecordCreationOrderSchema = z.object({
     children_key: z.union([z.string(), z.array(z.string())]),
     children_name: z.array(z.string()).optional(),
     hasParent: z.boolean().optional(),
-    isReportingKey: z.boolean().optional(),
+    isPublicKey: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
 });
 
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        let theRequest = await request.json()
-        RecordCreationOrderSchema.parse(theRequest['provenanceRecord']);
-        let name = theRequest['provenanceRecord']['deviceName'];
-        let description = theRequest['provenanceRecord']['description'];
-        let tags = theRequest['provenanceRecord']['tags'];
-        let attachment = theRequest['attachment'];
+        const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord");
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError("Missing provenanceRecord in form data");
+        }
+
+        let theRequest = JSON.parse(recordStr);
+        RecordCreationOrderSchema.parse(theRequest);
+        let name = theRequest['deviceName'];
+        let description = theRequest['description'];
+        let tags = theRequest['tags'];
 
         // if there's an attachment create a blob to add to the record
         const attachments = new Array<NamedBlob>();
-        if (attachment != "") {
-            attachment = theRequest['attachment']['file'];
-            let attachmentName = theRequest['attachment']['name'];
-            let bufferAttachment = Buffer.from(attachment, "base64");  // convert base64 string to buffer
-            const blob = new Blob([bufferAttachment], { type: 'image/jpeg' });
-            if (typeof blob !== 'string') {
-                console.log("attach type: " + typeof(blob))
-                attachments.push({ blob: blob, name: attachmentName });
-            }
+        for (const value of formData.values()) {
+            if (typeof value === "string") continue;
+            attachments.push({ name: value.name || "attachment", blob: value });
         }
 
         let recordUrl = await createRecord(context, name, description, tags, attachments)

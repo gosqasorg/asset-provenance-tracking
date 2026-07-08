@@ -1,15 +1,13 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { stashRequest, emptyStash, onlineTestFetch, periodicChecker } from '~/services/azureFuncs';
+import { stashRequest, emptyStash, onlineTestFetch, periodicChecker, testOnlineTestUrl, postProvenance, offlineModeFeatureFlag } from '~/services/azureFuncs';
 
-async function createRequest(
-  key: string,
+async function createRequest (
   name: string,
   description: string
 ): Promise<[string, FormData]> {
-  const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
-  const formUrl = baseUrl + 'provenance/' + key;
+  const key = await makeEncodedDeviceKey();
   const record = {
     blobType: 'deviceInitializer',
     deviceName: name,
@@ -17,12 +15,20 @@ async function createRequest(
     tags: [],
     children_key: '',
     hasParent: false,
-    isReportingKey: false
+    isPublicKey: false
   };
 
   const formData = new FormData();
   formData.append('provenanceRecord', JSON.stringify(record));
-  return [formUrl, formData];
+  return [key, formData];
+}
+
+function resetStashValues(): void {
+  // reset the values in localStorage to avoid overlap between tests
+  localStorage.setItem('stash_counter', '0');
+  localStorage.setItem('gdt-stash-fulfilled', '');
+  localStorage.setItem('gdt-stash-failed', '');
+  localStorage.setItem('gdt-awaiting-conectivity', 'false');
 }
 
 describe('Tests to see if user is online and offline', () => {
@@ -39,22 +45,21 @@ describe('Tests to see if user is online and offline', () => {
 
 describe('Tests to see if requests can be stashed', () => {
   it('Test to see if returned data types are correct', async () => {
-    const key = await makeEncodedDeviceKey();
-    let [formUrl, formData] = await createRequest(
-      key,
+    resetStashValues();
+
+    let [recordKey, formData] = await createRequest(
       'Stored Record',
       'Test record stored in localStorage then created from emptyStash()'
     );
 
-    localStorage.setItem('stash_counter', '0'); // need to reset counter to avoid overlap with other tests
-    stashRequest(formUrl, formData);
+    stashRequest(recordKey, formData);
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
 
     // Confirm that the datatypes are the same as they started
-    const returnedFormUrl = requestFromStash[0][1];
+    const returnedKey = requestFromStash[0][1];
     const returnedFormData = JSON.parse(requestFromStash[1][1]);
-    expect(typeof returnedFormUrl).toEqual(typeof formUrl);
-    expect(returnedFormUrl).toEqual(formUrl);
+    expect(typeof returnedKey).toEqual(typeof recordKey);
+    expect(returnedKey).toEqual(recordKey);
     expect(JSON.stringify(returnedFormData)).toStrictEqual(formData.get('provenanceRecord'));
 
     // Convert returned request back to FormData (stored in localStorage as string)
@@ -70,7 +75,7 @@ describe('Tests to see if requests can be stashed', () => {
       tags: z.array(z.string()),
       children_key: z.union([z.string(), z.array(z.string())]),
       hasParent: z.boolean().optional(),
-      isReportingKey: z.boolean().optional()
+      isPublicKey: z.boolean().optional()
     });
     ValidFormData.parse(returnedFormData);
 
@@ -79,25 +84,24 @@ describe('Tests to see if requests can be stashed', () => {
   });
 
   it('Test to see if we can store multiple requests', async () => {
-    const key1 = await makeEncodedDeviceKey();
-    const key2 = await makeEncodedDeviceKey();
-    let [formUrl1, formData1] = await createRequest(key1, 'name', 'description');
-    let [formUrl2, formData2] = await createRequest(key2, 'name2', 'slightly longer description');
+    resetStashValues();
 
-    localStorage.setItem('stash_counter', '0');
-    stashRequest(formUrl1, formData1);
-    stashRequest(formUrl2, formData2);
+    let [recordKey1, formData1] = await createRequest('name', 'description');
+    let [recordKey2, formData2] = await createRequest('name2', 'slightly longer description');
+
+    stashRequest(recordKey1, formData1);
+    stashRequest(recordKey2, formData2);
 
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
-    const returnedFormUrl = requestFromStash[0][1];
+    const returnedKey = requestFromStash[0][1];
     const returnedFormData = JSON.parse(requestFromStash[1][1]);
-    expect(returnedFormUrl).toEqual(formUrl1);
+    expect(returnedKey).toEqual(recordKey1);
     expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
 
     let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
-    const returnedFormUrl2 = requestFromStash2[0][1];
+    const returnedKey2 = requestFromStash2[0][1];
     const returnedFormData2 = JSON.parse(requestFromStash2[1][1]);
-    expect(returnedFormUrl2).toEqual(formUrl2);
+    expect(returnedKey2).toEqual(recordKey2);
     expect(JSON.stringify(returnedFormData2)).toStrictEqual(formData2.get('provenanceRecord'));
 
     // Check that the correct record was stored at each request
@@ -114,23 +118,21 @@ describe('Tests to see if requests can be stashed', () => {
 
 describe('Tests to see if we can remove from the stash', () => {
   it('Create and remove a request', async () => {
+    resetStashValues();
+
     // Mock fetch calls from emptyStash (since formData doesn't work from this file)
     const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
       status: 200,
       json: () => Promise.resolve({ record: "mockRecord" }),
     } as Response);
 
-    const key = await makeEncodedDeviceKey();
-    let [formUrl, formData] = await createRequest(key, 'stored record', 'testing emptyStash');
-
-    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
-    localStorage.setItem('gdt-stash-fulfilled', '');
-    stashRequest(formUrl, formData);
+    let [recordKey, formData] = await createRequest('stored record', 'testing emptyStash');
+    stashRequest(recordKey, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Confirm records were stored
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
-    expect(requestFromStash).not.toEqual('{}');
+    expect(requestFromStash).not.toEqual({});
 
     // Empty the stash and confirm it ran successfully
     let statusCode = await emptyStash();
@@ -143,7 +145,7 @@ describe('Tests to see if we can remove from the stash', () => {
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
     expect(existingKeys.length).toBe(1);
-    expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
+    expect(existingKeys[0]).toEqual(recordKey);
 
     // Remove mock
     fetchMock.mockRestore();
@@ -155,21 +157,20 @@ describe('Tests to see if we can remove from the stash', () => {
       json: () => Promise.resolve({ record: "mockRecord" }),
     } as Response);
 
-    const key1 = await makeEncodedDeviceKey();
-    const key2 = await makeEncodedDeviceKey();
-    let [formUrl1, formData1] = await createRequest(key1, 'first stored record', 'this is a test');
-    let [formUrl2, formData2] = await createRequest(key2, 'second stored record', 'this is the same test');
+    resetStashValues();
 
-    localStorage.setItem('stash_counter', '0');
-    stashRequest(formUrl1, formData1);
-    stashRequest(formUrl2, formData2);
+    let [recordKey1, formData1] = await createRequest('first stored record', 'this is a test');
+    let [recordKey2, formData2] = await createRequest('second stored record', 'this is the same test');
+
+    stashRequest(recordKey1, formData1);
+    stashRequest(recordKey2, formData2);
     expect(localStorage.getItem('stash_counter')).toEqual('2');
 
     // Confirm records were stored
     let requestFromStash1 = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
     let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas_offline_stash_2') || '{}');
-    expect(requestFromStash1).not.toEqual('{}');
-    expect(requestFromStash2).not.toEqual('{}');
+    expect(requestFromStash1).not.toEqual({});
+    expect(requestFromStash2).not.toEqual({});
 
     // Empty the stash and confirm it ran successfully
     let statusCode = await emptyStash();
@@ -183,17 +184,17 @@ describe('Tests to see if we can remove from the stash', () => {
     // Make sure all three keys (including the one from the previous test) are stored
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(3);
-    expect(existingKeys[2]).toEqual(formUrl1.split('/')[formUrl1.split('/').length - 1]);
-    expect(existingKeys[1]).toEqual(formUrl2.split('/')[formUrl2.split('/').length - 1]);
+    expect(existingKeys.length).toBe(2);
+    expect(existingKeys[1]).toEqual(recordKey1);
+    expect(existingKeys[0]).toEqual(recordKey2);
 
     fetchMock.mockRestore();
   });
 
   it('Try to emptyStash when nothing is stashed', async () => {
+    resetStashValues();
+
     // Should just return when stash_counter = 0
-    localStorage.setItem('stash_counter', '0');
-    localStorage.setItem('gdt-stash-fulfilled', '');
     expect(localStorage.getItem('stash_counter')).toEqual('0');
     let statusCode = await emptyStash();
     expect(statusCode).toEqual(200);
@@ -206,13 +207,10 @@ describe('Tests to see if we can remove from the stash', () => {
   });
 
   it("Make sure record is added to failed stash when post fails", async () => {
-    const key = await makeEncodedDeviceKey();
-    let [formUrl, formData] = await createRequest(key, 'failed record', 'this should fail to post');
-
-    localStorage.setItem('stash_counter', '0');
-    localStorage.setItem('gdt-stash-fulfilled', '');
-    localStorage.setItem('gdt-stash-failed', '');
-    stashRequest(formUrl, formData);
+    resetStashValues();
+    
+    let [recordKey, formData] = await createRequest('failed record', 'this should fail to post');
+    stashRequest(recordKey, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Empty the stash without mocking (so it will fail to post since formData cannot be posted from this file)
@@ -229,7 +227,7 @@ describe('Tests to see if we can remove from the stash', () => {
     let existingKeys = (localStorage.getItem('gdt-stash-failed') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
     expect(existingKeys.length).toBe(1);
-    expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
+    expect(existingKeys[0]).toEqual(recordKey);
 
     // Confirm failed key was not added to list of successful requests
     existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
@@ -244,18 +242,15 @@ describe("Tests to see if periodicChecker works", async () => {
       json: () => Promise.resolve({ record: "mockRecord" }),
     } as Response);
 
-    const key = await makeEncodedDeviceKey();
-    let [formUrl, formData] = await createRequest(key, 'stored record', 'testing periodicChecker');
+    resetStashValues();
 
-    localStorage.setItem('stash_counter', '0');  // reset the counter to avoid overlap with other tests
-    localStorage.setItem('gdt-stash-fulfilled', '');
-    localStorage.setItem('gdt-stash-failed', '');
-    stashRequest(formUrl, formData);
+    let [recordKey, formData] = await createRequest('stored record', 'testing periodicChecker');
+    stashRequest(recordKey, formData);
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Confirm records were stored
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
-    expect(requestFromStash).not.toEqual('{}');
+    expect(requestFromStash).not.toEqual({});
 
     await periodicChecker();
 
@@ -267,7 +262,7 @@ describe("Tests to see if periodicChecker works", async () => {
     let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
     expect(existingKeys).not.toEqual(['{}']);
     expect(existingKeys.length).toBe(1);
-    expect(existingKeys[0]).toEqual(formUrl.split('/')[formUrl.split('/').length - 1]);
+    expect(existingKeys[0]).toEqual(recordKey);
 
     fetchMock.mockRestore();
   });
@@ -277,6 +272,8 @@ describe("Tests to see if periodicChecker works", async () => {
     const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
       status: 500,
     } as Response);
+
+    resetStashValues();
     
     periodicChecker();
     await new Promise((r) => setTimeout(r, 5000));
@@ -292,6 +289,8 @@ describe("Tests to see if periodicChecker works", async () => {
       status: 500,
     } as Response);
     const consoleMock = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    resetStashValues();
     
     periodicChecker();
     periodicChecker();

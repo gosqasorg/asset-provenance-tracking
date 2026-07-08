@@ -23,7 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           </p>
           <div class="unsubscribe-buttons">
               <!-- Note: Currently links back to the history/[deviceKey].vue page -->
-              <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+              <div v-if="onDev">
+                <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+              </div>
           </div>
     </div>
     <div v-else-if="unsubscribeSuccessful" class="unsubscribe-container">
@@ -31,8 +33,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <p class="unsubscribe-description">
             You’ve been unsubscribed from record {{ deviceKey }}.
         </p>
-        <div class="unsubscribe-buttons">
-            <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+        <div v-if="onDev">
+          <div class="unsubscribe-buttons">
+              <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+          </div>
         </div>
     </div>
     <div v-else class="unsubscribe-container">
@@ -40,8 +44,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <p class="unsubscribe-description">
             There was an error trying to unsubscribe from {{ deviceKey }}. Please try again later.
         </p>
-        <div class="unsubscribe-buttons">
-            <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+        <div v-if="onDev">
+          <div class="unsubscribe-buttons">
+              <RouterLink :to="`/history/${deviceKey}`" class="btn btn-primary unsubscribe-button">Resubscribe</RouterLink>
+          </div>
         </div>
     </div>
 </template>
@@ -49,6 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
 import { removeNotificationEmail } from '~/services/azureFuncs';
+import { useRuntimeConfig } from '#app';
 
 export default {
     data() {
@@ -56,7 +63,8 @@ export default {
         deviceKey: "",
         emailID: "",
         loading: true,
-        unsubscribeSuccessful: true
+        unsubscribeSuccessful: true,
+        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local')
       }
     },
     async mounted() {
