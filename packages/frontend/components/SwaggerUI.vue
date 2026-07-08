@@ -14,7 +14,7 @@ const props = withDefaults(
   defineProps<{
     /** OpenAPI document URL under `public/` (e.g. `/openAPI-docs-sample.yaml`). */
     specUrl?: string
-    /** `embed`: bounded height (e.g. Data & Privacy). `page`: full-page docs. */
+    /** `embed`: bounded height (e.g. Features). `page`: full-page docs. */
     variant?: 'embed' | 'page'
   }>(),
   {
