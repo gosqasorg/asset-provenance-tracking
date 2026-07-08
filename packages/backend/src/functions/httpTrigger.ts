@@ -7,7 +7,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
@@ -951,7 +951,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 email,
                 "GOSQAS Verification Code",
                 `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                "GOSQAS Notification",
+                context
             )
 
             context.log('Email send result:', emailResult);
@@ -1043,7 +1044,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 }
 
 // setup TableClient for PendingVerifications
-// on success should call signupForNotifications - cause email is now verfies
+// on success should call signupForNotifications - cause email is now verfied
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         // get email and code
@@ -1092,7 +1093,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await updateNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags, true);
+        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags);
         // return response
 
         return {
@@ -1183,7 +1184,8 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
                 entity.email as string,
                 "GOSQAS Verification Code",
                 `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                "GOSQAS Notification",
+                context
             ) 
 
             context.log('Email resend results:', emailResult);
@@ -1225,7 +1227,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
 
         await containerClient.createIfNotExists();
-        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false); 
+        const response = await unsubscribeFromNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags); 
 
         context.log("Unsubscribed from the record");
         return response;
@@ -1250,7 +1252,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await updateNotifications(containerClient, calculateDeviceID, key, "email@email.foo", [], true)
+        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", []);
 
         // Access it
         const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
