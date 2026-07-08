@@ -55,7 +55,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     }
 }
 
-async function setupNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
+async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
     // 0: Setup id
     const deviceID = await calculateDeviceID(deviceKey);
 
@@ -80,7 +80,7 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     */
 
     // Setup the blobClient
-    let [blobName, blobClient] = await setupNotifications(containerClient, calculateDeviceID, deviceKey);
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
 
     // Confirm the email exists
@@ -195,7 +195,7 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 
 export async function unsubscribeFromNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailID: string, tags: string[] = []) {
     // Setup the blobClient
-    let [blobName, blobClient] = await setupNotifications(containerClient, calculateDeviceID, deviceKey);
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
 
     // Get all the emails and ids currently stored in the blob
@@ -223,14 +223,14 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
         }
     }
 
-    // Convert the emailID to an email and confirm it exists
+    // Confirm the emailID exists and convert it to an email
     const emailIndex = existingEmailIDs.indexOf(emailID);
-    const email = existingEmails[emailIndex];
-
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Email not found in the database" }, status: 404 };
+    if (emailIndex < 0) {
+        return { jsonBody: { message: "Email not found in the database" }, status: 200 };
     }
+
+    const email = existingEmails[emailIndex];
+    const normalized = (email ?? "").trim().toLowerCase();
 
     const emailSet = new Set(
         existingEmails
