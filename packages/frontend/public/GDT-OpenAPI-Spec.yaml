@@ -26,13 +26,60 @@ paths:
                 type: object
         '404':
           description: Not Found
+  
+  /provenance/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Gets the device provenance history
+      description: Retrieves the decrypted provenance history for a device, sorted by newest to oldest.
+      operationId: getProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a record whose provenance history is to be retrieved.
+          schema:
+            type: string
+            example: "6TzAdg1bei6QDNxJN1KnoV"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              examples:
+                RecordsFound:
+                  summary: Provenance record found
+                  description: Provenance record for the device, sorted by the newest first.
+                  value:
+                    - record: { description: "example record", children_key: "" }
+                NoRecords:
+                  summary: No record / container missing
+                  description: Returned when the storage container does not exist yet.
+                  value: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Invalid json stored in provenance"
+        '500':
+          description: Internal Server Error
 
   /createGroup:
     post:
       tags:
         - GDT API
       summary: Create a new group
-      description: This endpoint creates a group and returns a unique group URL via multipart/form-data.
+      description: This endpoint creates a group (and specified number of children), then returns a unique group URL via multipart/form-data.
       operationId: createGroup
       requestBody:
         description: Group creation parameters and attachments
@@ -60,6 +107,12 @@ paths:
                     number_of_children:
                       type: integer
                       example: 5
+                    tags:
+                      type: string array
+                      example: ["tag1", "tag2"]
+                    hasReportingKey:
+                      type: boolean
+                      example: true
                 attachments:
                   type: array
                   description: Optional binary files attached to the form data.
@@ -76,7 +129,7 @@ paths:
                 properties:
                   groupUrl:
                     type: string
-                    example: "{'groupUrl':'http://dev.gosqas.org/record/XuYCKWWDUEyv9vE5iL7Pzg'}"
+                    example: "{'groupUrl':'https://dev.gosqas.org/history/K7bdog8uVf3c9zTGuBVQqL'}"
         '400':
           description: Bad Request
           content:
@@ -136,7 +189,7 @@ paths:
         description: Record creation parameters in postProvenance
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
@@ -160,20 +213,11 @@ paths:
                       description: Group key for grouped records, or empty string for standalone records.
                       example: ""
                 attachment:
-                  oneOf:
-                    - type: string
-                      example: ""
-                    - type: object
-                      required:
-                        - file
-                        - name
-                      properties:
-                        file:
-                          type: string
-                          description: Base64-encoded attachment content
-                        name:
-                          type: string
-                          example: "photo.jpg"
+                  type: array
+                  description: Optional binary files attached to the form data.
+                  items:
+                    type: string
+                    format: binary 
       responses:
         '200':
           description: Successful creation
@@ -196,3 +240,81 @@ paths:
                     type: string
                     example: "Invalid input parameters"
 
+  /upgrade/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Upgrade a legacy record
+      description: This endpoint takes a legacy record and converts it to a provenance record.
+      operationId: upgradeProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a legacy record to upgrade.
+          schema:
+            type: string
+            example: "VvaaGvt5UoyMT9iCQuncre"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+              examples:
+                SuccessfullyUpgraded:
+                  summary: Key Successfully Upgraded
+                  description: Returned when the legacy record is found and successfully recreated as a provenance record.
+                  value:
+                    recordID: "6494deafa4390304169fffbd1ad737de0c8eff1634be0550c0baa9d505e4c0a6"
+                    attachments: []
+                    oversizedAttachments: undefined
+                KeyAlreadyUpgraded:
+                  summary: Key Already Upgraded
+                  description: Returned when the key is already a provenance record.
+                  value:
+                    already-converted: true
+                KeyDoesntExist:
+                  summary: Key Doesn't Exist
+                  description: Returned when the key has valid format but does not exist in our storage.
+                  value: []
+                InvalidLegacyJSON:
+                  summary: Invalid Legacy JSON
+                  description: Returned when the legacy record exists but is not valid JSON.
+                  value:
+                    status: 404
+        '500':
+          description: Internal Server Error
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      tags:
+        - GDT API
+      summary: Retrieve an attachment 
+      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID from the record's attachment array
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found

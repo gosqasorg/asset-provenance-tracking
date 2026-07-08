@@ -48,7 +48,7 @@ const recordHasParent = hasParent(provenance);
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
                             <div class="mb-3">
-                                <span id="desc" v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
+                                <span id="desc" v-html="clickableLink(deviceRecord?.description)" style="white-space: pre-wrap;"></span>
                             </div>
                         </div>
 
@@ -59,10 +59,18 @@ const recordHasParent = hasParent(provenance);
 
                     <div class="buttons-container">
                         <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
-                        <button class="btn px-3 device-btn download-qr" @click="downloadQRCode">Download QR Code</button>
-                        <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description"></ProvenanceShareDropdown>
-                        <EmailNotificationSignup :recordKey="_recordKey" :fontSize="18" :height="61"></EmailNotificationSignup>
+                        <button class="btn px-3 device-btn secondary-btn" @click="downloadQRCode">Download QR Code</button>
+                        <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
+                        </ProvenanceShareDropdown>
+
+                        <div v-if="onDev">
+                            <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- Email notifications modal -->
+                    <ModalsEmailNotification ref="emailModal" />
 
                     <!-- QR -->
                     <div class="col-sm-6 col-lg-3">
@@ -115,6 +123,7 @@ import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 import clickableLink from '~/utils/clickableLink';
 import QRCode from '@/components/QRCode.vue';
+import { useRuntimeConfig } from '#app';
 
 let deviceRecord: any;
 
@@ -132,6 +141,7 @@ export default {
         KeyList,
     },
     data() {
+        const config = useRuntimeConfig()
         return {
             isLoading: true,
             recordKeyFound: true,
@@ -139,6 +149,7 @@ export default {
             childKeys: [] as string[],
             loadingKey: 0,
             _recordKey: "",
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     methods: {
@@ -247,7 +258,7 @@ export default {
     align-items: flex-start;
 }
 
-.view-history, .download-qr {
+.view-history, .secondary-btn {
     flex: 1 1 300px;
     margin-right: 0;
     margin-top: 20px;
@@ -421,7 +432,7 @@ export default {
         color: black;
     }
 
-    .download-qr {
+    .secondary-btn {
         background-color: #1E2019;
         border: 2px solid #FFFFFF;
         color: white;
@@ -430,7 +441,7 @@ export default {
     .view-history:hover {
         background-color: #e6f6ff
     }
-    .download-qr:hover {
+    .secondary-btn:hover {
         background-color: white;
         color: black;
     }
@@ -463,14 +474,14 @@ export default {
     .view-history:hover {
         background-color: #322253
     }
-    .download-qr:hover {
+    .secondary-btn:hover {
         background-color: #e6f6ff
     }
     .share-btn:hover {
         background-color: #e6f6ff
     }
 
-    .download-qr {
+    .secondary-btn {
         background-color: #CCECFD;
         border: #CCECFD;
         color: black;
