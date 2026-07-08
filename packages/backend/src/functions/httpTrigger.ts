@@ -1289,12 +1289,31 @@ export async function addEntryHandler(request:HttpRequest, context: InvocationCo
     context.log(`addEntry cont:`, context);
     context.log(`addEntry Req:`, request);
 
-    // consumes the body and request can't be used in that state
-    // const formData = await request.formData();
-    // context.log(`addEntry FormData:`, formData);
+    // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+    const requestClone = request.clone();
+    const formData = await requestClone.formData();
+    context.log(formData)
+    const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
+    // context.log(tagsExist)
+    // context.log(tagsExist.includes("annotate"))
 
-    // works but a few things may have fallen through the cracks
-    const temp = await postProvenance(request, context)
+    let temp
+    if (tagsExist && tagsExist.includes("annotate")) {
+        temp = await postProvenance(request, context)
+        let tempTwo = await notifyChildren(request, context)
+        context.log(tempTwo)
+        context.log(tempTwo.body)
+    } else {
+        temp = await postProvenance(request, context)
+    }
+    
+    // context.log(`clone:`, requestClone)
+    // context.log(`addEntry FormData:`, formData);
+    // context.log(`addEntry cont after consumption:`, context);
+    // context.log(`addEntry Req after consumption:`, request);
+
+    
     context.log("temp:", temp)
     context.log(temp.jsonBody)
     
