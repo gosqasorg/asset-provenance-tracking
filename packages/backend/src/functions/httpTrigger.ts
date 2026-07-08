@@ -395,10 +395,11 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
+ 
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
+
     if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
@@ -434,8 +435,17 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         }
     }
 
-    await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, context);
-    
+    try {
+        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+    } catch(error) {
+        return {
+            status: error.statusCode,
+            jsonBody: {
+                error: 'Failed to send email'
+            }
+        }
+    }
+  
     return { jsonBody: body ?? { converted: true}};
 }
 
@@ -947,7 +957,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             context.log('Email send result:', emailResult);
 
         } catch (error) {
-            context.log("Error sending email: " + error);   
+            context.log("Error sending email: " + error); 
+            throw error  
         }
 
         // Return Success (frontend checks for properly formed email)
@@ -1179,6 +1190,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         } catch (error) {
             context.log("Error sending email: " + error);   
+            throw error
         }
 
         // Return Success (frontend has checks for properly formed email)

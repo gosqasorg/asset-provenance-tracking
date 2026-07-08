@@ -452,10 +452,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     errorMessage = error;
                 }
 
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating record: ${errorMessage}`
-                });
+                console.log(error)
+                console.log(errorMessage)
+                if(errorMessage.includes('high volume of requests')) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error sending email: ${errorMessage}`
+                    });
+                } else {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating record: ${error}`
+                    });
+                }
+
+                // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('feedRefresh');
             }
         }
     }

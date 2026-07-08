@@ -210,9 +210,11 @@ async function fetchUrl(url: string, formData?: FormData) {
         }
     }
 
-    if (response !== undefined && response.status !== 200) {
+    if (response !== undefined && response.status !== 200 && response.status !== 429) {
         console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
         throw new Error(response.status + " " + response.statusText)
+    } else if(response && response.status == 429) {
+        throw new Error("We are experiencing a high volume of requests. Please try again later.")
     } else {
         throw new Error(`Could not connect to the server, check your internet connection and try again`);
     }

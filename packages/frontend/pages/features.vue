@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <template>
-    <div class="container-fluid" id="data-privacy-container">
+    <div class="container-fluid" id="features-container">
         <h1>Data & Privacy</h1>
         <div class="row"> <p>
             Global Distributed Tracking encrypts user data and ensures its accessibility only through the unique record key, 
@@ -86,7 +86,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 <style scoped>
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
-    #data-privacy-container{
+    #features-container{
         padding: 20px 20px 40px 20px;
     }
     .row{
@@ -98,7 +98,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 
 /* For screens larger than 768px */
 @media (min-width: 768px) {
-    #data-privacy-container{
+    #features-container{
         padding: 80px 200px 100px 200px;
     }
     .row{
@@ -109,7 +109,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-    #data-privacy-container {
+    #features-container {
         background-color: #1E2019;
     }
     h1 {
@@ -122,7 +122,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-    #data-privacy-container {
+    #features-container {
         background-color: #FFFFFF;
     }
     h1 {
