@@ -268,11 +268,94 @@ describe("Group Creation v2 tests", () => {
 
 });
 
-describe("Group Update v2 tests", () => {
-	it("Updates group records", () => {
+describe("Update v2 tests", () => {
+	it("Updates records with new entries", async () => {
 		// var val = do_thing();
 		expect(0).toBe(0);
-	});
+
+        const baseUrl = "http://localhost:7071/api"
+		// const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+
+        const groupRecord = {
+            deviceName: "Update v2 Tests",
+            description: "Tests updates to records",
+            tags: ["integration", "tests"],
+            number_of_children: 2,
+            children_name: ["Update child 1", "Update child 2"],
+            annotate: true
+        }
+        const testCases = [
+            {
+
+            },
+            {
+                description: "record entry with description",
+            },
+            {
+                tags: ["entry", "with", "only", "tags"]
+            },
+            {
+                attachments: [['./test/attachments/a200.jpg', 'record-entry-with-attachment.jpg']]
+            },
+            {
+                description: "record entry with description, tags, and attachments",
+                tags: ["test", "complete"],
+                attachments: [['./test/attachments/b200.jpg', 'b200.jpg'], ['./test/attachments/c200.jpg', 'c200.jpg']]
+            },
+            {
+                description: "record entry that annotates",
+                tags: ["test", "annotate", "demo"],
+                attachments: [['./test/attachments/a200.jpg', 'a200.jpg']]
+            }
+        ]
+
+        let groupResponse;
+        const groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify(groupRecord));
+        groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: groupFormData
+        })
+        expect(groupResponse.ok).toBe(true);
+        const url = (await groupResponse.json()).groupUrl;
+        console.log("group url:", url)
+
+        const parentKey = url.substring(url.lastIndexOf('/') + 1);
+
+        console.log("groupFormData:", groupFormData)
+        console.log("groupResponse:", groupResponse)
+
+        for (let i = 0; i < testCases.length; i++) {
+            let currCase = testCases[i];
+            let response;
+
+            const caseFormData = new FormData();
+
+            if(!currCase.attachments) {
+                caseFormData.append("provenanceRecord", JSON.stringify(currCase));
+            } else {
+                const { attachments: attachInfo, ...currCaseWithoutAttachInfo } = currCase;
+                // console.log("curr:", currCase);
+                // console.log(attachInfo)
+                // console.log("new:", currCaseWithoutAttachInfo)
+                caseFormData.append("provenanceRecord", JSON.stringify(currCaseWithoutAttachInfo));
+
+                for (let j = 0; j < attachInfo.length; j++) {
+                    const buffer = await readFile(attachInfo[j][0]);
+                    const blob = new Blob([buffer], { type: 'image/jpg' });
+                    caseFormData.append(attachInfo[j][1], blob, attachInfo[j][1]);
+                    
+                }
+            };
+
+            response = await fetch(`${baseUrl}/addEntry/${parentKey}`, {
+                method: "POST",
+                body: caseFormData
+            });
+
+            
+        }
+	}, 60000);
 
 	// More tests
 })

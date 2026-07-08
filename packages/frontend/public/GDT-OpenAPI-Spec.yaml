@@ -221,6 +221,7 @@ paths:
                         type: array
                         items:
                           type: string
+                          example: "example tag"
                 attachments:
                   type: array
                   description: Optional binary files attached to the form data.
