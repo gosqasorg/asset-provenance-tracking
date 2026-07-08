@@ -232,7 +232,7 @@ export default {
                     tags: this.tags,
                     children_key: '',
                     hasParent: false,
-                    isReportingKey: false,
+                    isPublicKey: false,
                 }, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {

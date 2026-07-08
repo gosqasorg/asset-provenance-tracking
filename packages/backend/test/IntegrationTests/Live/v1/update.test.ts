@@ -92,7 +92,7 @@ describe("Record Update Tests", () => {
       tags: {},
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     };
     
     const setupFormData = new FormData();
@@ -145,7 +145,7 @@ describe("Record Update Tests", () => {
       tags: [],
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     };
     
     const setupFormData = new FormData();
@@ -190,7 +190,7 @@ describe("Record Update Tests", () => {
       tags: [],
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     };
     
     const setupFormData = new FormData();
@@ -247,7 +247,7 @@ describe("Record Update Tests", () => {
 			tags: [],
 			children_key: [childKey],
 			hasParent: false,
-			isReportingKey: false
+			isPublicKey: false
 		}));
 
 		const childFormData = new FormData();
@@ -258,7 +258,7 @@ describe("Record Update Tests", () => {
 			tags: [],
 			children_key: [grandchildKey],
 			hasParent: false,
-			isReportingKey: false
+			isPublicKey: false
 		}));
 
     const grandchildFormData = new FormData();
@@ -269,7 +269,7 @@ describe("Record Update Tests", () => {
 			tags: [],
 			children_key: "",
 			hasParent: false,
-			isReportingKey: false
+			isPublicKey: false
 		}));
 
 		const [groupResponse, childResponse, grandchildResponse] = await Promise.all([
@@ -356,7 +356,7 @@ describe("Record Update Tests", () => {
         tags: [],
         children_key: [childKey],
         hasParent: false,
-        isReportingKey: false
+        isPublicKey: false
       }));
   
       const childFormData = new FormData();
@@ -367,7 +367,7 @@ describe("Record Update Tests", () => {
         tags: [],
         children_key: [grandchildKey],
         hasParent: false,
-        isReportingKey: false
+        isPublicKey: false
       }));
   
       const grandchildFormData = new FormData();
@@ -378,7 +378,7 @@ describe("Record Update Tests", () => {
         tags: [],
         children_key: "",
         hasParent: false,
-        isReportingKey: false
+        isPublicKey: false
       }));
   
       const [groupResponse, childResponse, grandchildResponse] = await Promise.all([
