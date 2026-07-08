@@ -40,7 +40,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 Integrating GDT into your product is easy. We offer API access to our services. This API is completely open. You don't even need an API key. 
             </p>
             <p>
-                The full docs and openAPI spec are on our <a href="/docs">docs</a> page.
+                <strong>
+                    The full docs and OpenAPI spec are available on our <a href="/docs">docs</a> page.
+                </strong>
             </p>            
 
             <h2>Interactive API Examples</h2>
@@ -66,6 +68,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="docs-section">
             <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
+        </div>
+    
+
+        <h1>Notification System</h1>
+        <div class="row">
+            <p>
+                GDT is rolling out a Notification System, whereby users can receive email notifications whenever a record
+                is updated. In any record or group, simply click the "Get Email Notifications" button. The process is easy:
+            </p>
+            <ol>
+                <li>
+                    First, a six digit code is sent to your email. Enter this into the dialog, and you're signed up!
+                </li>
+                <li>
+                    Then, when the record receives an update, you'll receive an email.
+                </li>
+                <li>
+                    Finally, if you wish to no longer receive updates, simply click the unsubscribe link in the email.
+                </li>
+            </ol>
+            <p>
+                Note as of July 8th: we temporarily have limited email capacity, and are actively expanding over the next two weeks. 
+            </p>
         </div>
     
 
@@ -131,6 +156,10 @@ import Learn_more from '~/layouts/learn_more.vue';
     p {
         color: #1E2019;
     }
+}
+
+ol {
+  list-style-position: inside;
 }
 
 </style>
