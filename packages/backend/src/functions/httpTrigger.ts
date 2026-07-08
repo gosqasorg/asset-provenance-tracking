@@ -648,7 +648,6 @@ async function setStatisticsTotals() {
     }
 }
  
-
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
     return { 
@@ -851,7 +850,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     }
 }
 
-
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const tableUrl = accountName === "devstoreaccount1"
@@ -887,7 +885,6 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
     }
 }
-
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -958,6 +955,10 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             )
 
             context.log('Email send result:', emailResult);
+
+            if (emailResult.status !== "Succeeded") {
+                throw result.message
+            }
 
         } catch (error) {
             context.log("Error sending email: " + error); 
