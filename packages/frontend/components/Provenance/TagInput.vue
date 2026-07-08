@@ -103,7 +103,7 @@ export default {
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;
-        this.hasReportingKey = false;
+        this.hasPublicKey = false;
         console.log(error)
     }
   },

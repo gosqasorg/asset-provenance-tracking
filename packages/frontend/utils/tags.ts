@@ -19,6 +19,7 @@ export enum TagName {
     Counterfeit = "counterfeit",
     Damaged = "damaged",
     Defective = "defective",
+    Delivered = "delivered",
     Deployed = "deployed",
     Incompatible = "incompatible",
     Incomplete = "incomplete",
@@ -32,5 +33,5 @@ export enum InternalTagName {
     NotifyAll = "notify_all",
     Recall = "recall",
     Annotate = "annotate",
-    ReportingKey = "reportingkey", // This is in use so we can't change the formatting.
+    PublicKey = "publickey", // This is in use so we can't change the formatting.
 }

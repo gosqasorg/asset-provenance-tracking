@@ -56,7 +56,7 @@ describe("Tests to see if we can create records while offline", async () => {
       tags: [],
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     }
 
     // Go "offline"
@@ -111,7 +111,7 @@ describe("Tests to see if we can create records while offline", async () => {
 			expect(responseString.record.description).toBe('A record created while offline');
 			expect(responseString.record.children_key).toBe('');
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
     } catch(error) {
       expect.fail("Create Record Offline: postProvenance failed to create the record: " + error)
     }
