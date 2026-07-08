@@ -946,12 +946,15 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
+            // Validation email body with link included here for later work, see issue 1121. 
+            // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                `Your verification code is: ${code} \n\nExpires in 10 minutes. \nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification",
+                context
             )
 
             context.log('Email send result:', emailResult);
@@ -1178,12 +1181,15 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
+            // Validation email body with link included here for later work, see issue 1121. 
+            // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 entity.email as string,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                `Your verification code is: ${code} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification",
+                context
             ) 
 
             context.log('Email resend results:', emailResult);
