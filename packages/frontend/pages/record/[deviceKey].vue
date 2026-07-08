@@ -63,10 +63,8 @@ const recordHasParent = hasParent(provenance);
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
                         </ProvenanceShareDropdown>
 
-                        <div v-if="onDev">
-                            <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
-                            </button>
-                        </div>
+                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                        </button>
                     </div>
 
                     <!-- Email notifications modal -->
