@@ -653,7 +653,6 @@ async function setStatisticsTotals() {
     }
 }
  
-
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
     return { 
@@ -856,7 +855,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     }
 }
 
-
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const tableUrl = accountName === "devstoreaccount1"
@@ -893,10 +891,8 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
-
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
         context.log('body:', body);
@@ -951,15 +947,22 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
+            // Validation email body with link included here for later work, see issue 1121. 
+            // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                `Your verification code is: ${code} \n\nExpires in 10 minutes. \nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification",
+                context
             )
 
             context.log('Email send result:', emailResult);
+
+            if (emailResult.status !== "Succeeded") {
+                throw emailResult
+            }
 
         } catch (error) {
             context.log("Error sending email: " + error); 
@@ -974,11 +977,18 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
     } catch(error) {
         context.error(error.message);
-        return {
-            jsonBody: {message: "Internal Server Error"},
-            status: 500,
+        console.log(error)
+        if(Object.hasOwn(error, 'message') && Object.hasOwn(error.message, 'statusCode') && error.message.statusCode == 429) {
+            return {
+                jsonBody: { message: "" }, // Deliberately blank
+                status: 429
+            }
+        } else {
+            return {
+                jsonBody: {message: "Internal Server Error"},
+                status: 500,
+            }
         }
- 
     }
 }
 
@@ -1183,15 +1193,22 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
+            // Validation email body with link included here for later work, see issue 1121. 
+            // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 entity.email as string,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                `Your verification code is: ${code} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification",
+                context
             ) 
 
             context.log('Email resend results:', emailResult);
+
+            if (emailResult.status !== "Succeeded") {
+                throw emailResult
+            }
 
         } catch (error) {
             context.log("Error sending email: " + error);   
@@ -1276,7 +1293,6 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         }
     }
 }
-
 
 async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
