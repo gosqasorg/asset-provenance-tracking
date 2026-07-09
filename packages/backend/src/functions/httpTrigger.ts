@@ -395,13 +395,10 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-    context.log(`Context:`, context);
-    context.log(`Request:`, request);
 
     await containerClient.createIfNotExists();
 
     const formData = await request.formData();
-    context.log(`FormData:`, formData);
     if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
@@ -1597,50 +1594,18 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 
 // just a wrapper fxn for postProvenance
 export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log(`addEntry cont:`, context);
-    context.log(`addEntry Req:`, request);
-
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const requestClone = request.clone();
     const formData = await requestClone.formData();
-    context.log(formData)
     const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
-    // context.log(tagsExist)
-    // context.log(tagsExist.includes("annotate"))
 
     const postProvResponse = await postProvenance(request, context)
     if (tagsExist && tagsExist.includes("annotate")) {
         const notifChildrenResponse = await notifyChildren(request, context)
-        // context.log(notifChildrenResponse)
-        // context.log(notifChildrenResponse.body)
     }
-    
-    // context.log(`clone:`, requestClone)
-    // context.log(`addEntry FormData:`, formData);
-    // context.log(`addEntry cont after consumption:`, context);
-    // context.log(`addEntry Req after consumption:`, request);
 
-    
-    // context.log("temp:", temp)
-    // context.log(temp.jsonBody)
-    
-    // const wrappedRequest
-    // const wrappedContext
-
-    // return await postProvenance(wrappedRequest, wrappedContext)
     return postProvResponse
-
-    try{
-        let theRequest = await request.json()
-        return {
-            status: 200
-        }
-    } catch{
-        return {
-            status: 400
-        }
-    }
 }
 
 // Once per day update the total record, record entry, and attachment counts

@@ -65,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="docs-section">
-            <SwaggerUI spec-url="/GDT-OpenAPI-Spec.yaml" />
+            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
         </div>
     
 

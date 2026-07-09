@@ -380,8 +380,8 @@ describe("Group Creation v2 tests", () => {
 
 describe("Update v2 tests", () => {
 	it("Updates records with new entries", async () => {
-        const baseUrl = "http://localhost:7071/api"
-		// const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        // const baseUrl = "http://localhost:7071/api"
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
         const groupRecord = {
             deviceName: "Update v2 Tests",
@@ -425,17 +425,12 @@ describe("Update v2 tests", () => {
         })
         expect(groupResponse.ok).toBe(true);
         const url = (await groupResponse.json()).groupUrl;
-        console.log("group url:", url)
+        console.log("Update tests group url:", url)
 
         const parentKey = url.substring(url.lastIndexOf('/') + 1);
         const initialProv = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
         const parentRecord = initialProv[0].record
         let childKeys = parentRecord.children_key
-        // console.log(parentKey, initialProv, parentRecord)
-        // console.log(childKeys)
-
-        console.log("groupFormData:", groupFormData)
-        console.log("groupResponse:", groupResponse)
 
         for (let i = 0; i < testCases.length; i++) {
             let currCase = testCases[i];
@@ -447,9 +442,6 @@ describe("Update v2 tests", () => {
                 caseFormData.append("provenanceRecord", JSON.stringify(currCase));
             } else {
                 const { attachments: attachInfo, ...currCaseWithoutAttachInfo } = currCase;
-                // console.log("curr:", currCase);
-                // console.log(attachInfo)
-                // console.log("new:", currCaseWithoutAttachInfo)
                 caseFormData.append("provenanceRecord", JSON.stringify(currCaseWithoutAttachInfo));
 
                 for (let j = 0; j < attachInfo.length; j++) {
@@ -468,7 +460,6 @@ describe("Update v2 tests", () => {
 
             let parentProvs = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
             let currRecord = parentProvs[0].record
-            // console.log(parentProvs[0], currRecord)
 
             if (currCase.description) {
                 expect(currRecord.description).toBe(currCase.description)
@@ -483,7 +474,6 @@ describe("Update v2 tests", () => {
 
         for (let i = 0; i < parentRecord.number_of_children; i ++) {
             let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
-            // console.log(childProv[0].record)
             expect(childProv[0].record.description).toBe(testCases[5].description);
             expect(childProv[0].record.tags).toStrictEqual(testCases[5].tags);
         }
