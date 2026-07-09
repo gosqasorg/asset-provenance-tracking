@@ -1,3 +1,8 @@
+
+type BufferSource = any;
+namespace NodeJS { export type BufferSource = any; }
+// delete the top two lines, temporary for testing
+
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -1273,7 +1278,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
 }
 
 
-async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
+async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1291,7 +1296,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
             deviceName: custom_title,
-            description: "",
+            description: description || "",
             tags: tags,
             hasParent: true,
             isPublicKey: isPublicKey
@@ -1315,13 +1320,13 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     }
 }
 
-async function createChildren(context, number_of_children: number, custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
+async function createChildren(context, description: string, number_of_children: number,  custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     let j = 0;
     
     for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, custom_child_titles[j], tags))) {
+        if(!(thisChild = await createChild(context, description, custom_child_titles[j], tags))) {
             continue;
         }
 
@@ -1331,7 +1336,7 @@ async function createChildren(context, number_of_children: number, custom_child_
             // PublicKey is itself a record that is part of a group
             if(hasPublicKey){
                 const publicTags = [...tags, "publickey"]
-                if(!(thisChild = await createChild(context,"public key", publicTags, true))) {
+                if(!(thisChild = await createChild(context, description, "Public Key", publicTags, true))) {
                     continue;
                 }
                 childrenKeys.push(thisChild)
@@ -1343,7 +1348,7 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey, tags, attachments: NamedBlob[] = []) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = [], annotate: boolean = false) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1364,7 +1369,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         }
     };
     // Create children first
-    let childKeys = await createChildren(context, n_children, custom_child_titles, hasPublicKey, tags)
+    let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
     let totalChildren = n_children + (hasPublicKey ? 1 : 0)
     if (childKeys.length !== totalChildren) {
         throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
@@ -1394,7 +1399,6 @@ async function createGroup(context, name, description, n_children: number = 0, c
     for (const attachment of attachments) {
         groupFormData.append("attachment", attachment.blob, attachment.name);
     }
-    
     const createInitUrl = `${backendUrl}${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
@@ -1403,6 +1407,24 @@ async function createGroup(context, name, description, n_children: number = 0, c
     if (!groupResponse.ok) {
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
+    if(annotate){
+        for (const key of childKeys){
+            if(key !== public_key){
+                const annotateFormData = new FormData();
+                annotateFormData.append("provenanceRecord", JSON.stringify({
+                    blobType: "deviceRecord",
+                    description: description || "Annotated by Group",
+                    children_key: '',
+                    tags: [...tags, "notify_all"],
+                }));
+
+                await fetch(`${backendUrl}${key}`, {
+                    method: "POST",
+                    body:annotateFormData,
+                });
+            }
+        }
     }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
@@ -1449,7 +1471,8 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasPublicKey = theRequest['hasPublicKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
+        let annotate = theRequest['annotate']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments, annotate)
         context.log(theGroupRecordPageUrl)
 
         return {
