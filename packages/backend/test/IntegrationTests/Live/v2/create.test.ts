@@ -380,9 +380,6 @@ describe("Group Creation v2 tests", () => {
 
 describe("Update v2 tests", () => {
 	it("Updates records with new entries", async () => {
-		// var val = do_thing();
-		expect(0).toBe(0);
-
         const baseUrl = "http://localhost:7071/api"
 		// const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
@@ -431,6 +428,11 @@ describe("Update v2 tests", () => {
         console.log("group url:", url)
 
         const parentKey = url.substring(url.lastIndexOf('/') + 1);
+        const initialProv = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+        const parentRecord = initialProv[0].record
+        let childKeys = parentRecord.children_key
+        // console.log(parentKey, initialProv, parentRecord)
+        // console.log(childKeys)
 
         console.log("groupFormData:", groupFormData)
         console.log("groupResponse:", groupResponse)
@@ -462,8 +464,28 @@ describe("Update v2 tests", () => {
                 method: "POST",
                 body: caseFormData
             });
+            expect(response.ok).toBe(true);
 
-            
+            let parentProvs = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+            let currRecord = parentProvs[0].record
+            // console.log(parentProvs[0], currRecord)
+
+            if (currCase.description) {
+                expect(currRecord.description).toBe(currCase.description)
+            }
+            if (currCase.tags) {
+                expect(currRecord.tags).toStrictEqual(currCase.tags)
+            }
+            if (currCase.attachments) {
+                expect(parentProvs[0].attachments.length).toBe(currCase.attachments.length)
+            }
+        }
+
+        for (let i = 0; i < parentRecord.number_of_children; i ++) {
+            let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
+            // console.log(childProv[0].record)
+            expect(childProv[0].record.description).toBe(testCases[5].description);
+            expect(childProv[0].record.tags).toStrictEqual(testCases[5].tags);
         }
 	}, 60000);
 

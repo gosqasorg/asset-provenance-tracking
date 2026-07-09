@@ -700,7 +700,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
         if (records[0].record.tags.includes("annotate")) {
@@ -710,7 +710,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             // Send annotated record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
+                let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
                 // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
@@ -731,7 +731,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/${key}`, {
+                    let response = await fetch(`${baseUrl}${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
@@ -1609,14 +1609,11 @@ export async function addEntryHandler(request:HttpRequest, context: InvocationCo
     // context.log(tagsExist)
     // context.log(tagsExist.includes("annotate"))
 
-    let temp
+    const postProvResponse = await postProvenance(request, context)
     if (tagsExist && tagsExist.includes("annotate")) {
-        temp = await postProvenance(request, context)
-        let tempTwo = await notifyChildren(request, context)
-        context.log(tempTwo)
-        context.log(tempTwo.body)
-    } else {
-        temp = await postProvenance(request, context)
+        const notifChildrenResponse = await notifyChildren(request, context)
+        // context.log(notifChildrenResponse)
+        // context.log(notifChildrenResponse.body)
     }
     
     // context.log(`clone:`, requestClone)
@@ -1625,14 +1622,14 @@ export async function addEntryHandler(request:HttpRequest, context: InvocationCo
     // context.log(`addEntry Req after consumption:`, request);
 
     
-    context.log("temp:", temp)
-    context.log(temp.jsonBody)
+    // context.log("temp:", temp)
+    // context.log(temp.jsonBody)
     
     // const wrappedRequest
     // const wrappedContext
 
     // return await postProvenance(wrappedRequest, wrappedContext)
-    return temp
+    return postProvResponse
 
     try{
         let theRequest = await request.json()
