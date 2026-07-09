@@ -67,8 +67,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="docs-section">
-            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" style="margin-bottom: 1.5rem;"/>
-            
+            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" style="margin-bottom: 1.5rem;"/> 
         </div>
     
 
