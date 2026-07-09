@@ -1,38 +1,228 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from "fs/promises";
 
-/* README: To add a test, add inside the global describe an additional it. For example:
 
-describe("Group of tests", () => {
-	it("Brief description that this tests foo", () => {
-		var val = do_thing();
-		expect(val).toBe(0);
-	});
+describe ("v2 Group Creation Tests", () => {
 
-	it("Brief description that this tests bar", () => {
-		// structured similar to above
-	});
+    it("should verify that tags are applied correctly for annotation", async() => {
 
-	it("Another test", () => {
-		// More test contents
-	});
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const apiUrl = `${baseUrl}/createGroup`;
 
-	// More tests
-})
+        const payload = {
+            deviceName: "ItHasATag",
+            description: "Testing tags in record creation",
+            number_of_children: 3,
+            tags: ["Harry", "Ron"],
+            annotate: true
+        };
 
-*/
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(payload));
 
-describe("Group Creation Tests", () => {
-    // Test reporting key functionality
-    it("should create a group record with a reporting key", async () => {
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            body: formData,
+        });
+        //temporary to debug 
+        console.log("Response Status:", response.status);
+        
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.groupUrl).toContain("/record/");
+
+        const groupKey = data.groupUrl.split('/').pop();
+        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const responseData = await verifyResponse.json();
+        const actualRecord = responseData[0].record;
+        console.log(actualRecord);
+        expect(actualRecord.deviceName).toBe(payload.deviceName);
+        expect(actualRecord.tags).toEqual(["Harry", "Ron"]);
+
+        const childKeys: string[] = actualRecord.children_key;
+
+        for(const child of childKeys){
+            const childResponse = await fetch(`${baseUrl}/provenance/${child}`);
+            const childData = await childResponse.json();
+            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
+
+            // Check annotation tags and description 
+            const annotationRecord = childData[0].record;
+            expect(annotationRecord.tags).toContain("notify_all");
+            expect(annotationRecord.tags).toContain("Harry");
+            expect(annotationRecord.tags).toContain("Ron");
+            expect(annotationRecord.description).toBe(payload.description);
+
+        }
+
+    }, 60000);
+
+    it("should annotate children but not the public key", async() => {
+
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const apiUrl = `${baseUrl}/createGroup`;
+
+        const payload = {
+            deviceName: "AnnotateWithPublicKey",
+            description: "Testing annotation skips public key",
+            number_of_children: 3,
+            hasPublicKey: true,
+            tags: ["Harry", "Ron"],
+            annotate: true,
+        };
+
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(payload));
+
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            body: formData,
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.groupUrl).toContain("/record/");
+
+        const groupKey = data.groupUrl.split('/').pop();
+        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const responseData = await verifyResponse.json();
+        const groupRecord = responseData[0].record;
+
+        const childKeys: string[] = groupRecord.children_key;
+        const publicKey: string = groupRecord.publicKey;
+
+        for (const child of childKeys) {
+            const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
+            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
+            const childRecords = childData.map((entry: any) => entry.record);
+
+            // Parent description should always be passed to the child record
+            const oldestRecord = childRecords[childRecords.length - 1];
+            expect(oldestRecord.description).toBe(payload.description);
+
+            if (child === publicKey) {
+                // Public key should not have an annotation record
+                const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
+                expect(hasNotifyAll).toBe(false);
+            } else {
+                // Non-public children should have an annotation record with notify_all
+                const annotationRecord = childRecords.find((rp: any) => rp.tags?.includes("notify_all"));
+                expect(annotationRecord).toBeDefined();
+                expect(annotationRecord.tags).toContain("Harry");
+                expect(annotationRecord.tags).toContain("Ron");
+                expect(annotationRecord.description).toBe(payload.description);
+            }
+        }
+
+    }, 60000);
+
+    it("should not annotate children when annotate is false", async() => {
+
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const apiUrl = `${baseUrl}/createGroup`;
+
+        const payload = {
+            deviceName: "NoAnnotation",
+            description: "Testing that annotation does not occur when annotate is false",
+            number_of_children: 3,
+            tags: ["Harry", "Ron"],
+            annotate: false,
+        };
+
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(payload));
+
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            body: formData,
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.groupUrl).toContain("/record/");
+
+        const groupKey = data.groupUrl.split('/').pop();
+        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const responseData = await verifyResponse.json();
+        const groupRecord = responseData[0].record;
+
+        const childKeys: string[] = groupRecord.children_key;
+
+        for (const child of childKeys) {
+            const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
+            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
+            const childRecords = childData.map((entry: any) => entry.record);
+
+            // No annotation should exist when annotate is false
+            const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
+            expect(hasNotifyAll).toBe(false);
+
+            // Parent description should still be passed to the child record
+            const oldestRecord = childRecords[childRecords.length - 1];
+            expect(oldestRecord.description).toBe(payload.description);
+        }
+
+    }, 60000);
+
+    it("should have default annotation description when parent has no description", async() => {
+
+        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        const apiUrl = `${baseUrl}/createGroup`;
+
+        const payload = {
+            deviceName: "NoAnnotation",
+            description: "",
+            number_of_children: 3,
+            tags: ["Harry", "Ron"],
+            annotate: true,
+        };
+
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(payload));
+
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            body: formData,
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.groupUrl).toContain("/record/");
+
+        const groupKey = data.groupUrl.split('/').pop();
+        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const responseData = await verifyResponse.json();
+        const groupRecord = responseData[0].record;
+
+        const childKeys: string[] = groupRecord.children_key;
+
+        for (const child of childKeys) {
+            const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
+            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
+            const childRecords = childData.map((entry: any) => entry.record);
+
+            // No annotation should exist when annotate is false
+            const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
+            expect(hasNotifyAll).toBe(true);
+
+            // Annotation record should have the default description when parent description is empty
+            const annotationRecord = childRecords[0];
+            expect(annotationRecord.description).toBe("Annotated by Group");
+        }
+
+    }, 60000);
+
+
+    // Test public key functionality
+    it("should create a group record with a public key", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		const groupPayload = {
-			deviceName: "group_record_with_reporting_key",
-			title: "group_record_with_reporting_key",
-			description: "group record with a reporting key integration test",
+			deviceName: "group_record_with_public_key",
+			title: "group_record_with_public_key",
+			description: "group record with a public key integration test",
 			number_of_children: 1,
-			hasReportingKey: true,
+			hasPublicKey: true,
 			tags: [],
 		};
 
@@ -69,15 +259,15 @@ describe("Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
 
-		// Verify reporting key
-		const reportingKey = groupRecord.reportingKey as string;
-		const reportingKeyRes = await fetch(`${baseUrl}/provenance/${reportingKey}`)
-		expect(reportingKeyRes.ok).toBe(true);
-		const reportingKeyAttributes = await reportingKeyRes.json();
-		expect(reportingKeyAttributes.length).toBeGreaterThan(0);
-		const reportingKeyRecord = reportingKeyAttributes[0].record;
-		expect(reportingKeyRecord.isReportingKey).toBe(true);
-		expect(reportingKeyRecord.tags).toContain("reportingkey");
+		// Verify public key
+		const publicKey = groupRecord.publicKey as string;
+		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
+		expect(publicKeyRes.ok).toBe(true);
+		const publicKeyAttributes = await publicKeyRes.json();
+		expect(publicKeyAttributes.length).toBeGreaterThan(0);
+		const publicKeyRecord = publicKeyAttributes[0].record;
+		expect(publicKeyRecord.isPublicKey).toBe(true);
+		expect(publicKeyRecord.tags).toContain("publickey");
     }, 6000);
 
 	it("should create a group record with tags", async () => {
@@ -88,7 +278,7 @@ describe("Group Creation Tests", () => {
 			title: "group_record_with_tags",
 			description: "group record with tags integration test",
 			number_of_children: 1,
-			hasReportingKey: false,
+			hasPublicKey: false,
 			tags: ["integration_test", "record_tags"],
 		};
 
@@ -132,10 +322,119 @@ describe("Group Creation Tests", () => {
 });
 
 
+describe("Group Creation Tests", () => {
+    // Test public key functionality
+    it("should create a group record with a public key", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+		
+		const groupPayload = {
+			deviceName: "group_record_with_public_key",
+			title: "group_record_with_public_key",
+			description: "group record with a public key integration test",
+			number_of_children: 1,
+			hasPublicKey: true,
+			tags: [],
+		};
+
+		const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(groupPayload));
+        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
+
+
+		expect(groupResponse.ok).toBe(true);
+		expect(groupResponse.status).toBe(200);
+
+		const body = await groupResponse.json();
+		expect(body).toHaveProperty("groupUrl"); // make sure that groupUrl property exists
+
+		// Get the group record key generated
+		const groupKeyStr = body.groupUrl;
+		const parts = groupKeyStr.split("/");
+		const groupKey = parts.pop();
+		
+		// Fetch group record key response
+		const groupProvenanceRes = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		expect(groupProvenanceRes.ok).toBe(true);
+		const groupAttributes = await groupProvenanceRes.json();
+		expect(groupAttributes.length).toBeGreaterThan(0);
+		
+		// Verify group record key has the same parameters as the original payload
+		const groupRecord = groupAttributes[0].record;
+		expect(groupRecord.deviceName).toBe(groupPayload.title);
+		expect(groupRecord.description).toBe(groupPayload.description);
+
+		const childKeys: string[] = groupRecord.children_key;
+		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
+
+		// Verify public key
+		const publicKey = groupRecord.publicKey as string;
+		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
+		expect(publicKeyRes.ok).toBe(true);
+		const publicKeyAttributes = await publicKeyRes.json();
+		expect(publicKeyAttributes.length).toBeGreaterThan(0);
+		const publicKeyRecord = publicKeyAttributes[0].record;
+		expect(publicKeyRecord.isPublicKey).toBe(true);
+		expect(publicKeyRecord.tags).toContain("publickey");
+    }, 60000);
+
+	it("should create a group record with tags", async () => {
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+        
+		const groupPayload = {
+			deviceName: "group_record_with_tags",
+			title: "group_record_with_tags",
+			description: "group record with tags integration test",
+			number_of_children: 1,
+			hasPublicKey: false,
+			tags: ["integration_test", "record_tags"],
+		};
+
+		const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(groupPayload));
+        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
+
+		expect(groupResponse.ok).toBe(true);
+		expect(groupResponse.status).toBe(200);
+
+		const body = await groupResponse.json();
+		expect(body).toHaveProperty("groupUrl"); // make sure that groupUrl property exists
+
+		// Get the group record key generated
+		const groupKeyStr = body.groupUrl;
+		const parts = groupKeyStr.split("/");
+		const groupKey = parts.pop();
+		
+		// Fetch group record key response
+		const groupProvenanceRes = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		expect(groupProvenanceRes.ok).toBe(true);
+		const groupAttributes = await groupProvenanceRes.json();
+		expect(groupAttributes.length).toBeGreaterThan(0);
+		
+		// Verify group record key has the same parameters as the original payload
+		const groupRecord = groupAttributes[0].record;
+		expect(groupRecord.deviceName).toBe(groupPayload.title);
+		expect(groupRecord.description).toBe(groupPayload.description);
+
+		// Verify tags data
+		expect(groupRecord.tags).toContain("integration_test");
+		expect(groupRecord.tags).toContain("record_tags");
+		expect(groupRecord.tags.length).toBe(2);
+
+		const childKeys: string[] = groupRecord.children_key;
+		expect(childKeys.length).toBe(groupPayload.number_of_children);
+    }, 60000);
+});
+
+
 describe("Group Creation v2 tests", () => {
 
     it("should create a group record with multiple attachments (one image, one PDF file), with multiple children", async () => {
-    // const baseUrl = "http://localhost:7071/api"
     const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
     const payload = {
@@ -217,7 +516,6 @@ describe("Group Creation v2 tests", () => {
 
     // Tests group child custom titles
 	it("Custom Record Titles", async () => {
-        // const baseUrl = "http://localhost:7071/api"
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const groupParentRecords = []
         const groupedChildKeys = []
@@ -377,3 +675,107 @@ describe("Group Creation v2 tests", () => {
 	// More tests
 
 });
+
+describe("Update v2 tests", () => {
+	it("Updates records with new entries", async () => {
+        // const baseUrl = "http://localhost:7071/api"
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+
+        const groupRecord = {
+            deviceName: "Update v2 Tests",
+            description: "Tests updates to records",
+            tags: ["integration", "tests"],
+            number_of_children: 2,
+            children_name: ["Update child 1", "Update child 2"],
+            annotate: true
+        }
+        const testCases = [
+            {
+
+            },
+            {
+                description: "record entry with description",
+            },
+            {
+                tags: ["entry", "with", "only", "tags"]
+            },
+            {
+                attachments: [['./test/attachments/a200.jpg', 'record-entry-with-attachment.jpg']]
+            },
+            {
+                description: "record entry with description, tags, and attachments",
+                tags: ["test", "complete"],
+                attachments: [['./test/attachments/b200.jpg', 'b200.jpg'], ['./test/attachments/c200.jpg', 'c200.jpg']]
+            },
+            {
+                description: "record entry that annotates",
+                tags: ["test", "annotate", "demo"],
+                attachments: [['./test/attachments/a200.jpg', 'a200.jpg']]
+            }
+        ]
+
+        let groupResponse;
+        const groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify(groupRecord));
+        groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: groupFormData
+        })
+        expect(groupResponse.ok).toBe(true);
+        const url = (await groupResponse.json()).groupUrl;
+        console.log("Update tests group url:", url)
+
+        const parentKey = url.substring(url.lastIndexOf('/') + 1);
+        const initialProv = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+        const parentRecord = initialProv[0].record
+        let childKeys = parentRecord.children_key
+
+        for (let i = 0; i < testCases.length; i++) {
+            let currCase = testCases[i];
+            let response;
+
+            const caseFormData = new FormData();
+
+            if(!currCase.attachments) {
+                caseFormData.append("provenanceRecord", JSON.stringify(currCase));
+            } else {
+                const { attachments: attachInfo, ...currCaseWithoutAttachInfo } = currCase;
+                caseFormData.append("provenanceRecord", JSON.stringify(currCaseWithoutAttachInfo));
+
+                for (let j = 0; j < attachInfo.length; j++) {
+                    const buffer = await readFile(attachInfo[j][0]);
+                    const blob = new Blob([buffer], { type: 'image/jpg' });
+                    caseFormData.append(attachInfo[j][1], blob, attachInfo[j][1]);
+                    
+                }
+            };
+
+            response = await fetch(`${baseUrl}/addEntry/${parentKey}`, {
+                method: "POST",
+                body: caseFormData
+            });
+            expect(response.ok).toBe(true);
+
+            let parentProvs = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+            let currRecord = parentProvs[0].record
+
+            if (currCase.description) {
+                expect(currRecord.description).toBe(currCase.description)
+            }
+            if (currCase.tags) {
+                expect(currRecord.tags).toStrictEqual(currCase.tags)
+            }
+            if (currCase.attachments) {
+                expect(parentProvs[0].attachments.length).toBe(currCase.attachments.length)
+            }
+        }
+
+        for (let i = 0; i < parentRecord.number_of_children; i ++) {
+            let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
+            expect(childProv[0].record.description).toBe(testCases[5].description);
+            expect(childProv[0].record.tags).toStrictEqual(testCases[5].tags);
+        }
+	}, 60000);
+
+	// More tests
+})
