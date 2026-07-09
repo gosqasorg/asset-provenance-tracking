@@ -888,7 +888,6 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
         context.log('body:', body);
@@ -957,7 +956,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             context.log('Email send result:', emailResult);
 
             if (emailResult.status !== "Succeeded") {
-                throw result.message
+                throw emailResult
             }
 
         } catch (error) {
@@ -973,11 +972,17 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
     } catch(error) {
         context.error(error.message);
-        return {
-            jsonBody: {message: "Internal Server Error"},
-            status: 500,
+        if(Object.hasOwn(error, 'message') && Object.hasOwn(error.message, 'statusCode') && error.message.statusCode == 429) {
+            return {
+                jsonBody: { message: "" }, // Deliberately blank
+                status: 429
+            }
+        } else {
+            return {
+                jsonBody: {message: "Internal Server Error"},
+                status: 500,
+            }
         }
- 
     }
 }
 
@@ -1195,6 +1200,10 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
             context.log('Email resend results:', emailResult);
 
+            if (emailResult.status !== "Succeeded") {
+                throw emailResult
+            }
+
         } catch (error) {
             context.log("Error sending email: " + error);   
             throw error
@@ -1278,7 +1287,6 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         }
     }
 }
-
 
 async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
