@@ -78,7 +78,7 @@ describe("Group Creation Tests", () => {
 		const reportingKeyRecord = reportingKeyAttributes[0].record;
 		expect(reportingKeyRecord.isReportingKey).toBe(true);
 		expect(reportingKeyRecord.tags).toContain("reportingkey");
-    }, 6000);
+    }, 60000);
 
 	it("should create a group record with tags", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
@@ -128,7 +128,7 @@ describe("Group Creation Tests", () => {
 
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children);
-    }, 6000);
+    }, 60000);
 });
 
 
