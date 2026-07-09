@@ -144,9 +144,7 @@ const recordHasParent = hasParent(provenance);
 			</section>
 
             <div class="action-buttons">
-            	<div v-if="onDev">
-	        		<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
-		        </div>
+	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
                 <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 

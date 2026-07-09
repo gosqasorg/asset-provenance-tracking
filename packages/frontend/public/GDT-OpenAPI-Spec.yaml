@@ -11,68 +11,6 @@ servers:
 #  - url: https://gdtprodbackend.azurewebsites.net/api
 #    description: Production server
 paths:
-  /getNewDeviceKey:
-    get:
-      tags:
-        - GDT API
-      summary: GET /getNewDeviceKey
-      operationId: getNewDeviceKey
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        '404':
-          description: Not Found
-  
-  /provenance/{deviceKey}:
-    get:
-      tags:
-        - GDT API
-      summary: Gets the device provenance history
-      description: Retrieves the decrypted provenance history for a device, sorted by newest to oldest.
-      operationId: getProvenance
-      parameters:
-        - name: deviceKey
-          in: path
-          required: true
-          description: The device key of a record whose provenance history is to be retrieved.
-          schema:
-            type: string
-            example: "6TzAdg1bei6QDNxJN1KnoV"
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-              examples:
-                RecordsFound:
-                  summary: Provenance record found
-                  description: Provenance record for the device, sorted by the newest first.
-                  value:
-                    - record: { description: "example record", children_key: "" }
-                NoRecords:
-                  summary: No record / container missing
-                  description: Returned when the storage container does not exist yet.
-                  value: []
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: string
-                    example: "Invalid json stored in provenance"
-        '500':
-          description: Internal Server Error
 
   /createGroup:
     post:
@@ -154,33 +92,6 @@ paths:
                     type: string
                     example: "Error: Internal server error."
 
-  /recall/{deviceKey}:
-    post:
-      tags:
-        - GDT API
-      summary: Propagate a recall to all descendant devices
-      description: Recalls a group record and its child records.
-      operationId: recall
-      parameters:
-        - name: deviceKey
-          in: path
-          required: true
-          description: The device key of the parent record
-          schema:
-            type: string
-            example: "XuYCKWWDUEyv9vE5iL7Pzg"
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Success
-        '500':
-          description: Internal server error
-
   /createRecord:
     post:
       tags:
@@ -243,85 +154,6 @@ paths:
                     type: string
                     example: "Invalid input parameters"
 
-  /upgrade/{deviceKey}:
-    get:
-      tags:
-        - GDT API
-      summary: Upgrade a legacy record
-      description: This endpoint takes a legacy record and converts it to a provenance record.
-      operationId: upgradeProvenance
-      parameters:
-        - name: deviceKey
-          in: path
-          required: true
-          description: The device key of a legacy record to upgrade.
-          schema:
-            type: string
-            example: "VvaaGvt5UoyMT9iCQuncre"
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-              examples:
-                SuccessfullyUpgraded:
-                  summary: Key Successfully Upgraded
-                  description: Returned when the legacy record is found and successfully recreated as a provenance record.
-                  value:
-                    recordID: "6494deafa4390304169fffbd1ad737de0c8eff1634be0550c0baa9d505e4c0a6"
-                    attachments: []
-                    oversizedAttachments: undefined
-                KeyAlreadyUpgraded:
-                  summary: Key Already Upgraded
-                  description: Returned when the key is already a provenance record.
-                  value:
-                    already-converted: true
-                KeyDoesntExist:
-                  summary: Key Doesn't Exist
-                  description: Returned when the key has valid format but does not exist in our storage.
-                  value: []
-                InvalidLegacyJSON:
-                  summary: Invalid Legacy JSON
-                  description: Returned when the legacy record exists but is not valid JSON.
-                  value:
-                    status: 404
-        '500':
-          description: Internal Server Error
-
-  /attachment/{deviceKey}/{attachmentID}:
-    get:
-      tags:
-        - GDT API
-      summary: Retrieve an attachment 
-      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
-      operationId: getAttachment
-      parameters:
-        - name: deviceKey
-          in: path
-          required: true
-          description: The device key of the record
-          schema:
-            type: string
-            example: "XuYCKWWDUEyv9vE5iL7Pzg"
-        - name: attachmentID
-          in: path
-          required: true
-          description: The attachment ID from the record's attachment array
-          schema:
-            type: string
-            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
-      responses:
-        '200':
-          description: Success
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '404':
-          description: Attachment not found
-
   /addEntry/{deviceKey}:
     post:
       tags:
@@ -370,4 +202,173 @@ paths:
               schema:
                 type: object
         '404':
+          description: Not Found  
+
+  /recall/{deviceKey}:
+    post:
+      tags:
+        - GDT API
+      summary: Propagate a recall to all descendant devices
+      description: Recalls a group record and its child records.
+      operationId: recall
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the parent record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Success
+        '500':
+          description: Internal server error
+
+  /provenance/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Gets the device provenance history
+      description: Retrieves the decrypted provenance history for a device, sorted by newest to oldest.
+      operationId: getProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a record whose provenance history is to be retrieved.
+          schema:
+            type: string
+            example: "6TzAdg1bei6QDNxJN1KnoV"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              examples:
+                RecordsFound:
+                  summary: Provenance record found
+                  description: Provenance record for the device, sorted by the newest first.
+                  value:
+                    - record: { description: "example record", children_key: "" }
+                NoRecords:
+                  summary: No record / container missing
+                  description: Returned when the storage container does not exist yet.
+                  value: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Invalid json stored in provenance"
+        '500':
+          description: Internal Server Error
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      tags:
+        - GDT API
+      summary: Retrieve an attachment 
+      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID from the record's attachment array
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found
+
+  /getNewDeviceKey:
+    get:
+      tags:
+        - GDT API
+      summary: GET /getNewDeviceKey
+      operationId: getNewDeviceKey
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
           description: Not Found
+
+  /upgrade/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Upgrade a legacy record
+      description: This endpoint takes a legacy record and converts it to a provenance record.
+      operationId: upgradeProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a legacy record to upgrade.
+          schema:
+            type: string
+            example: "VvaaGvt5UoyMT9iCQuncre"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+              examples:
+                SuccessfullyUpgraded:
+                  summary: Key Successfully Upgraded
+                  description: Returned when the legacy record is found and successfully recreated as a provenance record.
+                  value:
+                    recordID: "6494deafa4390304169fffbd1ad737de0c8eff1634be0550c0baa9d505e4c0a6"
+                    attachments: []
+                    oversizedAttachments: undefined
+                KeyAlreadyUpgraded:
+                  summary: Key Already Upgraded
+                  description: Returned when the key is already a provenance record.
+                  value:
+                    already-converted: true
+                KeyDoesntExist:
+                  summary: Key Doesn't Exist
+                  description: Returned when the key has valid format but does not exist in our storage.
+                  value: []
+                InvalidLegacyJSON:
+                  summary: Invalid Legacy JSON
+                  description: Returned when the legacy record exists but is not valid JSON.
+                  value:
+                    status: 404
+        '500':
+          description: Internal Server Error
