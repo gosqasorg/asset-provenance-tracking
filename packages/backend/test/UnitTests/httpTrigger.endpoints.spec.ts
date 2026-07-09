@@ -104,7 +104,6 @@ vi.mock('@azure/communication-email', () => {
     };
 });
 
-
 vi.mock('../../src/functions/sendEmail.js', () => ({
     sendEmail: vi.fn().mockResolvedValue(undefined),
 }));
@@ -264,7 +263,7 @@ describe('postNotificationEmail - validation', () => {
     beforeEach(() => {
         mockTable = makeMockTableInstance();
         vi.mocked(TableClient).mockImplementation(() => mockTable as any); // make new TableClient() return our mock instance
-        vi.mocked(sendEmail).mockResolvedValue(undefined);
+        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
     });
 
     // missing email
@@ -290,7 +289,6 @@ describe('postNotificationEmail - validation', () => {
 
         const res = await httpTrigger.postNotificationEmail(req, ctx);
         expect(res.status).toBe(200);
-
     });
 });
 

@@ -972,6 +972,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
     } catch(error) {
         context.error(error.message);
+        console.log(error)
         if(Object.hasOwn(error, 'message') && Object.hasOwn(error.message, 'statusCode') && error.message.statusCode == 429) {
             return {
                 jsonBody: { message: "" }, // Deliberately blank
