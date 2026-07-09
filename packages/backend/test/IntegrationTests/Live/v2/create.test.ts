@@ -6,7 +6,6 @@ describe ("v2 Group Creation Tests", () => {
 
     it("should verify that tags are applied correctly for annotation", async() => {
 
-        // const baseUrl = "http://localhost:7071/api";
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const apiUrl = `${baseUrl}/createGroup`;
 
@@ -58,17 +57,16 @@ describe ("v2 Group Creation Tests", () => {
 
     }, 60000);
 
-    it("should annotate children but not the reporting key", async() => {
+    it("should annotate children but not the public key", async() => {
 
-        // const baseUrl = "http://localhost:7071/api";
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const apiUrl = `${baseUrl}/createGroup`;
 
         const payload = {
-            deviceName: "AnnotateWithReportingKey",
-            description: "Testing annotation skips reporting key",
+            deviceName: "AnnotateWithPublicKey",
+            description: "Testing annotation skips public key",
             number_of_children: 3,
-            hasReportingKey: true,
+            hasPublicKey: true,
             tags: ["Harry", "Ron"],
             annotate: true,
         };
@@ -91,7 +89,7 @@ describe ("v2 Group Creation Tests", () => {
         const groupRecord = responseData[0].record;
 
         const childKeys: string[] = groupRecord.children_key;
-        const reportingKey: string = groupRecord.reportingKey;
+        const publicKey: string = groupRecord.publicKey;
 
         for (const child of childKeys) {
             const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
@@ -102,12 +100,12 @@ describe ("v2 Group Creation Tests", () => {
             const oldestRecord = childRecords[childRecords.length - 1];
             expect(oldestRecord.description).toBe(payload.description);
 
-            if (child === reportingKey) {
-                // Reporting key should not have an annotation record
+            if (child === publicKey) {
+                // Public key should not have an annotation record
                 const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
                 expect(hasNotifyAll).toBe(false);
             } else {
-                // Non-reporting children should have an annotation record with notify_all
+                // Non-public children should have an annotation record with notify_all
                 const annotationRecord = childRecords.find((rp: any) => rp.tags?.includes("notify_all"));
                 expect(annotationRecord).toBeDefined();
                 expect(annotationRecord.tags).toContain("Harry");
@@ -120,7 +118,6 @@ describe ("v2 Group Creation Tests", () => {
 
     it("should not annotate children when annotate is false", async() => {
 
-        // const baseUrl = "http://localhost:7071/api";
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const apiUrl = `${baseUrl}/createGroup`;
 
@@ -169,7 +166,6 @@ describe ("v2 Group Creation Tests", () => {
 
     it("should have default annotation description when parent has no description", async() => {
 
-        // const baseUrl = "http://localhost:7071/api";
         const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const apiUrl = `${baseUrl}/createGroup`;
 
@@ -217,16 +213,16 @@ describe ("v2 Group Creation Tests", () => {
     }, 60000);
 
 
-    // Test reporting key functionality
-    it("should create a group record with a reporting key", async () => {
+    // Test public key functionality
+    it("should create a group record with a public key", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		const groupPayload = {
-			deviceName: "group_record_with_reporting_key",
-			title: "group_record_with_reporting_key",
-			description: "group record with a reporting key integration test",
+			deviceName: "group_record_with_public_key",
+			title: "group_record_with_public_key",
+			description: "group record with a public key integration test",
 			number_of_children: 1,
-			hasReportingKey: true,
+			hasPublicKey: true,
 			tags: [],
 		};
 
@@ -263,15 +259,15 @@ describe ("v2 Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
 
-		// Verify reporting key
-		const reportingKey = groupRecord.reportingKey as string;
-		const reportingKeyRes = await fetch(`${baseUrl}/provenance/${reportingKey}`)
-		expect(reportingKeyRes.ok).toBe(true);
-		const reportingKeyAttributes = await reportingKeyRes.json();
-		expect(reportingKeyAttributes.length).toBeGreaterThan(0);
-		const reportingKeyRecord = reportingKeyAttributes[0].record;
-		expect(reportingKeyRecord.isReportingKey).toBe(true);
-		expect(reportingKeyRecord.tags).toContain("reportingkey");
+		// Verify public key
+		const publicKey = groupRecord.publicKey as string;
+		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
+		expect(publicKeyRes.ok).toBe(true);
+		const publicKeyAttributes = await publicKeyRes.json();
+		expect(publicKeyAttributes.length).toBeGreaterThan(0);
+		const publicKeyRecord = publicKeyAttributes[0].record;
+		expect(publicKeyRecord.isPublicKey).toBe(true);
+		expect(publicKeyRecord.tags).toContain("publickey");
     }, 6000);
 
 	it("should create a group record with tags", async () => {
@@ -282,7 +278,7 @@ describe ("v2 Group Creation Tests", () => {
 			title: "group_record_with_tags",
 			description: "group record with tags integration test",
 			number_of_children: 1,
-			hasReportingKey: false,
+			hasPublicKey: false,
 			tags: ["integration_test", "record_tags"],
 		};
 
@@ -439,7 +435,6 @@ describe("Group Creation Tests", () => {
 describe("Group Creation v2 tests", () => {
 
     it("should create a group record with multiple attachments (one image, one PDF file), with multiple children", async () => {
-    // const baseUrl = "http://localhost:7071/api"
     const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
     const payload = {
@@ -521,7 +516,6 @@ describe("Group Creation v2 tests", () => {
 
     // Tests group child custom titles
 	it("Custom Record Titles", async () => {
-        // const baseUrl = "http://localhost:7071/api"
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
         const groupParentRecords = []
         const groupedChildKeys = []

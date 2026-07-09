@@ -1336,7 +1336,7 @@ async function createChildren(context, description: string, number_of_children: 
             // PublicKey is itself a record that is part of a group
             if(hasPublicKey){
                 const publicTags = [...tags, "publickey"]
-                if(!(thisChild = await createChild(context,"Public Key", publicTags, true))) {
+                if(!(thisChild = await createChild(context, description, "Public Key", publicTags, true))) {
                     continue;
                 }
                 childrenKeys.push(thisChild)
@@ -1410,7 +1410,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     }
     if(annotate){
         for (const key of childKeys){
-            if(key !== reporting_key){
+            if(key !== public_key){
                 const annotateFormData = new FormData();
                 annotateFormData.append("provenanceRecord", JSON.stringify({
                     blobType: "deviceRecord",
