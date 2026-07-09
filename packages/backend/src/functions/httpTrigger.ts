@@ -1372,7 +1372,7 @@ async function createChildren(context, description: string, number_of_children: 
     let thisChild;
     
     for (let i = 0; i < number_of_children; i++) {  // iterates the custom children names
-        if(!(thisChild = await createChild(context, custom_child_titles[i], tags))) {
+        if(!(thisChild = await createChild(context, description, custom_child_titles[i], tags))) {
             continue;
         }
         childrenKeys.push(thisChild)
@@ -1380,7 +1380,7 @@ async function createChildren(context, description: string, number_of_children: 
 
     if (hasPublicKey){
         const publicTags = [...tags, "publickey"]
-        thisChild = await createChild(context,"Public Key", publicTags, true)
+        thisChild = await createChild(context,description,"Public Key", publicTags, true)
         if(thisChild){ // checks to see that public key was made.
             childrenKeys.push(thisChild)
         }
