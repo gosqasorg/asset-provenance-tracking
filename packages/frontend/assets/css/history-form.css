@@ -95,6 +95,11 @@ input[type=checkbox] {
     width: 48%;
   }
 
+  .tags-note {
+    font-size: 12px;
+    margin-left: 2px;
+  }
+
 
 /*  For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -143,11 +148,7 @@ input[type=checkbox] {
         background-color: #4B4D47;
     }
 
-    h5, span {
-        color: #FFFFFF;
-    }
-
-    h4 {
+    h5, h4, div, span {
         color: #FFFFFF;
     }
 
@@ -195,8 +196,7 @@ input[type=checkbox] {
         background-color: #E6F6FF;
     }
 
-    h5,
-    h4 {
+    h5, h4, div {
         color: #4E3681;
     }
 

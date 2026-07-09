@@ -327,16 +327,16 @@ describe ("v2 Group Creation Tests", () => {
 
 
 describe("Group Creation Tests", () => {
-    // Test reporting key functionality
-    it("should create a group record with a reporting key", async () => {
+    // Test public key functionality
+    it("should create a group record with a public key", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 		
 		const groupPayload = {
-			deviceName: "group_record_with_reporting_key",
-			title: "group_record_with_reporting_key",
-			description: "group record with a reporting key integration test",
+			deviceName: "group_record_with_public_key",
+			title: "group_record_with_public_key",
+			description: "group record with a public key integration test",
 			number_of_children: 1,
-			hasReportingKey: true,
+			hasPublicKey: true,
 			tags: [],
 		};
 
@@ -373,15 +373,15 @@ describe("Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
 
-		// Verify reporting key
-		const reportingKey = groupRecord.reportingKey as string;
-		const reportingKeyRes = await fetch(`${baseUrl}/provenance/${reportingKey}`)
-		expect(reportingKeyRes.ok).toBe(true);
-		const reportingKeyAttributes = await reportingKeyRes.json();
-		expect(reportingKeyAttributes.length).toBeGreaterThan(0);
-		const reportingKeyRecord = reportingKeyAttributes[0].record;
-		expect(reportingKeyRecord.isReportingKey).toBe(true);
-		expect(reportingKeyRecord.tags).toContain("reportingkey");
+		// Verify public key
+		const publicKey = groupRecord.publicKey as string;
+		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
+		expect(publicKeyRes.ok).toBe(true);
+		const publicKeyAttributes = await publicKeyRes.json();
+		expect(publicKeyAttributes.length).toBeGreaterThan(0);
+		const publicKeyRecord = publicKeyAttributes[0].record;
+		expect(publicKeyRecord.isPublicKey).toBe(true);
+		expect(publicKeyRecord.tags).toContain("publickey");
     }, 6000);
 
 	it("should create a group record with tags", async () => {
@@ -392,7 +392,7 @@ describe("Group Creation Tests", () => {
 			title: "group_record_with_tags",
 			description: "group record with tags integration test",
 			number_of_children: 1,
-			hasReportingKey: false,
+			hasPublicKey: false,
 			tags: ["integration_test", "record_tags"],
 		};
 

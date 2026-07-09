@@ -9,7 +9,12 @@
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": ["/GDT-OpenAPI-Spec.yaml", "/user_manual.pdf", "/Global_Distributed_Tracking.pdf"]
+  },
+  "mimeTypes": {
+    ".yaml": "text/yaml",
+    ".pdf": "application/pdf"
   },
   "platform": {
     "apiRuntime": "node:20"

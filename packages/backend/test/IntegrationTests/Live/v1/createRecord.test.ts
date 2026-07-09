@@ -11,11 +11,12 @@ describe("Backend Record Creation Tests", () => {
             tags: [],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
-        const postValues = { "provenanceRecord": record, "attachment": [] }
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -33,7 +34,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.children_key).toBe("");
             expect(responseString.record.tags).toEqual([]);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
 
 		} catch(error) {
 			console.error('(Basic Create Test) Failed to fetch url: ' + recordUrl + '\nError: ' + error) 
@@ -50,11 +51,12 @@ describe("Backend Record Creation Tests", () => {
             tags: ['tags_test', 'integration'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
-        const postValues = { "provenanceRecord": record, "attachment": [] }
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -71,7 +73,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('An integration test creating a record with tags');
 			expect(responseString.record.tags).toEqual(["tags_test", "integration"]);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
 
 		} catch(error) {
 			console.error('(Create With Tags Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
@@ -88,19 +90,15 @@ describe("Backend Record Creation Tests", () => {
             tags: ['attach_test'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
 
-        // read the file and convert it to base64 string
         const buffer = await readFile('./test/attachments/a200.jpg');
-        let base64string = buffer.toString("base64");
-        const attachment = {
-            name: "kirby.jpg",
-            file: base64string
-        }
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
+        formData.append("kirby.jpg", new Blob([new Uint8Array(buffer)], { type: 'image/jpeg' }), "kirby.jpg");
 
-        const postValues = { "provenanceRecord": record, "attachment": attachment }
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200);
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -117,7 +115,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('An integration test creating a record with tags and an attachment');
 			expect(responseString.record.tags).toEqual(['attach_test']);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
             expect(responseString.attachments.length).toBe(1)
 
             // Download attachment and confirm it matches original file
@@ -147,11 +145,12 @@ describe("Backend Record Creation Tests", () => {
             tags: ['zod_test'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
 
-        const postValues = { "provenanceRecord": record, "attachment": [] }
-        let recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues) });
+        const formData1 = new FormData();
+        formData1.append("provenanceRecord", JSON.stringify(record));
+        let recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData1 });
         expect(recordResponse.status).toBe(400);
 
         // create a record that's missing an optional field and confirm it succeeds (blobType)
@@ -161,11 +160,12 @@ describe("Backend Record Creation Tests", () => {
             tags: ['zod_test'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
 
-        const postValues2 = { "provenanceRecord": record2, "attachment": [] }
-        recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: JSON.stringify(postValues2) });
+        const formData2 = new FormData();
+        formData2.append("provenanceRecord", JSON.stringify(record2));
+        recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData2 });
         expect(recordResponse.status).toBe(200);
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -182,7 +182,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('A test to make sure zod is correctly filtering input');
 			expect(responseString.record.tags).toEqual(["zod_test"]);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
 
 		} catch(error) {
 			console.error('(Create With Missing Optional) Failed to fetch url: ' + recordUrl + '\nError: ' + error) 

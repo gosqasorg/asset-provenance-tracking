@@ -1,11 +1,12 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
+import { InvocationContext } from "@azure/functions";
 
 const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
 const emailClient = new EmailClient(connectionString);
 
 // Send an email using the Azure Communication Services Email SDK
-export async function sendEmail(from_address: string, to_address: string, subject: string, plainText: string, displayName: string) {
-  if (!from_address || !to_address || !subject || !plainText || !displayName) {
+export async function sendEmail(from_address: string, to_address: string, subject: string, htmlMessage: string, displayName: string, context: InvocationContext) {
+  if (!from_address || !to_address || !subject || !htmlMessage || !displayName) {
     throw "Missing required parameter(s).";
   }
 
@@ -15,7 +16,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
       senderAddress: from_address,
       content: {
         subject: subject,
-        plainText: plainText,
+        html: htmlMessage,
       },
       recipients: {
         to: [
@@ -27,7 +28,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
       },
     };
 
-    console.log("Sending email...", message);
+    context.log("Sending email...", message);
     const poller = await emailClient.beginSend(message);
 
     // Note: Yes, this seems as though it could be written more simply, and 
@@ -53,7 +54,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     }
 
     if (poller.getResult().status === KnownEmailSendStatus.Succeeded) {
-      console.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
+      context.log(`Successfully sent the email (operation id: ${poller.getResult().id})`);
       return { status: KnownEmailSendStatus.Succeeded, message: message };
     }
     else {
@@ -61,7 +62,7 @@ export async function sendEmail(from_address: string, to_address: string, subjec
     }
 
   } catch (e) {
-    console.log(e);
+    context.log(e);
     return { status: "Failed", message: e };
   }
 
