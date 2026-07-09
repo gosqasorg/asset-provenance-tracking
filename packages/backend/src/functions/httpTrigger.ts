@@ -712,7 +712,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
         if (records[0].record.tags.includes("annotate")) {
@@ -722,7 +722,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             // Send annotated record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
+                let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
                 // Make sure key is NOT a public key (public keys do not have the ability to recall)
@@ -743,7 +743,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/${key}`, {
+                    let response = await fetch(`${baseUrl}${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
@@ -762,7 +762,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 500
         }
     }
- }
+}
  
 async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     let theUrl = `${baseUrl}${deviceKey}`;
@@ -1627,6 +1627,22 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
+// just a wrapper fxn for postProvenance
+export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+    const requestClone = request.clone();
+    const formData = await requestClone.formData();
+    const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
+
+    const postProvResponse = await postProvenance(request, context)
+    if (tagsExist && tagsExist.includes("annotate")) {
+        const notifChildrenResponse = await notifyChildren(request, context)
+    }
+
+    return postProvResponse
+}
+
 // Once per day update the total record, record entry, and attachment counts
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
@@ -1718,6 +1734,12 @@ app.post('recall', {
     authLevel: 'anonymous',
     route: 'recall/{deviceKey}',
     handler: recall,
+})
+
+app.post('addEntry', {
+    authLevel: 'anonymous',
+    route: 'addEntry/{deviceKey}',
+    handler: addEntryHandler
 })
 
 app.post('postResendCode', {

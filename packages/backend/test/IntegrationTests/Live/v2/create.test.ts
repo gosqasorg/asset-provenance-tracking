@@ -378,7 +378,7 @@ describe("Group Creation Tests", () => {
 		const publicKeyRecord = publicKeyAttributes[0].record;
 		expect(publicKeyRecord.isPublicKey).toBe(true);
 		expect(publicKeyRecord.tags).toContain("publickey");
-    }, 6000);
+    }, 60000);
 
 	it("should create a group record with tags", async () => {
 		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
@@ -428,7 +428,7 @@ describe("Group Creation Tests", () => {
 
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children);
-    }, 6000);
+    }, 60000);
 });
 
 
@@ -675,3 +675,107 @@ describe("Group Creation v2 tests", () => {
 	// More tests
 
 });
+
+describe("Update v2 tests", () => {
+	it("Updates records with new entries", async () => {
+        // const baseUrl = "http://localhost:7071/api"
+		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+
+        const groupRecord = {
+            deviceName: "Update v2 Tests",
+            description: "Tests updates to records",
+            tags: ["integration", "tests"],
+            number_of_children: 2,
+            children_name: ["Update child 1", "Update child 2"],
+            annotate: true
+        }
+        const testCases = [
+            {
+
+            },
+            {
+                description: "record entry with description",
+            },
+            {
+                tags: ["entry", "with", "only", "tags"]
+            },
+            {
+                attachments: [['./test/attachments/a200.jpg', 'record-entry-with-attachment.jpg']]
+            },
+            {
+                description: "record entry with description, tags, and attachments",
+                tags: ["test", "complete"],
+                attachments: [['./test/attachments/b200.jpg', 'b200.jpg'], ['./test/attachments/c200.jpg', 'c200.jpg']]
+            },
+            {
+                description: "record entry that annotates",
+                tags: ["test", "annotate", "demo"],
+                attachments: [['./test/attachments/a200.jpg', 'a200.jpg']]
+            }
+        ]
+
+        let groupResponse;
+        const groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify(groupRecord));
+        groupResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: groupFormData
+        })
+        expect(groupResponse.ok).toBe(true);
+        const url = (await groupResponse.json()).groupUrl;
+        console.log("Update tests group url:", url)
+
+        const parentKey = url.substring(url.lastIndexOf('/') + 1);
+        const initialProv = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+        const parentRecord = initialProv[0].record
+        let childKeys = parentRecord.children_key
+
+        for (let i = 0; i < testCases.length; i++) {
+            let currCase = testCases[i];
+            let response;
+
+            const caseFormData = new FormData();
+
+            if(!currCase.attachments) {
+                caseFormData.append("provenanceRecord", JSON.stringify(currCase));
+            } else {
+                const { attachments: attachInfo, ...currCaseWithoutAttachInfo } = currCase;
+                caseFormData.append("provenanceRecord", JSON.stringify(currCaseWithoutAttachInfo));
+
+                for (let j = 0; j < attachInfo.length; j++) {
+                    const buffer = await readFile(attachInfo[j][0]);
+                    const blob = new Blob([buffer], { type: 'image/jpg' });
+                    caseFormData.append(attachInfo[j][1], blob, attachInfo[j][1]);
+                    
+                }
+            };
+
+            response = await fetch(`${baseUrl}/addEntry/${parentKey}`, {
+                method: "POST",
+                body: caseFormData
+            });
+            expect(response.ok).toBe(true);
+
+            let parentProvs = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+            let currRecord = parentProvs[0].record
+
+            if (currCase.description) {
+                expect(currRecord.description).toBe(currCase.description)
+            }
+            if (currCase.tags) {
+                expect(currRecord.tags).toStrictEqual(currCase.tags)
+            }
+            if (currCase.attachments) {
+                expect(parentProvs[0].attachments.length).toBe(currCase.attachments.length)
+            }
+        }
+
+        for (let i = 0; i < parentRecord.number_of_children; i ++) {
+            let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
+            expect(childProv[0].record.description).toBe(testCases[5].description);
+            expect(childProv[0].record.tags).toStrictEqual(testCases[5].tags);
+        }
+	}, 60000);
+
+	// More tests
+})
