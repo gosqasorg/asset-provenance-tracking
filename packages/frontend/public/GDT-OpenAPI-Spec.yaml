@@ -107,6 +107,9 @@ paths:
                     number_of_children:
                       type: integer
                       example: 5
+                    children_name: 
+                      type: string array
+                      example: ["Child1", "Child2", "Child3", "Child4", "Child5"]
                     tags:
                       type: string array
                       example: ["tag1", "tag2"]
@@ -318,3 +321,53 @@ paths:
                 format: binary
         '404':
           description: Attachment not found
+
+  /addEntry/{deviceKey}:
+    post:
+      tags:
+        - GDT API
+      summary: Add new entry to a provenance
+      description: Adds a new entry with a description, optional attachments, and optional tags to an existing provenance.
+      operationId: addEntry
+      requestBody:
+        description: Additional entry parameters
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                provenanceRecord:
+                  type: object
+                  description: JSON object containing the new entry metadata.
+                  properties:
+                      description:
+                        type: string
+                        example: "Description"
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                          example: "example tag"
+                attachments:
+                  type: array
+                  description: Optional binary files attached to the form data.
+                  items:
+                    type: string
+                    format: binary
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key
+          schema:
+            type: string
+            example: "UTup36GAwwMBXeso3TyufF"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
