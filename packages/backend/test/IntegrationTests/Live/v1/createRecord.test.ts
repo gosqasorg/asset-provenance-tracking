@@ -11,7 +11,7 @@ describe("Backend Record Creation Tests", () => {
             tags: [],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(record));
@@ -34,7 +34,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.children_key).toBe("");
             expect(responseString.record.tags).toEqual([]);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
 
 		} catch(error) {
 			console.error('(Basic Create Test) Failed to fetch url: ' + recordUrl + '\nError: ' + error) 
@@ -51,7 +51,7 @@ describe("Backend Record Creation Tests", () => {
             tags: ['tags_test', 'integration'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(record));
@@ -73,7 +73,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('An integration test creating a record with tags');
 			expect(responseString.record.tags).toEqual(["tags_test", "integration"]);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
 
 		} catch(error) {
 			console.error('(Create With Tags Test) Failed to fetch url: ' + recordUrl.recordUrl + '\nError: ' + error) 
@@ -90,7 +90,7 @@ describe("Backend Record Creation Tests", () => {
             tags: ['attach_test'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
 
         const buffer = await readFile('./test/attachments/a200.jpg');
@@ -115,7 +115,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('An integration test creating a record with tags and an attachment');
 			expect(responseString.record.tags).toEqual(['attach_test']);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
             expect(responseString.attachments.length).toBe(1)
 
             // Download attachment and confirm it matches original file
@@ -145,7 +145,7 @@ describe("Backend Record Creation Tests", () => {
             tags: ['zod_test'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
 
         const formData1 = new FormData();
@@ -160,7 +160,7 @@ describe("Backend Record Creation Tests", () => {
             tags: ['zod_test'],
             children_key: '',
             hasParent: false,
-            isReportingKey: false,
+            isPublicKey: false,
         }
 
         const formData2 = new FormData();
@@ -182,7 +182,7 @@ describe("Backend Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('A test to make sure zod is correctly filtering input');
 			expect(responseString.record.tags).toEqual(["zod_test"]);
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
 
 		} catch(error) {
 			console.error('(Create With Missing Optional) Failed to fetch url: ' + recordUrl + '\nError: ' + error) 

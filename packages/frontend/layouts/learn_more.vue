@@ -28,9 +28,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <NavButton to="/how-it-works" text="How It Works" fontSize="18px"/>
 
             <NavButton
-                v-if="$route.path !== '/data-privacy'"
-                to="/data-privacy"
-                text="Data & Privacy"
+                v-if="$route.path !== '/features'"
+                to="/features"
+                text="Features"
                 fontSize="18px"
             />
 

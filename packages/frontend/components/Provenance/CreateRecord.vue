@@ -56,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             
             <h4 class="p-1 mt-3" v-if="isGroup">
                 <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
-                    Annotate all children
+                    Send to all Children
             </h4>
 
             <h4 class="p-1 mt-0" v-if="isGroup">
@@ -152,8 +152,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
     <div class="popup" v-if="annotatePopUp">
         <div class="popup-inner">
-            <h2 class="text-iris">Annotate all children</h2>
-            <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
+            <h2 class="text-iris">Send to all Children</h2>
+            <p>You've selected “Send to all Children” for this record entry. If you proceed, this message will be posted to all child records.</p>
 
             <div>
                 <!-- Cancels the record creation (close pop up) -->
@@ -452,10 +452,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     errorMessage = error;
                 }
 
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating record: ${errorMessage}`
-                });
+                console.log(error)
+                console.log(errorMessage)
+                if(errorMessage.includes('high volume of requests')) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error sending email: ${errorMessage}`
+                    });
+                } else {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating record: ${error}`
+                    });
+                }
+
+                // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('feedRefresh');
             }
         }
     }

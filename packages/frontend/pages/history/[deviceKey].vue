@@ -125,7 +125,7 @@ const recordHasParent = hasParent(provenance);
 
 				<div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
@@ -144,20 +144,18 @@ const recordHasParent = hasParent(provenance);
 			</section>
 
             <div class="action-buttons">
-              <div v-if="onDev">
-	              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
-	          </div>
+	           <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
               <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-                <ProvenanceShareDropdown
-                  :deviceName="deviceRecord.deviceName"
-                  :description="deviceRecord.description"
-                  :fontSize="20"
-                  :height="66"
-                  :width="33"
-                  >
-                </ProvenanceShareDropdown>
+              <ProvenanceShareDropdown
+                :deviceName="deviceRecord.deviceName"
+                :description="deviceRecord.description"
+                :fontSize="20"
+                :height="66"
+                :width="33"
+                >
+              </ProvenanceShareDropdown>
             </div>
 
             <!-- Email notifications modal -->
@@ -190,10 +188,10 @@ const recordHasParent = hasParent(provenance);
 			User Manual
 			</a>
 
-			<div v-if="hasReportingKey"> Reporting Key:
-				<div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+			<div v-if="hasPublicKey"> Public Key:
+				<div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
 			</div>
-			<div v-if="(childKeys?.length > 0) || hasReportingKey">
+			<div v-if="(childKeys?.length > 0) || hasPublicKey">
 				<div> Child Keys:
 				<div>
 					<KeyList v-bind:keys="childKeys" />
@@ -254,7 +252,7 @@ data() {
         isCreating: false,
         isLoading: true,
         recordKeyFound: false,
-        hasReportingKey: false,
+        hasPublicKey: false,
         childKeys: [] as string[],
         _recordKey: "",
         valid: false,
@@ -318,7 +316,7 @@ async mounted() {
 	} catch (error) {
         this.isCreating = false;
         this.recordKeyFound = false;
-        this.hasReportingKey = false;
+        this.hasPublicKey = false;
         setTimeout(() => {
           this.isLoading = false;
         }, 1000); // logs after 1 second
@@ -375,7 +373,7 @@ methods: {
 		});
 		this.isLoading = false;
 		this.recordKeyFound = false;
-		this.hasReportingKey = false;
+		this.hasPublicKey = false;
 		this.childKeys = [];
 		this.valid = false;
 		return;
@@ -399,12 +397,12 @@ methods: {
 	});
 
 	// This functionality could be pushed into a component...
-	this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+	this.hasPublicKey = (deviceRecord.publicKey ? true : false);
 
-	// We will remove the reportingKey, because although it is a child,
+	// We will remove the publicKey, because although it is a child,
 	// we have already rendered it.
-	if (this.hasReportingKey) {
-		const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+	if (this.hasPublicKey) {
+		const index = deviceRecord.children_key.indexOf(deviceRecord.publicKey, 0);
 		if (index > -1) {
 			deviceRecord.children_key.splice(index, 1);
 		}
@@ -412,7 +410,7 @@ methods: {
 	this.childKeys = getChildKeys(provenance);
 
 	// Add child key navigation if there are child keys
-	if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+	if ((this.childKeys?.length > 0) || this.hasPublicKey) {
 		headers = [
 		{ id: "device-details", name: "Record details" },
 		{ id: "priority-notices", name: "Priority notices" },

@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Grouped Record Titles?
+                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Child Titles
             </h4>
             <div v-if="customized" class="text-iris" id="num-fields">
                 <div v-for="(item, index) in fieldSet">
@@ -46,11 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
-            </h4>
- 
-            <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Key
             </h4>
 
             <!-- Subscribe to tag notifications -->
@@ -157,7 +153,7 @@ export default {
             tags: [] as string[],
             emailTags: [] as string[],  // tags for specified tag signup
             childrenKeys: 0,
-            createReportingKey: false,
+            createPublicKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
@@ -284,12 +280,9 @@ export default {
             // redundant until I get this workin.
             const childrenDeviceList = [];
             const childrenDeviceName = [];
-            let reportingKey;
+            let publicKey;
      
             // Get all elements from the DOM
-            if (this.annotate) {
-                this.tags = (this.tags).concat(['notify_all'])
-            } 
             
             // Emit an event to notify the gdt.vue page to display loading screen
             EventBus.emit('isLoading');
@@ -314,7 +307,7 @@ export default {
                             tags:this.tags,
                             children_key: '',
                             hasParent: true,
-                            isReportingKey: false
+                            isPublicKey: false
                         }, this.pictures || [])
                         
                         childrenDeviceList.push(childKey);
@@ -333,34 +326,34 @@ export default {
                 }
             };
 
-            if (this.createReportingKey) {
+            if (this.createPublicKey) {
                 // Should be higher up?
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+                publicKey =  await makeEncodedDeviceKey(); //public key = public key
+                let tag_set = (this.tags).concat(['publickey']);
 
                 try {
-                    await postProvenance(reportingKey, {
+                    await postProvenance(publicKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
+                        // Is this a proper description? Should it say "public key" or something?
                         description: this.description,
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
-                        isReportingKey: true,
+                        isPublicKey: true,
                     }, this.pictures || [])
                     
                     this.$snackbar.add({
                         type: 'success',
-                        text: 'Successfully created reporting key'
+                        text: 'Successfully created public key'
                     })
                 } catch (error) {
                     this.$snackbar.add({
                         type: 'error',
-                        text: `Error creating reporting key: ${error}`
+                        text: `Error creating public key: ${error}`
                     })
                 };
-                childrenDeviceList.push(reportingKey);
+                childrenDeviceList.push(publicKey);
                 childrenDeviceName.push(this.name);
             }
 
@@ -370,11 +363,11 @@ export default {
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey, 
+                    publicKey: publicKey, 
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
                     hasParent: false,
-                    isReportingKey: false
+                    isPublicKey: false
                 }, this.pictures || [])
                 
                 this.$snackbar.add({
