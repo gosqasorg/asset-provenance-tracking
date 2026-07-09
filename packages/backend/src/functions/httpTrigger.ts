@@ -1,3 +1,8 @@
+
+type BufferSource = any;
+namespace NodeJS { export type BufferSource = any; }
+// delete the top two lines, temporary for testing
+
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -648,7 +653,6 @@ async function setStatisticsTotals() {
     }
 }
  
-
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
     return { 
@@ -707,7 +711,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
-        let getRecords = await fetch(`${baseUrl}/${deviceKey}`)
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
         if (records[0].record.tags.includes("annotate")) {
@@ -717,7 +721,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             // Send annotated record to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}/${key}`);
+                let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
                 // Make sure key is NOT a public key (public keys do not have the ability to recall)
@@ -738,7 +742,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         tags: records[0].record.tags,
                     }));
                     
-                    let response = await fetch(`${baseUrl}/${key}`, {
+                    let response = await fetch(`${baseUrl}${key}`, {
                         method: "POST",
                         body: keyFormData,
                     })
@@ -757,7 +761,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 500
         }
     }
- }
+}
  
 async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     let theUrl = `${baseUrl}${deviceKey}`;
@@ -851,7 +855,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     }
 }
 
-
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const tableUrl = accountName === "devstoreaccount1"
@@ -888,10 +891,8 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
-
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
         context.log('body:', body);
@@ -946,15 +947,22 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
+            // Validation email body with link included here for later work, see issue 1121. 
+            // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                `Your verification code is: ${code} \n\nExpires in 10 minutes. \nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification",
+                context
             )
 
             context.log('Email send result:', emailResult);
+
+            if (emailResult.status !== "Succeeded") {
+                throw emailResult
+            }
 
         } catch (error) {
             context.log("Error sending email: " + error); 
@@ -969,11 +977,18 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
     } catch(error) {
         context.error(error.message);
-        return {
-            jsonBody: {message: "Internal Server Error"},
-            status: 500,
+        console.log(error)
+        if(Object.hasOwn(error, 'message') && Object.hasOwn(error.message, 'statusCode') && error.message.statusCode == 429) {
+            return {
+                jsonBody: { message: "" }, // Deliberately blank
+                status: 429
+            }
+        } else {
+            return {
+                jsonBody: {message: "Internal Server Error"},
+                status: 500,
+            }
         }
- 
     }
 }
 
@@ -1178,15 +1193,22 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
             
+            // Validation email body with link included here for later work, see issue 1121. 
+            // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 entity.email as string,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
-                "GOSQAS Notification"
+                `Your verification code is: ${code} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                "GOSQAS Notification",
+                context
             ) 
 
             context.log('Email resend results:', emailResult);
+
+            if (emailResult.status !== "Succeeded") {
+                throw emailResult
+            }
 
         } catch (error) {
             context.log("Error sending email: " + error);   
@@ -1306,7 +1328,7 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
     }
 }
 
-async function createChild(context: InvocationContext, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
+async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1324,7 +1346,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
         childFormData.append("provenanceRecord", JSON.stringify({
             blobType: "deviceInitializer",
             deviceName: custom_title,
-            description: "",
+            description: description || "",
             tags: tags,
             hasParent: true,
             isPublicKey: isPublicKey
@@ -1345,7 +1367,7 @@ async function createChild(context: InvocationContext, custom_title: string, tag
     }
 }
 
-async function createChildren(context, number_of_children: number, custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
+async function createChildren(context, description: string, number_of_children: number,  custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     
@@ -1367,7 +1389,7 @@ async function createChildren(context, number_of_children: number, custom_child_
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey, tags, attachments: NamedBlob[] = []) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = [], annotate: boolean = false) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1388,7 +1410,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         }
     };
     // Create children first
-    let childKeys = await createChildren(context, n_children, custom_child_titles, hasPublicKey, tags)
+    let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
     let totalChildren = n_children + (hasPublicKey ? 1 : 0)
     if (childKeys.length !== totalChildren) {
         throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
@@ -1418,7 +1440,6 @@ async function createGroup(context, name, description, n_children: number = 0, c
     for (const attachment of attachments) {
         groupFormData.append("attachment", attachment.blob, attachment.name);
     }
-    
     const createInitUrl = `${backendUrl}${groupKey}`
     const groupResponse = await fetch(createInitUrl, {
         method: "POST",
@@ -1427,6 +1448,24 @@ async function createGroup(context, name, description, n_children: number = 0, c
     if (!groupResponse.ok) {
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+    }
+    if(annotate){
+        for (const key of childKeys){
+            if(key !== public_key){
+                const annotateFormData = new FormData();
+                annotateFormData.append("provenanceRecord", JSON.stringify({
+                    blobType: "deviceRecord",
+                    description: description || "Annotated by Group",
+                    children_key: '',
+                    tags: [...tags, "notify_all"],
+                }));
+
+                await fetch(`${backendUrl}${key}`, {
+                    method: "POST",
+                    body:annotateFormData,
+                });
+            }
+        }
     }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
@@ -1473,7 +1512,8 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasPublicKey = theRequest['hasPublicKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
+        let annotate = theRequest['annotate']
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments, annotate)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1628,6 +1668,22 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
+// just a wrapper fxn for postProvenance
+export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+    const requestClone = request.clone();
+    const formData = await requestClone.formData();
+    const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
+
+    const postProvResponse = await postProvenance(request, context)
+    if (tagsExist && tagsExist.includes("annotate")) {
+        const notifChildrenResponse = await notifyChildren(request, context)
+    }
+
+    return postProvResponse
+}
+
 // Once per day update the total record, record entry, and attachment counts
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
@@ -1719,6 +1775,12 @@ app.post('recall', {
     authLevel: 'anonymous',
     route: 'recall/{deviceKey}',
     handler: recall,
+})
+
+app.post('addEntry', {
+    authLevel: 'anonymous',
+    route: 'addEntry/{deviceKey}',
+    handler: addEntryHandler
 })
 
 app.post('postResendCode', {

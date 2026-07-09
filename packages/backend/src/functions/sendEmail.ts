@@ -5,7 +5,14 @@ const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']
 const emailClient = new EmailClient(connectionString);
 
 // Send an email using the Azure Communication Services Email SDK
-export async function sendEmail(from_address: string, to_address: string, subject: string, htmlMessage: string, displayName: string, context: InvocationContext) {
+export async function sendEmail(
+  from_address: string, 
+  to_address: string, 
+  subject: string, 
+  htmlMessage: string, 
+  displayName: string, 
+  context: InvocationContext) 
+{
   if (!from_address || !to_address || !subject || !htmlMessage || !displayName) {
     throw "Missing required parameter(s).";
   }
