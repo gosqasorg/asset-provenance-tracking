@@ -73,15 +73,6 @@ export function hasParent(records: any): boolean {
     return false;
 }
 
-function hasRecalledRecord(records: any): boolean {
-    for (let record of records) {
-        if (record.record.tags && (record.record.tags).includes("recall")) {
-            return true;
-        }
-    }
-    return false;
-}
-
 // The records are immutable, so we need to iterate through all the records
 // to collate all feature flags.
 export function getFeatures(records: any) {
@@ -230,11 +221,6 @@ export async function recallChildren(recordKey: string, tags: string[], descript
         if (tags.includes(InternalTagName.Recall)) {
             let records = await getProvenance(recordKey);
 
-            // Prevent more than one recalled record
-            if (hasRecalledRecord(records)) {
-                throw new Error("Record already recalled")
-            }
-
             let keysToCheck = deduplicateKeys(getChildKeys(records));
 
             // Send recalled record to all children
@@ -267,7 +253,6 @@ export async function recallChildren(recordKey: string, tags: string[], descript
         }
     } catch (error) {
         console.error(`Error notifying children: ${error}`);
-        throw error;
     }
 }
  

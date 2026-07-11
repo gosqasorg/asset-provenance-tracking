@@ -197,7 +197,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             emailInput: '',
             config: useRuntimeConfig(),
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
-            hasRecalledRecord: true,
+            hasRecalledRecord: false,
         }
     },
     props: {
@@ -247,7 +247,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         try {
             // Hide recall checkbox if a group has already been recalled
             let records = await getProvenance(this.recordKey);
-            this.hasRecalledRecord = false;
             for (let record of records) {
                 if (record.record.tags && (record.record.tags).includes("recall")) {
                     this.hasRecalledRecord = true;
@@ -438,13 +437,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
 
+                // Prevent more than one record from being recalled
+                if (this.hasRecalledRecord) {
+                    throw new Error("Record already recalled");
+                }
+
+                await postProvenance(this.recordKey, record, this.pictures || []);
+
                 if (this.recallAll || this.tags.includes("recall")) {
                     await recallChildren(this.recordKey, this.tags, this.description);
                 } else if (this.annotateAll || this.tags.includes("annotate")) {
                     await notifyChildren(this.recordKey, this.tags, this.description);
                 }
-
-                await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.notify && this.emailInput) {
                     const email = this.emailInput.trim(); 
