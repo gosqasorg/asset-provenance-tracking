@@ -197,7 +197,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             emailInput: '',
             config: useRuntimeConfig(),
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
-            hasRecalledRecord: false,
         }
     },
     props: {
@@ -211,6 +210,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             default: null,
             required: true,
         },
+        hasRecalledRecord: {
+            type: Boolean,
+            default: false,
+            required: false,
+        }
     },
     computed: {
         uniqueChildrenKeys() {
@@ -241,21 +245,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         // Checks whether record is a child, disables 'Add to Group' field if is a child
         isChild() {
             return this.deviceRecord?.hasParent
-        }
-    },
-    async mounted() {
-        try {
-            // Hide recall checkbox if a group has already been recalled
-            let records = await getProvenance(this.recordKey);
-            for (let record of records) {
-                if (record.record.tags && (record.record.tags).includes("recall")) {
-                    this.hasRecalledRecord = true;
-                }
-            }
-        } catch (error) {
-            // If we can't read the provenance assume the record hasn't been recalled
-            this.hasRecalledRecord = false;
-            console.error(error)
         }
     },
     methods: {
@@ -438,7 +427,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 };
 
                 // Prevent more than one record from being recalled
-                if (this.hasRecalledRecord) {
+                if (this.tags.includes("recall") && this.hasRecalledRecord) {
                     throw new Error("Record already recalled");
                 }
 

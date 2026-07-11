@@ -160,7 +160,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
               <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
             </section>
             <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" :hasRecalledRecord="hasRecalledRecord" />
             </section>
 
 			<section id="child-keys">
@@ -252,6 +252,7 @@ data() {
         onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
 		provenance: [] as any[],
 		recordHasParent: false,
+		hasRecalledRecord: false
 	}
 },
 computed: {
@@ -307,6 +308,7 @@ async mounted() {
 
         await this.refreshFeed();
 	} catch (error) {
+		this.hasRecalledRecord = false;
         this.isCreating = false;
         this.recordKeyFound = false;
         this.hasPublicKey = false;
@@ -388,6 +390,11 @@ methods: {
 		    recordsInFeed.push(record);
 		}
 	});
+
+	// Hide recall checkbox if there are recalled records
+	if (recalledRecords.length !== 0) {
+		this.hasRecalledRecord = true;
+	}
 
 	// This functionality could be pushed into a component...
 	this.hasPublicKey = (deviceRecord.publicKey ? true : false);
