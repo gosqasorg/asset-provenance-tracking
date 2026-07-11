@@ -404,7 +404,6 @@ export async function offlineDetectAndStash (recordKey: string, formData: FormDa
     }
 }
 
-
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/notificationsubscription`, {
@@ -415,7 +414,9 @@ export async function postNotificationEmail(email:string, recordKey: string) {
 
     console.log('postNotificationEmail status:', response.status);
 
-    if (response.status != 200) {
+    if(response.status == 429) {
+        throw new Error("We are experiencing a high volume of requests. Please try again later.")
+    } else if (response.status != 200) {
         throw new Error('postNotificationEmail: Failed to send verification code')
     }
 

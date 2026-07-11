@@ -67,7 +67,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="docs-section">
-            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" />
+            <SwaggerUI spec-url="/openAPI-docs-sample.yaml" style="margin-bottom: 1.5rem;"/> 
         </div>
     
 
@@ -89,15 +89,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </li>
             </ol>
             <p>
+                Be sure to check your spam / all mail folder. 
+            </p>
+            <p>
                 Note as of July 8th: we temporarily have limited email capacity, and are actively expanding over the next two weeks. 
             </p>
         </div>
     
 
         <h1>Impact</h1>
-        <div class="row"> <p>
-            Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
-        </p> </div>
+        <div class="row"> 
+            <p>
+                Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
+            </p>
+        </div>
         <learn_more></learn_more>
 
     </div>
@@ -140,6 +145,15 @@ import Learn_more from '~/layouts/learn_more.vue';
     h1 {
         color: #CCECFD;
     }
+    h2 {
+        color: #CCECFD;
+    }
+    h3 {
+        color: #CCECFD;
+    }
+    li {
+        color: #FFFFFF;
+    }
     p {
         color: #FFFFFF;
     }
@@ -152,6 +166,15 @@ import Learn_more from '~/layouts/learn_more.vue';
     }
     h1 {
         color: #4E3681;
+    }
+    h2 {
+        color: #4E3681;
+    }
+    h3 {
+        color: #4E3681;
+    }
+    li {
+        color: #1E2019;
     }
     p {
         color: #1E2019;
