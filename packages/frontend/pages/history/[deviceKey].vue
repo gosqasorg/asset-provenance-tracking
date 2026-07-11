@@ -21,21 +21,10 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { hasParent } from '~/utils/descendantList';
+
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
-
-// Catches the error when the key is invalid / not found and prevents it from not crashing
-//i.e., not sending the invalid url
-let provenance: any[] = [];
-try {
-	provenance = await getProvenance(recordKey);
-} catch (e) {
-	provenance = [];
-}
-
-const recordHasParent = hasParent(provenance);
 </script>
 
 <template>
@@ -223,9 +212,10 @@ import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
 import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
 import { useRuntimeConfig } from '#app';
+import { hasParent } from '~/utils/descendantList';
 
 let deviceRecord: any;
-let provenance, deviceCreationRecord, provenanceNoRecord;
+let deviceCreationRecord, provenanceNoRecord;
 let recalledRecords = [];
 let recordsInFeed = [];
 const currentSection = ref();
@@ -259,7 +249,9 @@ data() {
         // for email verification
         autoToken: '' as string,
         autoCode: '' as string,
-        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+		provenance: [] as any[],
+		recordHasParent: false,
 	}
 },
 computed: {
@@ -294,9 +286,10 @@ async mounted() {
             this.$router.replace({query: {}}); // remove the token and code from the url after grabbing them- to prevent user from spam reloading.
         }
 
-        this._recordKey = route.params.deviceKey as string;
-        const response = await getProvenance(this._recordKey);
-        deviceRecord = response[response.length - 1].record;
+		this._recordKey = route.params.deviceKey as string;
+		this.provenance = await getProvenance(this._recordKey) || [];
+		this.recordHasParent = hasParent(this.provenance);
+        deviceRecord = this.provenance[this.provenance.length - 1].record;
 
         this.addScrollListener();
 
@@ -362,11 +355,11 @@ methods: {
 	});
 	},
 	async refreshFeed() {
-	    console.log("Refreshing feed...");
+	console.log("Refreshing feed...");
 	
-	const provenance = await getProvenance(this._recordKey);
+	this.provenance = await getProvenance(this._recordKey);
 
-	if (!provenance || provenance.length === 0) {
+	if (!this.provenance || this.provenance.length === 0) {
 		this.$snackbar.add({
             type: 'error',
             text: 'No provenance record found'
@@ -382,7 +375,7 @@ methods: {
 	this.recordKeyFound = true;
 
 	// Decompose the provenance records into parts to be rendered.
-	({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+	({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(this.provenance));
 
 	// Pin recalled records to the top of the feed
 	recalledRecords = [];
@@ -407,7 +400,7 @@ methods: {
 			deviceRecord.children_key.splice(index, 1);
 		}
 	}
-	this.childKeys = getChildKeys(provenance);
+	this.childKeys = getChildKeys(this.provenance);
 
 	// Add child key navigation if there are child keys
 	if ((this.childKeys?.length > 0) || this.hasPublicKey) {
