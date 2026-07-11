@@ -197,7 +197,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             emailInput: '',
             config: useRuntimeConfig(),
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
-            hasRecalledRecord: false,
+            hasRecalledRecord: true,
         }
     },
     props: {
@@ -244,15 +244,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }
     },
     async mounted() {
-        // Hide recall checkbox if a group has already been recalled
         try {
+            // Hide recall checkbox if a group has already been recalled
             let records = await getProvenance(this.recordKey);
+            this.hasRecalledRecord = false;
             for (let record of records) {
                 if (record.record.tags && (record.record.tags).includes("recall")) {
                     this.hasRecalledRecord = true;
                 }
             }
         } catch (error) {
+            // If we can't read the provenance assume the record hasn't been recalled
+            this.hasRecalledRecord = false;
             console.error(error)
         }
     },
