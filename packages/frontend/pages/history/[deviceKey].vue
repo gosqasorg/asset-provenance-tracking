@@ -391,9 +391,11 @@ methods: {
 		}
 	});
 
-	// Hide recall checkbox if there are recalled records
-	if (recalledRecords.length !== 0) {
-		this.hasRecalledRecord = true;
+	// Hide recall checkbox if there's already a recalled record
+	for (let record of this.provenance) {
+		if (record.record.tags && (record.record.tags).includes("recall")) {
+			this.hasRecalledRecord = true;
+		}
 	}
 
 	// This functionality could be pushed into a component...
