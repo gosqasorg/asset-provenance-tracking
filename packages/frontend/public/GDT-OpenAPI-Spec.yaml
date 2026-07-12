@@ -60,9 +60,6 @@ paths:
                     number_of_children:
                       type: integer
                       example: 5
-                    children_name: 
-                      type: string
-                      example: ["Child1", "Child2", "Child3", "Child4", "Child5"]
                     tags:
                       type: string array
                       example: ["tag1", "tag2"]

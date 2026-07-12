@@ -139,12 +139,7 @@ export default {
             return this.provenance.filter(item => item.record.blobType != 'deviceInitializer')
         },
         filteredProvenanceDeviceInit() {
-            if (this.parentChanged === true) {
-                return this.provenance.filter(item => item.record.blobType === 'deviceInitializer' && item.record.hasParent === true)
-            } else {
-                return this.provenance.filter(item => item.record.blobType === 'deviceInitializer' && item.record.hasParent === false)
-            }
-            
+            return this.provenance.filter(item => (item.record.blobType === 'deviceInitializer') && (item.record.hasParent === this.parentChanged))
     }},
     data() {
         return {
@@ -189,17 +184,13 @@ export default {
             
             this.recalledRecord = false;
             this.recalledRecord = (this.disabled ? true : false);
+            if (this.provenance.length !=0) {
+                console.log("INSIDE: ", this.provenance[0])}
         },
         onThumbClick(attachment) {
             this.modalImage = attachment.url;
             this.showModal = true;
         },
-        gatherDeviceInits() {
-            if (this.provenance.record.hasParent === true) {
-                this.parentChanged = true;
-            }
-                
-        }
     },
 };
 </script>

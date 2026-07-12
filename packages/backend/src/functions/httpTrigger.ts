@@ -3,7 +3,7 @@ import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { app, HttpRequest, HttpResponseInit, InvocationContext, InvocationHookContext } from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
@@ -747,35 +747,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
  }
  
-async function editRecordParentStatus(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    const constainerExists = await containerClient.exists();
-    if (!constainerExists) { return { jsonBody: [] }}
-    const provExists = await pathExists(containerClient, `prov/${deviceID}`);
-    if (!provExists) { await convertLegacyProvenance(containerClient, deviceKey)};
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}`})) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { contentType, data, filename, timestamp } = await decryptBlob(blobClient, deviceKey);
-        const isProv = blob.name.match(/^(.{4})/g)
-        const json = new TextDecoder().decode(data);
-        const parsed = JSON.parse(json);
-
-        // change to 'true' because top-level remains false after child gets added to group
-        parsed.record.hasParent = true;
-        const updatedData = JSON.stringify(parsed);
-        const buffer = Buffer.from(updatedData, 'utf8');
-        const type = isProv[0] === "prov" ? "prov" : "attach";
-
-        try {
-            await upload(containerClient, deviceKey, buffer, type, contentType, timestamp, filename )
-        } catch (error) {
-            console.log(error)
-        }
-    }
-}
-
 async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     let theUrl = `${baseUrl}${deviceKey}`;
 
@@ -1740,10 +1711,4 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
-})
-
-app.post('editRecordParentStatus',{
-    authLevel: 'anonymous',
-    route: 'editrecordparentstatus/{deviceKey}',
-    handler: editRecordParentStatus
 })
