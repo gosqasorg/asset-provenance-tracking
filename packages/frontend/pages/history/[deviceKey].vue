@@ -34,7 +34,6 @@ try {
 } catch (e) {
 	provenance = [];
 }
-console.log("provenance: ", provenance)
 const recordHasParent = hasParent(provenance);
 </script>
 
@@ -305,7 +304,6 @@ async mounted() {
 		if (hasParent(response)) {
 			hiddenHasParent.value = true
 		}
-
 
         this.addScrollListener();
 

@@ -190,7 +190,7 @@ export default {
         onThumbClick(attachment) {
             this.modalImage = attachment.url;
             this.showModal = true;
-        },
+        }
     },
 };
 </script>
