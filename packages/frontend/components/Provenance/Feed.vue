@@ -139,7 +139,7 @@ export default {
             return this.provenance.filter(item => item.record.blobType != 'deviceInitializer')
         },
         filteredProvenanceDeviceInit() {
-            return this.provenance.filter(item => (item.record.blobType === 'deviceInitializer') && (item.record.hasParent === this.parentChanged))
+            return this.provenance.filter(item => (item.record.blobType === 'deviceInitializer'))
     }},
     data() {
         return {
@@ -147,7 +147,6 @@ export default {
             modalImage: "",
             recalledRecord: false,
             showModal: false,
-            parentChanged: false
         };
     },
     mounted() {
@@ -184,8 +183,6 @@ export default {
             
             this.recalledRecord = false;
             this.recalledRecord = (this.disabled ? true : false);
-            if (this.provenance.length !=0) {
-                console.log("INSIDE: ", this.provenance[0])}
         },
         onThumbClick(attachment) {
             this.modalImage = attachment.url;
