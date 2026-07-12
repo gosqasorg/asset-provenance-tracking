@@ -236,7 +236,7 @@ paths:
       tags:
         - GDT API
       summary: Gets the device provenance history
-      description: Retrieves the decrypted provenance history for a device, sorted by newest to oldest.
+      description: Retrieves the decrypted provenance history of a device, sorted from newest to oldest.
       operationId: getProvenance
       parameters:
         - name: deviceKey
@@ -258,12 +258,61 @@ paths:
               examples:
                 RecordsFound:
                   summary: Provenance record found
-                  description: Provenance record for the device, sorted by the newest first.
+                  description: Provenance records for the device, sorted from newest to oldest.
                   value:
-                    - record: { description: "example record", children_key: "" }
+                    record: { blobType: "deviceRecord", description: "example record", tags: [], children_key: "" }
+                    attachments: []
                 NoRecords:
                   summary: No record / container missing
-                  description: Returned when the storage container does not exist yet.
+                  description: Returned when the key is valid but the storage container does not exist yet.
+                  value: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Invalid json stored in provenance"
+        '500':
+          description: Internal Server Error
+
+  /getProvenance/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Gets the device provenance history
+      description: Retrieves the decrypted provenance history for a device, sorted from newest to oldest. Same functionality as /provenance/{deviceKey}.
+      operationId: getProvenanceAlt
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a record whose provenance history is to be retrieved.
+          schema:
+            type: string
+            example: "2VaTmj6JWuQEt41NRZZi7N"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              examples:
+                RecordsFound:
+                  summary: Provenance record found
+                  description: Provenance records for the device, sorted from newest to oldest.
+                  value:
+                    record: { blobType: "deviceRecord", description: "example record", tags: [], children_key: "" }
+                    attachments: []
+                NoRecords:
+                  summary: No record / container missing
+                  description: Returned when the key is valid but the storage container does not exist yet.
                   value: []
         '400':
           description: Bad Request

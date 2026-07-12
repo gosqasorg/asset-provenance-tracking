@@ -485,7 +485,6 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // TODO: need to create below env variables for this code to work, in testing it runs
     const directory_id = process.env['AZURE_TENANT_ID'];
     const app_registration_id = process.env['AZURE_CLIENT_ID'];
     const secret_value = process.env['AZURE_CLIENT_SECRET'];
@@ -1649,7 +1648,7 @@ export async function addEntryHandler(request:HttpRequest, context: InvocationCo
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const requestClone = request.clone();
     const formData = await requestClone.formData();
-    const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
+    const tagsExist = JSON.parse(formData.get("provenanceRecord") as string).tags
 
     const postProvResponse = await postProvenance(request, context)
     if (tagsExist && tagsExist.includes("annotate")) {
@@ -1689,6 +1688,12 @@ app.post('deleteNotificationEmail', {
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
+    handler: getProvenance,
+})
+
+app.get("getProvenanceAlt", {
+    authLevel: 'anonymous',
+    route: 'getProvenance/{deviceKey}',
     handler: getProvenance,
 })
 
