@@ -992,11 +992,11 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
-const TagSignupOrderSchema = z.object({
-    deviceKey: z.string(),
-    tags: z.array(z.string()).optional(),
-    email: z.string().optional()
-});
+// const TagSignupOrderSchema = z.object({
+//     deviceKey: z.string(),
+//     tags: z.array(z.string()).optional(),
+//     email: z.string()
+// });
 
 // dual purpose schema dependent on existence of email prop, or two schemas with the only difference being a mandatory email prop?
 // confusing state may lead to errors
@@ -1008,6 +1008,29 @@ const TagSignupOrderSchema = z.object({
 // });
 
 export async function tagNotificationHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const TaggedRecordEntryOrderSchema = z.object({
+        deviceKey: z.string(),
+        tags: z.array(z.string()).optional(),
+        email: z.string().optional()
+    });
+
+    try {
+        const formData = await request.formData();
+        // may need to rework this code block
+        // possibly include the exact record id/key in order to pull tags manually
+        const recordStr = formData.get("provenanceRecord");
+        if (typeof recordStr !== "string") {
+            throw new SyntaxError("Missing provenanceRecord in form data");
+        }
+
+        let theRequest = JSON.parse(recordStr);
+        TaggedRecordEntryOrderSchema.parse(theRequest);
+        let deviceKey = theRequest['deviceKey'];
+        let tags = theRequest['tags'];
+        let email = theRequest['email'];
+
+
+    } catch(error) {}
     // signup
 
     // add new record entry
