@@ -97,7 +97,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${theKey.length}`);
+            return new Uint8Array;
     }
 }
 
@@ -368,31 +368,38 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 /* ----- API Endpoints Section 1/2: Functions ----- */
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    try {
+        const deviceKey = decodeKey(request.params.deviceKey);
+        if (deviceKey.length == 0) {
+            return { jsonBody: { error: "404: Invalid Key Length" } }
+        }
+        const deviceID = await calculateDeviceID(deviceKey);
+        context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+        const containerExists = await containerClient.exists();
+        if (!containerExists) { return { jsonBody: [] }; }
 
-    const provExists = await pathExists(containerClient, `prov/${deviceID}`);
-    if (!provExists) {
-        await convertLegacyProvenance(containerClient, deviceKey);
+        const provExists = await pathExists(containerClient, `prov/${deviceID}`);
+        if (!provExists) {
+            await convertLegacyProvenance(containerClient, deviceKey);
+        }
+
+        const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+        for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+            const blobClient = containerClient.getBlockBlobClient(blob.name);
+            const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            // if (!(await validateJSON(json))) { return { status: 400 }; }
+            // validateJSON is broken
+            const parsed_json = JSON.parse(json);
+            const provRecord = parsed_json as ProvenanceRecord;
+            records.push({ ...provRecord, deviceID, timestamp });
+        }
+        records.sort((a, b) => b.timestamp - a.timestamp)
+        return { jsonBody: records };
+    } catch (error) {
+        throw error;
     }
-
-    const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
-        const json = new TextDecoder().decode(data);
-        // if (!(await validateJSON(json))) { return { status: 400 }; }
-        // validateJSON is broken
-        const parsed_json = JSON.parse(json);
-        const provRecord = parsed_json as ProvenanceRecord;
-        records.push({ ...provRecord, deviceID, timestamp });
-    }
-    records.sort((a, b) => b.timestamp - a.timestamp)
-    return { jsonBody: records };
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -1649,7 +1656,7 @@ export async function addEntryHandler(request:HttpRequest, context: InvocationCo
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const requestClone = request.clone();
     const formData = await requestClone.formData();
-    const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
+    const tagsExist = JSON.parse(formData.get("provenanceRecord") as string).tags
 
     const postProvResponse = await postProvenance(request, context)
     if (tagsExist && tagsExist.includes("annotate")) {
