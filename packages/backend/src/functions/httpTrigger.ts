@@ -992,6 +992,31 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
+const TagSignupOrderSchema = z.object({
+    deviceKey: z.string(),
+    tags: z.array(z.string()).optional(),
+    email: z.string().optional()
+});
+
+// dual purpose schema dependent on existence of email prop, or two schemas with the only difference being a mandatory email prop?
+// confusing state may lead to errors
+
+// const TaggedRecordEntryOrderSchema = z.object({
+//     deviceKey: z.string(),
+//     tags: z.array(z.string()).optional(),
+//     email: z.string().optional()
+// });
+
+export async function tagNotificationHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // signup
+
+    // add new record entry
+
+    // or just separate into two fxns?
+    return null
+}
+
+
 
 export async function getPendingVerification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -1786,4 +1811,10 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
+})
+
+app.post('tagNotification', {
+    authLevel: 'anonymous',
+    route: 'tagNotification/{deviceKey}',
+    handler: tagNotificationHandler
 })
