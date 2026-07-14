@@ -953,7 +953,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nExpires in 10 minutes. \nIf you didn't request this, ignore this email.`,
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
                 "GOSQAS Notification",
                 context
             )
