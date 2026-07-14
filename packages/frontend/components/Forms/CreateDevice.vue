@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
-
+ 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
@@ -36,23 +36,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
-            <!-- Subscribe to notifications -->
-            <!-- <div class="my-3">
-                <h4>
-                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
-                        Receive email notifications for this record
-                </h4>
+            <!-- Subscribe to tag notifications -->
+            <div v-if="onDev">
+                <div class="my-3">
+                    <h4>
+                        <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                    </h4>
 
-                <div v-if="notify">
-                    <input
-                        type="email"
-                        class="form-control"
-                        v-model="emailInput"
-                        required placeholder="Email"
-                        @keyup.enter=""
-                />
+                    <div v-if="notifyTags">
+                        <input
+                            type="email"
+                            class="form-control"
+                            v-model="tagsEmailInput"
+                            required placeholder="Email"
+                            @keyup.enter=""
+                    />
+                    </div>
+
+                    <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                        tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+
+                    <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
                 </div>
-            </div> -->
+            </div>
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
@@ -117,28 +123,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey, validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
+import { useRuntimeConfig } from '#app';
 
 //TODO: add const for max limit of notification subscriptions
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
-            isReportingKey: false, // states whether this device is a reporting key
+            // TODO: replace isReportingKey with isPublicKey
+            isPublicKey: false, // states whether this device is a reporting key
             recordHasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
             deviceKey: ''
+            notify: false,      // email notification checkbox
+            notifyTags: false,  // email tag notification checkbox
+            emailInput: '',
+            tagsEmailInput: '', // email for specified tag signup
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     mounted() {
@@ -149,7 +164,7 @@ export default {
 
         // Only fill in stashed information if we redirected from the offline edits page
         if (isGroup === "false" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.isReportingKey = stashedRecord.isReportingKey
+            this.isPublicKey = stashedRecord.isReportingKey
             this.recordHasParent = stashedRecord.hasParent
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
             this.name = stashedRecord.deviceName
@@ -185,6 +200,9 @@ export default {
     methods: {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -236,7 +254,7 @@ export default {
                     tags: this.tags,
                     children_key: '',
                     hasParent: this.recordHasParent,
-                    isReportingKey: this.isReportingKey,
+                    isPublicKey: this.isPublicKey,
                 }, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {
@@ -271,13 +289,21 @@ export default {
                 }
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
-                if (!(await onlineTestFetch())) {
+                if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
                     await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
+                }
+
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
                 }
 
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Failed to create record: ${error}`
+                    text: `Failed to create record: ${errorMessage}`
                 });
 
                 // Otherwise just return to the /gdt page
@@ -343,12 +369,17 @@ export default {
 
     }
 
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #record-button {
@@ -379,7 +410,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #record-button {

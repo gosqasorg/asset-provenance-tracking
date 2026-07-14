@@ -110,7 +110,7 @@ their items while offline.
 </template>
 
 <script lang="ts">
-import { postProvenance, displayOfflineBanner, displayOnlineBanner, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
+import { postProvenance, displayOfflineBanner, displayOnlineBanner, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import jsQR from 'jsqr';
@@ -136,7 +136,7 @@ data() {
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
 			return true;
 		} else {
 			return false;

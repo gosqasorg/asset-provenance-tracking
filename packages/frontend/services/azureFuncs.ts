@@ -16,13 +16,19 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development
-export var offlineModeFeatureFlag = false;
+export var offlineModeFeatureFlag = { flag: false };
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
 
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
+
+// Global url for onlineTestFetch
+export var testOnlineTestUrl = { url: useRuntimeConfig().public.frontendUrl };
+
+// Global base url for emptyStash
+export var emptyStashBaseUrl = { url: useRuntimeConfig().public.baseUrl };
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -91,9 +97,9 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         // offline mode feature flag toggle
-        if (offlineModeFeatureFlag) {
+        if (offlineModeFeatureFlag.flag) {
             // Checks to see if user is offline, stashes record if offline
-            const checkOffline = await offlineDetectAndStash(fullUrl, formData);
+            const checkOffline = await offlineDetectAndStash(deviceKey, formData);
             if (checkOffline === 202) {
                 throw new Error('Status 202: User is offline but the record has been stashed')
             } else if (checkOffline === 507) {
@@ -204,9 +210,11 @@ async function fetchUrl(url: string, formData?: FormData) {
         }
     }
 
-    if (response !== undefined && response.status !== 200) {
+    if (response !== undefined && response.status !== 200 && response.status !== 429) {
         console.log(`Failed to post provenance: ${response.status} ${response.statusText}`)
         throw new Error(response.status + " " + response.statusText)
+    } else if(response && response.status == 429) {
+        throw new Error("We are experiencing a high volume of requests. Please try again later.")
     } else {
         throw new Error(`Could not connect to the server, check your internet connection and try again`);
     }
@@ -218,7 +226,7 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
     // This is added to make testing easier, if no parameter given -> defaults to pinging our frontend.
     // Given parameter can be bogus url to mock offlineness
     if (url === undefined) {
-        url = useRuntimeConfig().public.frontendUrl;
+        url = testOnlineTestUrl.url;
     }
 
     try {
@@ -226,14 +234,14 @@ export async function onlineTestFetch(url?: string): Promise<boolean> {
         if (response.status !== 200) {
             result = false;
 
-            displayOfflineBanner = true;
+            if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
         } 
 
 
     } catch (error) {
         console.log("Fetch attempt failed: " + error);
         result = false;
-        displayOfflineBanner = true;
+        if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
     }
 
     return result
@@ -249,11 +257,11 @@ export async function connectivityChecker() {
     return;
 }
 
-export async function stashRequest(formUrl: string, formData: FormData) {
+export async function stashRequest(recordKey: string, formData: FormData) {
     try {
         // Convert values to string and store them
         let valuesToStore = [];
-        valuesToStore.push(['formUrl', formUrl]);
+        valuesToStore.push(['recordKey', recordKey]);
         valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
 
         // Get stash_counter and add 1 to it
@@ -264,7 +272,7 @@ export async function stashRequest(formUrl: string, formData: FormData) {
         let stash_counter = parseInt(current_request) + 1;
         localStorage.setItem('stash_counter', stash_counter.toString());
 
-        // Store the request at a unique key (gosqas_offline_stash_#)
+        // Store the request at a unique key (gosqas-offline-stash-#)
         let request_name = 'gosqas-offline-stash-' + stash_counter;
         localStorage.setItem(request_name, JSON.stringify(valuesToStore));
     } catch (error: any) {
@@ -370,11 +378,12 @@ export async function emptyStash() {
     for (stash_counter; stash_counter > 0; stash_counter--) {
         // Get the last request stored
         let request_name = 'gosqas-offline-stash-' + stash_counter;
-        let request = localStorage.getItem(request_name) || '{}';
+        let request = JSON.parse(localStorage.getItem(request_name) || '{}');
         let fullUrl;
         let record;
         let currentKey;
 
+        // TODO: below checks do about the same thing, modify to only keep one (if statement from main)
         // If the request can't be parsed then remove it, needs to be parsed to add to failed stash
         try {
             request = JSON.parse(request);
@@ -386,6 +395,21 @@ export async function emptyStash() {
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString())
             continue
+        }
+        if (JSON.stringify(request) === '{}') { 
+            localStorage.removeItem(request_name)
+            localStorage.setItem('stash_counter', (stash_counter - 1).toString())
+            continue
+        }
+
+        let baseUrl = emptyStashBaseUrl.url;
+        let currentKey = request[0][1];
+        let record = request[1][1];
+
+        // If the environment is local add /provenance/ to the url
+        let fullUrl = `${baseUrl}${currentKey}`;
+        if (baseUrl.includes('localhost')) {
+            fullUrl = `${baseUrl}/provenance/${currentKey}`;
         }
 
         try {
@@ -453,13 +477,13 @@ export async function periodicChecker() {
     localStorage.setItem('gdt-awaiting-conectivity', "false");
 }
 
-export async function offlineDetectAndStash (formUrl: string, formData: FormData) {
+export async function offlineDetectAndStash (recordKey: string, formData: FormData) {
     try {
         // Check if the user is online or offline. Stash the request if the user is offline
         if ((await(onlineTestFetch()))) {
             return 200;
         } else {
-            await stashRequest(formUrl, formData);
+            await stashRequest(recordKey, formData);
             // Intentionally left unawaited
             periodicChecker();
             return 202;
@@ -475,7 +499,6 @@ export async function offlineDetectAndStash (formUrl: string, formData: FormData
     }
 }
 
-
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/notificationsubscription`, {
@@ -486,7 +509,9 @@ export async function postNotificationEmail(email:string, recordKey: string) {
 
     console.log('postNotificationEmail status:', response.status);
 
-    if (response.status != 200) {
+    if(response.status == 429) {
+        throw new Error("We are experiencing a high volume of requests. Please try again later.")
+    } else if (response.status != 200) {
         throw new Error('postNotificationEmail: Failed to send verification code')
     }
 

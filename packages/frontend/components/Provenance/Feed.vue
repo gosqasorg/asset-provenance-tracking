@@ -56,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div v-for="(report, index) in filteredProvenanceDeviceInit" class="device-creation-box">
 
             <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3 id="createdDevicePoint" style="word-break: break-word;">Created Record: {{ report.record.deviceName }}</h3>
+                <h3 id="createdDevicePoint" style="white-space:pre-wrap;">Created Record: {{ report.record.deviceName }}</h3>
             </template>
 
             <div v-if="recalledRecord">
@@ -70,7 +70,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <div class="text"
                 style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
-                <span v-html="clickableLink(report.record?.description)" style="word-break: break-word;"></span>
+                <span v-html="clickableLink(report.record?.description)" style="white-space: pre-wrap;"></span>
             </div>
 
             <div class="mb-1 tag-container">
@@ -202,7 +202,7 @@ export default {
     margin-bottom: 14px;
     margin-top: 14px;
     border-radius: 20px;
-    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 .device-creation-box {
     display:block;

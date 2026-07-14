@@ -17,15 +17,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
   <div>
-    <ul class="ulTagsList"><input ref="inputField" type="text" class="tagInp form-control" placeholder="Record Tag" @input="updateTags" :value="editableValue" /></ul>
+    <ul :id="tagListID" class="ulTagsList"><input ref="inputField" type="text" :id="inputID" class="form-control" :placeholder="placeholder" @input="updateTagsWithInput" :value="editableValue" /></ul>
 
     <!-- UI Toolkit (for x icon on tags) -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
 
-    <h5 class="mt-3 mb-1">Suggested Tags</h5>
-    <div class="tag-container mb-2">
-      <button class="tag" type="button" v-for="tag in TagName" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'" 
-      @click="moveTagToForm(tag)">{{ tag }}</button>
+    <div v-if="showSuggested">
+      <h5 class="mt-3 mb-1">Suggested Tags</h5>
+      <div class="tag-container mb-2">
+        <button class="tag" type="button" v-for="tag in TagName" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'" 
+        @click="moveTagToForm(tag)">{{ tag }}</button>
+      </div>
     </div>
   </div>
 </template>
@@ -34,68 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
 import { TagName } from "~/utils/tags";
 import { EventBus } from '~/utils/event-bus';
-
-let storedTags = [];  // only tags in bubbles
-let createdTags = [];  // all tags in input field
-
-function removeTag(inputField, tag) {
-  // Remove tag from screen and storedList
-  if (storedTags.includes(tag)) {
-    storedTags.forEach((item, index) => {
-      if (item == tag) {
-          storedTags.splice(index, 1);
-          createdTags.splice(index, 1);
-      }
-    });
-  }
-
-  // Reload visible tags
-  createTag();
-
-  // Updates tags in other files
-  const event = new Event('input');
-  inputField.dispatchEvent(event);
-}
-
-function createTag() {
-  let ul = document.getElementsByClassName("ulTagsList");
-  let input = document.getElementsByClassName("tagInp");
-
-  ul = Object.entries(ul);
-  input = Object.entries(input);
-
-  // Add tags to all tag input fields
-  ul.forEach(ul =>{
-    ul = ul[1];
-    input.forEach(input =>{
-      input = input[1];
-      ul.querySelectorAll("li").forEach(li => li.remove());
-      
-      storedTags.slice().reverse().forEach(tag =>{
-        // Create new tag
-        let liTag = document.createElement('li');
-        liTag.style.color = textColorForTag(tag);
-        liTag.style.backgroundColor = getColorForTag(tag);
-        liTag.innerHTML = `${tag} <i class="uit uit-multiply"></i>`;
-        
-        // Create event listener for click
-        liTag.addEventListener('click', function() {
-          removeTag(input, tag);
-        });
-
-        if (ul) {
-          ul.insertAdjacentElement("afterbegin", liTag);
-        }
-      });
-
-      if (storedTags.length == 0) {
-        input.placeholder = "Record Tag";
-      } else {
-        input.placeholder = "";
-      }
-    });
-  });
-}
+import { redrawTags } from "~/utils/tagFuncs";
 
 export default {
   name: 'TagInput',
@@ -111,12 +52,29 @@ export default {
     isGroup: {
       type: Boolean,
       default: false
+    tagListID: {
+      type: String,
+      default: 'tagsList',
+    },
+    inputID: {
+      type: String,
+      default: 'tagInp',
+    },
+    showSuggested: {
+      type: Boolean,
+      default: true
+    },
+    placeholder: {
+      type: String,
+      default: "Record Tag"
     }
   },
   emits: ['updateTags'],
   data() {
     return {
       tags: this.modelValue,
+      storedTags: [],  // only tags in bubbles
+      createdTags: [],  // all tags in input field
     };
   },
   computed: {
@@ -129,13 +87,13 @@ export default {
         const uniqueValues = [...new Set($value)];
         const transformedValues = uniqueValues.map(tag => tag.toLowerCase().trim());
         this.tags = transformedValues;
-        const cleanArray = this.cleanArray(this.tags); // Calling forbidden tags method.
+        const cleanedArray = this.cleanArray(this.tags); // Calling forbidden tags method.
 
-        createdTags = [];
-        storedTags.forEach(tag => createdTags.push(tag));
-        cleanArray.forEach(tag => createdTags.push(tag));
+        this.createdTags = [];
+        this.storedTags.forEach(tag => this.createdTags.push(tag));
+        cleanedArray.forEach(tag => this.createdTags.push(tag));
 
-        this.$emit ('updateTags', createdTags);
+        this.$emit ('updateTags', this.createdTags);
       },
     }
   },
@@ -143,8 +101,8 @@ export default {
     try {
       // reset tags when the page is refreshed
       EventBus.on('feedRefresh2', this.refreshFeed);
-      createdTags = [];
-      storedTags = [];
+      this.createdTags = [];
+      this.storedTags = [];
 
       // If we have tags from a redirect update our form to display/store them
       let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
@@ -159,8 +117,8 @@ export default {
             this.editableValue = '';
 
             if (tag == cleanTag[0]) {
-              storedTags.push(tag);
-              createdTags.push(tag);
+              this.storedTags.push(tag);
+              this.createdTags.push(tag);
               createTag();
             }
           })
@@ -170,7 +128,7 @@ export default {
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;
-        this.hasReportingKey = false;
+        this.hasPublicKey = false;
         console.log(error)
     }
   },
@@ -178,45 +136,61 @@ export default {
       EventBus.off('feedRefresh2', this.refreshFeed);
   },
   methods: {
-    cleanArray(arr) { // checking to see if correct
-        const forbiddenWords = getDecipheredForbiddenTags();
-        const cleanedArray = arr.filter (tagName => !forbiddenWords.includes (tagName.toLowerCase ()));
-        return cleanedArray;
+    cleanArray(array) {
+      // Remove any tags with forbidden words in them
+      const forbiddenWords = getDecipheredForbiddenTags();
+      const cleanedArray = array.filter(tagName => !forbiddenWords.includes(tagName.toLowerCase()));
+      return cleanedArray;
     },
     moveTagToForm(tag) {
-      // Store the value that was clicked
-      if (!storedTags.includes(tag)) {
-        storedTags.push(tag);
-        createdTags.splice(createdTags.length - 1, 0, tag);
+      // Store the Suggested Tag that was clicked
+      if (!this.storedTags.includes(tag)) {
+        this.storedTags.push(tag);
+        this.createdTags.splice(this.createdTags.length - 1, 0, tag);
       }
 
-      this.$emit ('updateTags', createdTags);  // update tags in other files
+      this.updatePlaceholder();  // hide placeholder if tags are stored
+      this.$emit ('updateTags', this.createdTags);  // update tags in other files
       
-      createTag();
+      redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
     },
-    updateTags(event) {
-      let tag = event.target.value;
-
-      // Get the last char of a str, if it's a space then remove space and add to list
-      if (storedTags.includes(tag.substring(0, tag.length - 1)) || tag == ' ') {
-        event.target.value = "";
-      } else if (tag[tag.length - 1] == ' ') {
-        // Check to make sure the word is clean before creating tag
-        tag = tag.substring(0, tag.length - 1);
+    updateTags(tagInput) {
+      // Get the last char of tag input, if it's a space then remove the space and add the tag to the list
+      if (this.storedTags.includes(tagInput.substring(0, tagInput.length - 1)) || tagInput == ' ') {
+        this.editableValue = "";
+      } else if (tagInput[tagInput.length - 1] == ' ') {
+        // Check to make sure the word is clean before creating the tag
+        let tag = tagInput.substring(0, tagInput.length - 1);
         let cleanTag = this.cleanArray([tag]);
-        this.editableValue = '';
 
         if (tag == cleanTag[0]) {
-          storedTags.push(tag);
-          createdTags.push(tag);
-          event.target.value = "";
-          createTag();
-        } else {
-          event.target.value = "";
+          this.storedTags.push(tag);
+          this.createdTags.push(tag);
+          redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
         }
+
+        // Remove the text from the input field
+        this.editableValue = "";
       }
-      // Call set (which updates tags in other files)
-      this.editableValue = event.target.value;
+    },
+    updatePlaceholder() {
+      // Only show the placeholder text if no tags are stored
+      let input = document.getElementById(this.inputID);
+      if (this.storedTags.length == 0 && input) {
+        input.placeholder = this.placeholder;
+      } else if (input) {
+        input.placeholder = "";
+      }
+    },
+    updateTagsWithInput() {
+      // Get our most recent changes to the tags input field
+      this.editableValue = document.getElementById(this.inputID).value;
+
+      // Update the stored tags (the colorful ones) in our input section
+      this.updateTags(this.editableValue);
+
+      // Hide the placeholder if any tags are stored
+      this.updatePlaceholder();
     },
   },
 };
