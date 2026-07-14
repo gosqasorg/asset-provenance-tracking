@@ -1008,34 +1008,57 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 // });
 
 export async function tagNotificationHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const TaggedRecordEntryOrderSchema = z.object({
+    const TagEmailNotificationOrderSchema = z.object({
         deviceKey: z.string(),
         tags: z.array(z.string()).optional(),
         email: z.string().optional()
     });
+    // sanitize input?
 
+    // validation
     try {
         const formData = await request.formData();
         // may need to rework this code block
         // possibly include the exact record id/key in order to pull tags manually
         const recordStr = formData.get("provenanceRecord");
+        // change formData key, or use a different HTTP response body
+        // should we use one HTTP message that is broken apart and sent where needed or multiple messages that are sent separately?
         if (typeof recordStr !== "string") {
             throw new SyntaxError("Missing provenanceRecord in form data");
         }
 
         let theRequest = JSON.parse(recordStr);
-        TaggedRecordEntryOrderSchema.parse(theRequest);
+        TagEmailNotificationOrderSchema.parse(theRequest);
         let deviceKey = theRequest['deviceKey'];
         let tags = theRequest['tags'];
         let email = theRequest['email'];
 
+        // or just separate into two fxns?
 
+        let data
+        if (email) {
+            // signup
+            data = {
+                tags: tags,
+                email: email
+            }
+
+            const formData = new FormData();
+			formData.append(`${deviceKey}`, JSON.stringify(data));
+
+            // send off to be added to key: {tag: email} data structure
+        } else {
+            // add new record entry
+            data = {
+                tags: tags
+            }
+            const formData = new FormData();
+			formData.append(`${deviceKey}`, JSON.stringify(data));
+
+            // send off to notify emails subscribed to specified tags 
+        }
     } catch(error) {}
-    // signup
-
-    // add new record entry
-
-    // or just separate into two fxns?
+    
     return null
 }
 
