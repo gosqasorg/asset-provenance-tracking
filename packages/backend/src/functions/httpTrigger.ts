@@ -368,43 +368,42 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 /* ----- API Endpoints Section 1/2: Functions ----- */
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try {
-        const deviceKey = decodeKey(request.params.deviceKey);
-        if (deviceKey.length == 0) {
-            return { jsonBody: { error: "404: Invalid Key Length" } }
-        }
-        const deviceID = await calculateDeviceID(deviceKey);
-        context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
-        const containerExists = await containerClient.exists();
-        if (!containerExists) { return { jsonBody: [] }; }
-
-        const provExists = await pathExists(containerClient, `prov/${deviceID}`);
-        if (!provExists) {
-            await convertLegacyProvenance(containerClient, deviceKey);
-        }
-
-        const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-        for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-            const blobClient = containerClient.getBlockBlobClient(blob.name);
-            const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
-            const json = new TextDecoder().decode(data);
-            // if (!(await validateJSON(json))) { return { status: 400 }; }
-            // validateJSON is broken
-            const parsed_json = JSON.parse(json);
-            const provRecord = parsed_json as ProvenanceRecord;
-            records.push({ ...provRecord, deviceID, timestamp });
-        }
-        records.sort((a, b) => b.timestamp - a.timestamp)
-        return { jsonBody: records };
-    } catch (error) {
-        throw error;
+    const deviceKey = decodeKey(request.params.deviceKey);
+    if (deviceKey.length == 0) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
     }
+    const deviceID = await calculateDeviceID(deviceKey);
+    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+
+    const containerExists = await containerClient.exists();
+    if (!containerExists) { return { jsonBody: [] }; }
+
+    const provExists = await pathExists(containerClient, `prov/${deviceID}`);
+    if (!provExists) {
+        await convertLegacyProvenance(containerClient, deviceKey);
+    }
+
+    const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
+        const json = new TextDecoder().decode(data);
+        // if (!(await validateJSON(json))) { return { status: 400 }; }
+        // validateJSON is broken
+        const parsed_json = JSON.parse(json);
+        const provRecord = parsed_json as ProvenanceRecord;
+        records.push({ ...provRecord, deviceID, timestamp });
+    }
+    records.sort((a, b) => b.timestamp - a.timestamp)
+    return { jsonBody: records };
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const deviceKey = decodeKey(request.params.deviceKey);
+    if (deviceKey.length == 0) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
  
