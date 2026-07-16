@@ -254,6 +254,7 @@ methods: {
             await postProvenance(this.recordKey, record, this.pictures || []);
 
             // If the record came from a redirect then move it to the fulfilled stash
+            // Note: If we're offline postProvenance will throw an error, and this code will not be reached
             let key = sessionStorage.getItem("gdt-redirect-key") || '';
 
             if (JSON.stringify(stashedRecord) !== '{}' && this.recordKey == key) {

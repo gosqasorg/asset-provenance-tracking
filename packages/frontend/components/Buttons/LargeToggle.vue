@@ -29,15 +29,7 @@
     mounted() {
       // If we're redirecting from offline-edits and the record is a group, go to the group tab on load
       let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
-      const previousUrl = window.history.state.back;
-      
-      if (isGroup && previousUrl === "/offline-edits") {
-        if (isGroup === "true") {
-          this.rightLabelStart = true;
-        } else {
-            this.rightLabelStart = false;
-        }
-      }
+      this.rightLabelStart = isGroup === "true";
 
       const checkbox = document.getElementById("toggle") as HTMLInputElement
       if (checkbox) {

@@ -225,32 +225,18 @@ methods: {
                 }
             }
 
-            // Try to post the record/group and display an error if it fails
-            if (stashedRecord.children_name) {
-                // Post a group
-                await postProvenance(key, {
-                    blobType: 'deviceInitializer',
-                    deviceName: stashedRecord.deviceName,
-                    description: stashedRecord.description,
-                    tags: stashedRecord.tags,
-                    publicKey: stashedRecord.publicKey,
-                    children_name: stashedRecord.childrenName,
-                    children_key: stashedRecord.children_key,
-                    hasParent: stashedRecord.hasParent,
-                    isPublicKey: stashedRecord.isPublicKey,
-                }, []);
-            } else {
-                // Post a record
-                await postProvenance(key, {
-                    blobType: 'deviceInitializer',
-                    deviceName: stashedRecord.deviceName,
-                    description: stashedRecord.description,
-                    tags: stashedRecord.tags,
-                    children_key: stashedRecord.children_key,
-                    hasParent: stashedRecord.hasParent,
-                    isPublicKey: stashedRecord.isPublicKey,
-                }, []);
+            // Display a custom error message if stashedRecord is undefined
+            if (!stashedRecord) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Record was not found in the stash`
+                });
+
+                return;
             }
+
+            // Try to post the record/group and display an error if it fails
+            await postProvenance(key, stashedRecord, []);
 
             // If the request creates successfully move the key to the fulfilled stash
             stashOfflineRequest(key, "gdt-stash-fulfilled");

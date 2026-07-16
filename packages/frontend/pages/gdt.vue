@@ -89,12 +89,7 @@ export default {
     async mounted() {
         // If we're redirecting from offline-edits and the record is a group, go to the group form on load
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
-
-        if (isGroup === "true") {      
-            this.toggled = false;
-        } else {
-            this.toggled = true;
-        }
+        this.toggled = !(isGroup === "true");
 
         // switch to loading screen when a form is submitted
         EventBus.on('isLoading', () => {

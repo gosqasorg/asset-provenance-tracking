@@ -331,10 +331,22 @@ export default {
                             text: 'Successfully created child key'
                         })
                     } catch (error) {
+                        let errorMessage: string = error instanceof Error
+                            ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                            : error as string  // otherwise just show the whole error
+
+                        // If the record was stashed display a success message instead
+                        let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                        if (errorMessage.includes("202")) {
+                            snackbarType = "success";
+                        } else {
+                            errorMessage = `Error creating child key: ${errorMessage}`;
+                        }
+
                         this.$snackbar.add({
-                            type: 'error',
-                            text: `Error creating child key: ${error}`
-                        })
+                            type: snackbarType,
+                            text: errorMessage
+                        });
                     };                
                 }
             };
@@ -364,10 +376,22 @@ export default {
                         text: 'Successfully created public key'
                     })
                 } catch (error) {
+                    let errorMessage: string = error instanceof Error
+                        ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                        : error as string  // otherwise just show the whole error
+
+                    // If the record was stashed display a success message instead
+                    let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                    if (errorMessage.includes("202")) {
+                        snackbarType = "success";
+                    } else {
+                        errorMessage = `Error creating public key: ${errorMessage}`;
+                    }
+
                     this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating public key: ${error}`
-                    })
+                        type: snackbarType,
+                        text: errorMessage
+                    });
                 };
             }
 
@@ -449,20 +473,24 @@ export default {
                     await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
                 }
 
-                // Remove the leading "Error:" text
-                let errorMessage;
-                if (error instanceof Error) {
-                    errorMessage = error.message;
+                let errorMessage: string = error instanceof Error
+                    ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                    : error as string  // otherwise just show the whole error
+
+                // If the record was stashed display a success message instead
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                if (errorMessage.includes("202")) {
+                    snackbarType = "success";
                 } else {
-                    errorMessage = error;
+                    errorMessage = `Error creating the group: ${errorMessage}`;
                 }
 
                 this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating the group: ${errorMessage}`
-                })
+                    type: snackbarType,
+                    text: errorMessage
+                });
 
-                // Otherwise just return to the /gdt page
+                // If we're online return to the /gdt page
                 EventBus.emit('isLoading')
             }
 
