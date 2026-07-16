@@ -1007,6 +1007,8 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 //     email: z.string().optional()
 // });
 
+// probably shouldn't be a concurrent fxn with new record addition. may lead to cases of email being sent but record not being added.
+// more evidence against one fxn handling both signup and add new record entry
 export async function tagNotificationHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const TagEmailNotificationOrderSchema = z.object({
         deviceKey: z.string(),
@@ -1035,7 +1037,7 @@ export async function tagNotificationHandler(request:HttpRequest, context: Invoc
 
         // or just separate into two fxns?
 
-        let data
+        let data: object
         if (email) {
             // signup
             data = {
@@ -1046,7 +1048,15 @@ export async function tagNotificationHandler(request:HttpRequest, context: Invoc
             const formData = new FormData();
 			formData.append(`${deviceKey}`, JSON.stringify(data));
 
+            // !!! SIGNUP WITH NO TAGS & NO ENTRY, NO TAGS & ENTRY, TAGS & ENTRY ALL POSSIBLE. TAGS & NO ENTRY NOT POSSIBLE !!! MUST SPLIT CASES
+            // or two/three separate if statements lol
+
             // send off to be added to key: {tag: email} data structure
+
+            // below block probably won't be executed here
+            // may be better to use a Set rather than list/array for emails
+            // if deviceKey exists && tag exists && email not a value to corresponding tag key, insert email
+            // else create and insert missing parts
         } else {
             // add new record entry
             data = {
@@ -1055,7 +1065,15 @@ export async function tagNotificationHandler(request:HttpRequest, context: Invoc
             const formData = new FormData();
 			formData.append(`${deviceKey}`, JSON.stringify(data));
 
-            // send off to notify emails subscribed to specified tags 
+            // send off to notify emails subscribed to specified tags
+
+            // retrieve email addresses associate with deviceKey and tags
+            // send emails
+            // loop a few times for each email on failure to increase success chance
+            // if enough failures, throw error/HTTP status
+            // log and store which emails and tags failed and still need to be notified?
+
+            // return success message/HTTP status
         }
     } catch(error) {}
     
