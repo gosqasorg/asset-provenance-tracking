@@ -317,7 +317,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
-            // Won't emit if recall all children is selected
+            // Won't emit if recall all children checkbox is selected
             if (!this.recallAll) {
                 EventBus.emit('isCreating');
             }
