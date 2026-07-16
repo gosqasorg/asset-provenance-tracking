@@ -233,11 +233,11 @@ methods: {
                     deviceName: stashedRecord.deviceName,
                     description: stashedRecord.description,
                     tags: stashedRecord.tags,
-                    reportingKey: stashedRecord.reportingKey,
+                    publicKey: stashedRecord.publicKey,
                     children_name: stashedRecord.childrenName,
                     children_key: stashedRecord.children_key,
                     hasParent: stashedRecord.hasParent,
-                    isReportingKey: stashedRecord.isReportingKey,
+                    isPublicKey: stashedRecord.isPublicKey,
                 }, []);
             } else {
                 // Post a record
@@ -248,7 +248,7 @@ methods: {
                     tags: stashedRecord.tags,
                     children_key: stashedRecord.children_key,
                     hasParent: stashedRecord.hasParent,
-                    isReportingKey: stashedRecord.isReportingKey,
+                    isPublicKey: stashedRecord.isPublicKey,
                 }, []);
             }
 

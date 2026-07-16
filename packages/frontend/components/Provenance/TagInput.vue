@@ -52,6 +52,7 @@ export default {
     isGroup: {
       type: Boolean,
       default: false
+    },
     tagListID: {
       type: String,
       default: 'tagsList',
@@ -119,10 +120,13 @@ export default {
             if (tag == cleanTag[0]) {
               this.storedTags.push(tag);
               this.createdTags.push(tag);
-              createTag();
+              redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
             }
           })
         }
+
+        // Hide placeholder text if any tags were added
+        this.updateTagsWithInput();
       }
 
     } catch (error) {

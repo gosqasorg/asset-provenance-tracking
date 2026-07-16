@@ -379,24 +379,7 @@ export async function emptyStash() {
         // Get the last request stored
         let request_name = 'gosqas-offline-stash-' + stash_counter;
         let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-        let fullUrl;
-        let record;
-        let currentKey;
-
-        // TODO: below checks do about the same thing, modify to only keep one (if statement from main)
-        // If the request can't be parsed then remove it, needs to be parsed to add to failed stash
-        try {
-            request = JSON.parse(request);
-            fullUrl = request[0][1];
-            record = request[1][1];
-            currentKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
-        } catch (error) {
-            console.log(`Could not parse stashed request: ${error}`)
-            localStorage.removeItem(request_name)
-            localStorage.setItem('stash_counter', (stash_counter - 1).toString())
-            continue
-        }
-        if (JSON.stringify(request) === '{}') { 
+        if (JSON.stringify(request) === '{}') {
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString())
             continue

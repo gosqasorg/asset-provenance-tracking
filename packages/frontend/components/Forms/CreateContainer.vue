@@ -154,10 +154,8 @@ export default {
             childrenKey: [] as string[], // list of children keys
             childrenName: [] as string[], // list of children names
             childrenKeys: 0, // number of new children to create
-            createReportingKey: false,
             publicKey: '',
             emailTags: [] as string[],  // tags for specified tag signup
-            childrenKeys: 0,
             createPublicKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
@@ -171,7 +169,7 @@ export default {
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
-            deviceKey: ''
+            deviceKey: '',
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
@@ -185,7 +183,7 @@ export default {
         if (isGroup === "true" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
             this.childrenKey = stashedRecord.children_key
             this.childrenName = stashedRecord.children_name
-            this.publicKey = stashedRecord.reportingKey
+            this.publicKey = stashedRecord.publicKey
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
             this.name = stashedRecord.deviceName
             this.description = stashedRecord.description
@@ -343,8 +341,6 @@ export default {
 
             if (this.createPublicKey) {
                 // Should be higher up?
-                // TODO: replaced this.reportingKey with this.publicKey to match naming change, confirm this all is working as intended
-//                  // Also update stash to store publicKey instead of reportingKey (or make a new issue for it)
                 this.publicKey = await makeEncodedDeviceKey();  // reporting key = public key
                 let tag_set = (this.tags).concat(['publickey']);
 
@@ -435,7 +431,7 @@ export default {
 
                 if (response && this.subscribeChecked && this.subscribeEmail) {
                     try {
-                        await postNotificationEmail(this.subscribeEmail, deviceKey);
+                        await postNotificationEmail(this.subscribeEmail, this.deviceKey);
                         this.$snackbar.add({
                             type: 'success',
                             text: 'Check your email to verify your notification subscription.'

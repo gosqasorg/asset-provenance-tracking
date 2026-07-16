@@ -227,7 +227,7 @@ describe('Tests to see if we can remove from the stash', () => {
     let failedRequests = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
     expect(failedRequests).not.toEqual(['{}']);
     expect(failedRequests.length).toBe(1);
-    expect(failedRequests[0][0][1]).toEqual(formUrl);
+    expect(failedRequests[0][0][1]).toEqual(recordKey);
 
     // Confirm failed key was not added to list of successful requests
     failedRequests = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
@@ -249,7 +249,6 @@ describe("Tests to see if periodicChecker works", async () => {
     expect(localStorage.getItem('stash_counter')).toEqual('1');
 
     // Confirm records were stored
-    // TODO: this branch previously checked "expect(requestFromStash).not.toEqual('{}')", which is correct?
     let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).not.toEqual({});
 
