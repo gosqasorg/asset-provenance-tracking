@@ -64,7 +64,7 @@ export function isGroup(records: any): boolean {
     return false;
 }
 
-export function hasParent(records: any): boolean {
+export function recordHasParent(records: any): boolean {
     for (let record of records) {
         if (record.record.hasParent) {
             return true;
@@ -114,7 +114,7 @@ export async function addChildKeys(recordKey: any, record: any, childKeys: strin
                 throw new Error(`Child record is same as group record.`);
             }
 
-            if (hasParent(records)) {
+            if (recordHasParent(records)) {
                 console.log(`Child record ${childKey} could not be added.`);
                 badRecords.push(childKey);
             } else {
@@ -143,7 +143,7 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
         console.log("No child/parent key provided.");
         throw new Error("No child/parent key provided.");
     }
-    if (hasParent(records)) {
+    if (recordHasParent(records)) {
         throw new Error("This record already belongs to a group.");
     }
     let groupRecords = await getProvenance(groupKey);

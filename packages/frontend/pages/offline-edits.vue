@@ -177,7 +177,9 @@ methods: {
         let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
         for (stash_counter; stash_counter > 0; stash_counter--) {
             let request_name = 'gosqas-offline-stash-' + stash_counter;
+            let old_request_name = 'gosqas_offline_stash_' + stash_counter;
             localStorage.removeItem(request_name);
+            localStorage.removeItem(old_request_name);
         }
         localStorage.setItem('stash_counter', '0');
         localStorage.removeItem('gdt-stash-syncing');

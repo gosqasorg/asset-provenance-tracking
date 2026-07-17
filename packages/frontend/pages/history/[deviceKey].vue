@@ -21,7 +21,7 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { hasParent } from '~/utils/descendantList';
+import { recordHasParent } from '~/utils/descendantList';
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
@@ -35,7 +35,7 @@ try {
 	provenance = [];
 }
 
-const recordHasParent = hasParent(provenance);
+const hasParent = recordHasParent(provenance);
 </script>
 
 <template>
@@ -123,10 +123,10 @@ const recordHasParent = hasParent(provenance);
 				</h1>
 				</div>
 
-				<div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">

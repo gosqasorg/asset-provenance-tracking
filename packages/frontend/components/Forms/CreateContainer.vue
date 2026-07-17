@@ -157,7 +157,6 @@ export default {
             publicKey: '',
             emailTags: [] as string[],  // tags for specified tag signup
             createPublicKey: false,
-            hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
             notifyTags: false,      // email tag notification checkbox
@@ -170,23 +169,23 @@ export default {
             annotate: false,
             fieldSet: [{id: '', customName:''}],
             deviceKey: '',
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
         }
     },
     mounted() {
         // If we're creating a group from the stash fill in the stashed information
-        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
         const previousUrl = window.history.state.back;
 
         // Only fill in stashed information if we redirected from the offline edits page
-        if (isGroup === "true" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.childrenKey = stashedRecord.children_key
-            this.childrenName = stashedRecord.children_name
-            this.publicKey = stashedRecord.publicKey
+        if (isGroup === "true" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.childrenKey = this.stashedRecord.children_key
+            this.childrenName = this.stashedRecord.children_name
+            this.publicKey = this.stashedRecord.publicKey
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
-            this.name = stashedRecord.deviceName
-            this.description = stashedRecord.description
+            this.name = this.stashedRecord.deviceName
+            this.description = this.stashedRecord.description
         }
     },
     computed: {

@@ -142,7 +142,7 @@ export default {
             emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
             isPublicKey: false, // states whether this device is a reporting key
-            recordHasParent: false, // states whether a record is contained within a box/container
+            hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
@@ -152,22 +152,22 @@ export default {
             notifyTags: false,  // email tag notification checkbox
             emailInput: '',
             tagsEmailInput: '', // email for specified tag signup
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
         }
     },
     mounted() {
         // If we're creating a record from the stash fill in the stashed information
-        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
         const previousUrl = window.history.state.back;
 
         // Only fill in stashed information if we redirected from the offline edits page
-        if (isGroup === "false" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.isPublicKey = stashedRecord.isPublicKey
-            this.recordHasParent = stashedRecord.hasParent
+        if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.isPublicKey = this.stashedRecord.isPublicKey
+            this.hasParent = this.stashedRecord.hasParent
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
-            this.name = stashedRecord.deviceName
-            this.description = stashedRecord.description
+            this.name = this.stashedRecord.deviceName
+            this.description = this.stashedRecord.description
         }
     },
     computed: {
@@ -239,7 +239,6 @@ export default {
 
             if (this.isSubmitting) return;
             this.isSubmitting = true;
-            let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
 
             try {
                 // Create a new deviceKey if we didn't get one from a stashed record
@@ -252,7 +251,7 @@ export default {
                     description: this.description,
                     tags: this.tags,
                     children_key: '',
-                    hasParent: this.recordHasParent,
+                    hasParent: this.hasParent,
                     isPublicKey: this.isPublicKey,
                 }, this.pictures || []);
 
@@ -266,7 +265,7 @@ export default {
                 // Only update the stash if the stashed request is a record
                 let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
 
-                if (JSON.stringify(stashedRecord) !== '{}' && isGroup == "false" && previousUrl === "/offline-edits") {
+                if (isGroup == "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
                     stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
@@ -316,7 +315,7 @@ export default {
             }
 
             // If we were redirected to this page then remove the stashed record
-            if (JSON.stringify(stashedRecord) !== '{}') {
+            if (JSON.stringify(this.stashedRecord) !== '{}') {
                 sessionStorage.removeItem("gdt-redirect-record");
                 sessionStorage.removeItem("gdt-redirect-isGroup");
                 sessionStorage.removeItem("gdt-redirect-key");
