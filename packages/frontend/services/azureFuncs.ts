@@ -259,7 +259,7 @@ export async function connectivityChecker() {
 
 export async function stashRequest(recordKey: string, formData: FormData) {
     try {
-    // Convert values to string and store them
+        // Convert values to string and store them
         let valuesToStore = [];
         valuesToStore.push(['recordKey', recordKey]);
         valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
@@ -272,8 +272,8 @@ export async function stashRequest(recordKey: string, formData: FormData) {
         let stash_counter = parseInt(current_request) + 1;
         localStorage.setItem('stash_counter', stash_counter.toString());
 
-        // Store the request at a unique key (gosqas_offline_stash_#)
-        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        // Store the request at a unique key (gosqas-offline-stash-#)
+        let request_name = 'gosqas-offline-stash-' + stash_counter;
         localStorage.setItem(request_name, JSON.stringify(valuesToStore));
     } catch (error: any) {
         // This web API error is thrown when localStorage is full
@@ -284,27 +284,91 @@ export async function stashRequest(recordKey: string, formData: FormData) {
     }
 }
 
-async function stashKeysAndRemove(currentKey: string, stashName: string, request_name: string, stash_counter: number, request: string) {
+export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
+    // Function to stash an offline request (works for syncing, fulfilled, and failed stashes)
     try {
-        let keys = [];
-        let existingKeys = localStorage.getItem(stashName)
-        if (existingKeys) {
-            for (const key of existingKeys.split(",")) {
-                keys.push(key)
+        let requests = [];
+        let stash = localStorage.getItem(stashName) || "{}";
+        let existingRequests;
+
+        // Get the previous requests from the stash
+        if (stashName.includes("failed")) {
+            existingRequests = JSON.parse(stash);
+        } else {
+            existingRequests = stash.split(",");
+        }
+
+        // Get the existing stashed requests, skip the loop if there are none
+        if (JSON.stringify(existingRequests) !== "{}" && JSON.stringify(existingRequests) !== '["{}"]') {
+            for (const storedRequest of existingRequests) {
+                // If new request == existing request, exit without updating the stash
+                if ((request && storedRequest[0][1] == request[0][1]) || storedRequest == currentKey) {
+                    return;
+                }
+
+                requests.push(storedRequest);
             }
         }
-        keys.push(currentKey)
-        localStorage.setItem(stashName, keys.toString())
+
+        // Add the new request and set the new stash value
+        if (stashName.includes("failed")) {
+            requests.push(request);
+            localStorage.setItem(stashName, JSON.stringify(requests));
+        } else {
+            requests.push(currentKey);
+            localStorage.setItem(stashName, requests.toString());
+        }
 
     } catch (error) {
-        // If the request can't be formatted properly to stash, then just stash the whole thing in failed
-        localStorage.setItem("gdt-stash-failed", request)
-        console.log("Record from localStorage was not able to be stashed: " + error)
+        console.log("Failed to Stash: " + error);
+        throw error;
     }
+}
 
-    // Remove request from stash and update counter
-    localStorage.removeItem(request_name)
-    localStorage.setItem('stash_counter', (stash_counter - 1).toString());
+export function removeOfflineRequest(currentKey: string, stashName: string) {
+    // Function to remove an offline request from the stash (works for syncing, fulfilled, and failed stashes)
+    try {
+        let requests = [];
+        let stash = localStorage.getItem(stashName) || "{}";
+        let existingRequests;
+
+        // Get the previous requests from the stash
+        if (stashName.includes("failed")) {
+            existingRequests = JSON.parse(stash);
+        } else {
+            existingRequests = stash.split(",");
+        }
+
+        // If there are no previous requests exit the function (nothing to remove)
+        if (JSON.stringify(existingRequests) == "{}" || JSON.stringify(existingRequests) == '["{}"]') {
+            return;
+        }
+
+        if (stashName.includes("failed")) {
+            // Remove request from failed stash
+            for (let i = 0; i < existingRequests.length; i++) {
+                let fullUrl = existingRequests[i][0][1];
+                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+
+                // Add back all requests except the one we're removing 
+                if (requestKey != currentKey) {
+                    requests.push(existingRequests[i]);
+                }
+            }
+            localStorage.setItem(stashName, JSON.stringify(requests))
+        } else {
+            // Remove key from other stashes (syncing/fulfilled)
+            const index = existingRequests.indexOf(currentKey);
+            if (typeof existingRequests != "string" && index > -1) {
+                existingRequests.splice(index, 1);
+            }
+            localStorage.setItem(stashName, existingRequests.toString())
+        }
+
+    } catch (error) {
+        console.log("Failed to Remove from Stash: " + error);
+        throw error;
+    }
 }
 
 export async function emptyStash() {
@@ -313,13 +377,14 @@ export async function emptyStash() {
 
     for (stash_counter; stash_counter > 0; stash_counter--) {
         // Get the last request stored
-        let request_name = 'gosqas_offline_stash_' + stash_counter;
+        let request_name = 'gosqas-offline-stash-' + stash_counter;
         let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-        if (JSON.stringify(request) === '{}') { 
+        if (JSON.stringify(request) === '{}') {
             localStorage.removeItem(request_name)
             localStorage.setItem('stash_counter', (stash_counter - 1).toString())
             continue
         }
+
         let baseUrl = emptyStashBaseUrl.url;
         let currentKey = request[0][1];
         let record = request[1][1];
@@ -331,7 +396,11 @@ export async function emptyStash() {
         }
 
         try {
-            // Fulfill the request
+            // Move key into the syncing stash
+            localStorage.removeItem(request_name);
+            stashOfflineRequest(currentKey, "gdt-stash-syncing", request);
+
+            // Fulfill the request and confirm it was created (this will throw an error if it fails)
             const formData = new FormData();
             formData.append('provenanceRecord', record);
 
@@ -340,17 +409,26 @@ export async function emptyStash() {
             if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
 
             // Add created key to a list of successfully created keys to display later
-            stashKeysAndRemove(currentKey, "gdt-stash-fulfilled", request_name, stash_counter, request)
+            stashOfflineRequest(currentKey, "gdt-stash-fulfilled", request);
+            removeOfflineRequest(currentKey, "gdt-stash-syncing");
+
         } catch (error) {
-            // Add the request to the failed stash
-            stashKeysAndRemove(currentKey, "gdt-stash-failed", request_name, stash_counter, request)
-            console.log("Record from localStorage failed to create: " + error)
+            // Move the request to the failed stash
+            console.log("Record from localStorage failed to create: " + error);
+            stashOfflineRequest(currentKey, "gdt-stash-failed", request);
+            removeOfflineRequest(currentKey, "gdt-stash-syncing");
         }
+
+        // Update the stash counter
+        localStorage.setItem('stash_counter', (stash_counter - 1).toString());
 
         if (!await(onlineTestFetch())) {
             return 202;
         }
     }
+
+    // Make sure that stash counter is set to empty now that we're out of the loop
+    localStorage.setItem('stash_counter', '0');
 
     // Disable the offline banner and enable the online banner
     displayOfflineBanner = false;

@@ -71,7 +71,7 @@ while offline.
         <div class="key-box" style="border: none; overflow:auto; display:grid; gap:10px; margin-bottom: 10px; margin-top: 0px">
             <p style="grid-row: 1; font-size: 17px; margin-top: -5px; margin-bottom: -5px">{{ key }}</p>      
             <div class="status-bubble">Published</div>
-            <button class="btn key-buttons" style="grid-row: 1;" @click="$router.push('/history/' + key)">Go to record</button>
+            <button class="btn key-buttons" style="grid-row: 1;" @click="clearSessionStorage(); $router.push('/history/' + key)">Go to record</button>
             <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(key)">Dismiss edit</button>
         </div>
     </div>
@@ -89,8 +89,8 @@ while offline.
         <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
             <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
-            <button class="btn key-buttons" style="grid-row: 1;">Retry syncing</button>
-            <button class="btn key-buttons bottom">Edit submission</button>
+            <button class="btn key-buttons" style="grid-row: 1;" @click="retrySyncing(key, index)">Retry syncing</button>
+            <button class="btn key-buttons bottom" @click="editSubmission(key, index)">Edit submission</button>
         </div>
     </div>
 
@@ -98,6 +98,8 @@ while offline.
 </template>
 
 <script lang="ts">
+import { postProvenance, stashOfflineRequest, removeOfflineRequest } from "~/services/azureFuncs"
+
 export default {
 data() {
 	return {
@@ -119,8 +121,12 @@ async mounted() {
         this.getSyncingKeys();
         this.getFulfilledKeys();
         this.clearOneEdit();
-    } catch (e) {
-        console.log("There was an error displaying your offline edits: " + e)
+    } catch (error) {
+        console.log("There was an error displaying your offline edits: " + error);
+        this.$snackbar.add({
+            type: 'error',
+            text: `Could not display offline edits: ${error}`
+        });
     }
 },
 
@@ -129,8 +135,8 @@ methods: {
         // Get all keys that were successfully stashed while offline
         let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
         for (stash_counter; stash_counter > 0; stash_counter--) {
-            let test = JSON.parse(localStorage.getItem('gosqas_offline_stash_' + stash_counter) || '{}')
-            let fullUrl = test[0][1]
+            let stashedRequest = JSON.parse(localStorage.getItem('gosqas-offline-stash-' + stash_counter) || '{}')
+            let fullUrl = stashedRequest[0][1]
             let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
             this.offlineKeys.push(record)   
         }
@@ -139,26 +145,46 @@ methods: {
         // Get all keys that were fullfilled from the stash
         let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
         for (const key of fulfilled.split(",")) {
-            if (key === "{}") {
-                continue
-            }
-            this.fulfilledKeys.push(key)  
+            if (key !== "{}") {
+                this.fulfilledKeys.push(key) 
+            } 
         }
     },
     getSyncingKeys() {
-
+        // Get all keys in the stash that are syncing
+        let syncing = (localStorage.getItem('gdt-stash-syncing') || "{}")
+        for (const key of syncing.split(",")) {
+            if (key !== "{}") {
+                this.syncingKeys.push(key)  
+            }
+        }
     },
     getFailedKeys() {
+        // Get all keys in the stash that failed to create
+        let failed = localStorage.getItem("gdt-stash-failed") || '{}';
+        if (failed == '[{}]' || failed == '{}') {
+            return
+        }
 
+        for (const request of JSON.parse(failed)) {
+            if (JSON.stringify(request) !== "{}") {
+                let fullUrl = request[0][1];
+                this.failedKeys.push(fullUrl.split("/")[fullUrl.split("/").length - 1]);
+            }
+        }
     },
     clearAllEdits() {
         let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
         for (stash_counter; stash_counter > 0; stash_counter--) {
-            let request_name = 'gosqas_offline_stash_' + stash_counter;
+            let request_name = 'gosqas-offline-stash-' + stash_counter;
+            let old_request_name = 'gosqas_offline_stash_' + stash_counter;
             localStorage.removeItem(request_name);
+            localStorage.removeItem(old_request_name);
         }
         localStorage.setItem('stash_counter', '0');
-        localStorage.removeItem('gdt-stash-fulfilled')
+        localStorage.removeItem('gdt-stash-syncing');
+        localStorage.removeItem('gdt-stash-fulfilled');
+        localStorage.removeItem('gdt-stash-failed');
         window.location.reload();
     },
     clearPublishedEdits() {
@@ -167,6 +193,11 @@ methods: {
     },
     clearOneEditPrepare(key: string) {
         this.dismissOneKey = key;
+    },
+    clearSessionStorage() {
+        sessionStorage.removeItem("gdt-redirect-record");
+        sessionStorage.removeItem("gdt-redirect-isGroup");
+        sessionStorage.removeItem("gdt-redirect-key");
     },
     clearOneEdit() {
         // Removes key from fulfilled array then resets and copies this array to gdt stash fullfilled
@@ -179,7 +210,90 @@ methods: {
         localStorage.setItem('gdt-stash-fulfilled', '')
         localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
-    }
+    async retrySyncing(key: string, index: number) {
+        try {
+            // Get the specified failed request
+            let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+            let stashedRequest = failedRequests[index];
+
+            // Display a custom error message if stashedRecord is undefined
+            if (!stashedRequest) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Record was not found in the stash`
+                });
+
+                return;
+            }
+
+            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+
+            // Try to post the record/group and display an error if it fails
+            await postProvenance(key, stashedRecord, []);
+
+            // If the request creates successfully move the key to the fulfilled stash
+            stashOfflineRequest(key, "gdt-stash-fulfilled");
+            removeOfflineRequest(key, "gdt-stash-failed");
+
+            // Reload the page
+            window.location.reload();
+
+        } catch (error) {
+            this.$snackbar.add({
+                type: 'error',
+                text: `Failed to create record: ${error}`
+            });
+        }
+    },
+    editSubmission(key: string, index: number) {
+        try {
+            // Get the specified failed request
+            let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+            let stashedRequest = failedRequests[index];
+
+            // Display a custom error message if stashedRecord is undefined
+            if (!stashedRequest) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Record was not found in the stash`
+                });
+
+                return;
+            }
+
+            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+            let isGroup = false;
+
+            if (stashedRecord.children_name) {
+                isGroup = true;
+            }
+
+            // Store the record in sessionStorage so the create pages have access to it
+            sessionStorage.setItem("gdt-redirect-record", JSON.stringify(stashedRecord));
+            sessionStorage.setItem("gdt-redirect-isGroup", isGroup.toString());
+            sessionStorage.setItem("gdt-redirect-key", key);
+                                                             
+            // Redirect to the specified creation page
+            if (!stashedRecord.deviceName) {
+                // If the request doesn't have a name then it is part of an existing record/group
+                this.$router.push({
+                    path: '/history/offline'
+                });
+            } else {
+                // Otherwise it is either a new record or group
+                this.$router.push({
+                    path: '/gdt'
+                });
+            }
+
+        } catch (error) {
+            this.$snackbar.add({
+                type: 'error',
+                text: `Failed to get stashed information: ${error}`
+            });
+        }
+    },
+}
 }
 </script>
 

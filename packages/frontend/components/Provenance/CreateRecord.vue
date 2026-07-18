@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineDetectAndStash, offlineModeFeatureFlag } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -309,30 +309,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.annotatePopUp = false;
             this.recallPopUp = false;
         },
-        async redirectIfOffline() {
-            // If the user is offline navigate to the offline history page instead
-            if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
-                await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
-            }
-        },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
+
+            // Define the new record to post
+            const record = {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+            };
 
             // Get a refreshed copy of the records
             let records;
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
-                this.redirectIfOffline()
-                EventBus.emit('isCreating');
-            }
+                let errorMessage = 'No provenance record found';
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
 
-            if (!records || records.length === 0) {
+                // If we're offline stash the record and display the stashed message
+                if (offlineModeFeatureFlag.flag) {
+                    const formData = new FormData();
+                    formData.append("provenanceRecord", JSON.stringify(record));
+                    const checkOffline = await offlineDetectAndStash(this.recordKey, formData);
+
+                    if (checkOffline === 202) {
+                        errorMessage = 'Status 202: User is offline but the record has been stashed';
+                        snackbarType = "success";
+                    } else if (checkOffline === 507) {
+                        errorMessage = 'Storage limit has been reached, record not stashed';
+                    }
+                }
+                
+                // Otherwise the record doesn't exist
                 this.$snackbar.add({
-                    type: 'error',
-                    text: 'No provenance record found'
+                    type: snackbarType,
+                    text: errorMessage
                 })
+
+                EventBus.emit('isCreating');
                 return;
             }
 
@@ -345,7 +362,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
                     } catch (error) {
                         console.error('Error adding to group:', error);
-                        this.redirectIfOffline()
                         this.$snackbar.add({
                             type: 'error',
                             text: `Error adding to group: ${error}`
@@ -385,7 +401,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
             } catch (error: any) {
                 console.error('Error adding children:', error);
-                this.redirectIfOffline()
                 const badKeys = error.message.split(",");
                 
                 if (error.message.split(" ").length > badKeys.length) {
@@ -415,13 +430,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             // Append the record to the records.
             try {
-                const record = {
-                    blobType: 'deviceRecord',
-                    description: this.description,
-                    tags: this.tags,
-                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
-                };
-
                 await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {
@@ -442,8 +450,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
-                this.redirectIfOffline()
-
                 // Remove the leading "Error:" text
                 let errorMessage;
                 if (error instanceof Error) {

@@ -49,6 +49,10 @@ export default {
       type: String,
       default: ' ',
     },
+    isGroup: {
+      type: Boolean,
+      default: false
+    },
     tagListID: {
       type: String,
       default: 'tagsList',
@@ -100,6 +104,31 @@ export default {
       EventBus.on('feedRefresh2', this.refreshFeed);
       this.createdTags = [];
       this.storedTags = [];
+
+      // If we have tags from a redirect update our form to display/store them
+      let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+      let recordIsGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+      const previousUrl = window.history.state.back;
+
+      if (JSON.stringify(stashedRecord) !== '{}' && stashedRecord.tags.length !== 0 && previousUrl === "/offline-edits") {
+        // Display the tags either on the group page or the record page
+        if ((this.isGroup && recordIsGroup === "true") || (!this.isGroup && recordIsGroup === "false")) {
+          stashedRecord.tags.forEach((tag) => {
+            let cleanTag = this.cleanArray([tag]);
+            this.editableValue = '';
+
+            if (tag == cleanTag[0]) {
+              this.storedTags.push(tag);
+              this.createdTags.push(tag);
+              redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
+            }
+          })
+        }
+
+        // Hide placeholder text if any tags were added
+        this.updateTagsWithInput();
+      }
+
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;
