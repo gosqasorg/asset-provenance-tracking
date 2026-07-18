@@ -89,8 +89,8 @@ while offline.
         <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
             <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
-            <button class="btn key-buttons" style="grid-row: 1;" @click="retrySyncing(key)">Retry syncing</button>
-            <button class="btn key-buttons bottom" @click="editSubmission(key)">Edit submission</button>
+            <button class="btn key-buttons" style="grid-row: 1;" @click="retrySyncing(key, index)">Retry syncing</button>
+            <button class="btn key-buttons bottom" @click="editSubmission(key, index)">Edit submission</button>
         </div>
     </div>
 
@@ -210,25 +210,14 @@ methods: {
         localStorage.setItem('gdt-stash-fulfilled', '')
         localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
-    async retrySyncing(key: string) {
+    async retrySyncing(key: string, index: number) {
         try {
-            // Get all failed requests
+            // Get the specified failed request
             let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
-            let stashedRecord;
-
-            // Get the specified request to retry
-            for (let i = 0; i < failedRequests.length; i++) {
-                let fullUrl = failedRequests[i][0][1];
-                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
-                // If we find the request store it and exit the loop
-                if (requestKey == key) {
-                    stashedRecord = JSON.parse(failedRequests[i][1][1]);
-                    break
-                }
-            }
+            let stashedRequest = failedRequests[index];
 
             // Display a custom error message if stashedRecord is undefined
-            if (!stashedRecord) {
+            if (!stashedRequest) {
                 this.$snackbar.add({
                     type: 'error',
                     text: `Record was not found in the stash`
@@ -236,6 +225,8 @@ methods: {
 
                 return;
             }
+
+            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
 
             // Try to post the record/group and display an error if it fails
             await postProvenance(key, stashedRecord, []);
@@ -254,23 +245,24 @@ methods: {
             });
         }
     },
-    editSubmission(key: string) {
-        // Get all failed requests
-        let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
-        let stashedRecord;
-        let isGroup = false;
-
+    editSubmission(key: string, index: number) {
         try {
-            // Get the specified request to edit
-            for (let i = 0; i < failedRequests.length; i++) {
-                let fullUrl = failedRequests[i][0][1];
-                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
-                // If we find the request store it and exit the loop
-                if (requestKey == key) {
-                    stashedRecord = JSON.parse(failedRequests[i][1][1]);
-                    break
-                }
+            // Get the specified failed request
+            let failedRequests = JSON.parse(localStorage.getItem("gdt-stash-failed") || '{}');
+            let stashedRequest = failedRequests[index];
+
+            // Display a custom error message if stashedRecord is undefined
+            if (!stashedRequest) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Record was not found in the stash`
+                });
+
+                return;
             }
+
+            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+            let isGroup = false;
 
             if (stashedRecord.children_name) {
                 isGroup = true;

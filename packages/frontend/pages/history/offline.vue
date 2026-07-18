@@ -127,10 +127,10 @@ data() {
 	return {
         isCreating: false,
         description: "",
-
         recordKey: "",
         pictures: [] as File[] | null,
         tags: [] as string[],
+        stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}'),
 	}
 },
 computed: {
@@ -158,13 +158,12 @@ async mounted() {
         this.recordKey = route.query.key as string;
 
         // If we're redirecting from the offline edits page fill in the stashed information
-        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
         let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
         const previousUrl = window.history.state.back;
 
-        if (isGroup === "false" && JSON.stringify(stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+        if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
             this.recordKey = sessionStorage.getItem("gdt-redirect-key") || '';
-            this.description = stashedRecord.description;
+            this.description = this.stashedRecord.description;
         }
 
         EventBus.on('feedRefresh', this.refreshFeed);
@@ -239,8 +238,6 @@ methods: {
         } else {
             this.isCreating = false;
         }
-
-        let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
         
         // Append the record to the records.
         try {
@@ -257,22 +254,35 @@ methods: {
             // Note: If we're offline postProvenance will throw an error, and this code will not be reached
             let key = sessionStorage.getItem("gdt-redirect-key") || '';
 
-            if (JSON.stringify(stashedRecord) !== '{}' && this.recordKey == key) {
+            if (JSON.stringify(this.stashedRecord) !== '{}' && this.recordKey == key) {
                 stashOfflineRequest(this.recordKey, "gdt-stash-fulfilled");
                 removeOfflineRequest(this.recordKey, "gdt-stash-failed");
             }
 
         } catch (error) {
+            let errorMessage: string = error instanceof Error
+                ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                : error as string  // otherwise just show the whole error
+
+            // If the record was stashed display a success message instead
+            let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+            if (errorMessage.includes("202")) {
+                snackbarType = "success";
+            } else {
+                errorMessage = `Error creating record: ${errorMessage}`;
+            }
+
             this.$snackbar.add({
-                type: 'error',
-                text: `Error creating record: ${error}`
+                type: snackbarType,
+                text: errorMessage
             });
+
             this.refresh()
             this.isCreating = false;
         }
 
         // If we were redirected to this page then remove the stashed record
-        if (JSON.stringify(stashedRecord) !== '{}') {
+        if (JSON.stringify(this.stashedRecord) !== '{}') {
             sessionStorage.removeItem("gdt-redirect-record");
             sessionStorage.removeItem("gdt-redirect-isGroup");
             sessionStorage.removeItem("gdt-redirect-key");
