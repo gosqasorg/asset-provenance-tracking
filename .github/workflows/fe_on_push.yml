@@ -54,7 +54,6 @@ jobs:
           rm package-lock.json 
           npm install
           npx nuxi build --preset=azure
-          npm run coverage
         env:
           FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
       - name: deploy frontend
@@ -68,3 +67,23 @@ jobs:
           name: packages
           path: packages/frontend/.output/**
 
+  frontend-coverage-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: 22
+
+      - name: Install frontend dependencies
+        working-directory: packages/frontend
+        run: npm install
+
+      - name: Run frontend coverage tests
+        working-directory: packages/frontend
+        run: npm run coverage
