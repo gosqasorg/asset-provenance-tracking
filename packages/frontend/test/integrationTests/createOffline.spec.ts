@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { testOnlineTestUrl, postProvenance, offlineModeFeatureFlag, emptyStashBaseUrl } from '~/services/azureFuncs';
+import { testOnlineTestUrl, postProvenance, emptyStashBaseUrl } from '~/services/azureFuncs';
 
 // Functions to allow devs to easily switch between development and local backends
 let frontendUrl = useRuntimeConfig().public.frontendUrl
@@ -60,7 +60,6 @@ describe("Tests to see if we can create records while offline", async () => {
     }
 
     // Go "offline"
-    offlineModeFeatureFlag.flag = true  // turn the featureflag on for the duration of the test
     testOnlineTestUrl.url = "https://fakeurltosimulateoffline.org"
 
     // Create record, confirm it stashed and that periodicChecker is running
@@ -116,7 +115,6 @@ describe("Tests to see if we can create records while offline", async () => {
       expect.fail("Create Record Offline: postProvenance failed to create the record: " + error)
     }
 
-    offlineModeFeatureFlag.flag = false
     fetchMock.mockRestore();
   })
 });
