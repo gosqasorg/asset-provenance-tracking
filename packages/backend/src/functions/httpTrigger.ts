@@ -1,8 +1,3 @@
-
-type BufferSource = any;
-namespace NodeJS { export type BufferSource = any; }
-// delete the top two lines, temporary for testing
-
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -706,7 +701,7 @@ export function deduplicateKeys(keys: string[]): string[] {
 }
 
 // Annotate: Send new record's tags to all children
-export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function notifyChildren(request: HttpRequest, context: InvocationContext, allowAnnotate: boolean = false): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
 
     try {
@@ -714,7 +709,8 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
-        if (records[0].record.tags.includes("annotate")) {
+        // allowAnnotate: bypass for createGroup, which cannot rely on an "annotate" tag being present during group record creation
+        if (allowAnnotate || records[0].record.tags.includes("annotate")) { 
             let length = Object.keys(records).length;
             let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 
@@ -739,7 +735,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         blobType: 'deviceRecord',
                         description: records[0].record.description || "Annotated by Group",
                         children_key: '',
-                        tags: records[0].record.tags,
+                        tags: allowAnnotate ? [...records[0].record.tags, "notify_all"] : records[0].record.tags,
                     }));
                     
                     let response = await fetch(`${baseUrl}${key}`, {
@@ -1449,23 +1445,8 @@ async function createGroup(context, name, description, n_children: number = 0, c
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
     }
-    if(annotate){
-        for (const key of childKeys){
-            if(key !== public_key){
-                const annotateFormData = new FormData();
-                annotateFormData.append("provenanceRecord", JSON.stringify({
-                    blobType: "deviceRecord",
-                    description: description || "Annotated by Group",
-                    children_key: '',
-                    tags: [...tags, "notify_all"],
-                }));
-
-                await fetch(`${backendUrl}${key}`, {
-                    method: "POST",
-                    body:annotateFormData,
-                });
-            }
-        }
+    if (annotate){
+        await notifyChildren({ params: { deviceKey: groupKey } } as unknown as HttpRequest, context, true) 
     }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
