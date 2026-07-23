@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <textarea id="provenance-description" v-model="description"
                 placeholder="Description" maxlength="5000" rows="3"></textarea>
-            <div v-if="isGroup">
+            <div v-if="recordIsGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
@@ -54,12 +54,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h4 class="p-1 mt-3" v-if="isGroup">
+            <h4 class="p-1 mt-3" v-if="recordIsGroup">
                 <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
                     Send to all Children
             </h4>
 
-            <h4 class="p-1 mt-0" v-if="isGroup">
+            <h4 class="p-1 mt-0" v-if="recordIsGroup && !hasRecalledRecord">
                 <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
                     Recall all children
             </h4>
@@ -197,7 +197,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             notifyTags: false,
             emailInput: '',
             config: useRuntimeConfig(),
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
         }
     },
     props: {
@@ -207,17 +207,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             required: true,
         },
         deviceRecord: {
-            // type: Any, // TODO: add type
+            type: Object,
             default: null,
             required: true,
         },
+        hasRecalledRecord: {
+            type: Boolean,
+            default: false,
+            required: false,
+        }
     },
     computed: {
         uniqueChildrenKeys() {
             const uniqueValues = [...new Set(this.newChildKeys)];
             return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
         },
-        isGroup(): boolean {
+        recordIsGroup() {
             // children_key is "" if it is created as a record or [] if it is created as a group
             // The Boolean constructor returns false for "" and true for []
             return Boolean(this.deviceRecord?.children_key);
@@ -342,8 +347,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (validateKey(this.groupKey)) {
                     try {
                         console.log("Adding to group...", this.groupKey);
-                        const groupRecords = await getProvenance(this.groupKey);
-                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
+                        await addToGroup(this.recordKey, this.groupKey, records, this.pictures || []);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.redirectIfOffline()
@@ -423,12 +427,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
 
+                // Prevent more than one record from being recalled
+                if (this.tags.includes("recall") && this.hasRecalledRecord) {
+                    throw new Error("Record already recalled");
+                }
+
                 await postProvenance(this.recordKey, record, this.pictures || []);
 
-                if (this.recallAll) {
-                    recallChildren(this.recordKey, this.tags, this.description);
-                } else if (this.annotateAll) {
-                    notifyChildren(this.recordKey, this.tags, this.description);
+                if (this.recallAll || this.tags.includes("recall")) {
+                    await recallChildren(this.recordKey, this.tags, this.description);
+                } else if (this.annotateAll || this.tags.includes("annotate")) {
+                    await notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
                 if (this.notify && this.emailInput) {
@@ -455,7 +464,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 console.log(error)
                 console.log(errorMessage)
-                if(errorMessage.includes('high volume of requests')) {
+
+                if (typeof errorMessage == "string" && errorMessage.includes('high volume of requests')) {
                     this.$snackbar.add({
                         type: 'error',
                         text: `Error sending email: ${errorMessage}`
@@ -463,11 +473,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 } else {
                     this.$snackbar.add({
                         type: 'error',
-                        text: `Error creating record: ${error}`
+                        text: `Error creating record: ${errorMessage}`
                     });
                 }
 
                 // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('isCreating');
                 EventBus.emit('feedRefresh');
             }
         }

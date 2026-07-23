@@ -213,13 +213,14 @@ export async function notifyChildren(recordKey: string, tags: string[], descript
     } catch (error) {
         console.error(`Error annotating children: ${error}`);
     }
- }
- 
- // Recall: Pin and send new record entry to all children
- export async function recallChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
+}
+
+// Recall: Pin and send new record entry to all children
+export async function recallChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
     try {
         if (tags.includes(InternalTagName.Recall)) {
             let records = await getProvenance(recordKey);
+
             let keysToCheck = deduplicateKeys(getChildKeys(records));
 
             // Send recalled record to all children
@@ -253,5 +254,5 @@ export async function notifyChildren(recordKey: string, tags: string[], descript
     } catch (error) {
         console.error(`Error notifying children: ${error}`);
     }
- }
+}
  

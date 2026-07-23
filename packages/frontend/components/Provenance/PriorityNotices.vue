@@ -46,6 +46,7 @@ export default {
             default: "",
         },
         provenance: {
+            type: Object,
             default: null,
         },
     },
