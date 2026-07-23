@@ -416,6 +416,11 @@ methods: {
 	}
 	this.childKeys = getChildKeys(provenance);
 
+	// If record now has a parent hide the "Add to Group" field
+	if (hasParent(provenance)) {
+		hiddenHasParent.value = true
+	}
+
 	// Add child key navigation if there are child keys
 	if ((this.childKeys?.length > 0) || this.hasReportingKey) {
 		headers = [
