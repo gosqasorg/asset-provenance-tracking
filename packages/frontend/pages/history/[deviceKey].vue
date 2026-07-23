@@ -34,7 +34,6 @@ try {
 } catch (e) {
 	provenance = [];
 }
-
 const recordHasParent = hasParent(provenance);
 </script>
 
@@ -231,6 +230,7 @@ let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
+export let hiddenHasParent = ref(false)
 
 let headers = [
 { id: "device-details", name: "Record details" },
@@ -297,6 +297,11 @@ async mounted() {
         this._recordKey = route.params.deviceKey as string;
         const response = await getProvenance(this._recordKey);
         deviceRecord = response[response.length - 1].record;
+
+		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
+		if (hasParent(response)) {
+			hiddenHasParent.value = true
+		}
 
         this.addScrollListener();
 
@@ -408,6 +413,11 @@ methods: {
 		}
 	}
 	this.childKeys = getChildKeys(provenance);
+
+	// If record now has a parent hide the "Add to Group" field
+	if (hasParent(provenance)) {
+		hiddenHasParent.value = true
+	}
 
 	// Add child key navigation if there are child keys
 	if ((this.childKeys?.length > 0) || this.hasPublicKey) {
