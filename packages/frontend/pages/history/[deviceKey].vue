@@ -39,7 +39,7 @@ const recordHasParent = hasParent(provenance);
 
 <template>
 <!-- This link is for the icon in mobile dropdown menu -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 <div v-if="isLoading">
 	<p class="text-center pb-5 pt-5">Loading record(s)...</p>
 </div>
