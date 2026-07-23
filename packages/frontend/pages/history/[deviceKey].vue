@@ -294,7 +294,7 @@ async mounted() {
         deviceRecord = this.provenance[this.provenance.length - 1].record;
 
 		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
-		if (hasParent(response)) {
+		if (hasParent(this.provenance)) {
 			hiddenHasParent.value = true
 		}
 
@@ -418,7 +418,7 @@ methods: {
 	this.childKeys = getChildKeys(this.provenance);
 
 	// If record now has a parent hide the "Add to Group" field
-	if (hasParent(provenance)) {
+	if (hasParent(this.provenance)) {
 		hiddenHasParent.value = true
 	}
 
