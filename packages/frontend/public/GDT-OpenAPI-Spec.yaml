@@ -6,10 +6,10 @@ info:
 servers:
 #  - url: http://localhost:7071/api
 #    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
-#  - url: https://gdtprodbackend.azurewebsites.net/api
-#    description: Production server
+  # - url: https://gosqasbe.azurewebsites.net/api
+  #   description: Staging server
+ - url: https://gdtprodbackend.azurewebsites.net/api
+   description: Production server
 paths:
 
   /createGroup:
@@ -399,13 +399,10 @@ paths:
         '200':
           description: Success
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    example: "photo.jpg"
+                type: string
+                example: photo.jpg
         '404':
           description: Attachment not found
   
