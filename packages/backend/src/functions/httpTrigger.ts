@@ -1294,6 +1294,40 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
+    let response = undefined;
+    const MAX_RETRIES = 3;
+
+    for (let i = 1; i <= MAX_RETRIES; i++) {
+        response = undefined //resets each retry attempt
+        try {
+            if (typeof formData !== 'undefined') {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                response = await fetch(`${url}`, {
+                    method: "GET"
+                });
+            }
+
+            if (response !== undefined && response.ok) {
+                return response;
+            }
+        } catch (e) {
+            context.log(`Fetch attempt failed: ${url}: ` + e);
+        }
+    }
+
+    if (response !== undefined && !response.ok) {
+        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+    } else {
+        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
+    }
+}
+
 async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
@@ -1319,10 +1353,7 @@ async function createChild(context: InvocationContext, description: string, cust
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
-        const theResponse = await fetch(`${baseUrl}${childKey}`, {
-            method: "POST",
-            body: childFormData,
-        });
+        const theResponse = await fetchWithRetry(context, `${baseUrl}${childKey}`, childFormData);
 
         const theJson = await theResponse.json()
         const dataUrl = theResponse.url.split('/')
@@ -1339,25 +1370,19 @@ async function createChild(context: InvocationContext, description: string, cust
 async function createChildren(context, description: string, number_of_children: number,  custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    let j = 0;
     
-    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, description, custom_child_titles[j], tags))) {
+    for (let i = 0; i < number_of_children; i++) {  // iterates the custom children names
+        if(!(thisChild = await createChild(context, description, custom_child_titles[i], tags))) {
             continue;
         }
-
-        j++;
         childrenKeys.push(thisChild)
-        if(childrenKeys.length == number_of_children) { 
-            // PublicKey is itself a record that is part of a group
-            if(hasPublicKey){
-                const publicTags = [...tags, "publickey"]
-                if(!(thisChild = await createChild(context, description, "Public Key", publicTags, true))) {
-                    continue;
-                }
-                childrenKeys.push(thisChild)
-            }
-            break;
+    }
+
+    if (hasPublicKey){
+        const publicTags = [...tags, "publickey"]
+        thisChild = await createChild(context,description,"Public Key", publicTags, true)
+        if(thisChild){ // checks to see that public key was made.
+            childrenKeys.push(thisChild)
         }
     }
 
