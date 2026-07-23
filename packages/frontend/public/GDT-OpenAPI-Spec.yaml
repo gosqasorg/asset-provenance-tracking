@@ -6,10 +6,10 @@ info:
 servers:
 #  - url: http://localhost:7071/api
 #    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
-#  - url: https://gdtprodbackend.azurewebsites.net/api
-#    description: Production server
+  # - url: https://gosqasbe.azurewebsites.net/api
+  #   description: Staging server
+ - url: https://gdtprodbackend.azurewebsites.net/api
+   description: Production server
 paths:
 
   /createGroup:
@@ -372,3 +372,37 @@ paths:
                     status: 404
         '500':
           description: Internal Server Error
+
+  /attachment/{deviceKey}/{attachmentID}/name:
+    get:
+      tags:
+        - GDT API
+      summary: Get the name of an attachment 
+      description: This endpoint retrieves the name of an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachmentName
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID from the record's attachments array
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: photo.jpg
+        '404':
+          description: Attachment not found
+  

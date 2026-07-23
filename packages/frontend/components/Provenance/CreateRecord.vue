@@ -176,6 +176,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { validateFileSize } from '~/utils/fileSizeValidation';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
+ import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
 
  export default {
     data() {
@@ -244,7 +245,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         // Checks whether record is a child, disables 'Add to Group' field if is a child
         isChild() {
-            return this.deviceRecord?.hasParent
+            return hiddenHasParent.value === true
         }
     },
     methods: {
