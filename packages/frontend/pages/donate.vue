@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 open-source hardware, and scientific research communities.<br><br>
                 We believe that all communities, regardless of location or resource environment, deserve tools that
                 increase accessibility to quality information and products.<br><br>
-            </p>F
+            </p>
             <p style="margin-top: -25px">Global Distributed is used worldwide. See our <a href="/heatmap">impact</a>.
             </p>
         </div>
