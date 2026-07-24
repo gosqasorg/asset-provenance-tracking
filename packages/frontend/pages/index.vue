@@ -50,6 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <p style="font-weight: 400; padding-bottom: 15px">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
           <div style="display: flex; flex-direction: row; gap: 40px">
             <img style="width: 184px; height: 184px" class="ieee-image" src="/IEEE.png">
+            <!-- TODO: Swap with DMDM Section and turn into banner. -->
             <div class="ieee-button-container" style="display: flex; flex-direction: column;">
                 <h3 style="">GDT Papers Published in the Institute of Electrical and Electronics Engineers</h3>
                 <p style="font-size: 20px; font-weight: 400; margin-top: -5px">Our paper "Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication" was recently published in the October 2025 publication of IEEE.</p>
@@ -76,6 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
 
+        <!-- TODO: Swap with IEEE Section -->
         <div class="row second-row" >
           <div class="dmdmcontainer">
             <img src="/dmdmCropped.png" alt="Logo" class="dmdmimage" />

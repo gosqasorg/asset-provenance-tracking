@@ -15,6 +15,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <!--
     This is the Decentralized Medical Device Manufacturing (DMDM) page for GOSQAS
 -->
+
+<!-- TODO: Remove open source bullet points -->
+<!-- TODO: Add Text Sections -->
+<!-- TODO: Style text sections accordingly -->
+<!-- TODO: Implement picture enlargement feature -->
+<!-- TODO: Enure css matches figma design -->
 <script setup lang="ts">
     const route = useRoute()
 </script>
