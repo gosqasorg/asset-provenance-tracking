@@ -158,7 +158,7 @@ const recordHasParent = hasParent(provenance);
             </div>
 
             <!-- Email notifications modal -->
-            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode"/>
+            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
 
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -441,6 +441,11 @@ methods: {
 	this.isCreating = false;
 	this.isLoading = false;
 	},
+	clearModalEmailNotificationValues() {
+      // Completely clear the values to prevent the modal from remounting
+      this.autoToken = '';
+      this.autoCode = '';
+    }
 }
 };
 </script>
