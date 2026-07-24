@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 We believe that all communities, regardless of location or resource environment, deserve tools that
                 increase accessibility to quality information and products.<br><br>
             </p>
-            <p style="margin-top: -25px">Global Distributed is used worldwide. See our <a href="/heatmap">impact</a>.
+            <p style="margin-top: -25px">Global Distributed Tracking is used worldwide. See our impact <a href="/heatmap">here</a>.
             </p>
         </div>
 
