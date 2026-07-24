@@ -81,6 +81,7 @@ function _chart(d3,filteredCountryData,countries,filteredRegionData,filteredCity
   // Legend stays on svg
   svg.append("g")
       .attr("transform", "translate(20,0)")
+      .attr("style", "color-scheme: light dark; color: light-dark(#1E2019, #FFFFFF);")
       .append(() => Legend(color, {title: "Website Requests", width: 260}));
 
   // 1. Sphere
