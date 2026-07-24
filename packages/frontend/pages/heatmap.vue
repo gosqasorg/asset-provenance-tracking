@@ -48,4 +48,24 @@ onBeforeUnmount(() => {
 .heatmap-viz-origin {
   min-height: 24rem;
 }
+
+/* Dark mode version*/
+@media (prefers-color-scheme: dark) {
+    #features-container {
+        background-color: #1E2019;
+    }
+    p {
+        color: #FFFFFF;
+    }
+  
+}
+/* Light mode version*/
+@media (prefers-color-scheme: light) {
+    #features-container {
+        background-color: #FFFFFF;
+    }
+    p {
+        color: #1E2019;
+    }
+}
 </style>

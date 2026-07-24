@@ -70,8 +70,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     <p style="font-weight: 400;">{{ item.descr }}</p>
                 </div>
             </div>
-            <div class="col" style="text-align: center; margin-top: 50px;">
-                <NavButton to="/about" text="About Us" id="about-button" margin="0" padding="18px 22px"/>
+            <div class="col" style="text-align: center; margin-top: 50px; gap: 10px">
+                <NavButton to="/about" text="About Us" id="about-button" margin="0" padding="18px 22px" style="margin: 10px 0;"/>
             </div>
 
         </div>
@@ -90,6 +90,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           </div>
           <div class="col" style="text-align: center; margin-top: 50px;">
           <NavButton to="/dmdm" text="View our pilot program" id="dmdm-button" margin="0" padding="18px 22px"/>
+          <NavButton to="/heatmap" text="See Our Global Impact" id="dmdm-button" margin="0" padding="18px 22px" style="margin: 0 10px;"/>
           </div>
         </div>
 
