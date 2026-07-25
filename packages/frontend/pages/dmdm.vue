@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <!-- TODO: Style text sections accordingly -->
 <!-- TODO: Implement picture enlargement feature -->
 <!-- TODO: Enure css matches figma design -->
+<!-- TODO:Add captions to images -->
 <script setup lang="ts">
     const route = useRoute()
 </script>
@@ -28,49 +29,59 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
     <div class="container-fluid" id="dmdm-container">
-        <h1>Making a Difference with DMDM</h1>
-        <div class="row">
-            <p style="font-weight: 400;" >
-                Manufacturing open source medical hardware at scale, while meeting quality assurance standards, 
-                can sometimes be a mysterious process to the outside observer. Through the GOSQAS-sponsored 
-                pilot program with Distributed Medical Device Manufacturing 
-                (<a href="https://dmdm.icu/" class="dmdm-link">DMDM</a>), 
-                this process is becoming more transparent and accessible.
-            </p><br>
-            <p style="font-weight: 400; margin-bottom: 30px;">
-                As a non-profit, FDA-registered cooperative, DMDM is committed to manufacturing trustworthy and 
-                reliable humanitarian aid while honoring democratic operation, flexibility and resilience. 
-                While manufacturing the open source Glia tourniquet for Sudan, Gaza, and Lebanon, DMDM used 
-                Global Distributed Tracking (GDT) as part of their open source Quality Management System (QMS) 
-                and logistics management. Watch our video to learn how the GDT Group Record helps document 
-                their open source process.
-            </p>
+        <div class="row" id="hero-container">
+            <div id="hero-text">
+                <h1>Making a Difference with DMDM</h1>
+                <p style="font-weight: 400;" >
+                    Manufacturing open source medical hardware at scale, while meeting quality assurance standards,
+                    can sometimes be a mysterious process to the outside observer. Through the GOSQAS-sponsored
+                    pilot program with Distributed Medical Device Manufacturing
+                    (<a href="https://dmdm.icu/" class="dmdm-link">DMDM</a>),
+                    this process is becoming more transparent and accessible.
+                </p><br>
+                <p style="font-weight: 400;">
+                    As a non-profit, FDA-registered cooperative, DMDM is committed to manufacturing trustworthy and
+                    reliable humanitarian aid while honoring democratic operation, flexibility and resilience.
+                </p>
+            </div>
+            <div id="hero-video">
+                <iframe src="https://player.vimeo.com/video/1169447155?h=4b7f6c0213&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; display: block; aspect-ratio: 16 / 9;"
+                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="How to Create a Group Record with Distributed Medical Device Manufacturing (DMDM)"></iframe>
+                <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+            </div>
         </div>
 
-        <div class="row"  style="font-weight: 400;">
-    <h3>Open Source:</h3>
-            <div class="flexcontainer">
-<ul>
-    <li>Design</li>
-</ul>
-<ul>
-    <li>QMS</li>
-</ul>
-<ul>
-    <li>Product Testing</li>
-</ul>
-<ul>
-    <li>Logistics Management</li>
-</ul>
-    </div>
+    
+        <div class="row even-stripe">
+            <h3>Open Source QMS</h3>
+            <p>Sponsored by a GOSQAS grant, DMDM has open sourced their FDA and ISO13485:2016 compliant quality management system (QMS) for the manufacturing of pre-market exempt, non sterile, class I and class II medical devices. The QMS was designed for adoption by any group focused on high quality manufacturing, but especially for open source, small-scale community manufacturing groups where quality management resource capacity is more constrained.</p>
+            <button class="btn btn-tertiary">View the DMDM QMS here</button>
         </div>
 
-    <iframe src="https://player.vimeo.com/video/1169447155?h=4b7f6c0213&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-        style="width: 100%; display: block; aspect-ratio: 7 / 4;"
-        frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="How to Create a Group Record with Distributed Medical Device Manufacturing (DMDM)"></iframe>
-    <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
-
+        <div class="row" id="dme-container">
+            <div id="dme-text">
+                <h3>Distributed Manufacturing Ecosystem (DME)</h3>
+                <p>DMDM is developing the Distributed Manufacturing Ecosystem (DME) as an open-source software suite for production line management. Built upon the Global Distributed Tracking (GDT) codebase, DME is intended for small-scale, community manufacturing where documenting quality processes is paramount for user adoption and trust.</p>
+                <p>DME enables realtime manufacturing throughput visualization by recording batch workflows, defects, reworks and a comprehensive device history file (DHF). A customizable tiered-checklist gating system monitors each stage of the manufacturing process down to the component level. Records are updated through GDT, which easily allows mobile phone interface.</p>
+                <button class="btn btn-primary">Browse the DME codebase</button>
+            </div>
+            <!-- col-md-6 -->
+            <div id="dme-graphics">
+                <img src="/dmdm-decisiontree.png" alt="Decision Tree" class="dmegraph" />
+                <img src="/dmdm-recordhistory.jpg" alt="Record History" class="dmegraph" />
+            </div>
+        </div>
+        
+        <div class="row even-stripe">
+            <h3>GDT for Class 1 Medical Device Manufacturing</h3>
+            <p>Since 2024, DMDM has been using GDT in their FDA-registered manufacturing facility. Now, DMDM has released a comprehensive report describing how GDT helps them create documentation for tool maintenance, product defects, batch records, materials tracking, and post-market surveillance.</p>
+            <button class="btn btn-tertiary">Read the report</button>
+        </div>
     </div>
+    
+    
+    
 </template>
 
 
@@ -90,6 +101,66 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     overflow-wrap: break-word;
 }
 
+.dmegraph {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+}
+
+.btn {
+  box-sizing: border-box;
+  height: 58px;
+  padding: 0 24px;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  width: fit-content;
+}
+
+#hero-container {
+    display: flex !important;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+#hero-text {
+    display: flex;
+    flex-direction: column;
+}
+
+#hero-video {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#dme-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+#dme-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+#dme-graphics {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
     #dmdm-container{
@@ -98,19 +169,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .row{
         margin-top:32px;
     }
+    #dme-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* For screens larger than 768px */
 @media (min-width: 768px) {
-    #dmdm-container{
+    /* #dmdm-container{
         padding: 80px 200px 100px 200px;
-    }
+    } */
     .row{
         margin-top:32px;
+        padding: 70px 126px;
     }
     .dmdm-link {
         font-size: 20px;
     }
+
+
 }
 
 /* Dark mode version*/
@@ -134,6 +211,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #video-caption a {
       color: #CCECFD; 
     }
+    .even-stripe{
+        background-color: #4E3681;
+    }
+
+    .btn-primary {
+        background-color: #CCECFD;
+        color: #1E2019;
+    }
+
+    .btn-primary:hover {
+        background-color: #E6F6FF;
+    }
+
+    .btn-primary:active {
+        color: #1E2019;
+    }
+
+    .btn-tertiary {
+        background-color: transparent;
+        color: #CCECFD;
+        border: 2px solid #CCECFD;
+    }    
+
+    .btn-tertiary:hover,
+    .btn-tertiary:active {
+        background-color: #CCECFD;
+        color: #000000;
+        mix-blend-mode: lighten;
+    }
+
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -155,6 +262,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     #video-caption a {
     text-decoration: underline;
     color: #4E3681; 
+    }
+    .even-stripe{
+        background-color: #E6F6FF;
+    }
+
+    .btn-primary {
+        background-color: #4E3681;
+        color: #FFFFFF;
+    }
+
+    .btn-tertiary {
+        background-color: #F1F5F9;
+        color: #322253;
+        border: 2px solid #4E3681;
+    }
+
+    .btn-primary:hover {
+        background-color: #322253;
+    }
+
+    .btn-tertiary:hover {
+        background-color: #4E3681;
+        color: #FFFFFF;
     }
 }
 </style>
