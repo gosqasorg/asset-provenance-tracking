@@ -89,12 +89,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
               <h3>GDT Paper Published in the Institute of Electrical and Electronics Engineers</h3>
               <p class="text" style="font-size:20px; line-height:30px; font-weight: 400;">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.
               </p>
+              <div class="col" >
+                <button id="ieee-button" @click="getPDF()">Read the paper now</button>
+                <NavButton to="/heatmap" text="See Our Global Impact" id="dmdm-button" margin="0" padding="18px 22px" style="margin: 0 10px;"/>
+              </div>
             </div>
+
           </div>
-          <div class="col" style="text-align: center;">
-            <button id="ieee-button" @click="getPDF()">Read the paper now</button>
-            <NavButton to="/heatmap" text="See Our Global Impact" id="dmdm-button" margin="0" padding="18px 22px" style="margin: 0 10px;"/>
-          </div>
+          
         </div>
 
         <Learn_more id="learn-more"></Learn_more>
@@ -200,9 +202,10 @@ methods: {
 .ieeeimage {
   max-width: 12em;
   max-height: 12em;
-  width: auto;
+  width: 100%;
   height: auto;
   border-radius: 10px;
+  background-color: #FFFFFF;
 }
 
 .dmdm-image {
@@ -406,6 +409,13 @@ methods: {
         background-color: white;
         color: black;
     }
+
+    :deep(#dmdm-button) {
+        color: #FFFFFF;
+        background-color: #4E3681;
+        border: 2px solid #FFFFFF;
+    }
+
     #ieee-button:hover {
         background-color: white;
         color: #4E3681;
@@ -431,6 +441,11 @@ methods: {
     :deep(#news-button):hover {
         background-color: white !important;
         color: #000000 !important;
+    }
+
+    :deep(#dmdm-button:hover) {
+        background-color: white;
+        color: #4E3681;
     }
 }
 /* Light mode version of second row */
@@ -462,6 +477,12 @@ methods: {
         background-color: #E6F6FF;
         border: 2px solid #E6F6FF;
     }
+
+    :deep(#dmdm-button) {
+        color: #322253;
+        background-color: #E6F6FF;
+        border: 2px solid #4E3681;
+    }
     #ieee-button:hover {
         background-color: #4E3681;
         color: white;
@@ -482,6 +503,11 @@ methods: {
         color: white !important;
         background-color: transparent !important;
         border: 2px solid white !important;
+    }
+
+    :deep(#dmdm-button:hover) {
+        background-color: #4E3681;
+        color: white;
     }
 
     :deep(#news-button):hover {
