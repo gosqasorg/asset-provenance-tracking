@@ -16,14 +16,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the Decentralized Medical Device Manufacturing (DMDM) page for GOSQAS
 -->
 
-<!-- TODO: Remove open source bullet points -->
-<!-- TODO: Add Text Sections -->
-<!-- TODO: Style text sections accordingly -->
 <!-- TODO: Implement picture enlargement feature -->
 <!-- TODO: Enure css matches figma design -->
 <!-- TODO:Add captions to images -->
 <script setup lang="ts">
     const route = useRoute()
+
+    const lightboxOpen = ref(false)
+    const lightboxIndex = ref(0)
+
+    const dmeImages = [
+        { src: '/dmdm-decisiontree.png', alt: 'Decision Tree', caption: 'DME graph 1' },
+        { src: '/dmdm-recordhistory.jpg', alt: 'Record History', caption: 'DME graph 2' },
+    ]
+
+    function openLightbox(index: number) {
+        lightboxIndex.value = index
+        lightboxOpen.value = true
+    }
+
+    function closeLightbox() {
+        lightboxOpen.value = false
+    }
+
+    // Add functions to navigte images in the lightbox
+    function prevImage() {
+    }
+    function nextImage() {
+    }
+
 </script>
 
 
@@ -66,12 +87,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <p>DME enables realtime manufacturing throughput visualization by recording batch workflows, defects, reworks and a comprehensive device history file (DHF). A customizable tiered-checklist gating system monitors each stage of the manufacturing process down to the component level. Records are updated through GDT, which easily allows mobile phone interface.</p>
                 <button class="btn btn-primary">Browse the DME codebase</button>
             </div>
-            <!-- col-md-6 -->
+
             <div id="dme-graphics">
-                <img src="/dmdm-decisiontree.png" alt="Decision Tree" class="dmegraph" />
-                <img src="/dmdm-recordhistory.jpg" alt="Record History" class="dmegraph" />
+                <!-- image card for each graphic hooked up to lightbox for fullscreen viewing -->
+                <div
+                    v-for="(img, i) in dmeImages"
+                    :key="i"
+                    class="dme-image-card"
+                    @click="openLightbox(i)"
+                >
+                    <img :src="img.src" :alt="img.alt" class="dmegraph" />
+                    <button class="enlarge-btn" @click.stop="openLightbox(i)">
+                        <!-- From Lucide Icons: https://lucide.dev/icons/zoom-in -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zoom-in-icon lucide-zoom-in"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
+                        Click to enlarge
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Lightbox for fullscreen images -->
+        <Teleport to="body">
+            <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
+                <button class="lightbox-close" @click="closeLightbox">&#x2715;</button>
+                <div class="lightbox-content">
+                    <img :src="dmeImages[lightboxIndex]?.src" :alt="dmeImages[lightboxIndex]?.alt" class="lightbox-img" />
+                </div>
+                <p class="lightbox-footer">
+                    Image {{ lightboxIndex + 1 }} of {{ dmeImages.length }}
+                </p>
+            </div>
+        </Teleport>
         
         <div class="row even-stripe">
             <h3>GDT for Class 1 Medical Device Manufacturing</h3>
@@ -96,9 +142,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   justify-content: space-between;
 }
 
+h3{
+    font-size: 32px !important;
+    line-height: 50px !important;
+    font-weight: medium;
+}
+
+
 .dmdm-link {
     font-weight: 400;
     overflow-wrap: break-word;
+}
+
+.dme-image-card {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
 }
 
 .dmegraph {
@@ -106,6 +166,98 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     height: auto;
     border-radius: 8px;
     display: block;
+}
+
+
+.enlarge-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+
+/* Lightbox Stuff */
+.lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    gap: 1rem;
+}
+
+.lightbox-close {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #555;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-close:hover {
+    background: #777; 
+}
+
+.lightbox-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 90vw;
+    max-height: 80vh;
+}
+
+.lightbox-img {
+    max-width: 80vw;
+    max-height: 80vh;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.lightbox-nav {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-footer {
+    color: #ccc;
+    font-size: 14px;
+    margin: 0;
 }
 
 .btn {
@@ -125,7 +277,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 #hero-container {
     display: flex !important;
     flex-direction: column;
-    gap: 2rem;
+    gap: 32px;
+    padding: 20px 126px 100px 126px !important;
 }
 
 #hero-text {
@@ -133,10 +286,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     flex-direction: column;
 }
 
+#hero-text > h1 {
+    padding-bottom: 20px;
+}
+
 #hero-video {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 #dme-container {
@@ -160,6 +317,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     min-width: 0;
 }
 
+.row > h3, p {
+    padding: 0;
+}
+
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -168,6 +329,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     }
     .row{
         margin-top:32px;
+        
     }
     #dme-container {
         grid-template-columns: 1fr;
@@ -183,6 +345,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         margin-top:32px;
         padding: 70px 126px;
     }
+
     .dmdm-link {
         font-size: 20px;
     }
