@@ -69,7 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <iframe src="https://player.vimeo.com/video/1169447155?h=4b7f6c0213&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                     style="width: 100%; display: block; aspect-ratio: 16 / 9;"
                     frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="How to Create a Group Record with Distributed Medical Device Manufacturing (DMDM)"></iframe>
-                <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+                <p id="video-caption" style="font-size: 14px !important;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
             </div>
         </div>
 
@@ -324,15 +324,44 @@ h3{
 
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
-    #dmdm-container{
-        padding: 20px 20px 40px 20px;
-    }
     .row{
-        margin-top:32px;
-        
+        padding: 40px 30px!important;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
+
+    .even-stripe{
+        margin: 0 !important;
+    }
+
+    #hero-container {
+        padding: 20px 20px 40px 20px !important;
+    }
+
+    #dmdm-container{
+        padding: 0 !important;
+    }
+    
     #dme-container {
         grid-template-columns: 1fr;
+    }
+
+    h3 {
+        font-size: 24px !important;
+        line-height: 36px !important;
+        font-weight: 600;
+    }
+
+    p {
+        font-size: 18px !important;
+        line-height: 27px !important;
+    }
+
+    button {
+        font-size: 18px !important;
+        line-height: 27px !important;
+        padding: 14px 18px !important;
     }
 }
 

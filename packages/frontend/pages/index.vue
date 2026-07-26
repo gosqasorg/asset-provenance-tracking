@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row second-row" id="gdt-section">
             <div style="display:flex; flex-direction:column; gap: 17px;">
-                <h3 style="font-size: 36px !important; font-weight: 500; line-height: 50px!important;">Global Distributed Tracking</h3>    
+                <h3>Global Distributed Tracking</h3>    
                 <p style="font-weight: 400;">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
             </div>
 
@@ -91,7 +91,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
           <div class="ieeecontainer">
             <img src="/ieee.png" alt="IEEE Logo" class="ieeeimage" />
             <div id="flexright">
-              <h3 style="font-size: 36px !important; font-weight: 500; line-height: 50px!important;">GDT Paper Published in the Institute of Electrical and Electronics Engineers</h3>
+              <h3>GDT Paper Published in the Institute of Electrical and Electronics Engineers</h3>
               <p class="text" style="font-size:20px; line-height:30px; font-weight: 400;">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.
               </p>
             </div>
@@ -139,10 +139,6 @@ methods: {
 
 
 <style scoped>
-
-h3 {
-    
-}
 
 #latest-news-banner {
     max-width: 100%;
@@ -206,16 +202,20 @@ h3 {
     display: flex;
     flex-direction: column;
     gap: 50px;
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .ieeecontainer {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;       /* Allows wrapping onto a new line */
-align-items: stretch;
-justify-content: space-around;
+    align-items: stretch;
+    justify-content: space-around;
+}
+
+.ieecontainer > h3 {
+    font-size: 36px !important; 
+    font-weight: 500; 
+    line-height: 50px!important;
 }
 
 .ieeeimage {
@@ -227,8 +227,6 @@ justify-content: space-around;
 
   /* margin-bottom: 15px; */
   /* margin-right: 15px; */
-
-  border: 2px solid #4E3681;
 }
 
 .dmdm-image {
@@ -294,12 +292,41 @@ justify-content: space-around;
     #first-row-col {
         width: 100% !important;
     }
-    .ieee-image {
+    .dmdm-image {
         display: none;
     }
-    .ieee-button {
-        display: block; 
+    :deep(#news-button) {
+        display: block !important;
+        text-decoration: none !important;
+        font-size: 18px !important;
+        margin: 0 auto !important;
+        padding: 14px 18px !important;
+    }
+
+    #news-text-container h4 {
+    font-size: 22px;
+    line-height: 33px;
+    }
+
+    #news-text-container p {
+        font-size: 18px;
+        line-height: 27px;
+    }
+
+    .ieecontainer > h3 {
+        font-size: 22px !important; 
+        line-height: 33px!important;
+    }
+
+
+    #flexright {
+        max-width: 100%;
+    }
+
+    #ieee-button {
+        display:block;
         margin: 0 auto;
+        padding: 14px 18px;
     }
 }
 
@@ -334,8 +361,8 @@ justify-content: space-around;
         order: 1;
         margin-top: 0px !important;
     }
-    .ieee-button {
-        text-align: center;
+    :deep(#news-button) {
+        text-align: center !important;
     }
 }
 
@@ -411,7 +438,7 @@ justify-content: space-around;
         background-color: transparent;
         border: 2px solid #FFFFFF;
     }
-    :deep(#ieee-button) {
+    #ieee-button {
         color: #FFFFFF;
         background-color: #4E3681;
         border: 2px solid #FFFFFF;
@@ -426,7 +453,7 @@ justify-content: space-around;
         background-color: white;
         color: black;
     }
-    :deep(#ieee-button:hover) {
+    #ieee-button:hover {
         background-color: white;
         color: #4E3681;
     }
@@ -456,7 +483,7 @@ justify-content: space-around;
         background-color: #CCECFD;
         border: 2px solid #CCECFD;
     }
-    :deep(#ieee-button) {
+    #ieee-button {
         color: #322253;
         background-color: #E6F6FF;
         border: 2px solid #4E3681;
@@ -465,7 +492,7 @@ justify-content: space-around;
         background-color: #E6F6FF;
         border: 2px solid #E6F6FF;
     }
-    :deep(#ieee-button:hover) {
+    #ieee-button:hover {
         background-color: #4E3681;
         color: white;
     }
