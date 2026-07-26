@@ -166,6 +166,7 @@ h3{
     height: auto;
     border-radius: 8px;
     display: block;
+    border: 2px solid #ccc;
 }
 
 
@@ -176,8 +177,6 @@ h3{
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
     border: none;
     border-radius: 20px;
     padding: 6px 14px;
@@ -190,7 +189,6 @@ h3{
 .lightbox-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.85);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -203,8 +201,6 @@ h3{
     position: fixed;
     top: 20px;
     right: 20px;
-    background: #555;
-    color: #fff;
     border: none;
     border-radius: 50%;
     width: 36px;
@@ -214,10 +210,6 @@ h3{
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.lightbox-close:hover {
-    background: #777; 
 }
 
 .lightbox-content {
@@ -236,8 +228,6 @@ h3{
 }
 
 .lightbox-nav {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
     border: none;
     border-radius: 50%;
     width: 40px;
@@ -250,12 +240,7 @@ h3{
     flex-shrink: 0;
 }
 
-.lightbox-nav:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
 .lightbox-footer {
-    color: #ccc;
     font-size: 14px;
     margin: 0;
 }
@@ -433,6 +418,37 @@ h3{
         mix-blend-mode: lighten;
     }
 
+    .enlarge-btn {
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+    }
+
+    .lightbox-overlay {
+        background: rgba(0, 0, 0, 0.85);
+    }
+
+    .lightbox-close {
+        background: #555;
+        color: #fff;
+    }
+
+    .lightbox-close:hover {
+        background: #777;
+    }
+
+    .lightbox-nav {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+
+    .lightbox-nav:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .lightbox-footer {
+        color: #ccc;
+    }
+
 }
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
@@ -465,7 +481,7 @@ h3{
     }
 
     .btn-tertiary {
-        background-color: #F1F5F9;
+        background-color: transparent;
         color: #322253;
         border: 2px solid #4E3681;
     }
@@ -477,6 +493,37 @@ h3{
     .btn-tertiary:hover {
         background-color: #4E3681;
         color: #FFFFFF;
+    }
+
+    .enlarge-btn {
+        background: rgba(255, 255, 255, 0.8);
+        color: #1E2019;
+    }
+
+    .lightbox-overlay {
+        background: rgba(0, 0, 0, 0.75);
+    }
+
+    .lightbox-close {
+        background: #ddd;
+        color: #1E2019;
+    }
+
+    .lightbox-close:hover {
+        background: #bbb;
+    }
+
+    .lightbox-nav {
+        background: rgba(0, 0, 0, 0.1);
+        color: #1E2019;
+    }
+
+    .lightbox-nav:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .lightbox-footer {
+        color: white;
     }
 }
 </style>

@@ -62,15 +62,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
 
-            <!-- Move to IEEE Section -->
-            <!-- <button class="...." @click="getPDF()">Read the paper now</button> -->
-
-            <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
-                style="width: 100%; display: block; aspect-ratio: 7 / 4;"
-                frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
-            </iframe>
-            <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
-        
+            <div>
+                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+                    style="width: 100%; display: block; aspect-ratio: 7 / 4;"
+                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
+                </iframe>
+                <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+            </div>  
         </div>
 
         <div class="row odd-stripe"  >
@@ -142,12 +140,11 @@ methods: {
 
 #latest-news-banner {
     max-width: 100%;
-    display: flex; 
-    flex-direction: row; 
+    display: flex;
+    flex-direction: row;
     gap: 52px;
     padding: 30px 40px;
     border-radius: 15px;
-    background-color: #1E2019;
     align-items: center;
     margin-left: 0.75rem;
 }
@@ -163,7 +160,6 @@ methods: {
     font-size: 24px;
     font-weight: 500;
     line-height: 36px;
-    color: #CCECFD;
     margin: 0;
 }
 
@@ -171,22 +167,13 @@ methods: {
     font-size: 20px;
     font-weight: 400;
     line-height: 30px;
-    color: white;
     margin: 0;
 }
 
 :deep(#news-button) {
     width: fit-content;
     padding: 18px 22px !important;
-    color: white !important;
-    background-color: transparent !important;
-    border: 2px solid white !important;
     border-radius: 10px;
-}
-
-:deep(#news-button):hover {
-    background-color: white !important;
-    color: #000000 !important;
 }
 
 #ieee-button {
@@ -233,7 +220,9 @@ methods: {
     /* width: 100px;
     height: auto; */
     width: 158px; 
-    height: 158px
+    height: 158px;
+    background-color: #E6F6FF;
+    border-radius: 10px;
 }
 
 #flexright {
@@ -458,9 +447,32 @@ methods: {
         color: #4E3681;
     }
     .ieee-button {
-        background-color: #4E3681; 
-        border-color: white; 
+        background-color: #4E3681;
+        border-color: white;
         color: white
+    }
+
+    #latest-news-banner {
+        background-color: #1E2019;
+    }
+
+    #news-text-container h4 {
+        color: #CCECFD;
+    }
+
+    #news-text-container p {
+        color: #FFFFFF;
+    }
+
+    :deep(#news-button) {
+        color: white !important;
+        background-color: transparent !important;
+        border: 2px solid white !important;
+    }
+
+    :deep(#news-button):hover {
+        background-color: white !important;
+        color: #000000 !important;
     }
 }
 /* Light mode version of second row */
@@ -499,6 +511,29 @@ methods: {
     .ieee-button {
         background-color: #E6F6FF;
         color: #322253;
+    }
+
+    #latest-news-banner {
+        background-color: #4E3681;
+    }
+
+    #news-text-container h4 {
+        color: #CCECFD;
+    }
+
+    #news-text-container p {
+        color: #FFFFFF;
+    }
+
+    :deep(#news-button) {
+        color: white !important;
+        background-color: transparent !important;
+        border: 2px solid white !important;
+    }
+
+    :deep(#news-button):hover {
+        background-color: white !important;
+        color: #4E3681 !important;
     }
 }
 
