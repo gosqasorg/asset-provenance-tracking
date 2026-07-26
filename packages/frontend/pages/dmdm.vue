@@ -16,35 +16,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the Decentralized Medical Device Manufacturing (DMDM) page for GOSQAS
 -->
 
-<!-- TODO: Implement picture enlargement feature -->
-<!-- TODO: Enure css matches figma design -->
-<!-- TODO:Add captions to images -->
-<script setup lang="ts">
-    const route = useRoute()
+<!-- TODO: Add prev and next navigation to lightbox -->
+<script lang="ts">
 
-    const lightboxOpen = ref(false)
-    const lightboxIndex = ref(0)
-
-    const dmeImages = [
-        { src: '/dmdm-decisiontree.png', alt: 'Decision Tree', caption: 'DME graph 1' },
-        { src: '/dmdm-recordhistory.jpg', alt: 'Record History', caption: 'DME graph 2' },
-    ]
-
-    function openLightbox(index: number) {
-        lightboxIndex.value = index
-        lightboxOpen.value = true
+    export default {
+        data() {
+            return {
+                lightboxOpen: false,
+                lightboxIndex: 0,
+                dmeImages: [
+                    { src: '/dmdm-decisiontree.png', alt: 'Decision Tree', caption: 'DME graph 1' },
+                    { src: '/dmdm-recordhistory.jpg', alt: 'Record History', caption: 'DME graph 2' },
+                ]
+            }
+        },
+    
+    methods: {
+        openLightbox(index: number) {
+            this.lightboxIndex = index
+            this.lightboxOpen = true
+        },
+        closeLightbox() {
+            this.lightboxOpen = false
+        },
+        getQMS() {
+            window.open('https://codeberg.org/DMDM', '_blank')
+        },
+        getCodebase() {
+            window.open('https://codeberg.org/DMDM/DME', '_blank')
+        },
+        getReport() {
+            window.open('/USING_GDT_FOR_CLASS_I_MEDICAL_DEVICES.pdf', '_blank')
+        }
     }
-
-    function closeLightbox() {
-        lightboxOpen.value = false
-    }
-
-    // Add functions to navigte images in the lightbox
-    function prevImage() {
-    }
-    function nextImage() {
-    }
-
+}
 </script>
 
 
@@ -77,7 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row even-stripe">
             <h3>Open Source QMS</h3>
             <p>Sponsored by a GOSQAS grant, DMDM has open sourced their FDA and ISO13485:2016 compliant quality management system (QMS) for the manufacturing of pre-market exempt, non sterile, class I and class II medical devices. The QMS was designed for adoption by any group focused on high quality manufacturing, but especially for open source, small-scale community manufacturing groups where quality management resource capacity is more constrained.</p>
-            <button class="btn btn-tertiary">View the DMDM QMS here</button>
+            <button class="btn btn-tertiary" @click="getQMS()">View the DMDM QMS here</button>
         </div>
 
         <div class="row" id="dme-container">
@@ -85,7 +90,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h3>Distributed Manufacturing Ecosystem (DME)</h3>
                 <p>DMDM is developing the Distributed Manufacturing Ecosystem (DME) as an open-source software suite for production line management. Built upon the Global Distributed Tracking (GDT) codebase, DME is intended for small-scale, community manufacturing where documenting quality processes is paramount for user adoption and trust.</p>
                 <p>DME enables realtime manufacturing throughput visualization by recording batch workflows, defects, reworks and a comprehensive device history file (DHF). A customizable tiered-checklist gating system monitors each stage of the manufacturing process down to the component level. Records are updated through GDT, which easily allows mobile phone interface.</p>
-                <button class="btn btn-primary">Browse the DME codebase</button>
+                <button class="btn btn-primary" @click="getCodebase()">Browse the DME codebase</button>
             </div>
 
             <div id="dme-graphics">
@@ -97,6 +102,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     @click="openLightbox(i)"
                 >
                     <img :src="img.src" :alt="img.alt" class="dmegraph" />
+                    <!-- @click.stop stops the enlarge button triggering twice due to propagation :) -->
                     <button class="enlarge-btn" @click.stop="openLightbox(i)">
                         <!-- From Lucide Icons: https://lucide.dev/icons/zoom-in -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zoom-in-icon lucide-zoom-in"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
@@ -108,6 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <!-- Lightbox for fullscreen images -->
         <Teleport to="body">
+            <!-- using .self so that clicking the overlay closes the fullscreen view instead of the image -->
             <div v-if="lightboxOpen" class="lightbox-overlay" @click.self="closeLightbox">
                 <button class="lightbox-close" @click="closeLightbox">&#x2715;</button>
                 <div class="lightbox-content">
@@ -122,15 +129,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row even-stripe">
             <h3>GDT for Class 1 Medical Device Manufacturing</h3>
             <p>Since 2024, DMDM has been using GDT in their FDA-registered manufacturing facility. Now, DMDM has released a comprehensive report describing how GDT helps them create documentation for tool maintenance, product defects, batch records, materials tracking, and post-market surveillance.</p>
-            <button class="btn btn-tertiary">Read the report</button>
+            <button class="btn btn-tertiary" @click="getReport()">Read the report</button>
         </div>
     </div>
     
     
-    
 </template>
-
-
 
 <style scoped>
 

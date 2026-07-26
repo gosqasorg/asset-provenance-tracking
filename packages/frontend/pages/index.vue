@@ -221,7 +221,7 @@ methods: {
     height: auto; */
     width: 158px; 
     height: 158px;
-    background-color: #E6F6FF;
+    background-color: #FFFFFF;
     border-radius: 10px;
 }
 
