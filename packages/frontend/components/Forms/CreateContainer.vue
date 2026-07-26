@@ -303,12 +303,12 @@ export default {
                         await postProvenance(childKey, {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
-                            description: this.description,  // need to see if we want a special description when making a child
-                            tags:this.tags,
+                            description: '',
+                            tags: [],
                             children_key: '',
                             hasParent: true,
                             isPublicKey: false
-                        }, this.pictures || [])
+                        }, [])
                         
                         childrenDeviceList.push(childKey);
                         childrenDeviceName.push(childName);
@@ -329,19 +329,18 @@ export default {
             if (this.createPublicKey) {
                 // Should be higher up?
                 publicKey =  await makeEncodedDeviceKey(); //public key = public key
-                let tag_set = (this.tags).concat(['publickey']);
+                let tag_set = ['publickey'];
 
                 try {
                     await postProvenance(publicKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
-                        // Is this a proper description? Should it say "public key" or something?
-                        description: this.description,
+                        description: '',
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
                         isPublicKey: true,
-                    }, this.pictures || [])
+                    }, [])
                     
                     this.$snackbar.add({
                         type: 'success',
