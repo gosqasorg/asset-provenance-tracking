@@ -411,6 +411,12 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const record = JSON5.parse(provenanceRecord);
     if (!validateJSON(record)) { return { status: 404 }; }
 
+    // If requested and record already exists add the sent_to_all_children tag
+    const sendEntryToAllChildren = record.sent_to_all_children;
+    if (!record.deviceName && sendEntryToAllChildren) {
+        record.tags.push("sent_to_all_children");
+    }
+
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
     const attachments = new Array<NamedBlob>();
@@ -705,7 +711,7 @@ export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
 
-// Annotate: Send new record's tags to all children
+// Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
 
@@ -714,17 +720,17 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
-        if (records[0].record.tags.includes("annotate")) {
+        if (records[0].record.tags.includes("sent_to_all_children")) {
             let length = Object.keys(records).length;
             let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 
-            // Send annotated record to all children
+            // Send record entry to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                // Make sure key is NOT a public key (public keys do not have the ability to recieve records from the group)
                 if (!keyProvenance[0].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
@@ -737,7 +743,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                     const keyFormData = new FormData();
                     keyFormData.append("provenanceRecord", JSON.stringify({
                         blobType: 'deviceRecord',
-                        description: records[0].record.description || "Annotated by Group",
+                        description: records[0].record.description || "Record Entry sent from Group",
                         children_key: '',
                         tags: records[0].record.tags,
                     }));
@@ -756,7 +762,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        console.error(`Error annotating children: ${error}`);
+        context.error(`Error sending record entry to all children: ${error}`);
         return {
             status: 500
         }
@@ -1389,7 +1395,7 @@ async function createChildren(context, description: string, number_of_children: 
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = [], annotate: boolean = false) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1449,24 +1455,6 @@ async function createGroup(context, name, description, n_children: number = 0, c
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
     }
-    if(annotate){
-        for (const key of childKeys){
-            if(key !== public_key){
-                const annotateFormData = new FormData();
-                annotateFormData.append("provenanceRecord", JSON.stringify({
-                    blobType: "deviceRecord",
-                    description: description || "Annotated by Group",
-                    children_key: '',
-                    tags: [...tags, "notify_all"],
-                }));
-
-                await fetch(`${backendUrl}${key}`, {
-                    method: "POST",
-                    body:annotateFormData,
-                });
-            }
-        }
-    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1483,8 +1471,7 @@ const GroupCreationOrderSchema = z.object({
     hasPublicKey: z.boolean().optional(),
     custom_record_titles: z.array(z.string()).optional(),
     children_name: z.array(z.string()).optional(),
-    create_public_key: z.boolean().optional(),
-    annotate: z.boolean().optional(),
+    create_public_key: z.boolean().optional()
 });
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -1512,8 +1499,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasPublicKey = theRequest['hasPublicKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let annotate = theRequest['annotate']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments, annotate)
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1669,16 +1655,27 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 // just a wrapper fxn for postProvenance
-export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const requestClone = request.clone();
     const formData = await requestClone.formData();
-    const tagsExist = JSON.parse(formData.get("provenanceRecord")).tags
+    const record = JSON.parse(formData.get("provenanceRecord") as string);
 
-    const postProvResponse = await postProvenance(request, context)
-    if (tagsExist && tagsExist.includes("annotate")) {
-        const notifChildrenResponse = await notifyChildren(request, context)
+    // Post the record entry
+    const postProvResponse = await postProvenance(request, context);
+
+    // If we're sending the record to the children call notifyChildren
+    const sendEntryToAllChildren = record.sent_to_all_children;
+    if (sendEntryToAllChildren) {
+        const notifChildrenResponse = await notifyChildren(request, context);
+        if (notifChildrenResponse.status !== 200) {
+            return {
+                status: 500,
+                jsonBody: { data: "Error: Record entry was unable to be sent to children." },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
     }
 
     return postProvResponse
@@ -1765,9 +1762,9 @@ app.get('getNewDeviceKey', {
     handler: getNewDeviceKey,
 })
 
-app.post('annotateChildren', {
+app.post('sendToAllChildren', {
     authLevel: 'anonymous',
-    route: 'provenance/annotate/{deviceKey}',
+    route: 'provenance/sendToChildren/{deviceKey}',
     handler: notifyChildren,
 })
 
