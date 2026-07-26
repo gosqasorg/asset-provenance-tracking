@@ -145,6 +145,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             autoCode:  { type: String, default: '' },
         },
 
+        emits: ['verification-completed'],  // to clear the props data being sent after this modal closes
+
         computed: {
             resendDisabled(): boolean {
                 return this.isResending || this.resendCooldownRemaining > 0;
@@ -322,6 +324,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (notifModal) {                    
                     new Modal(notifModal).show();
                 }
+
+                this.$emit('verification-completed'); // clearing data after verification
             }
         }
     }

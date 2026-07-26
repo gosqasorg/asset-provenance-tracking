@@ -81,6 +81,7 @@ function _chart(d3,filteredCountryData,countries,filteredRegionData,filteredCity
   // Legend stays on svg
   svg.append("g")
       .attr("transform", "translate(20,0)")
+      .attr("style", "color-scheme: light dark; color: light-dark(#1E2019, #FFFFFF);")
       .append(() => Legend(color, {title: "Website Requests", width: 260}));
 
   // 1. Sphere
@@ -417,11 +418,11 @@ FileAttachment("recent-requests.json").json()
 )}
 
 function _selectedWindow(Inputs){return(
-Inputs.radio(
-  ["1y", "6m", "3m", "1m", "1w", "1d"],
-  {value: "1y", label: "Time window", 
-   format: x => ({"1d": "1 Day", "1w": "1 Week", "1m": "1 Month", "3m": "3 Months", "6m": "6 Months", "1y": "1 Year"})[x]}
-)
+  Inputs.radio(
+    ["1y", "6m", "3m", "1m", "1w", "1d"],
+    {value: "1y", label: "Time window", 
+    format: x => ({"1d": "1 Day", "1w": "1 Week", "1m": "1 Month", "3m": "3 Months", "6m": "6 Months", "1y": "1 Year"})[x]}
+  )
 )}
 
 function _detailPanel(selectedCity,selectedRegion,selectedCountry,html,selectedWindow,recentRequests)
@@ -480,7 +481,6 @@ function _detailPanel(selectedCity,selectedRegion,selectedCountry,html,selectedW
       <div style="margin-bottom: 12px; color: #999; font-size: 12px; text-transform: uppercase;">
         ${level === "city" ? "City" : level === "region" ? "Region" : "Country"} view
       </div>
-
       <div style="margin-bottom: 12px; color: #555; font-size: 13px">
         ${filtered.length} requests &nbsp;|&nbsp;
         Success rate: ${successRate}% &nbsp;|&nbsp;
@@ -661,9 +661,11 @@ function _dashboard(chart,html,detailPanel,viewofSelectedWindow)
   
   const container = html`
     <div>
-      <div style="margin-bottom:12px">${viewofSelectedWindow}</div>
+<!--  Commented out in prep for Fab26  
+<!--      <div style="margin-bottom:12px">${viewofSelectedWindow}</div> 
+
       ${mapNode}
-      ${detailPanel}
+<!--      ${detailPanel}
     </div>
   `;
   return container;
@@ -711,7 +713,9 @@ export default function define(runtime, observer) {
   main.variable(null).define("regionValuemap", ["regionData","regionCountryLookup"], _regionValuemap);
   main.variable(null).define("recentRequests", ["FileAttachment"], _recentRequests);
   main.variable(null).define("viewof selectedWindow", ["Inputs"], _selectedWindow);
-  main.variable(null).define("selectedWindow", ["Generators", "viewof selectedWindow"], (G, _) => G.input(_));
+  // Commented out for Fab26
+  //main.variable(null).define("selectedWindow", ["Generators", "viewof selectedWindow"], (G, _) => G.input(_));
+  main.variable(null).define("selectedWindow", "1y"); // Edited from the above for Fab26
   main.variable(null).define("detailPanel", ["selectedCity","selectedRegion","selectedCountry","html","selectedWindow","recentRequests"], _detailPanel);
   main.variable(null).define("countryNameToAlpha3", ["world"], _countryNameToAlpha3);
   main.variable(null).define("filteredCountryData", ["selectedWindow","d3","recentRequests","data","countryNameToAlpha3"], _filteredCountryData);
