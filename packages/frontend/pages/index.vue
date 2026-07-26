@@ -53,12 +53,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <div id="latest-news-banner">
                 <img class="dmdm-image" src="/dmdm-logo.png">
-                <!-- TODO: Swap with DMDM Section and turn into banner. -->
                 <div id="news-text-container">
                     <h4>Latest News</h4>
                     <p>See the latest updates from Distributed Medical Device Manufacturing (DMDM), where GDT is a foundational element of their FDA-required quality management system.</p>
                     <NavButton to="/dmdm" text="See our latest updates" id="news-button"/>
-                    <!-- margin="0" padding="18px 22px" -->
                 </div>
             </div>
 
@@ -84,7 +82,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
 
-        <!-- TODO: Swap with IEEE Section -->
         <div class="row second-row" >
           <div class="ieeecontainer">
             <img src="/ieee.png" alt="IEEE Logo" class="ieeeimage" />
@@ -199,27 +196,16 @@ methods: {
     justify-content: space-around;
 }
 
-.ieecontainer > h3 {
-    font-size: 36px !important; 
-    font-weight: 500; 
-    line-height: 50px!important;
-}
-
 .ieeeimage {
   max-width: 12em;
   max-height: 12em;
   width: auto;
   height: auto;
   border-radius: 10px;
-
-  /* margin-bottom: 15px; */
-  /* margin-right: 15px; */
 }
 
 .dmdm-image {
-    /* width: 100px;
-    height: auto; */
-    width: 158px; 
+    width: 158px;
     height: 158px;
     background-color: #FFFFFF;
     border-radius: 10px;
@@ -230,20 +216,6 @@ methods: {
     display: flex;
     flex-direction: column;
     gap: 20px
-}
-
-.text-block {
-  flex: 1;              /* Let the text block take remaining space */
-}
-
-#wrap-word {
-    overflow-wrap: break-word;
-}
-
-#rowtest {
-    width: 100%;
-    max-width: 20vw;
-    height: auto;
 }
 
 #first-row {
@@ -301,12 +273,6 @@ methods: {
         font-size: 18px;
         line-height: 27px;
     }
-
-    .ieecontainer > h3 {
-        font-size: 22px !important; 
-        line-height: 33px!important;
-    }
-
 
     #flexright {
         max-width: 100%;
@@ -413,9 +379,6 @@ methods: {
     .second-row{
             background-color: #4E3681;
     }
-    .odd-stripe{
-    }
-
     h3 {
         color: #FFFFFF;
     }
@@ -446,12 +409,6 @@ methods: {
         background-color: white;
         color: #4E3681;
     }
-    .ieee-button {
-        background-color: #4E3681;
-        border-color: white;
-        color: white
-    }
-
     #latest-news-banner {
         background-color: #1E2019;
     }
@@ -508,11 +465,6 @@ methods: {
         background-color: #4E3681;
         color: white;
     }
-    .ieee-button {
-        background-color: #E6F6FF;
-        color: #322253;
-    }
-
     #latest-news-banner {
         background-color: #4E3681;
     }

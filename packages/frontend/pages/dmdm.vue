@@ -16,7 +16,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     This is the Decentralized Medical Device Manufacturing (DMDM) page for GOSQAS
 -->
 
-<!-- TODO: Add prev and next navigation to lightbox -->
 <script lang="ts">
 
     export default {
