@@ -15,7 +15,7 @@ export FUNC_NAME=gosqasbe
 export MY_STATIC_WEB_APP_NAME=gosqas-frontend
 
 export BACKEND_URL=https://gosqasbe.azurewebsites.net/api
-export FRONTEND_URL=https://red-stone-00f5d251e.5.azurestaticapps.net/
+export FRONTEND_URL=/
 
 # Build
 cd packages/frontend

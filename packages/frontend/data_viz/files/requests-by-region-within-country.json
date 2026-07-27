@@ -1,0 +1,147 @@
+[
+  {
+    "country/region": "Canada",
+    "state/province": "British Columbia",
+    "requests": 1414
+  },
+  {
+    "country/region": "Canada",
+    "state/province": "Ontario",
+    "requests": 16
+  },
+  {
+    "country/region": "France",
+    "state/province": "Paris",
+    "requests": 138
+  },
+  {
+    "country/region": "France",
+    "state/province": "Essonne",
+    "requests": 14
+  },
+  {
+    "country/region": "France",
+    "state/province": "Seine-Et-Marne",
+    "requests": 12
+  },
+  {
+    "country/region": "France",
+    "state/province": "Morbihan",
+    "requests": 5
+  },
+  {
+    "country/region": "France",
+    "state/province": "Haute-Savoie",
+    "requests": 5
+  },
+  {
+    "country/region": "France",
+    "state/province": "Val-De-Marne",
+    "requests": 5
+  },
+  {
+    "country/region": "Germany",
+    "state/province": "Nordrhein-Westfalen",
+    "requests": 2
+  },
+  {
+    "country/region": "Occupied Palestinian Territory",
+    "state/province": "Nablus",
+    "requests": 44
+  },
+  {
+    "country/region": "Singapore",
+    "state/province": "Central Singapore",
+    "requests": 28
+  },
+  {
+    "country/region": "State Of Palestine",
+    "state/province": "Nablus",
+    "requests": 137
+  },
+  {
+    "country/region": "State Of Palestine",
+    "state/province": "Gaza",
+    "requests": 5
+  },
+  {
+    "country/region": "United States",
+    "state/province": "California",
+    "requests": 904
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Arizona",
+    "requests": 759
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Virginia",
+    "requests": 740
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Illinois",
+    "requests": 564
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Maryland",
+    "requests": 359
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Wyoming",
+    "requests": 298
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Massachusetts",
+    "requests": 284
+  },
+  {
+    "country/region": "United States",
+    "state/province": "North Carolina",
+    "requests": 271
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Texas",
+    "requests": 151
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Iowa",
+    "requests": 145
+  },
+  {
+    "country/region": "United States",
+    "state/province": "New Jersey",
+    "requests": 130
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Washington",
+    "requests": 25
+  },
+  {
+    "country/region": "United States",
+    "state/province": "New York",
+    "requests": 9
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Ohio",
+    "requests": 7
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Nevada",
+    "requests": 5
+  },
+  {
+    "country/region": "United States",
+    "state/province": "Colorado",
+    "requests": 4
+  }
+]

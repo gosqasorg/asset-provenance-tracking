@@ -4,7 +4,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup Node ${{ env.NODE_VERSION }} Environment
-      uses: actions/setup-node@v4.0.4
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
 

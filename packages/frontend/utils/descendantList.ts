@@ -155,14 +155,14 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
         // records[0].record.hasParent = true;
 
         // Inform child it has been added to a group
-        const response2 = postProvenance(childKey, {
+        const response2 = await postProvenance(childKey, {
             blobType: 'deviceRecord',
             description:  "Added to group",
             hasParent: true,
         }, attachments || []);
 
         // Add child to group
-        const response = postProvenance(groupKey, {
+        const response = await postProvenance(groupKey, {
             blobType: 'deviceRecord',
             description:  "Child added to group",
             children_key: [`${childKey}`],
@@ -175,8 +175,8 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
     }
 }
 
-// Annotate: Send new record's tags to all children
-export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
+// Annotate: Send new record's tags and description to all children
+export async function notifyChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
     try {
         if (tags.includes(InternalTagName.Annotate)) {
             let records = await getProvenance(recordKey);
@@ -187,8 +187,8 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
-                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                // Make sure key is NOT a public key (public keys do not have the ability to annotate)
+                if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
                     if (uniqueChildKeys.includes(recordKey)) {
@@ -197,9 +197,9 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
 
                     keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
-                    postProvenance(key, {
+                    await postProvenance(key, {
                         blobType: 'deviceRecord',
-                        description: "Annotated by admin",
+                        description: description || "Annotated by Group",
                         children_key: '',
                         tags: tags,
                     }, attachments || [])
@@ -227,8 +227,8 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
-                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
                     if (uniqueChildKeys.includes(recordKey)) {
@@ -237,7 +237,7 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
 
                     keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
-                    postProvenance(key, {
+                    await postProvenance(key, {
                         blobType: 'deviceRecord',
                         description: description,
                         children_key: '',

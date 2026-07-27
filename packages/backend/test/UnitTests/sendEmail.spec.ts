@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { InvocationContext } from "@azure/functions";
 import { sendEmail } from '../../src/functions/sendEmail';
 
 vi.mock('@azure/communication-email', () => {
@@ -29,7 +30,7 @@ describe('sendEmail', () => {
         const body = 'This is a test email.';
         const displayName = 'Test User';
 
-        const result = await sendEmail(from_address, to_address, subject, body, displayName);
+        const result = await sendEmail(from_address, to_address, subject, body, displayName, console as InvocationContext);
         console.log(result);
         expect(result.status).toBe('Succeeded');
     });

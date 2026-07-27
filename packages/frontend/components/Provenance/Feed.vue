@@ -41,8 +41,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
+                <img v-if="attachment.isImage" :src="attachment.url" :alt="attachment.fileName" class="thumbnail" data-bs-toggle="modal"
                     data-bs-target="#imageModal" @click="modalImage = attachment.url">
+                
+                <div v-else class="file-attachment">
+                    <div class="file-name">{{"File: " + attachment.fileName }}</div>
+                </div>
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">Download File</a>
             </div>
 
@@ -52,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div v-for="(report, index) in filteredProvenanceDeviceInit" class="device-creation-box">
 
             <template v-if="report.record.blobType === 'deviceInitializer'">
-                <h3 id="createdDevicePoint">Created Record: {{ report.record.deviceName }}</h3>
+                <h3 id="createdDevicePoint" style="white-space:pre-wrap;">Created Record: {{ report.record.deviceName }}</h3>
             </template>
 
             <div v-if="recalledRecord">
@@ -66,7 +70,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <div class="text"
                 style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 20px; line-height: 30px;">
-                <span v-html="clickableLink(report.record?.description)"></span>
+                <span v-html="clickableLink(report.record?.description)" style="white-space: pre-wrap;"></span>
             </div>
 
             <div class="mb-1 tag-container">
@@ -76,11 +80,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <div v-for="(attachment, i) in attachmentURLs[index.toString()]" :key="i" class="attachment-wrapper">
-                <img :src="attachment.url" 
+                <img v-if="attachment.isImage"
+                :src="attachment.url" 
                 :alt="attachment.fileName" 
                 class="thumbnail"
                 @click="onThumbClick(attachment)">
 
+                <div v-else class="file-attachment">
+                    <div class="file-name">{{ "File: " + attachment.fileName }}</div>
+                </div>
 
                 <a :href="attachment.url" :download="attachment.fileName" class="download-link">
                     Download File
@@ -130,16 +138,15 @@ export default {
         filteredProvenance(){
             return this.provenance.filter(item => item.record.blobType != 'deviceInitializer')
         },
-        filteredProvenanceDeviceInit(){
-            return this.provenance.filter(item => item.record.blobType === 'deviceInitializer')
-        }
-    },
+        filteredProvenanceDeviceInit() {
+            return this.provenance.filter(item => (item.record.blobType === 'deviceInitializer'))
+    }},
     data() {
         return {
             attachmentURLs: {},
             modalImage: "",
             recalledRecord: false,
-            showModal: false
+            showModal: false,
         };
     },
     mounted() {
@@ -159,7 +166,8 @@ export default {
                     // Create object URLs for attachments and include filenames
                     const urls = attachments.map(attachment => ({
                         url: URL.createObjectURL(attachment.blob),
-                        fileName: attachment.fileName
+                        fileName: attachment.fileName,
+                        isImage: attachment.blob.type?.startsWith("image/")
                     }));
 
                     this.attachmentURLs[index.toString()] = urls;
@@ -193,7 +201,7 @@ export default {
     margin-bottom: 14px;
     margin-top: 14px;
     border-radius: 20px;
-    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 .device-creation-box {
     display:block;

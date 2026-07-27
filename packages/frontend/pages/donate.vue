@@ -30,6 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 We believe that all communities, regardless of location or resource environment, deserve tools that
                 increase accessibility to quality information and products.<br><br>
             </p>
+            <p style="margin-top: -25px">Global Distributed Tracking is used worldwide. See our impact <a href="/heatmap">here</a>.
+            </p>
         </div>
 
         <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"

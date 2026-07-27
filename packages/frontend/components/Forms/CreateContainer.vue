@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <h4 class="mt-1 mb-3">Create New Group</h4>
 
         <div>
-            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500">
+            <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500" @keydown.enter.prevent>
             <textarea id="container-description" v-model="description" placeholder="Group Description" maxlength="5000" rows="3"></textarea>
 
             <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
@@ -26,16 +26,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
-                <input type="number" v-model="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" @change="displayFields" >
+                <input type="number" v-model.number="childrenKeys" class="form-inline" id="children-keys" min="0" max="500" step="1" @input="enforceLimit" @change="displayFields" @keydown="blockInvalidNumberChars">
+                <span style="font-size: 1em; font-weight: normal; margin-left: 8px;">(Limit 500)</span>
             </h4>
 
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Grouped Record Titles?
+                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Child Titles
             </h4>
             <div v-if="customized" class="text-iris" id="num-fields">
                 <div v-for="(item, index) in fieldSet">
@@ -45,18 +46,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Key
             </h4>
- 
-            <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
-            </h4>
+
+            <!-- Subscribe to tag notifications -->
+            <div v-if="onDev">
+                <h4 class="p-1 my-0">
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
+
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
+                />
+                </div>
+
+                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+                    
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
+            </div>            
 
             <!-- Volunteer Feedback Email --> 
             <h4 class="p-1">
-                <input v-model="isChecked" type="checkbox" class="form-check-input"/> I'm open to providing feedback on my experience with GDT
+                <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
-    
+
             <div v-if="isChecked">
                 <!-- TODO: API call function -->
                 <input style="margin-bottom: 18px;"
@@ -65,16 +84,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     v-model="textInput"
                     placeholder="Email"
                     @keyup.enter=""
+                    @keydown.enter.prevent
                 />
             </div>
 
             <!-- Offline Banner -->
-            <OfflineBanner v-if="displayBanner" class="offline-banner" style="align-items: center; display: flex">
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
                 </div> 
-            </OfflineBanner>
+            </Banner>
+
+            <!-- Banner to Offline History Create Page -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
+
+            <!-- Back Online Banner -->
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
+				</div>
+            </Banner>
+
         </div>
 
         <div class="d-grid mt-3">
@@ -96,7 +133,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -104,38 +141,81 @@ import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
-import OfflineBanner from '../OfflineBanner.vue';
-import { displayOfflineBanner } from '~/services/azureFuncs';
+import Banner from '../Banner.vue';
+import { useRuntimeConfig } from '#app';
 
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             childrenKeys: 0,
-            createReportingKey: false,
+            createPublicKey: false,
             hasParent: false, // states whether this device is contained within a box/group
             pictures: [] as File[] | null,
+            notify: false,          //sign up for email notifs vals
+            notifyTags: false,      // email tag notification checkbox
+            emailInput: '',
             isChecked: false,
             textInput: '',
+            subscribeChecked: false,
+            subscribeEmail: '',
             customized: false,
             annotate: false,
             fieldSet: [{id: '', customName:''}],
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+
         }
     },
     computed: {
+        // Controls the visibility of offline banner based on global variable displayOfflineBanner
         displayBanner() {
-            if (displayOfflineBanner === true)
+            if (displayOfflineBanner === true) {
                 return true;
-            else{
+            } else {
                 return false;
             }
+        },
+        // Controls the visibility of online banner based on global variable displayOnlineBanner
+        onlineBannerToggle() {
+            if (displayOnlineBanner === true) {
+                return true;
+        } else {
+            return false;
         }
+        },
     },
     methods: {
+        blockInvalidNumberChars(e: KeyboardEvent) {
+            const invalidKeys = ['e', 'E', '+', '-', '.'];
+            if (invalidKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        },
+        enforceLimit() {
+            // To handle cases: empty user input or invalid input types such as the string 'abc' or '1+600'.
+            if (this.childrenKeys === null || this.childrenKeys === undefined || isNaN(this.childrenKeys)) {
+                this.childrenKeys = 0;
+                return;
+            }
+
+            if (this.childrenKeys > 500) {
+                this.childrenKeys = 500;
+            } else if (this.childrenKeys < 0) {
+                this.childrenKeys = 0;
+            } else {
+                this.childrenKeys = Math.floor(this.childrenKeys);
+            }
+        },
+
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
+        },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -143,7 +223,7 @@ export default {
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;  // aka 2MB
+            const maxFileSize = 5242880;  // aka 5MB
 
             let validFileSize = true;
 
@@ -200,12 +280,9 @@ export default {
             // redundant until I get this workin.
             const childrenDeviceList = [];
             const childrenDeviceName = [];
-            let reportingKey;
+            let publicKey;
      
             // Get all elements from the DOM
-            if (this.annotate) {
-                this.tags = (this.tags).concat(['notify_all'])
-            } 
             
             // Emit an event to notify the gdt.vue page to display loading screen
             EventBus.emit('isLoading');
@@ -226,12 +303,12 @@ export default {
                         await postProvenance(childKey, {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
-                            description: this.description,  // need to see if we want a special description when making a child
-                            tags:this.tags,
+                            description: '',
+                            tags: [],
                             children_key: '',
                             hasParent: true,
-                            isReportingKey: false
-                        }, this.pictures || [])
+                            isPublicKey: false
+                        }, [])
                         
                         childrenDeviceList.push(childKey);
                         childrenDeviceName.push(childName);
@@ -249,34 +326,33 @@ export default {
                 }
             };
 
-            if (this.createReportingKey) {
+            if (this.createPublicKey) {
                 // Should be higher up?
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+                publicKey =  await makeEncodedDeviceKey(); //public key = public key
+                let tag_set = ['publickey'];
 
                 try {
-                    await postProvenance(reportingKey, {
+                    await postProvenance(publicKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
+                        description: '',
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
+                        isPublicKey: true,
+                    }, [])
                     
                     this.$snackbar.add({
                         type: 'success',
-                        text: 'Successfully created reporting key'
+                        text: 'Successfully created public key'
                     })
                 } catch (error) {
                     this.$snackbar.add({
                         type: 'error',
-                        text: `Error creating reporting key: ${error}`
+                        text: `Error creating public key: ${error}`
                     })
                 };
-                childrenDeviceList.push(reportingKey);
+                childrenDeviceList.push(publicKey);
                 childrenDeviceName.push(this.name);
             }
 
@@ -286,11 +362,11 @@ export default {
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey, 
+                    publicKey: publicKey, 
                     children_key: childrenDeviceList,
                     children_name: childrenDeviceName,
                     hasParent: false,
-                    isReportingKey: false
+                    isPublicKey: false
                 }, this.pictures || [])
                 
                 this.$snackbar.add({
@@ -299,7 +375,15 @@ export default {
                 })
 
                 if (response && this.isChecked && this.textInput) {
-                        await postEmail(this.textInput);
+                    await postEmail(this.textInput);
+                }
+                
+                //Repeated logic from lines 171-177 in CreateDevice.vue
+                if (response && this.notify && this.emailInput) {
+                    const email = this.emailInput.trim();
+                    await postNotificationEmail(deviceKey,email);
+                } else if (!response && this.notify && this.emailInput) {
+                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 // Navigate to the new group page
@@ -311,11 +395,42 @@ export default {
                         text: `Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`
                     })
                 }
+
+                if (response && this.subscribeChecked && this.subscribeEmail) {
+                    try {
+                        await postNotificationEmail(this.subscribeEmail, deviceKey);
+                        this.$snackbar.add({
+                            type: 'success',
+                            text: 'Check your email to verify your notification subscription.'
+                        });
+                    } catch (error) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Failed to send verification email: ${error}`
+                        });
+                    }
+                }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                }
+
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Error creating the group: ${error}`
+                    text: `Error creating the group: ${errorMessage}`
                 })
+
+                // Otherwise just return to the /gdt page
+                EventBus.emit('isLoading')
             }
 
             
@@ -375,13 +490,17 @@ export default {
         border:5px;
         border-color:red;
     }
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #group-button {
@@ -403,16 +522,8 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .offline-banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
+    .banner-link {
+        color: #CCECFD;
     }
 }
 /* Light mode version*/
@@ -420,7 +531,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #group-button {
@@ -439,16 +550,8 @@ export default {
         background-color: #4E3681;  
         color: white;
     }
-    .offline-banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
+    .banner-link {
+        color: #4E3681;
     }
 }
 </style>

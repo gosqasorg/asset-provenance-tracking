@@ -34,14 +34,14 @@ def through_filedialog():
                          'Device Url' : i['Device Url'],
                          'Description': i['Description'],
                          'Tags': i['Tags'],
-                         'Reporting Key': i['Reporting Key'],
+                         'Public Key': i['Public Key'],
                          'Attachment File': i['Attachment File']
                          }
             to_db.append(temp_dict)
 
     for info in to_db:
         #print('info: ', info)
-        c.execute('INSERT INTO records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Reporting_Key, Attachment_File) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (info['Timestamp'], info['Device Key'], info['Device Name'], info['Device Url'], info['Description'], info['Tags'], info['Reporting Key'], info['Attachment File'],))
+        c.execute('INSERT INTO records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Public_Key, Attachment_File) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (info['Timestamp'], info['Device Key'], info['Device Name'], info['Device Url'], info['Description'], info['Tags'], info['Public Key'], info['Attachment File'],))
         conn.commit()
 
 # open file through CLI
@@ -65,7 +65,7 @@ def through_cli():
                          'Device Url': i['Device Url'],
                          'Description': i['Description'],
                          'Tags': i['Tags'],
-                         'Reporting Key': i['Reporting Key'],
+                         'Public Key': i['Public Key'],
                          'Attachment File': i['Attachment File']
                          }
             to_db.append(temp_dict)
@@ -73,14 +73,14 @@ def through_cli():
     for info in to_db:
         #print('info: ', info)
         c.execute(
-            'INSERT INTO records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Reporting_Key, Attachment_File) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Public_Key, Attachment_File) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             (info['Timestamp'], info['Device Key'], info['Device Name'], info['Device Url'], info['Description'],
-             info['Tags'], info['Reporting Key'], info['Attachment File'],))
+             info['Tags'], info['Public Key'], info['Attachment File'],))
         conn.commit()
 
 conn = sqlite3.connect('records.db')
 c = conn.cursor()
-c.execute("CREATE TABLE IF NOT EXISTS records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Reporting_Key, Attachment_File)")
+c.execute("CREATE TABLE IF NOT EXISTS records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Public_Key, Attachment_File)")
 
 # ask user filedialog box
 test = pymsgbox.confirm(text='Would you like to upload a record csv file?', buttons=['Yes', 'No'], timeout=5000)
@@ -98,7 +98,7 @@ print('Fetched keys: ', fetch_keys)
 for stuff in fetch_keys:
     print('Working on record key: ', stuff)
     fetched_time = conn.execute('SELECT max(Timestamp) from records WHERE Device_Key=?', stuff)
-    row = conn.execute('SELECT max(Timestamp), Device_Key, Device_Name, Device_Url, Description, Tags, Reporting_Key, Attachment_File from records WHERE Device_Key=?', stuff)
+    row = conn.execute('SELECT max(Timestamp), Device_Key, Device_Name, Device_Url, Description, Tags, Public_Key, Attachment_File from records WHERE Device_Key=?', stuff)
     fetched_data = row.fetchall()
     print('Fetched key data : ', fetched_data)
     fetched_time_data = fetched_time.fetchall()
@@ -156,7 +156,7 @@ for stuff in fetch_keys:
     if formatted_site_date > formatted_file_date:
         formatted_utc = datetime.strftime(formatted_site_date, '%Y-%m-%d %I:%M:%S %z')
         tags = ', '.join(tags)
-        c.execute('INSERT INTO records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Reporting_Key, Attachment_File) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        c.execute('INSERT INTO records (Timestamp, Device_Key, Device_Name, Device_Url, Description, Tags, Public_Key, Attachment_File) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             (formatted_time_str + ' (' + formatted_utc + ' UTC)', fetched_data[0][1], fetched_data[0][2], fetched_data[0][3], captured_text, tags,
              fetched_data[0][6], fetched_data[0][7]))
         conn.commit()

@@ -39,76 +39,74 @@ const recordHasParent = hasParent(provenance);
                 </h1>
               </div>
 
-              <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">
-                Group & Child Record Key: {{ _recordKey }}
-              </div>
-              <div class="h5" v-else-if="deviceRecord?.children_key">
-                Group Record Key: {{ _recordKey }}
-              </div>
-              <div class="h5" v-else-if="deviceRecord.isReportingKey">
-                Reporting Key: {{ _recordKey }}
-              </div>
-              <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
-              <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
+                    <section id="device-details" class="details-container">
+                        <div class="record-description">
+                            <div class="my-4 fs-1">
+                                <p class="h text-bold mb-0">Asset History Records</p>
+                                <h1 class="mt-1 mb-1" style="word-break: break-word;">
+                                    {{ deviceRecord?.deviceName }}
+                                </h1>
+                            </div>
 
-              <div class="mb-3">
-                <span
-                  style="word-wrap: break-word"
-                  id="desc"
-                  v-html="clickableLink(deviceRecord?.description)"
-                ></span>
-              </div>
-            </div>
+                            <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
-            <div>
-              <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden" />
-            </div>
-          </section>
+                            <div class="mb-3">
+                                <span id="desc" v-html="clickableLink(deviceRecord?.description)" style="white-space: pre-wrap;"></span>
+                            </div>
+                        </div>
 
-          <div class="buttons-container">
-            <button class="btn px-3 device-btn view-history" @click="viewRecord">
-              View History Records
-            </button>
-            <ProvenanceDownloadDropdown
-              :downloadQRCodeMethod="downloadQRCode"
-              :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
-              :showWithTextMethod="showWithText"
-              :resetToDefaultMethod="resetToDefaultImage"
-            ></ProvenanceDownloadDropdown>
-            <ProvenanceShareDropdown
-              :deviceName="deviceRecord.deviceName"
-              :description="deviceRecord.description"
-            ></ProvenanceShareDropdown>
-          </div>
+                        <div>
+                            <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
+                        </div>
+                    </section>
 
-          <!-- QR -->
-          <div class="col-sm-6 col-lg-3">
-            <QRCode :url="qrCodeUrl" ref="qrcode_component" />
-          </div>
+                    <div class="buttons-container">
+                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
+                        <ProvenanceDownloadDropdown
+                        :downloadQRCodeMethod="downloadQRCode"
+                        :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+                        :showWithTextMethod="showWithText"
+                        :resetToDefaultMethod="resetToDefaultImage"
+                      ></ProvenanceDownloadDropdown>
+                        <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
+                        </ProvenanceShareDropdown>
 
-          <div v-if="hasReportingKey">
-            Reporting Key:
-            <div>
-              <a :href="`/history/${deviceRecord?.reportingKey}`">{{
-                deviceRecord?.reportingKey
-              }}</a>
-            </div>
-          </div>
+                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                        </button>
+                    </div>
 
-          <div v-if="childKeys?.length > 0 || hasReportingKey">
-            <div class="mb-3">
-              <h4>Child Keys</h4>
-              <div>
-                <KeyList v-bind:keys="childKeys" />
-              </div>
-            </div>
+                    <!-- Email notifications modal -->
+                    <ModalsEmailNotification ref="emailModal" />
 
-            <CsvFile :recordKey="_recordKey"></CsvFile>
-          </div>
+                    <!-- QR -->
+                    <div class="col-sm-6 col-lg-3">
+                        <QRCode :url="qrCodeUrl" ref="qrcode_component" />
+                    </div>
 
-          <div>
-            <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
-          </div>
+                    <div v-if="hasPublicKey"> Public Key:
+                        <div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
+                    </div>
+
+                    <div v-if="(childKeys?.length > 0) || hasPublicKey">
+                        <div class="mb-3"> 
+                            <h4>Child Keys</h4>
+                            <div>
+                                <KeyList v-bind:keys="childKeys" />
+                            </div>
+                        </div>
+
+                        <CsvFile :recordKey="_recordKey"></CsvFile>
+                    </div>
+
+                    <div>
+                        <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+                    </div>                    
+                </div>
+            </div>        
         </div>
       </div>
     </div>
@@ -137,12 +135,13 @@ import KeyList from '~/components/KeyList.vue';
 import { getProvenance } from '~/services/azureFuncs';
 import clickableLink from '~/utils/clickableLink';
 import QRCode from '@/components/QRCode.vue';
+import { useRuntimeConfig } from '#app';
 
 let deviceRecord: any;
 
 // Here we are are going to want to read the device,
 //    but not all the provenance. We will use this to load
-//    the two components above, the reporting key component and
+//    the two components above, the public key component and
 //    the child list component.
 //    At present, get Provenance is our only function;
 //    we do not have a function for returning only the first
@@ -163,30 +162,69 @@ export default {
       _recordKey: ''
     };
   },
-  methods: {
-    // This method helps rerendering the site
-    forceRerender() {
-      this.loadingKey += 1;
+    data() {
+        const config = useRuntimeConfig()
+        return {
+            isLoading: true,
+            recordKeyFound: true,
+            hasPublicKey: false,
+            childKeys: [] as string[],
+            loadingKey: 0,
+            _recordKey: "",
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+        }
     },
-    downloadQRCode() {
-      const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.downloadQRCode();
+    methods: {
+        // This method helps rerendering the site
+        forceRerender() {
+            this.loadingKey += 1;
+        },
+        downloadQRCode() {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.downloadQRCode();
+        },
+        downloadQRCodeWithText(customText?: string) {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.downloadQRCodeWithText(customText);
+        },
+        showWithText(customText?: string) {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.showWithText(customText);
+        },
+        resetToDefaultImage() {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.resetToDefault();
+        },
+        viewRecord() {
+            const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
+            navigateTo(`/history/${route.params.deviceKey}`);
+        },
     },
-    downloadQRCodeWithText(customText?: string) {
-      const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.downloadQRCodeWithText(customText);
-    },
-    showWithText(customText?: string) {
-      const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.showWithText(customText);
-    },
-    resetToDefaultImage() {
-      const qrCodeComponent = this.$refs.qrcode_component as any;
-      qrCodeComponent?.resetToDefault();
-    },
-    viewRecord() {
-      const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
-      navigateTo(`/history/${route.params.deviceKey}`);
+    async mounted() {
+        try {
+            const route = useRoute();
+            this._recordKey = route.params.deviceKey as string;
+            const response = await getProvenance(this._recordKey);
+            deviceRecord = response[response.length - 1].record;
+            console.log("device record: ", deviceRecord);
+            this.hasPublicKey = (deviceRecord.publicKey ? true : false);
+            // We will remove the publicKey, because although it is a child,
+            // we have already rendered it.
+            if (this.hasPublicKey) {
+                const index = deviceRecord.children_key.indexOf(deviceRecord.publicKey, 0);
+                if (index > -1) {
+                    deviceRecord.children_key.splice(index, 1);
+                }
+            }
+            this.childKeys = getChildKeys(response)
+            this.isLoading = false;
+        } catch (error) {
+            this.recordKeyFound = false;
+            this.$snackbar.add({
+                type: 'error',
+                text: 'No record found'
+            });
+        }
     }
   },
   async mounted() {
@@ -274,9 +312,38 @@ export default {
 }
 
 .buttons-container {
-  margin-bottom: 10px;
-  display: flex;
-  flex-wrap: wrap;
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.view-history, .secondary-btn {
+    flex: 1 1 300px;
+    margin-right: 0;
+    margin-top: 20px;
+}
+
+.buttons-container :deep(.buttons-container) {
+    flex: 1 1 300px;
+    width: 100% !important;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+
+.buttons-container :deep(.share-btn) {
+    width: 100%;
+}
+
+.buttons-container :deep(.notify-btn) {
+    flex: 1 1 300px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 20px;
 }
 
 .error-container {
@@ -381,10 +448,14 @@ export default {
     margin-right: 0px;
   }
 
-  .container-md {
-    margin-top: 0px !important;
-    box-sizing: border-box;
-  }
+    .container-md {
+        margin-top: 0px !important;
+        box-sizing: border-box;
+    }
+
+    .buttons-container :deep(.notify-btn) {
+        width: 100%;
+    }
 }
 
 /* Dark mode version*/
@@ -422,19 +493,19 @@ export default {
     color: black;
   }
 
-  .download-qr {
-    background-color: #1e2019;
-    border: 2px solid #ffffff;
-    color: white;
-  }
+    .secondary-btn {
+        background-color: #1E2019;
+        border: 2px solid #FFFFFF;
+        color: white;
+    }
 
-  .view-history:hover {
-    background-color: #e6f6ff;
-  }
-  .download-qr:hover {
-    background-color: white;
-    color: black;
-  }
+    .view-history:hover {
+        background-color: #e6f6ff
+    }
+    .secondary-btn:hover {
+        background-color: white;
+        color: black;
+    }
 }
 
 /* Light mode version*/
@@ -456,25 +527,25 @@ export default {
     color: #1e2019;
   }
 
-  .view-history {
-    background-color: #4e3681;
-    border: #4e3681;
-    color: white;
-  }
-  .view-history:hover {
-    background-color: #322253;
-  }
-  .download-qr:hover {
-    background-color: #e6f6ff;
-  }
-  .share-btn:hover {
-    background-color: #e6f6ff;
-  }
+    .view-history {
+        background-color: #4e3681;
+        border: #4e3681;
+        color: white;
+    }
+    .view-history:hover {
+        background-color: #322253
+    }
+    .secondary-btn:hover {
+        background-color: #e6f6ff
+    }
+    .share-btn:hover {
+        background-color: #e6f6ff
+    }
 
-  .download-qr {
-    background-color: #ccecfd;
-    border: #ccecfd;
-    color: black;
-  }
+    .secondary-btn {
+        background-color: #CCECFD;
+        border: #CCECFD;
+        color: black;
+    }
 }
 </style>
