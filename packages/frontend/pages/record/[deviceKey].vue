@@ -30,15 +30,6 @@ const recordHasParent = hasParent(provenance);
     <div v-if="recordKeyFound" class="record-container">
       <div class="my-4 mb-2 parent-container" :key="loadingKey">
         <div class="row justify-content-between main-container">
-          <section id="device-details" class="details-container">
-            <div class="record-description">
-              <div class="my-4 fs-1">
-                <p class="h text-bold mb-0">Asset History Records</p>
-                <h1 class="mt-1 mb-1">
-                  {{ deviceRecord?.deviceName }}
-                </h1>
-              </div>
-
                     <section id="device-details" class="details-container">
                         <div class="record-description">
                             <div class="my-4 fs-1">
@@ -106,10 +97,8 @@ const recordHasParent = hasParent(provenance);
                         <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
                     </div>                    
                 </div>
-            </div>        
+            </div>
         </div>
-      </div>
-    </div>
 
     <div v-else class="error-container">
       <h1 class="error-title">Invalid history key</h1>
@@ -151,16 +140,6 @@ export default {
   components: {
     GenerateQRCode,
     KeyList
-  },
-  data() {
-    return {
-      isLoading: true,
-      recordKeyFound: true,
-      hasReportingKey: false,
-      childKeys: [] as string[],
-      loadingKey: 0,
-      _recordKey: ''
-    };
   },
     data() {
         const config = useRuntimeConfig()
@@ -226,32 +205,6 @@ export default {
             });
         }
     }
-  },
-  async mounted() {
-    try {
-      const route = useRoute();
-      this._recordKey = route.params.deviceKey as string;
-      const response = await getProvenance(this._recordKey);
-      deviceRecord = response[response.length - 1].record;
-      this.hasReportingKey = deviceRecord.reportingKey ? true : false;
-      // We will remove the reportingKey, because although it is a child,
-      // we have already rendered it.
-      if (this.hasReportingKey) {
-        const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
-        if (index > -1) {
-          deviceRecord.children_key.splice(index, 1);
-        }
-      }
-      this.childKeys = deviceRecord.children_key;
-      this.isLoading = false;
-    } catch (error) {
-      this.recordKeyFound = false;
-      this.$snackbar.add({
-        type: 'error',
-        text: 'No record found'
-      });
-    }
-  }
 };
 </script>
 
