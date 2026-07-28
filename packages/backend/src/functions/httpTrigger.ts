@@ -411,8 +411,8 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const record = JSON5.parse(provenanceRecord);
     if (!validateJSON(record)) { return { status: 404 }; }
 
-    // If requested and record already exists add the sent_to_all_children tag
-    const sendEntryToAllChildren = record.sent_to_all_children;
+    // If record is marked "send_to_all_children" and it is not the first record then send it to all children
+    const sendEntryToAllChildren = record.send_to_all_children;
     if (!record.deviceName && sendEntryToAllChildren) {
         record.tags.push("sent_to_all_children");
     }
@@ -1666,7 +1666,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     const postProvResponse = await postProvenance(request, context);
 
     // If we're sending the record to the children call notifyChildren
-    const sendEntryToAllChildren = record.sent_to_all_children;
+    const sendEntryToAllChildren = record.send_to_all_children;
     if (sendEntryToAllChildren) {
         const notifChildrenResponse = await notifyChildren(request, context);
         if (notifChildrenResponse.status !== 200) {
