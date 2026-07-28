@@ -55,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
             
             <h4 class="p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
+                <input type="checkbox" class="form-check-input" id="send-to-all-children" v-model="sendToAllChildren"/> 
                     Send to all Children
             </h4>
 
@@ -150,7 +150,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <div class="popup" v-if="annotatePopUp">
+    <div class="popup" v-if="sendToAllChildrenPopUp">
         <div class="popup-inner">
             <h2 class="text-iris">Send to all Children</h2>
             <p>You've selected “Send to all Children” for this record entry. If you proceed, this message will be posted to all child records.</p>
@@ -189,9 +189,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
-            annotateAll: false,
+            sendToAllChildren: false,
             recallAll: false,
-            annotatePopUp: false,
+            sendToAllChildrenPopUp: false,
             recallPopUp: false,
             notify: false,
             notifyTags: false,
@@ -245,20 +245,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     },
     methods: {
         closePopUpA() {
-            this.annotatePopUp = false
+            this.sendToAllChildrenPopUp = false
         },
         closePopUpR() {
             this.recallPopUp = false
         },
         async trackingForm() {
 
-            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
+            if (Object.is(this.sendToAllChildren, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
             } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (this.annotateAll) {
-                this.annotatePopUp = true
+            } else if (this.sendToAllChildren) {
+                this.sendToAllChildrenPopUp = true
             } else {
                 this.submitRecord()
             }
@@ -305,9 +305,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.tags = [];
             this.groupKey = '';
             this.newChildKeys = [];
-            this.annotateAll = false;
+            this.sendToAllChildren = false;
             this.recallAll = false;
-            this.annotatePopUp = false;
+            this.sendToAllChildrenPopUp = false;
             this.recallPopUp = false;
         },
         async redirectIfOffline() {
@@ -410,8 +410,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (this.recallAll) {
                 this.tags.push("recall");
-            } else if (this.annotateAll) {
-                this.tags.push("annotate");
+            } else if (this.sendToAllChildren) {
+                this.tags.push("sent_to_all_children");
             }
 
             // Append the record to the records.
@@ -427,7 +427,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
-                } else if (this.annotateAll) {
+                } else if (this.sendToAllChildren) {
                     notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
