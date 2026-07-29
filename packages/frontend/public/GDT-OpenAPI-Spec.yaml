@@ -213,8 +213,20 @@ paths:
                   attachments:
                     type: array
                     example: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Provenance needs to exist before adding entries."
         '404':
           description: Not Found  
+        '500':
+          description: Internal Server Error 
 
   /recall/{deviceKey}:
     post:
