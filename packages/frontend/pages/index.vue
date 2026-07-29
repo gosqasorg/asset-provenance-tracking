@@ -51,15 +51,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <p style="font-weight: 400;">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
             </div>
 
-            <div id="latest-news-banner">
-                <img class="dmdm-image" src="/dmdm-logo.png">
-                <div id="news-text-container">
-                    <h4>Latest News</h4>
-                    <p>See the latest updates from Distributed Medical Device Manufacturing (DMDM), where GDT is a foundational element of their FDA-required quality management system.</p>
-                    <NavButton to="/dmdm" text="See our latest updates" id="news-button"/>
-                </div>
-            </div>
-
             <div>
                 <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                     style="width: 100%; display: block; aspect-ratio: 7 / 4;"
@@ -83,7 +74,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
 
         <div class="row second-row" >
-          <div class="ieeecontainer">
+          <div class="lastest-news-container">
             <img src="/ieee.png" alt="IEEE Logo" class="ieeeimage" />
             <div id="flexright">
               <h3>GDT Paper Published in the Institute of Electrical and Electronics Engineers</h3>
@@ -147,6 +138,7 @@ methods: {
     border-radius: 15px;
     align-items: center;
     margin-left: 0.75rem;
+    flex-direction: nowrap;
 }
 
 #news-text-container {
@@ -191,10 +183,10 @@ methods: {
     gap: 50px;
 }
 
-.ieeecontainer {
+.lastest-news-container {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;       /* Allows wrapping onto a new line */
+  flex-wrap: nowrap;       /* Allows wrapping onto a new line */
     align-items: stretch;
     justify-content: space-around;
 }
