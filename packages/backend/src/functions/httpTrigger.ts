@@ -411,12 +411,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const record = JSON5.parse(provenanceRecord);
     if (!validateJSON(record)) { return { status: 404 }; }
 
-    // If record is marked "send_to_all_children" and it is not the first record then send it to all children
-    const sendEntryToAllChildren = record.send_to_all_children;
-    if (!record.deviceName && sendEntryToAllChildren) {
-        record.tags.push("sent_to_all_children");
-    }
-
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
     const attachments = new Array<NamedBlob>();
@@ -1658,27 +1652,65 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+    const backendUrl = process.env['backend_url'];
     const requestClone = request.clone();
-    const formData = await requestClone.formData();
+    const deviceKey = requestClone.params.deviceKey;
+    let formData = await requestClone.formData();
+    const attachmentValues = formData.values();
     const record = JSON.parse(formData.get("provenanceRecord") as string);
 
-    // Post the record entry
-    const postProvResponse = await postProvenance(request, context);
+    // Check the first record entry in the provenance to see if the key is a group or not
+    const provenance = await getProvenance(request, context);
+    const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
+    if (!creationRecord) {
+        return {
+            status: 400,
+            jsonBody: { error: "Provenance needs to exist before adding entries." },
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+    const isGroup = Array.isArray(creationRecord.record.children_key);
 
-    // If we're sending the record to the children call notifyChildren
+    // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
     const sendEntryToAllChildren = record.send_to_all_children;
-    if (sendEntryToAllChildren) {
+    if (isGroup && sendEntryToAllChildren) {
+        record.tags.push("sent_to_all_children");
+
+        // Rebuild our formData to include the new tag
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
+        
+        for (const attachment of attachmentValues) {
+            if (typeof attachment === 'string') continue;
+            formData.append(attachment.name, attachment);
+        }
+    }
+
+    // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
+    const response = await fetch(`${backendUrl}${deviceKey}`, {
+        method: "POST",
+        body: formData,
+    });
+
+    if (response.status !== 200) { return { status: response.status }; }
+    let postProvResponse = await response.json();
+
+    // If we're sending the record to all children call notifyChildren
+    if (isGroup && sendEntryToAllChildren) {
         const notifChildrenResponse = await notifyChildren(request, context);
         if (notifChildrenResponse.status !== 200) {
             return {
                 status: 500,
-                jsonBody: { data: "Error: Record entry was unable to be sent to children." },
+                jsonBody: { error: "Record entry was unable to be sent to children." },
                 headers: { "Content-Type": "text/plain" }
             }
         }
     }
 
-    return postProvResponse
+    return {
+        jsonBody: postProvResponse,
+        headers: { "Content-Type": "application/json" }
+    }
 }
 
 // Once per day update the total record, record entry, and attachment counts
