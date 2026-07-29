@@ -84,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         <div class="row second-row" >
           <div class="ieeecontainer">
-            <img src="/ieee.png" alt="IEEE Logo" class="ieeeimage" />
+            <img src="/IEEE.png" alt="IEEE Logo" class="ieeeimage" />
             <div id="flexright">
               <h3>GDT Paper Published in the Institute of Electrical and Electronics Engineers</h3>
               <p class="text" style="font-size:20px; line-height:30px; font-weight: 400;">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.
