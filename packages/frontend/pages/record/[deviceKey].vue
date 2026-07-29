@@ -180,7 +180,7 @@ export default {
                     deviceRecord.children_key.splice(index, 1);
                 }
             }
-            this.childKeys = deviceRecord.children_key;
+            this.childKeys = getChildKeys(response)
             this.isLoading = false;
         } catch (error) {
             this.recordKeyFound = false;

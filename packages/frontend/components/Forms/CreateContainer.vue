@@ -318,12 +318,12 @@ export default {
                         await postProvenance(childKey, {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
-                            description: this.description,  // need to see if we want a special description when making a child
-                            tags:this.tags,
+                            description: '',
+                            tags: [],
                             children_key: '',
                             hasParent: true,
                             isPublicKey: false
-                        }, this.pictures || [])
+                        }, [])
                         
                         this.$snackbar.add({
                             type: 'success',
@@ -362,13 +362,12 @@ export default {
                     await postProvenance(this.publicKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
-                        // Is this a proper description? Should it say "public key" or something?
-                        description: this.description,
+                        description: '',
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
                         isPublicKey: true,
-                    }, this.pictures || [])
+                    }, [])
                     
                     this.$snackbar.add({
                         type: 'success',
