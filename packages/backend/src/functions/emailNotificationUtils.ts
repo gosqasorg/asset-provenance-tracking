@@ -193,6 +193,7 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     emailIDSet.add(uniqueEmailString)
 
     try {
+        // Update our stored emails to include the new email/id
         uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
     } catch(error) {
         return {
@@ -232,6 +233,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     }
 
     try {
+        // Update our stored emails to no longer include the specified email/id
         uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
     } catch(error) {
         return {
