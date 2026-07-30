@@ -1,5 +1,5 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
-import { ContainerClient } from "@azure/storage-blob";
+import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
 
 const NOTIFICATION_TYPE = 'notificationSignups';
@@ -67,28 +67,7 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
     return [blobName, blobClient] as const;
 }
 
-export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
-    /*
-       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
-       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
-
-       Master docs here:
-       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-
-       * The BlockBlobUploadOptions Interface is where storage tier is set.
-         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
-    */
-
-    // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    const exists = await blobClient.exists();
-
-    // Confirm the email exists
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Email not provided" }, status: 404 };
-    }
-
+async function getExisitingEmails(exists: boolean, blobClient: BlockBlobClient) {
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
@@ -126,6 +105,66 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
         .map(s => s.trim())
         .filter(Boolean)
     );
+
+    return [emailSet, emailIDSet] as const;
+}
+
+async function uploadBlob(containerClient: ContainerClient, blobName: string, emailSet: Set<string>, emailIDSet: Set<string>, tags: string[]) {
+    // Setup data to upload
+    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    // Note: do not reformat; leave as commented
+    let status = (await containerClient.uploadBlockBlob(
+                    blobName,        // 1. Blob name
+                    data,           // 2. body (can be a string)
+                    data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
+                    uploadOptions // 4. optional options
+    )).response._response.status
+
+    if (status < 300 && status >= 200) {
+        return {
+            jsonBody: { message: "Success",
+                        name: blobName },
+            status: 200
+        }
+        // TODO: have frontend display in snackbar for status 4xx
+        // This means nothing for now since we're not validating that what we're being handed is an email.
+    } else {
+        throw new Error()
+    }
+}
+
+export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
+    /*
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
+
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+       * The BlockBlobUploadOptions Interface is where storage tier is set.
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    */
+
+    // Setup the blobClient
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    const exists = await blobClient.exists();
+
+    // Confirm the email exists
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) {
+        return { jsonBody: { message: "Email not provided" }, status: 404 };
+    }
+
+    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
 
     // Add the specified email to the set
     const sizeBeforeAdding = emailSet.size;
@@ -153,41 +192,11 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     const uniqueEmailString = base58encode(new Uint8Array(buffer));
     emailIDSet.add(uniqueEmailString)
 
-    // Setup data to upload
-    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
-    const data = JSON.stringify(payloadObj);
-
-    const uploadOptions = {
-        tier: "Cool",
-        blobHTTPHeaders: {
-            blobContentType: "application/json; charset=utf-8",
-        },
-    };
-
     try {
-        // Note: do not reformat; leave as commented
-        let status = (await containerClient.uploadBlockBlob(
-                        blobName,        // 1. Blob name
-                        data,           // 2. body (can be a string)
-                        data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
-                        uploadOptions // 4. optional options
-        )).response._response.status
-
-        if (status < 300 && status >= 200) {
-            return {
-                jsonBody: { message: "Success",
-                            name: blobName },
-                status: 200
-            }
-            // TODO: have frontend display in snackbar for status 4xx
-            // This means nothing for now since we're not validating that what we're being handed is an email.
-        } else {
-            throw Error('Failed to subscribe to email notifications')
-        }
+        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
     } catch(error) {
-        const msg = error instanceof Error ? error.message : String(error);
         return {
-            jsonBody: {message: error.message},
+            jsonBody: {message: 'Failed to subscribe to email notifications'},
             status: 500,
         }
     }
@@ -198,51 +207,16 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
 
-    // Get all the emails and ids currently stored in the blob
-    let existingEmails: string[] = [];
-    let existingEmailIDs: string[] = [];
-    if (exists) {
-        const buffer = await blobClient.downloadToBuffer();
-        const text = buffer.toString("utf8");
-
-        if (text) {
-            const parsed = JSON.parse(text) as any;
-            const emailsFromBlob = parsed?.email;
-            if (Array.isArray(emailsFromBlob)) {
-                existingEmails = emailsFromBlob.filter(email => {
-                    return typeof email === "string";
-                });
-            }
-
-            const emailIDsFromBlob = parsed?.email_id;
-            if (Array.isArray(emailIDsFromBlob)) {
-                existingEmailIDs = emailIDsFromBlob.filter(id => {
-                    return typeof id === "string";
-                });
-            }
-        }
-    }
+    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
 
     // Confirm the emailID exists and convert it to an email
-    const emailIndex = existingEmailIDs.indexOf(emailID);
+    const emailIndex = Array.from(emailIDSet).indexOf(emailID);
     if (emailIndex < 0) {
         return { jsonBody: { message: "Email not found in the database" }, status: 200 };
     }
-
+    const existingEmails = Array.from(emailSet);
     const email = existingEmails[emailIndex];
     const normalized = (email ?? "").trim().toLowerCase();
-
-    const emailSet = new Set(
-        existingEmails
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    const emailIDSet = new Set(
-        existingEmailIDs
-        .map(s => s.trim())
-        .filter(Boolean)
-    );
 
     // Remove the specified email from the set
     const sizeBeforeAdding = emailSet.size;
@@ -257,41 +231,11 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
         };
     }
 
-    // Setup data to upload
-    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
-    const data = JSON.stringify(payloadObj);
-
-    const uploadOptions = {
-        tier: "Cool",
-        blobHTTPHeaders: {
-            blobContentType: "application/json; charset=utf-8",
-        },
-    };
-
     try {
-        // Note: do not reformat; leave as commented
-        let status = (await containerClient.uploadBlockBlob(
-                        blobName,        // 1. Blob name
-                        data,           // 2. body (can be a string)
-                        data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
-                        uploadOptions // 4. optional options
-        )).response._response.status
-
-        if (status < 300 && status >= 200) {
-            return {
-                jsonBody: { message: "Success",
-                            name: blobName },
-                status: 200
-            }
-            // TODO: have frontend display in snackbar for status 4xx
-            // This means nothing for now since we're not validating that what we're being handed is an email.
-        } else {
-            throw Error('Failed to unsubscribe from email notifications')
-        }
+        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
     } catch(error) {
-        const msg = error instanceof Error ? error.message : String(error);
         return {
-            jsonBody: {message: error.message},
+            jsonBody: {message: 'Failed to unsubscribe from email notifications'},
             status: 500,
         }
     }
