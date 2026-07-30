@@ -8,7 +8,7 @@ const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 describe ("Send to All Children Tests", () => {
     it("Should send entry to the child record", async() => {
 		// Create the group/children
-        let payload = {
+        const payload = {
             deviceName: "Send To Children Basic Test",
             description: "Test for send_to_all_children feature",
             tags: [],
@@ -36,14 +36,14 @@ describe ("Send to All Children Tests", () => {
         let childKeys: string[] = groupRecord.children_key;
 
         // Add an entry to the group and send it to all children
-        payload = {
+        const newPayload = {
             description: "Sending record entry to all children and confirming it sent...",
             tags: ["Harry", "Ron"],
             send_to_all_children: true
         };
 
         formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(payload));
+        formData.append("provenanceRecord", JSON.stringify(newPayload));
 
         response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
             method: "POST",
@@ -57,7 +57,7 @@ describe ("Send to All Children Tests", () => {
         groupRecord = groupProvenance[0].record;
         console.log("(Send to Children Test) Group Record:", groupRecord);
 
-        expect(groupRecord.description).toBe(payload.description);
+        expect(groupRecord.description).toBe(newPayload.description);
         expect(groupRecord.tags).toEqual(["Harry", "Ron", "sent_to_all_children"]);
 
         // Look at the most recent record entry on the child and confirm it has the tags from the parent
@@ -66,14 +66,14 @@ describe ("Send to All Children Tests", () => {
         const childRecord = childProvenance[0].record;
         console.log("(Send to Children Test) Child Record:", childRecord);
 
-        expect(childRecord.description).toBe(payload.description);
+        expect(childRecord.description).toBe(newPayload.description);
         expect(childRecord.tags).toEqual(["Harry", "Ron", "sent_to_all_children"]);
 
     }, 60000);
 
     it("Should send entry to children but not to the public key", async() => {
         // Create the group/children
-        let payload = {
+        const payload = {
             deviceName: "Send To Children But Not Public Key",
             description: "Testing that records sent from the group are not sent to the public key",
             tags: [],
@@ -104,14 +104,14 @@ describe ("Send to All Children Tests", () => {
         childKeys.splice(childKeys.indexOf(publicKey), 1);
 
         // Add an entry to the group and send it to all children
-        payload = {
+        const newPayload = {
             description: "Sending record entry to all children and confirming it's not sent to the public key...",
             tags: ["Harry", "Ron", "Hermione"],
             send_to_all_children: true
         };
 
         formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(payload));
+        formData.append("provenanceRecord", JSON.stringify(newPayload));
 
         response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
             method: "POST",
@@ -125,7 +125,7 @@ describe ("Send to All Children Tests", () => {
             const childProvenance = await childData.json();
             const childRecord = childProvenance[0].record;
 
-            expect(childRecord.description).toBe(payload.description);
+            expect(childRecord.description).toBe(newPayload.description);
             expect(childRecord.tags).toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
         }
 
@@ -134,7 +134,7 @@ describe ("Send to All Children Tests", () => {
         const publicData = await publicProvenance.json();
         const publicRecord = publicData[0].record;
 
-        expect(publicRecord.description).not.toBe(payload.description);
+        expect(publicRecord.description).not.toBe(newPayload.description);
         expect(publicRecord.tags).not.toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
 
     }, 60000);

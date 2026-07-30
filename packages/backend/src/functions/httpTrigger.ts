@@ -1665,8 +1665,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     if (!creationRecord) {
         return {
             status: 400,
-            jsonBody: { error: "Provenance needs to exist before adding entries." },
-            headers: { "Content-Type": "text/plain" }
+            jsonBody: { error: "Provenance needs to exist before adding entries." }
         }
     }
     const isGroup = Array.isArray(creationRecord.record.children_key);
@@ -1700,9 +1699,8 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         const notifChildrenResponse = await notifyChildren(request, context);
         if (notifChildrenResponse.status !== 200) {
             return {
-                status: 500,
-                jsonBody: { error: "Record entry was unable to be sent to children." },
-                headers: { "Content-Type": "text/plain" }
+                status: notifChildrenResponse.status,
+                jsonBody: { error: "Record entry was unable to be sent to children." }
             }
         }
     }
