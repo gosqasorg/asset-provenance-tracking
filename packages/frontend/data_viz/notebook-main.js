@@ -444,14 +444,15 @@ function _detailPanel(selectedCity,selectedRegion,selectedCountry,html,selectedW
   if (selectedWindow === "1m") cutoff.setMonth(now.getMonth() - 1);
   if (selectedWindow === "3m") cutoff.setMonth(now.getMonth() - 3);
   if (selectedWindow === "6m") cutoff.setMonth(now.getMonth() - 6);
-  if (selectedWindow === "1y") cutoff.setMonth(now.getFullYear() - 1);
+  if (selectedWindow === "1y") cutoff.setFullYear(now.getFullYear() - 1);
 
   // Filter based on level
   const filtered = recentRequests.filter(d => {
     const inTime = new Date(d.time) >= cutoff;
-    if (level === "city") return d.city === selectedCity.city && inTime;
-    if (level === "region") return d.region === selectedRegion && inTime;
-    if (level === "country") return d.country === selectedCountry && inTime;
+    // Using includes rather than == to catch cases like "United States" vs. "United States of America"
+    if (level === "city") return selectedCity.city.includes(d.city) && inTime;
+    if (level === "region") return selectedRegion.includes(d.region) && inTime;
+    if (level === "country") return selectedCountry.includes(d.country) && inTime;
     return false;
   });
 
@@ -562,10 +563,18 @@ function _filteredCountryData(selectedWindow,d3,recentRequests,data,countryNameT
   const now = new Date();
   const cutoff = new Date(now);
   if (selectedWindow === "1d") cutoff.setDate(now.getDate() - 1);
+  if (selectedWindow === "1w") cutoff.setDate(now.getDate() - 7);
   if (selectedWindow === "1m") cutoff.setMonth(now.getMonth() - 1);
   if (selectedWindow === "3m") cutoff.setMonth(now.getMonth() - 3);
   if (selectedWindow === "6m") cutoff.setMonth(now.getMonth() - 6);
   if (selectedWindow === "1y") cutoff.setFullYear(now.getFullYear() - 1);
+
+  // Temporarily just returning static data everytime (since recent-requests isn't finalized and only contains 20 requests)
+  // Return static all-time data (since we don't currently have stored data for the different time periods)
+  return data.map(d => ({
+    country: d.country,
+    requests: d.requests
+  }));
 
   // Check if recentRequests covers this window
   const earliest = d3.min(recentRequests, d => new Date(d.time));
@@ -581,7 +590,7 @@ function _filteredCountryData(selectedWindow,d3,recentRequests,data,countryNameT
 
   // Use recentRequests for covered windows
   const counts = d3.rollup(
-    recentRequests.filter(d => new Date(d.time) >= cutoff),
+    recentRequests.filter(d => new Date(d.time) <= cutoff),
     v => v.length,
     d => d.country
   );
@@ -597,6 +606,7 @@ function _filteredRegionData(selectedWindow,d3,recentRequests)
   const now = new Date();
   const cutoff = new Date(now);
   if (selectedWindow === "1d") cutoff.setDate(now.getDate() - 1);
+  if (selectedWindow === "1w") cutoff.setDate(now.getDate() - 7);
   if (selectedWindow === "1m") cutoff.setMonth(now.getMonth() - 1);
   if (selectedWindow === "3m") cutoff.setMonth(now.getMonth() - 3);
   if (selectedWindow === "6m") cutoff.setMonth(now.getMonth() - 6);
@@ -628,6 +638,7 @@ function _filteredCityData(selectedWindow,d3,recentRequests,geocodedCities)
   const now = new Date();
   const cutoff = new Date(now);
   if (selectedWindow === "1d") cutoff.setDate(now.getDate() - 1);
+  if (selectedWindow === "1w") cutoff.setDate(now.getDate() - 7);
   if (selectedWindow === "1m") cutoff.setMonth(now.getMonth() - 1);
   if (selectedWindow === "3m") cutoff.setMonth(now.getMonth() - 3);
   if (selectedWindow === "6m") cutoff.setMonth(now.getMonth() - 6);
@@ -661,11 +672,10 @@ function _dashboard(chart,html,detailPanel,viewofSelectedWindow)
   
   const container = html`
     <div>
-<!--  Commented out in prep for Fab26  
-<!--      <div style="margin-bottom:12px">${viewofSelectedWindow}</div> 
+      <div style="margin-bottom:12px">${viewofSelectedWindow}</div> 
 
       ${mapNode}
-<!--      ${detailPanel}
+          ${detailPanel}
     </div>
   `;
   return container;
@@ -713,9 +723,7 @@ export default function define(runtime, observer) {
   main.variable(null).define("regionValuemap", ["regionData","regionCountryLookup"], _regionValuemap);
   main.variable(null).define("recentRequests", ["FileAttachment"], _recentRequests);
   main.variable(null).define("viewof selectedWindow", ["Inputs"], _selectedWindow);
-  // Commented out for Fab26
-  //main.variable(null).define("selectedWindow", ["Generators", "viewof selectedWindow"], (G, _) => G.input(_));
-  main.variable(null).define("selectedWindow", "1y"); // Edited from the above for Fab26
+  main.variable(null).define("selectedWindow", ["Generators", "viewof selectedWindow"], (G, _) => G.input(_));
   main.variable(null).define("detailPanel", ["selectedCity","selectedRegion","selectedCountry","html","selectedWindow","recentRequests"], _detailPanel);
   main.variable(null).define("countryNameToAlpha3", ["world"], _countryNameToAlpha3);
   main.variable(null).define("filteredCountryData", ["selectedWindow","d3","recentRequests","data","countryNameToAlpha3"], _filteredCountryData);
