@@ -83,9 +83,11 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
       ]
     },
     workbox: {
+      skipWaiting: true,
+      clientsClaim: true,
       globPatterns: ['**/*.{js,css,html,png,svg,ico,vue,mjs}'],
       maximumFileSizeToCacheInBytes: 5 * 1024 ** 2,
-      navigateFallbackDenylist: [/^\/GDT-OpenAPI-Spec\.yaml$/, /^\/user_manual\.pdf$/, /^\/Global_Distributed_Tracking\.pdf$/]
+      navigateFallbackDenylist: [/\/[^/?]+\.[^/]+$/]
     },
     devOptions: {
       enabled: false

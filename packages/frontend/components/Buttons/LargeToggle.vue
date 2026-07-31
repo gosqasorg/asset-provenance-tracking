@@ -21,6 +21,21 @@
         required: true
       }
     },
+    data() {
+      return {
+        rightLabelStart: false
+      }
+    },
+    mounted() {
+      // If we're redirecting from offline-edits and the record is a group, go to the group tab on load
+      let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+      this.rightLabelStart = isGroup === "true";
+
+      const checkbox = document.getElementById("toggle") as HTMLInputElement
+      if (checkbox) {
+        checkbox.checked = this.rightLabelStart;
+      }
+    },
     methods: {
       toggleView() {
         this.$emit('toggle-change');
