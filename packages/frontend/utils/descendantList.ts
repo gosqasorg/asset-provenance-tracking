@@ -175,19 +175,19 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
     }
 }
 
-// Annotate: Send new record's tags and description to all children
+// Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
     try {
-        if (tags.includes(InternalTagName.Annotate)) {
+        if (tags.includes(InternalTagName.SentToAllChildren)) {
             let records = await getProvenance(recordKey);
             let keysToCheck = deduplicateKeys(getChildKeys(records));
 
-            // Send annotated record to all children
+            // Send the record entry to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a public key (public keys do not have the ability to annotate)
+                // Make sure key is NOT a public key (public keys do not have the ability to recieve records from the group)
                 if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
@@ -199,7 +199,7 @@ export async function notifyChildren(recordKey: string, tags: string[], descript
 
                     await postProvenance(key, {
                         blobType: 'deviceRecord',
-                        description: description || "Annotated by Group",
+                        description: description || "Record Entry sent from Group",
                         children_key: '',
                         tags: tags,
                     }, attachments || [])
@@ -208,10 +208,10 @@ export async function notifyChildren(recordKey: string, tags: string[], descript
                 keysToCheck.shift();
             }
 
-            console.log("Finished updating children with 'annotate' tag.");
+            console.log("Finished updating children with 'sent_to_all_children' tag.");
         }
     } catch (error) {
-        console.error(`Error annotating children: ${error}`);
+        console.error(`Error sending record entry to all children: ${error}`);
     }
  }
  

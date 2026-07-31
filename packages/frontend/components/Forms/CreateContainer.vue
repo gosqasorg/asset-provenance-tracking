@@ -166,7 +166,6 @@ export default {
             subscribeChecked: false,
             subscribeEmail: '',
             customized: false,
-            annotate: false,
             fieldSet: [{id: '', customName:''}],
             deviceKey: '',
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
