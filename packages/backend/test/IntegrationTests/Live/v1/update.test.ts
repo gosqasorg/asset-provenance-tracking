@@ -365,7 +365,7 @@ describe("Record Update Tests", () => {
         description: "parent group for testing sent_to_all_children",
         tags: [],
         children_key: [grandchildKey],
-        hasParent: false,
+        hasParent: true,
         isPublicKey: false
       }));
   
@@ -376,7 +376,7 @@ describe("Record Update Tests", () => {
         description: "child record for testing sent_to_all_children",
         tags: [],
         children_key: "",
-        hasParent: false,
+        hasParent: true,
         isPublicKey: false
       }));
   
