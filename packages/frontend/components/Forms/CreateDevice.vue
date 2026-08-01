@@ -123,8 +123,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
-import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { makeEncodedDeviceKey, validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
@@ -141,16 +141,33 @@ export default {
             tags: [] as string[],
             emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
+            isPublicKey: false, // states whether this device is a reporting key
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
+            deviceKey: '',
             notify: false,      // email notification checkbox
             notifyTags: false,  // email tag notification checkbox
             emailInput: '',
             tagsEmailInput: '', // email for specified tag signup
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
+        }
+    },
+    mounted() {
+        // If we're creating a record from the stash fill in the stashed information
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        // Only fill in stashed information if we redirected from the offline edits page
+        if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.isPublicKey = this.stashedRecord.isPublicKey
+            this.hasParent = this.stashedRecord.hasParent
+            this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.name = this.stashedRecord.deviceName
+            this.description = this.stashedRecord.description
         }
     },
     computed: {
@@ -223,20 +240,34 @@ export default {
             if (this.isSubmitting) return;
             this.isSubmitting = true;
 
-            const deviceKey = await makeEncodedDeviceKey();
             try {
-                const response = await postProvenance(deviceKey, {
+                // Create a new deviceKey if we didn't get one from a stashed record
+                if (!validateKey(this.deviceKey)) {
+                    this.deviceKey = await makeEncodedDeviceKey();
+                }
+                const response = await postProvenance(this.deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags: this.tags,
                     children_key: '',
-                    hasParent: false,
-                    isPublicKey: false,
+                    hasParent: this.hasParent,
+                    isPublicKey: this.isPublicKey,
                 }, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
+                }
+
+                // If the record is being created from the offline edits page move it to the fulfilled stash
+                const previousUrl = window.history.state.back;
+                
+                // Only update the stash if the stashed request is a record
+                let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+
+                if (isGroup == "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
 
                 this.$snackbar.add({
@@ -245,7 +276,7 @@ export default {
                 });
 
                 // Navigate to the new record page
-                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${this.deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({
@@ -257,26 +288,37 @@ export default {
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
                 if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
-                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
                 }
 
-                // Remove the leading "Error:" text
-                let errorMessage;
-                if (error instanceof Error) {
-                    errorMessage = error.message;
+                let errorMessage: string = error instanceof Error
+                    ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                    : error as string  // otherwise just show the whole error
+
+                // If the record was stashed display a success message instead
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                if (errorMessage.includes("202")) {
+                    snackbarType = "success";
                 } else {
-                    errorMessage = error;
+                    errorMessage = `Failed to create record: ${errorMessage}`;
                 }
 
                 this.$snackbar.add({
-                    type: 'error',
-                    text: `Failed to create record: ${errorMessage}`
+                    type: snackbarType,
+                    text: errorMessage
                 });
 
-                // Otherwise just return to the /gdt page
+                // If we're online return to the /gdt page
                 EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
+            }
+
+            // If we were redirected to this page then remove the stashed record
+            if (JSON.stringify(this.stashedRecord) !== '{}') {
+                sessionStorage.removeItem("gdt-redirect-record");
+                sessionStorage.removeItem("gdt-redirect-isGroup");
+                sessionStorage.removeItem("gdt-redirect-key");
             }
         },
     }

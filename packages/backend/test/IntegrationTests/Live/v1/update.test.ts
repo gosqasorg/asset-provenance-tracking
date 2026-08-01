@@ -29,7 +29,7 @@ const apiUrl = "https://gosqasbe.azurewebsites.net/api/";
 // question for Vincent why put create a variable, is it to clean code?
 // from Vincent: the question is unclear, rephrase?
 let baseTestName;
-  describe(baseTestName = 'Group + Record History Update Tests', () => {
+describe(baseTestName = 'Group + Record History Update Tests', () => {
 	let testName;
 
 	// Placeholder
@@ -337,22 +337,21 @@ describe("Record Update Tests", () => {
 
     expect(grandchildRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
     expect(grandchildRecord.record.description).toBe("Updated with recall");
-    }, timeout);
+  }, timeout);
 
-    // Update with annotate
-    it("Update with annotate", async () => {
+  // Update and send record entry to all children
+  it("Update and send to all children", async () => {
       // Create a group with one child
       const groupKey = await makeEncodedDeviceKey();
       const childKey = await makeEncodedDeviceKey();
       const grandchildKey = await makeEncodedDeviceKey();
-      let fullUrl = `${baseUrl}${groupKey}`;
-      console.log("Update to test annotate: " + groupKey);
+      console.log("Update to test sent_to_all_children: " + groupKey);
   
       const groupFormData = new FormData();
       groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: "grandparent_smoketest",
-        description: "grandparent group for testing an annotated record",
+        description: "grandparent group for testing sent_to_all_children",
         tags: [],
         children_key: [childKey],
         hasParent: false,
@@ -363,10 +362,10 @@ describe("Record Update Tests", () => {
       childFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: "parent_smoketest",
-        description: "parent group for testing an annotated record",
+        description: "parent group for testing sent_to_all_children",
         tags: [],
         children_key: [grandchildKey],
-        hasParent: false,
+        hasParent: true,
         isPublicKey: false
       }));
   
@@ -374,10 +373,10 @@ describe("Record Update Tests", () => {
       grandchildFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: "child_smoketest",
-        description: "child record for testing an annotated record",
+        description: "child record for testing sent_to_all_children",
         tags: [],
         children_key: "",
-        hasParent: false,
+        hasParent: true,
         isPublicKey: false
       }));
   
@@ -400,53 +399,52 @@ describe("Record Update Tests", () => {
       expect(childResponse.ok).toBe(true);
       expect(grandchildResponse.ok).toBe(true);
   
-      // Add a new annotated record (aka a record w/ the annotate tag) to the parent group
+      // Add a new record to the parent group
       const updateData = {
         blobType: 'deviceRecord',
-        description: "Updated with annotate",
-        tags: ['annotate', 'testing_annotate'],
-        children_key: '',
+        description: "Record to be sent to all children",
+        tags: ['sent_to_all_children', 'update_test'],
       };
   
       const updateFormData = new FormData();
       updateFormData.append("provenanceRecord", JSON.stringify(updateData));
   
-      const updateResponse = await fetch(fullUrl, {
+      const updateResponse = await fetch(`${baseUrl}${groupKey}`, {
         method: "POST",
         body: updateFormData,
       });
 
-      // Call the annotate function to send annotated record to all the children and grandchildren
-      const annotateResponse = await fetch(`${baseUrl}annotate/${groupKey}`, {
+      // Call the notifyChildren function to send record to all the children and grandchildren
+      const sendToChildrenResponse = await fetch(`${baseUrl}sendToChildren/${groupKey}`, {
         method: "POST",
         body: updateFormData,
       });
       
-      expect(annotateResponse.ok).toBe(true);
+      expect(sendToChildrenResponse.ok).toBe(true);
   
-      // Test to see if the record was successfully annotated
+      // Test to see if the record was successfully sent to all children
       // To succeed, the record should exist in both group and child/grandchild record history
-      const getGroupResponse = await fetch(fullUrl);
+      const getGroupResponse = await fetch(`${baseUrl}${groupKey}`);
       const groupData = await getGroupResponse.json();
       const groupRecord = JSON.parse(JSON.stringify(groupData[0]));
   
-      expect(groupRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
-      expect(groupRecord.record.description).toBe("Updated with annotate");
+      expect(groupRecord.record.tags).toStrictEqual(['sent_to_all_children', 'update_test'])
+      expect(groupRecord.record.description).toBe("Record to be sent to all children");
   
       const getChildResponse = await fetch(`${baseUrl}${childKey}`);
       const childData = await getChildResponse.json();
       const childRecord = JSON.parse(JSON.stringify(childData[0]));
   
-      expect(childRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
-      expect(childRecord.record.description).toBe("Updated with annotate");
+      expect(childRecord.record.tags).toStrictEqual(['sent_to_all_children', 'update_test'])
+      expect(childRecord.record.description).toBe("Record to be sent to all children");
 
       const getGrandchildResponse = await fetch(`${baseUrl}${grandchildKey}`);
       const grandchildData = await getGrandchildResponse.json();
       const grandchildRecord = JSON.parse(JSON.stringify(grandchildData[0]));
 
-      expect(grandchildRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
-      expect(grandchildRecord.record.description).toBe("Updated with annotate");
-      }, timeout);
+      expect(grandchildRecord.record.tags).toStrictEqual(['sent_to_all_children', 'update_test'])
+      expect(grandchildRecord.record.description).toBe("Record to be sent to all children");
+  }, timeout);
 });
 
 
