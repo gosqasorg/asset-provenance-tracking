@@ -569,35 +569,35 @@ function _filteredCountryData(selectedWindow,d3,recentRequests,data,countryNameT
   if (selectedWindow === "6m") cutoff.setMonth(now.getMonth() - 6);
   if (selectedWindow === "1y") cutoff.setFullYear(now.getFullYear() - 1);
 
-  // Temporarily just returning static data everytime (since recent-requests isn't finalized and only contains 20 requests)
-  // Return static all-time data (since we don't currently have stored data for the different time periods)
+  // Temporarily just returning static data everytime (since recent-requests isn't finalized and currently only contains 20 requests)
   return data.map(d => ({
     country: d.country,
     requests: d.requests
   }));
 
-  // Check if recentRequests covers this window
-  const earliest = d3.min(recentRequests, d => new Date(d.time));
-  const windowCovered = earliest <= cutoff;
+  // Note: Leaving the below code as reference, as it could potentially be helpful once we're looking at live data
+  // Make sure recentRequests are within the timeframe (look at the newest request and make sure it happened after the cutoff date)
+  // const newest = d3.max(recentRequests, d => new Date(d.time));
+  // const windowCovered = newest >= cutoff;
 
-  if (!windowCovered) {
-    // Fall back to static all-time data
-    return data.map(d => ({
-      country: d.country,
-      requests: d.requests
-    }));
-  }
+  // if (!windowCovered) {
+  //   // If the newest request is not in our timeframe fall back to static all-time data
+  //   return data.map(d => ({
+  //     country: d.country,
+  //     requests: d.requests
+  //   }));
+  // }
 
-  // Use recentRequests for covered windows
-  const counts = d3.rollup(
-    recentRequests.filter(d => new Date(d.time) <= cutoff),
-    v => v.length,
-    d => d.country
-  );
-  return [...counts.entries()].map(([country, requests]) => ({
-    country: countryNameToAlpha3.get(country) || country,
-    requests
-  }));
+  // // If the newest request is within our timeframe show all requests in the timeframe
+  // const counts = d3.rollup(
+  //   recentRequests.filter(d => new Date(d.time) >= cutoff),
+  //   v => v.length,
+  //   d => d.country
+  // );
+  // return [...counts.entries()].map(([country, requests]) => ({
+  //   country: countryNameToAlpha3.get(country) || country,
+  //   requests
+  // }));
 }
 
 
