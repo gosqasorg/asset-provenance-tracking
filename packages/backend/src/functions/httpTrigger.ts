@@ -939,8 +939,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         await tableClient.upsertEntity(entity);
 
-        // sendEmail() with the code attached
-        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         const frontendUrl = process.env['frontend_url'];
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
         
@@ -950,7 +948,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             // Validation email body with link included here for later work, see issue 1121. 
             // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
-                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
+                process.env['SENDER_EMAIL'],
                 email,
                 "GOSQAS Verification Code",
                 `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
@@ -1185,8 +1183,6 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         await tableClient.createEntity(updatedEntity);
 
-        // sendEmail() with the code attached
-        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string;
         const frontendUrl = process.env['frontend_url'];
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
 
@@ -1196,7 +1192,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             // Validation email body with link included here for later work, see issue 1121. 
             // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
-                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
+                process.env['SENDER_EMAIL'],
                 entity.email as string,
                 "GOSQAS Verification Code",
                 `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
