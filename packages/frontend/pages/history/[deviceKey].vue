@@ -145,14 +145,13 @@ const hasParent = recordHasParent(provenance);
             <div class="action-buttons">
 	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
-                <div class="buttons-container">
-                  <ProvenanceDownloadDropdown
-                  :downloadQRCodeMethod="downloadQRCode"
-                  :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
-                  :showWithTextMethod="showWithText"
-                  :resetToDefaultMethod="resetToDefaultImage">
-                  </ProvenanceDownloadDropdown>
-                </div>
+				<ProvenanceDownloadDropdown
+				:downloadQRCodeMethod="downloadQRCode"
+				:downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+				:showWithTextMethod="showWithText"
+				:resetToDefaultMethod="resetToDefaultImage">
+				</ProvenanceDownloadDropdown>
+
 
                 <ProvenanceShareDropdown
                   :deviceName="deviceRecord.deviceName"
@@ -167,13 +166,11 @@ const hasParent = recordHasParent(provenance);
             <!-- Email notifications modal -->
             <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
 
+			<!--QR Code modal-->
+			<ModalsQRCode :url="qrCodeUrl" />
+
             <section id="recalled">
-              <ProvenanceFeed
-                border="2px solid #4e3681"
-                :disabled="!valid"
-                :recordKey="_recordKey"
-                :provenance="recalledRecords"
-              />
+              <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
             </section>
             <section id="recent">
               <ProvenanceFeed :recordKey="_recordKey" :provenance="recordsInFeed" />
@@ -267,10 +264,9 @@ data() {
         hasPublicKey: false,
         childKeys: [] as string[],
         _recordKey: "",
-        // for qr code text addition
         valid: false,
         customText: '',
-      showTextInput: false,
+		showTextInput: false,
         // for email verification
         autoToken: '' as string,
         autoCode: '' as string,
@@ -364,18 +360,18 @@ methods: {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
 	},
-  downloadQRCodeWithText(customText?: string) {
-    const qrCodeComponent = this.$refs.qrcode_component as any;
-    qrCodeComponent?.downloadQRCodeWithText(customText);
-  },
-  showWithText(customText?: string) {
-    const qrCodeComponent = this.$refs.qrcode_component as any;
-    qrCodeComponent?.showWithText(customText);
-  },
-  resetToDefaultImage() {
-    const qrCodeComponent = this.$refs.qrcode_component as any;
-    qrCodeComponent?.resetToDefault();
-  },
+	downloadQRCodeWithText(customText?: string) {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.downloadQRCodeWithText(customText);
+	},
+	showWithText(customText?: string) {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.showWithText(customText);
+	},
+	resetToDefaultImage() {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.resetToDefault();
+	},
 	addScrollListener() {
 	// When user scrolls, the nav bar is updated
 	window.addEventListener('scroll', () => {
@@ -485,25 +481,16 @@ methods: {
 }
 
 .qr-code-wrapper {
-  background-color: #4e3681;
-  /* Purple outline */
-  padding: 13px;
-  padding-bottom: 7px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform: scale(0.775);
-  margin: -20px;
-  margin-left: -40px;
-  height: 400px;
-  min-height: 400px;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
-}
-
-.qr-code-wrapper > * {
-  max-height: 100%;
-  overflow: hidden;
+    background-color: #4e3681;
+    /* Purple outline */
+    padding: 13px;
+    padding-bottom: 7px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: scale(0.775);
+    margin: -20px;
+    margin-left: -40px;
+    height: min-content;
 }
 
 .record-description {
@@ -542,11 +529,25 @@ methods: {
     width: 100% !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+	margin-right: 0;
 }
 
 .buttons-container :deep(.share-btn) {
     width: 100%;
 } */
+
+.action-buttons :deep(.buttons-container) {
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    margin-top: 20px !important;
+    margin-bottom: 0 !important;
+    margin-right: 0 !important;
+}
+
+.action-buttons :deep(.share-btn) {
+    width: 100%;
+}
+
 
 .notif-btn,
 .download-btn {
@@ -594,6 +595,10 @@ methods: {
   .download-btn
   {
     flex: 1 1 100%;
+  }
+
+  .action-buttons :deep(.buttons-container) {
+    flex: 1 1 100% !important;
   }
 }
 
@@ -809,8 +814,8 @@ h1 {
 }
 
   .download-btn {
-    background-color: #1e2019;
-    border: 2px solid #ffffff;
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
     color: white;
   }
 

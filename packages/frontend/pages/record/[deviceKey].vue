@@ -22,15 +22,16 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
 const provenance = await getProvenance(String(recordKey));
 
-const recordHasParent = hasParent(provenance);
+const hasParent = recordHasParent(provenance);
 
 </script>
 
 <template>
-  <div v-if="!isLoading">
-    <div v-if="recordKeyFound" class="record-container">
-      <div class="my-4 mb-2 parent-container" :key="loadingKey">
-        <div class="row justify-content-between main-container">
+    <div v-if="!isLoading">
+        <div v-if="recordKeyFound" class="record-container">
+            <div class="my-4 mb-2 parent-container" :key="loadingKey">
+                <div class="row justify-content-between main-container">
+
                     <section id="device-details" class="details-container">
                         <div class="record-description">
                             <div class="my-4 fs-1">
@@ -51,9 +52,6 @@ const recordHasParent = hasParent(provenance);
                             </div>
                         </div>
 
-                        <div>
-                            <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
-                        </div>
                     </section>
 
                     <div class="buttons-container">
@@ -62,8 +60,8 @@ const recordHasParent = hasParent(provenance);
                         :downloadQRCodeMethod="downloadQRCode"
                         :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
                         :showWithTextMethod="showWithText"
-                        :resetToDefaultMethod="resetToDefaultImage"
-                      ></ProvenanceDownloadDropdown>
+                        :resetToDefaultMethod="resetToDefaultImage">
+                        </ProvenanceDownloadDropdown>
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
                         </ProvenanceShareDropdown>
 
@@ -78,6 +76,9 @@ const recordHasParent = hasParent(provenance);
                     <div class="col-sm-6 col-lg-3">
                         <QRCode :url="qrCodeUrl" ref="qrcode_component" />
                     </div>
+
+                    <!--QR Code modal-->
+                    <ModalsQRCode :url="qrCodeUrl" />
 
                     <div v-if="hasPublicKey"> Public Key:
                         <div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
@@ -98,25 +99,25 @@ const recordHasParent = hasParent(provenance);
                         <ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
                     </div>                    
                 </div>
-            </div>
+            </div>        
         </div>
 
-    <div v-else class="error-container">
-      <h1 class="error-title">Invalid history key</h1>
-      <h2 class="error-subtitle">No record attached to this key</h2>
-      <p class="error-description">
-        We’re sorry, the record you’re looking for could not be found. Please double-check your key.
-        If you keep receiving this error, email us at
-        <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
-      </p>
-      <div class="error-buttons">
-        <!-- Go home button -->
-        <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
-        <!-- Email us button -->
-        <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
-      </div>
+        <div v-else class="error-container">
+            <h1 class="error-title">Invalid history key</h1>
+            <h2 class="error-subtitle">No record attached to this key</h2>
+            <p class="error-description">
+                We’re sorry, the record you’re looking for could not be found.
+                Please double-check your key. If you keep receiving this error,
+                email us at <a class="error-email" href="mailto:info@gosqas.org">info@gosqas.org</a>.
+            </p>
+            <div class="error-buttons">
+                <!-- Go home button -->
+                <RouterLink to="/" class="btn btn-primary error-button">Go home</RouterLink>
+                <!-- Email us button -->
+                <RouterLink to="/contact" class="btn btn-secondary error-button">Email us</RouterLink>
+            </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <script lang="ts">
@@ -138,10 +139,10 @@ let deviceRecord: any;
 //    record of a device, but we probably should.
 
 export default {
-  components: {
-    GenerateQRCode,
-    KeyList
-  },
+    components: {
+        GenerateQRCode,
+        KeyList,
+    },
     data() {
         const config = useRuntimeConfig()
         return {
@@ -211,58 +212,57 @@ export default {
 
 <style scoped>
 .record-container {
-  padding: 5px 5px 5px 5px;
-  width: 100%;
+    padding: 5px 5px 5px 5px;
+    width: 100%;
 }
 
 .btn {
-  padding: 16px 20px;
-  border-radius: 10px;
-  margin-right: 30px;
-  margin-top: 20px;
-  max-height: 61px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-right: 30px;
+    margin-top: 20px;
+    max-height: 61px;
 }
 
 .record-description {
-  width: 60%;
-  word-wrap: break-word;
+    width: 60%;
+    word-wrap: break-word;
 }
 
 .qr-container {
-  width: 30%;
+    width: 30%;
 }
 
 .main-container {
-  justify-content: space-between;
+    justify-content: space-between;
 }
 
 .parent-container {
-  margin-left: 4%;
-  margin-right: 4%;
+    margin-left: 4%;
+    margin-right: 4%;
 }
 
 .details-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .record-description {
-  margin-right: 15px;
-  max-width: 60%;
+    margin-right: 15px;
 }
 
 .qr-code-wrapper {
-  background-color: #4e3681;
-  /* Purple outline */
-  padding: 13px;
-  padding-bottom: 7px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform: scale(0.775);
-  margin: -20px;
-  margin-left: -40px;
-  height: min-content;
+    background-color: #4e3681;
+    /* Purple outline */
+    padding: 13px;
+    padding-bottom: 7px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: scale(0.775);
+    margin: -20px;
+    margin-left: -40px;
+    height: min-content;
 }
 
 .buttons-container {
@@ -284,6 +284,7 @@ export default {
     width: 100% !important;
     margin-top: 20px;
     margin-bottom: 0;
+    margin-right: 0;
 }
 
 .buttons-container :deep(.share-btn) {
@@ -324,7 +325,7 @@ export default {
   font-size: 40px;
   line-height: 60px;
   margin-bottom: 20px;
-  color: #1e2019;
+  color: #1E2019;
   /* Dark text color */
   text-align: left;
 }
@@ -335,7 +336,7 @@ export default {
   font-size: 20px;
   line-height: 30px;
   margin-bottom: 30px;
-  color: #1e2019;
+  color: #1E2019;
   text-align: left;
 }
 
@@ -365,13 +366,13 @@ export default {
 }
 
 .btn-primary {
-  background-color: #4e3681;
-  color: #ffffff;
+  background-color: #4E3681;
+  color: #FFFFFF;
 }
 
 .btn-secondary {
-  background-color: #ccecfd;
-  color: #1e2019;
+  background-color: #CCECFD;
+  color: #1E2019;
 }
 
 .btn-primary:hover {
@@ -380,27 +381,27 @@ export default {
 
 .btn-secondary:hover {
   background-color: #e6f6ff;
-  color: #1e2019;
+  color: #1E2019;
 }
 
 /* Switches to mobile sizing */
 @media (max-width: 991px) {
-  .record-description {
-    width: 100%;
-  }
+    .record-description {
+        width: 100%;
+    }
 
-  .buttons-container {
-    width: 100%;
-  }
+    .buttons-container {
+        width: 100%;
+    }
 
-  .qr-container {
-    width: 100%;
-  }
+    .qr-container {
+        width: 100%;
+    }
 
-  .device-btn {
-    width: 100%;
-    margin-right: 0px;
-  }
+    .device-btn {
+        width: 100%;
+        margin-right: 0px;
+    }
 
     .container-md {
         margin-top: 0px !important;
@@ -414,38 +415,38 @@ export default {
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
-  .error-subtitle,
-  .error-description {
-    color: white;
-  }
+    .error-subtitle,
+    .error-description {
+        color: white;
+    }
 
-  .error-title,
-  .error-email {
-    color: #ccecfd;
-  }
+    .error-title,
+    .error-email {
+        color: #ccecfd;
+    }
 
-  .record-container {
-    background-color: #1e2019;
-  }
+    .record-container {
+        background-color: #1E2019
+    }
 
-  h1,
-  .h {
-    color: #ccecfd;
-  }
+    h1,
+    .h {
+        color: #CCECFD;
+    }
 
-  .h5 {
-    color: #ffffff;
-  }
+    .h5 {
+        color: #FFFFFF;
+    }
 
-  #desc {
-    color: #ffffff;
-  }
+    #desc {
+        color: #FFFFFF;
+    }
 
-  .view-history {
-    background-color: #ccecfd;
-    border: 2px solid #ccecfd !important;
-    color: black;
-  }
+    .view-history {
+        background-color: #CCECFD;
+        border: 2px solid #CCECFD !important;
+        color: black;
+    }
 
     .secondary-btn {
         background-color: #1E2019;
@@ -464,22 +465,22 @@ export default {
 
 /* Light mode version*/
 @media (prefers-color-scheme: light) {
-  .record-container {
-    background-color: #ffffff;
-  }
+    .record-container {
+        background-color: #FFFFFF;
+    }
 
-  h1,
-  .h {
-    color: #4e3681;
-  }
+    h1,
+    .h {
+        color: #4E3681;
+    }
 
-  .h5 {
-    color: #1e2019;
-  }
+    .h5 {
+        color: #1E2019;
+    }
 
-  #desc {
-    color: #1e2019;
-  }
+    #desc {
+        color: #1E2019;
+    }
 
     .view-history {
         background-color: #4e3681;

@@ -21,6 +21,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { useNuxtApp } from '#app';
 import type QRCodeStyling from 'qr-code-styling';
 
+// Styling for custom text
+const CUSTOM_TEXT_MAX_LENGTH = 100;
+const CUSTOM_TEXT_FONT = 'bold 20px Arial, sans-serif';
+const CUSTOM_TEXT_LINE_HEIGHT = 24;
+
+// Styling for url
+const URL_FONT = '400 12px Poppins, sans-serif';
+const URL_LINE_HEIGHT = 12;
+const URL_TEXT_COLOR = '#1E2019';
+
+const PADDING = 5; // Padding between text blocks and the QR code
+const QR_SCALE_WITH_CUSTOM_TEXT = 0.9; // Scale down QR code when custom text is shown
+
 export default {
   props: {
     url: {
@@ -76,6 +89,113 @@ export default {
     }
   },
   methods: {
+    /* Splits text into lines that fit maxWidth. Breaks at spaces first; a single
+    "word" too wide on its own (e.g. a URL) breaks at natural delimiters
+    (/ . - _ : ? & = ,) next, and only falls back to a raw character-by-character
+    break if a single delimiter-bounded segment is still too wide by itself. */
+    wrapText(text: string, font: string, maxWidth: number): string[] {
+      const measureCanvas = document.createElement('canvas');
+      const measureCtx = measureCanvas.getContext('2d');
+      measureCtx.font = font;
+      const fitsWidth = (candidate: string) => measureCtx.measureText(candidate).width <= maxWidth;
+
+      // Wraps segments onto lines, joining segments that fit with `joiner`.
+      // Any single segment still too wide on its own is broken further via `breakSegment`.
+      const wrapSegments = (segments: string[], joiner: string, breakSegment: (segment: string) => string[]): string[] => {
+        const lines: string[] = [];
+        let currentLine = '';
+
+        segments.forEach((segment) => {
+          if (!fitsWidth(segment)) {
+            if (currentLine) {
+              lines.push(currentLine);
+              currentLine = '';
+            }
+            const pieces = breakSegment(segment);
+            lines.push(...pieces.slice(0, -1));
+            currentLine = pieces[pieces.length - 1] || '';
+            return;
+          }
+
+          const candidate = currentLine ? `${currentLine}${joiner}${segment}` : segment;
+          if (!fitsWidth(candidate) && currentLine) {
+            lines.push(currentLine);
+            currentLine = segment;
+          } else {
+            currentLine = candidate;
+          }
+        });
+
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      };
+
+      // Fallback: a single character always "fits" on its own line
+      const breakByChar = (segment: string): string[] => wrapSegments(segment.split(''), '', (char) => [char]);
+
+      // Prefer breaking at natural delimiters before resorting to a raw character break
+      const breakAtDelimiters = (segment: string): string[] =>
+        wrapSegments(segment.split(/(?<=[/.\-_:?&=,])/), '', breakByChar);
+
+      return wrapSegments(text.split(' '), ' ', breakAtDelimiters);
+    },
+
+    //a reusable function that builds the canvas for text
+    buildCanvasWithText(qrCanvas: HTMLCanvasElement, customText?: string, includeCustomText = true): HTMLCanvasElement {
+      const qrScale = includeCustomText ? QR_SCALE_WITH_CUSTOM_TEXT : 1;
+      const scaledQrHeight = qrCanvas.height * qrScale;
+      const scaledQrWidth = qrCanvas.width * qrScale;
+
+      // Custom text and the url appear together with url below the custom text
+      let customLines: string[] = [];
+      let customTextHeight = 0;
+      let urlLines: string[] = [];
+      let urlHeight = 0;
+      if (includeCustomText) {
+        const limitedText = (customText || 'QR Text').substring(0, CUSTOM_TEXT_MAX_LENGTH);
+        customLines = this.wrapText(limitedText, CUSTOM_TEXT_FONT, qrCanvas.width - 20);
+        customTextHeight = customLines.length * CUSTOM_TEXT_LINE_HEIGHT + 10;
+
+        urlLines = this.wrapText(this.url, URL_FONT, qrCanvas.width - 20);
+        urlHeight = urlLines.length * URL_LINE_HEIGHT + PADDING;
+      }
+
+      const finalCanvas = document.createElement('canvas');
+      const ctx = finalCanvas.getContext('2d');
+
+      finalCanvas.width = qrCanvas.width;
+      finalCanvas.height = scaledQrHeight + PADDING + customTextHeight + urlHeight;
+
+      // Fill background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      ctx.textAlign = 'center';
+
+      // Draws the QR code at the top, scaled down only when custom text is also shown
+      const qrX = (finalCanvas.width - scaledQrWidth) / 2; // Center horizontally
+      ctx.drawImage(qrCanvas, qrX, 0, scaledQrWidth, scaledQrHeight);
+      let cursorY = scaledQrHeight + PADDING;
+
+      if (includeCustomText) {
+        // Draws the custom text directly below the QR code
+        ctx.fillStyle = '#000000';
+        ctx.font = CUSTOM_TEXT_FONT;
+        customLines.forEach((line, i) => {
+          ctx.fillText(line, finalCanvas.width / 2, cursorY + CUSTOM_TEXT_LINE_HEIGHT * (i + 1));
+        });
+        cursorY += customTextHeight;
+
+        // Draws the hardcoded url text below the custom text, at the very bottom
+        ctx.fillStyle = URL_TEXT_COLOR;
+        ctx.font = URL_FONT;
+        urlLines.forEach((line, i) => {
+          ctx.fillText(line, finalCanvas.width / 2, cursorY + URL_LINE_HEIGHT * (i + 1));
+        });
+      }
+
+      return finalCanvas;
+    },
+
     showWithText(customText?: string) {
       // Check if temp canvas already exists, if so, remove it to update with new text
       // Was previous adding multiple lines of text
@@ -88,37 +208,8 @@ export default {
 
       if (!qrCanvas) return;
 
-      // Create a new canvas for the combined image
-      const finalCanvas = document.createElement('canvas');
+      const finalCanvas = this.buildCanvasWithText(qrCanvas, customText, true);
       finalCanvas.id = 'temp-canvas-with-text'; // get id of canvas to keep track of it
-      const ctx = finalCanvas.getContext('2d');
-
-      // Set dimensions
-      const textHeight = 50;
-      const padding = 5; // Padding between text and QR code
-      const qrScale = 0.9; // Scale down QR code when text is shown
-      const scaledQrHeight = qrCanvas.height * qrScale;
-      const scaledQrWidth = qrCanvas.width * qrScale;
-
-      finalCanvas.width = qrCanvas.width;
-      finalCanvas.height = textHeight + padding + scaledQrHeight;
-
-      // Fill background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-
-      // Add text
-      let text = customText || 'QR Text';
-      let limitedText = text.substring(0, 32); // limit text to 32 characters
-
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 20px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(limitedText, finalCanvas.width / 2, 30);
-
-      // Draws the QR code below the text with padding and scaled down
-      const qrX = (finalCanvas.width - scaledQrWidth) / 2; // Center horizontally
-      ctx.drawImage(qrCanvas, qrX, textHeight + padding, scaledQrWidth, scaledQrHeight);
 
       // Hide the original canvas
       qrCanvas.style.display = 'none';
@@ -150,37 +241,9 @@ export default {
       setTimeout(() => {
         // Get the QR code canvas
         const qrCanvas = this.$refs.qrCode.querySelector('canvas');
+        if (!qrCanvas) return;
 
-        // Create a new canvas for the combined image
-        const finalCanvas = document.createElement('canvas');
-        const ctx = finalCanvas.getContext('2d');
-
-        // Set dimensions
-        const textHeight = 50;
-        const padding = 5; // Padding between text and QR code
-        const qrScale = 0.9; // Scale down QR code when text is shown
-        const scaledQrHeight = qrCanvas.height * qrScale;
-        const scaledQrWidth = qrCanvas.width * qrScale;
-
-        finalCanvas.width = qrCanvas.width;
-        finalCanvas.height = textHeight + padding + scaledQrHeight;
-
-        // Fill background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-
-        // Add text
-        let text = customText || 'QR Text';
-        let limitedText = text.substring(0, 32); // limit text to 32 characters
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 20px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(limitedText, finalCanvas.width / 2, 30);
-
-        // Draws the QR code below the text with padding and scaled down
-        const qrX = (finalCanvas.width - scaledQrWidth) / 2; // Center horizontally
-        ctx.drawImage(qrCanvas, qrX, textHeight + padding, scaledQrWidth, scaledQrHeight);
+        const finalCanvas = this.buildCanvasWithText(qrCanvas, customText, true);
 
         // Download the combined image
         finalCanvas.toBlob((blob) => {

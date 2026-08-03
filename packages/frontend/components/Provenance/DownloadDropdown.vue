@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         data-bs-target="#download-dropdown"
         @click="buttonFormat"
       >
-        Download Record
+        Download QR Record
         <picture v-if="!downloadDropdown">
           <img id="hover-icon" src="../../assets/images/dropdown-icon.svg" style="display: none" />
           <source
@@ -67,27 +67,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
       <ul id="download-dropdown" class="collapse" style="padding: 5px 10px 15px 10px">
         <li class="dropdown-item" style="padding: 7px">
-          <a @click="downloadQRImage()" class="drop-text item-link">Download Image</a>
+          <a @click="downloadQRImage()" class="drop-text item-link">Download code</a>
         </li>
         <li class="dropdown-item" style="padding: 7px">
-          <div class="text-input-wrapper">
-            <input
-              v-model="customText"
-              @input="handleTextInput"
-              @focus="showWithTextPreview"
-              @blur="resetToDefault"
-              type="text"
-              placeholder="QR Text"
-              maxlength="32"
-              class="custom-text-input"
-            />
             <a
-              @click="downloadQRImageWithText()"
-              class="drop-text item-link download-link"
-              :class="{ disabled: !customText.trim() }"
-              >Download Image with Text</a
+              data-bs-toggle="modal"
+              data-bs-target="#qrCodeTextModal"
+              class="drop-text item-link"
+              >Add additional text</a
             >
-          </div>
         </li>
       </ul>
     </div>
