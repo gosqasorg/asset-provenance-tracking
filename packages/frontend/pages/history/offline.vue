@@ -110,7 +110,7 @@ their items while offline.
 </template>
 
 <script lang="ts">
-import { postProvenance, displayOfflineBanner, displayOnlineBanner, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { postProvenance, displayOfflineBanner, displayOnlineBanner, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { EventBus } from '~/utils/event-bus';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import jsQR from 'jsqr';
@@ -127,10 +127,10 @@ data() {
 	return {
         isCreating: false,
         description: "",
-
         recordKey: "",
         pictures: [] as File[] | null,
         tags: [] as string[],
+        stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}'),
 	}
 },
 computed: {
@@ -153,9 +153,19 @@ computed: {
 },
 async mounted() {
 	try {
+        // If we're redirecting from a banner get key from query params
         const route = useRoute();
         this.recordKey = route.query.key as string;
-        
+
+        // If we're redirecting from the offline edits page fill in the stashed information
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.recordKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.description = this.stashedRecord.description;
+        }
+
         EventBus.on('feedRefresh', this.refreshFeed);
 
         await this.refreshFeed();
@@ -240,18 +250,47 @@ methods: {
 
             await postProvenance(this.recordKey, record, this.pictures || []);
 
-            // Refresh CreateRecord component
-            this.refresh();
-            this.refreshFeed();
+            // If the record came from a redirect then move it to the fulfilled stash
+            // Note: If we're offline postProvenance will throw an error, and this code will not be reached
+            let key = sessionStorage.getItem("gdt-redirect-key") || '';
+
+            if (JSON.stringify(this.stashedRecord) !== '{}' && this.recordKey == key) {
+                stashOfflineRequest(this.recordKey, "gdt-stash-fulfilled");
+                removeOfflineRequest(this.recordKey, "gdt-stash-failed");
+            }
 
         } catch (error) {
+            let errorMessage: string = error instanceof Error
+                ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                : error as string  // otherwise just show the whole error
+
+            // If the record was stashed display a success message instead
+            let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+            if (errorMessage.includes("202")) {
+                snackbarType = "success";
+            } else {
+                errorMessage = `Error creating record: ${errorMessage}`;
+            }
+
             this.$snackbar.add({
-                type: 'error',
-                text: `Error creating record: ${error}`
+                type: snackbarType,
+                text: errorMessage
             });
+
             this.refresh()
             this.isCreating = false;
         }
+
+        // If we were redirected to this page then remove the stashed record
+        if (JSON.stringify(this.stashedRecord) !== '{}') {
+            sessionStorage.removeItem("gdt-redirect-record");
+            sessionStorage.removeItem("gdt-redirect-isGroup");
+            sessionStorage.removeItem("gdt-redirect-key");
+        }
+
+        // Refresh offline component
+        this.refresh();
+        this.refreshFeed();
     },
     async qrCameraOffline () {
         // Prevent spam clicking/reloading of the camera
