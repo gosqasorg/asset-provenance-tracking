@@ -289,7 +289,6 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
-        if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
@@ -385,8 +384,6 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
-        // if (!(await validateJSON(json))) { return { status: 400 }; }
-        // validateJSON is broken
         const parsed_json = JSON.parse(json);
         const provRecord = parsed_json as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
@@ -409,7 +406,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
+    if (!validateJSON(record)) { return { status: 400 }; }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
@@ -679,7 +676,7 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
     }
 }
 
-export async function validateJSON(json: any) {
+export function validateJSON(json: any) {
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),

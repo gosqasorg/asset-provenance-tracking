@@ -148,8 +148,18 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
 
   it('postProvenance returns a body', async () => {
+    let record = JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "post_prov tests",
+			description: "test to see if postProvenance returns a body",
+			tags: [],
+			children_key: '',
+			hasParent: false,
+			isPublicKey: false
+		})
+
     const formData = {
-      get: vi.fn((key) => key === 'provenanceRecord' ? '{"foo":1}' : undefined),
+      get: vi.fn((key) => key === 'provenanceRecord' ? record : undefined),
       values: vi.fn(() => [].values()),
     };
     const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
