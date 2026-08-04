@@ -49,10 +49,12 @@ jobs:
         uses: actions/checkout@v4.1.7
       - name: build frontend
         working-directory: packages/frontend
+        # 'npm ci' replaced the following two lines originally under run: to avoid inconsistencies with package-lock.json and node_modules.
+          # rm package-lock.json 
+          # npm install
         run: |
           [ -d node_modules ] && rm -r node_modules
-          rm package-lock.json 
-          npm install
+          npm ci
           npx nuxi build --preset=azure
           npm run coverage
         env:
