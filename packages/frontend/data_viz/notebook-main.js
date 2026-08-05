@@ -106,7 +106,7 @@ function _chart(d3,filteredCountryData,countries,filteredRegionData,filteredCity
       .attr("d", path)
       .on("click", clicked)
     .append("title")
-      .text(d => `${d.properties.ADM0_A3}\n${valuemap.get(d.properties.ADM0_A3)}`);
+      .text(d => `${d.properties.ADM0_A3}\n${valuemap.get(d.properties.ADM0_A3) ?? "No data"} requests`);
 
   // 3. Mesh
   g.append("path")
@@ -180,7 +180,7 @@ function _chart(d3,filteredCountryData,countries,filteredRegionData,filteredCity
     .append("title")
       .text(d => {
         const key = `${d.properties.adm0_a3}|${d.properties.name}`;
-        return `${d.properties.name}\n${regionValuemap.get(key) ?? "No data"} requests`;
+        return `${d.properties.name}\n${filteredRegionValuemap.get(key) ?? "No data"} requests`;
       });
 
 
@@ -314,7 +314,7 @@ function _chart(d3,filteredCountryData,countries,filteredRegionData,filteredCity
 
 async function _data(FileAttachment){return(
 (await FileAttachment("requests-by-country@5.json").json())
-  .map(d => ({country: d.country, requests: +d.requests}))
+  .map(d => ({country: d.country, one_year: +d.one_year, six_months: +d.six_months, three_months: +d.three_months, one_month: +d.one_month, one_week: +d.one_week, one_day: +d.one_day}))
 )}
 
 function _6(md){return(
@@ -558,46 +558,40 @@ function _countryNameToAlpha3(world)
 }
 
 
-function _filteredCountryData(selectedWindow,d3,recentRequests,data,countryNameToAlpha3)
+function _filteredCountryData(selectedWindow,data)
 {
-  const now = new Date();
-  const cutoff = new Date(now);
-  if (selectedWindow === "1d") cutoff.setDate(now.getDate() - 1);
-  if (selectedWindow === "1w") cutoff.setDate(now.getDate() - 7);
-  if (selectedWindow === "1m") cutoff.setMonth(now.getMonth() - 1);
-  if (selectedWindow === "3m") cutoff.setMonth(now.getMonth() - 3);
-  if (selectedWindow === "6m") cutoff.setMonth(now.getMonth() - 6);
-  if (selectedWindow === "1y") cutoff.setFullYear(now.getFullYear() - 1);
-
-  // Temporarily just returning static data everytime (since recent-requests isn't finalized and currently only contains 20 requests)
-  return data.map(d => ({
-    country: d.country,
-    requests: d.requests
-  }));
-
-  // Note: Leaving the below code as reference, as it could potentially be helpful once we're looking at live data
-  // Make sure recentRequests are within the timeframe (look at the newest request and make sure it happened after the cutoff date)
-  // const newest = d3.max(recentRequests, d => new Date(d.time));
-  // const windowCovered = newest >= cutoff;
-
-  // if (!windowCovered) {
-  //   // If the newest request is not in our timeframe fall back to static all-time data
-  //   return data.map(d => ({
-  //     country: d.country,
-  //     requests: d.requests
-  //   }));
-  // }
-
-  // // If the newest request is within our timeframe show all requests in the timeframe
-  // const counts = d3.rollup(
-  //   recentRequests.filter(d => new Date(d.time) >= cutoff),
-  //   v => v.length,
-  //   d => d.country
-  // );
-  // return [...counts.entries()].map(([country, requests]) => ({
-  //   country: countryNameToAlpha3.get(country) || country,
-  //   requests
-  // }));
+  // Filter the data based on the selected timewindow
+  if (selectedWindow === "6m") {
+    return data.map(d => ({
+      country: d.country,
+      requests: d.six_months
+    }));
+  } else if (selectedWindow === "3m") {
+    return data.map(d => ({
+      country: d.country,
+      requests: d.three_months
+    }));
+  } else if (selectedWindow === "1m") {
+    return data.map(d => ({
+      country: d.country,
+      requests: d.one_month
+    }));
+  } else if (selectedWindow === "1w") {
+    return data.map(d => ({
+      country: d.country,
+      requests: d.one_week
+    }));
+  } else if (selectedWindow === "1d") {
+    return data.map(d => ({
+      country: d.country,
+      requests: d.one_day
+    }));
+  } else {
+    return data.map(d => ({
+      country: d.country,
+      requests: d.one_year
+    }));
+  }
 }
 
 
@@ -726,7 +720,7 @@ export default function define(runtime, observer) {
   main.variable(null).define("selectedWindow", ["Generators", "viewof selectedWindow"], (G, _) => G.input(_));
   main.variable(null).define("detailPanel", ["selectedCity","selectedRegion","selectedCountry","html","selectedWindow","recentRequests"], _detailPanel);
   main.variable(null).define("countryNameToAlpha3", ["world"], _countryNameToAlpha3);
-  main.variable(null).define("filteredCountryData", ["selectedWindow","d3","recentRequests","data","countryNameToAlpha3"], _filteredCountryData);
+  main.variable(null).define("filteredCountryData", ["selectedWindow","data"], _filteredCountryData);
   main.variable(null).define("filteredRegionData", ["selectedWindow","d3","recentRequests"], _filteredRegionData);
   main.variable(null).define("filteredCityData", ["selectedWindow","d3","recentRequests","geocodedCities"], _filteredCityData);
   main.variable(null).define("filteredRegionValuemap", ["filteredRegionData","regionCountryLookup"], _filteredRegionValuemap);
