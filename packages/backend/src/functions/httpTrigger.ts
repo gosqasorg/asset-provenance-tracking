@@ -680,7 +680,7 @@ export function validateRecordJSON(json: any) {
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
         children_name: z.array(z.string()).optional(),
         description: z.string(),
         deviceName: z.string().optional(),
@@ -1340,6 +1340,7 @@ async function createChild(context: InvocationContext, description: string, cust
             blobType: "deviceInitializer",
             deviceName: custom_title,
             description: description || "",
+            children_key: "",
             tags: tags,
             hasParent: true,
             isPublicKey: isPublicKey
