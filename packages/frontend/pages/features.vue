@@ -41,7 +41,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </p>
             <p>
                 <strong>
-                    The full docs and OpenAPI spec are available on our <a href="/docs">docs</a> page.
+                    The full docs and OpenAPI spec are available on our <a class="link bold-link" href="/docs">docs</a> page.
                 </strong>
             </p>            
 
@@ -97,10 +97,43 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
     
 
+        <h1>Coming Soon: Offline Mode</h1>
+        <div class="row">
+            <p>
+                GOSQAS is working on adding an Offline Mode! This will allow our services to be used even when cell reception 
+                drops: you'll be able to create records and groups, as well as edit existing records from your phone in the field. 
+                Everything you make will be saved, and once you're back in a service area, just bring up the website and all 
+                of what you made will be deployed.
+            </p>
+            <p>
+                If you want to get an idea of how Offline Mode will work, take a look at our user guide, linked 
+                <a class="link" href="/docs/GDT_Offline_PWA_User_Guide.pdf">here</a> and also below[1]. Please note that 
+                this feature is a work in progress, and the steps shown in the guide will not work yet.
+            </p>
+            <p>
+                GOSQAS Offline Mode will provide access to GDT in both emergency situations and everyday use in areas where coverage 
+                can be inconsistent. When cell service is unreliable, Offline Mode will bridge the gaps between moments of 
+                good reception.
+            </p>
+            <p>
+                For example, imagine Alice and Bob are grassroots first responders in Western North Carolina who experienced 
+                extensive cell/internet outage during a hurricane, especially in parts of the rural mountain areas that 
+                historically struggle with good cell reception. Before going into the field, they set their phones up with 
+                GOSQAS Offline Mode, providing them with uninterrupted documentation capabilities.
+            </p>
+            <ol>
+                Links:
+                <li>
+                    <a class="link" href="/docs/GDT_Offline_PWA_User_Guide.pdf">https://gosqas.org/docs/GDT_Offline_PWA_User_Guide.pdf</a>
+                </li>
+            </ol>
+        </div>
+
+
         <h1>Impact</h1>
         <div class="row"> 
             <p>
-                Global Distributed Tracking is used around the world. Take a look <a href="/heatmap">here</a>.
+                Global Distributed Tracking is used around the world. Take a look <a class="link" href="/heatmap">here</a>.
             </p>
         </div>
         <learn_more></learn_more>
@@ -134,7 +167,10 @@ import Learn_more from '~/layouts/learn_more.vue';
     .row{
         margin-top:32px;
     }
-
+    strong {
+        font-size: 20px !important;
+        line-height: 30px !important;
+    }
 }
 
 /* Dark mode version*/
@@ -151,11 +187,14 @@ import Learn_more from '~/layouts/learn_more.vue';
     h3 {
         color: #CCECFD;
     }
-    li {
+    ol, li {
         color: #FFFFFF;
     }
     p {
         color: #FFFFFF;
+    }
+    .link {
+        color: #CCECFD;
     }
   
 }
@@ -173,16 +212,32 @@ import Learn_more from '~/layouts/learn_more.vue';
     h3 {
         color: #4E3681;
     }
-    li {
+    ol, li {
         color: #1E2019;
     }
     p {
         color: #1E2019;
     }
+    .link {
+        color: #4E3681;
+    }
 }
 
 ol {
-  list-style-position: inside;
+    list-style-position: inside;
+}
+
+strong {
+    font-size: 18px;
+    line-height: 27px;
+}
+
+.link {
+    overflow-wrap: break-word;
+}
+
+.bold-link {
+    font-weight: bolder;
 }
 
 </style>

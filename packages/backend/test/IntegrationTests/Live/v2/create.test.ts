@@ -2,331 +2,272 @@ import { describe, it, expect } from "vitest";
 import { readFile } from "fs/promises";
 
 
-describe ("v2 Group Creation Tests", () => {
+// const baseUrl = "http://localhost:7071/api";
+const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 
-    it("should verify that tags are applied correctly for annotation", async() => {
-
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const apiUrl = `${baseUrl}/createGroup`;
-
+describe ("Send to All Children Tests", () => {
+    it("Should send entry to the child record", async() => {
+		// Create the group/children
         const payload = {
-            deviceName: "ItHasATag",
-            description: "Testing tags in record creation",
-            number_of_children: 3,
-            tags: ["Harry", "Ron"],
-            annotate: true
+            deviceName: "Send To Children Basic Test",
+            description: "Test for send_to_all_children feature",
+            tags: [],
+            number_of_children: 1
         };
 
-        const formData = new FormData();
+        let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        const response = await fetch(apiUrl, {
+        let response = await fetch(`${baseUrl}/createGroup`, {
             method: "POST",
             body: formData,
         });
-        //temporary to debug 
-        console.log("Response Status:", response.status);
-        
         expect(response.status).toBe(200);
+
         const data = await response.json();
         expect(data.groupUrl).toContain("/record/");
+        console.log("(Basic Send to Children Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-        const responseData = await verifyResponse.json();
-        const actualRecord = responseData[0].record;
-        console.log(actualRecord);
-        expect(actualRecord.deviceName).toBe(payload.deviceName);
-        expect(actualRecord.tags).toEqual(["Harry", "Ron"]);
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        let groupProvenance = await groupResponse.json();
+        let groupRecord = groupProvenance[0].record;
 
-        const childKeys: string[] = actualRecord.children_key;
+        let childKeys: string[] = groupRecord.children_key;
 
-        for(const child of childKeys){
-            const childResponse = await fetch(`${baseUrl}/provenance/${child}`);
-            const childData = await childResponse.json();
-            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
+        // Add an entry to the group and send it to all children
+        const newPayload = {
+            description: "Sending record entry to all children and confirming it sent...",
+            tags: ["Harry", "Ron"],
+            send_to_all_children: true
+        };
 
-            // Check annotation tags and description 
-            const annotationRecord = childData[0].record;
-            expect(annotationRecord.tags).toContain("notify_all");
-            expect(annotationRecord.tags).toContain("Harry");
-            expect(annotationRecord.tags).toContain("Ron");
-            expect(annotationRecord.description).toBe(payload.description);
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(newPayload));
 
-        }
+        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+            method: "POST",
+            body: formData,
+        });
+        expect(response.status).toBe(200);
+
+        // Look at the most recent record entry on the group and confirm the entry was added successfully
+        const groupData = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        groupProvenance = await groupData.json();
+        groupRecord = groupProvenance[0].record;
+        console.log("(Send to Children Test) Group Record:", groupRecord);
+
+        expect(groupRecord.description).toBe(newPayload.description);
+        expect(groupRecord.tags).toEqual(["Harry", "Ron", "sent_to_all_children"]);
+
+        // Look at the most recent record entry on the child and confirm it has the tags from the parent
+        const childData = await fetch(`${baseUrl}/provenance/${childKeys[0]}`);
+        const childProvenance = await childData.json();
+        const childRecord = childProvenance[0].record;
+        console.log("(Send to Children Test) Child Record:", childRecord);
+
+        expect(childRecord.description).toBe(newPayload.description);
+        expect(childRecord.tags).toEqual(["Harry", "Ron", "sent_to_all_children"]);
 
     }, 60000);
 
-    it("should annotate children but not the public key", async() => {
-
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const apiUrl = `${baseUrl}/createGroup`;
-
+    it("Should send entry to children but not to the public key", async() => {
+        // Create the group/children
         const payload = {
-            deviceName: "AnnotateWithPublicKey",
-            description: "Testing annotation skips public key",
-            number_of_children: 3,
+            deviceName: "Send To Children But Not Public Key",
+            description: "Testing that records sent from the group are not sent to the public key",
+            tags: [],
+            number_of_children: 2,
             hasPublicKey: true,
-            tags: ["Harry", "Ron"],
-            annotate: true,
         };
 
-        const formData = new FormData();
+        let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        const response = await fetch(apiUrl, {
+        let response = await fetch(`${baseUrl}/createGroup`, {
             method: "POST",
             body: formData,
         });
-
         expect(response.status).toBe(200);
+
         const data = await response.json();
         expect(data.groupUrl).toContain("/record/");
+        console.log("(Send to Children Not Public Key Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-        const responseData = await verifyResponse.json();
-        const groupRecord = responseData[0].record;
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupProvenance = await groupResponse.json();
+        const groupRecord = groupProvenance[0].record;
 
-        const childKeys: string[] = groupRecord.children_key;
         const publicKey: string = groupRecord.publicKey;
+        let childKeys: string[] = groupRecord.children_key;
+        childKeys.splice(childKeys.indexOf(publicKey), 1);
 
-        for (const child of childKeys) {
-            const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
-            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
-            const childRecords = childData.map((entry: any) => entry.record);
-
-            // Parent description should always be passed to the child record
-            const oldestRecord = childRecords[childRecords.length - 1];
-            expect(oldestRecord.description).toBe(payload.description);
-
-            if (child === publicKey) {
-                // Public key should not have an annotation record
-                const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
-                expect(hasNotifyAll).toBe(false);
-            } else {
-                // Non-public children should have an annotation record with notify_all
-                const annotationRecord = childRecords.find((rp: any) => rp.tags?.includes("notify_all"));
-                expect(annotationRecord).toBeDefined();
-                expect(annotationRecord.tags).toContain("Harry");
-                expect(annotationRecord.tags).toContain("Ron");
-                expect(annotationRecord.description).toBe(payload.description);
-            }
-        }
-
-    }, 60000);
-
-    it("should not annotate children when annotate is false", async() => {
-
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const apiUrl = `${baseUrl}/createGroup`;
-
-        const payload = {
-            deviceName: "NoAnnotation",
-            description: "Testing that annotation does not occur when annotate is false",
-            number_of_children: 3,
-            tags: ["Harry", "Ron"],
-            annotate: false,
+        // Add an entry to the group and send it to all children
+        const newPayload = {
+            description: "Sending record entry to all children and confirming it's not sent to the public key...",
+            tags: ["Harry", "Ron", "Hermione"],
+            send_to_all_children: true
         };
 
-        const formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(payload));
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(newPayload));
 
-        const response = await fetch(apiUrl, {
+        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
             method: "POST",
             body: formData,
         });
-
         expect(response.status).toBe(200);
+
+        // Look at the most recent record entry on the children and confirm they have the tags from the parent
+        for (const child of childKeys) {
+            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childProvenance = await childData.json();
+            const childRecord = childProvenance[0].record;
+
+            expect(childRecord.description).toBe(newPayload.description);
+            expect(childRecord.tags).toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
+        }
+
+        // Look at the public key and confirm it did not receive the record entry
+        const publicProvenance = await fetch(`${baseUrl}/provenance/${publicKey}`);
+        const publicData = await publicProvenance.json();
+        const publicRecord = publicData[0].record;
+
+        expect(publicRecord.description).not.toBe(newPayload.description);
+        expect(publicRecord.tags).not.toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
+
+    }, 60000);
+
+    it("Should create new entry and not send to all children", async() => {
+        // Create the group/children
+        const payload = {
+            deviceName: "Not Sent to Children",
+            description: "Testing that send to all children does not occur when the boolean is false",
+            tags: ["Dumbledore"],
+            number_of_children: 2,
+        };
+
+        let formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(payload));
+
+        let response = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
+        expect(response.status).toBe(200);
+
         const data = await response.json();
         expect(data.groupUrl).toContain("/record/");
+        console.log("(Don't Send to Children Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-        const responseData = await verifyResponse.json();
-        const groupRecord = responseData[0].record;
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        let groupProvenance = await groupResponse.json();
+        let groupRecord = groupProvenance[0].record;
 
         const childKeys: string[] = groupRecord.children_key;
 
+        // Add an entry to the group and DON'T send it to all children
+        const entryPayload = {
+            description: "Record should NOT be sent to all children",
+            tags: ["Snape"]
+        };
+
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(entryPayload));
+
+        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+            method: "POST",
+            body: formData,
+        });
+        expect(response.status).toBe(200);
+
+        // Look at the most recent record entry on the group and confirm it doesn't have the sent_to_all_children tag
+        const groupData = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        groupProvenance = await groupData.json();
+        groupRecord = groupProvenance[0].record;
+
+        expect(groupRecord.description).toBe(entryPayload.description);
+        expect(groupRecord.tags).toEqual(["Snape"]);
+        expect(groupRecord.tags).not.toContain(["sent_to_all_children"]);
+
+        // Look at the most recent record entry on the children and confirm they don't have the tags from the parent
         for (const child of childKeys) {
-            const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
-            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
-            const childRecords = childData.map((entry: any) => entry.record);
+            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childProvenance = await childData.json();
+            const childRecord = childProvenance[0].record;
 
-            // No annotation should exist when annotate is false
-            const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
-            expect(hasNotifyAll).toBe(false);
-
-            // Parent description should still be passed to the child record
-            const oldestRecord = childRecords[childRecords.length - 1];
-            expect(oldestRecord.description).toBe(payload.description);
+            expect(childRecord.description).toBe(payload.description);  // description from parent creation
+            expect(childRecord.tags).toEqual(["Dumbledore"]);
+            expect(groupRecord.tags).not.toContain(["sent_to_all_children"]);
+            expect(childProvenance.length).toBe(1);
         }
 
     }, 60000);
 
-    it("should have default annotation description when parent has no description", async() => {
-
-        const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const apiUrl = `${baseUrl}/createGroup`;
-
+    it("Should use default 'Sent from Group' description when entry has no description", async() => {
+        // Create the group/children
         const payload = {
-            deviceName: "NoAnnotation",
-            description: "",
-            number_of_children: 3,
-            tags: ["Harry", "Ron"],
-            annotate: true,
+            deviceName: "Sent Without Description Test",
+            description: "Testing that record entries sent to children without descriptions have the default description",
+            tags: [],
+            number_of_children: 1,
         };
 
-        const formData = new FormData();
+        let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        const response = await fetch(apiUrl, {
+        let response = await fetch(`${baseUrl}/createGroup`, {
             method: "POST",
             body: formData,
         });
-
         expect(response.status).toBe(200);
+
         const data = await response.json();
         expect(data.groupUrl).toContain("/record/");
+        console.log("(Send to Children Default Description Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const verifyResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-        const responseData = await verifyResponse.json();
-        const groupRecord = responseData[0].record;
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupProvenance = await groupResponse.json();
+        const groupRecord = groupProvenance[0].record;
 
         const childKeys: string[] = groupRecord.children_key;
 
+        // Add an entry without a description to the group and send it to all children
+        const entryPayload = {
+            tags: ["Draco"],
+            send_to_all_children: true
+        };
+
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(entryPayload));
+
+        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+            method: "POST",
+            body: formData,
+        });
+        expect(response.status).toBe(200);
+
+        // Look at the most recent record entry on the child and confirm they have the default description
         for (const child of childKeys) {
-            const childData = await (await fetch(`${baseUrl}/provenance/${child}`)).json();
-            console.log(`Child ${child} provenance:`, JSON.stringify(childData));
-            const childRecords = childData.map((entry: any) => entry.record);
+            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childProvenance = await childData.json();
+            const childRecord = childProvenance[0].record;
 
-            // No annotation should exist when annotate is false
-            const hasNotifyAll = childRecords.some((rp: any) => rp.tags?.includes("notify_all"));
-            expect(hasNotifyAll).toBe(true);
-
-            // Annotation record should have the default description when parent description is empty
-            const annotationRecord = childRecords[0];
-            expect(annotationRecord.description).toBe("Annotated by Group");
+            expect(childRecord.description).toBe("Record Entry sent from Group");
+            expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
         }
 
     }, 60000);
 
-
-    // Test public key functionality
-    it("should create a group record with a public key", async () => {
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-		
-		const groupPayload = {
-			deviceName: "group_record_with_public_key",
-			title: "group_record_with_public_key",
-			description: "group record with a public key integration test",
-			number_of_children: 1,
-			hasPublicKey: true,
-			tags: [],
-		};
-
-		const formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(groupPayload));
-        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
-            method: "POST",
-            body: formData,
-        });
-
-
-		expect(groupResponse.ok).toBe(true);
-		expect(groupResponse.status).toBe(200);
-
-		const body = await groupResponse.json();
-		expect(body).toHaveProperty("groupUrl"); // make sure that groupUrl property exists
-
-		// Get the group record key generated
-		const groupKeyStr = body.groupUrl;
-		const parts = groupKeyStr.split("/");
-		const groupKey = parts.pop();
-		
-		// Fetch group record key response
-		const groupProvenanceRes = await fetch(`${baseUrl}/provenance/${groupKey}`);
-		expect(groupProvenanceRes.ok).toBe(true);
-		const groupAttributes = await groupProvenanceRes.json();
-		expect(groupAttributes.length).toBeGreaterThan(0);
-		
-		// Verify group record key has the same parameters as the original payload
-		const groupRecord = groupAttributes[0].record;
-		expect(groupRecord.deviceName).toBe(groupPayload.title);
-		expect(groupRecord.description).toBe(groupPayload.description);
-
-		const childKeys: string[] = groupRecord.children_key;
-		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
-
-		// Verify public key
-		const publicKey = groupRecord.publicKey as string;
-		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
-		expect(publicKeyRes.ok).toBe(true);
-		const publicKeyAttributes = await publicKeyRes.json();
-		expect(publicKeyAttributes.length).toBeGreaterThan(0);
-		const publicKeyRecord = publicKeyAttributes[0].record;
-		expect(publicKeyRecord.isPublicKey).toBe(true);
-		expect(publicKeyRecord.tags).toContain("publickey");
-    }, 6000);
-
-	it("should create a group record with tags", async () => {
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        
-		const groupPayload = {
-			deviceName: "group_record_with_tags",
-			title: "group_record_with_tags",
-			description: "group record with tags integration test",
-			number_of_children: 1,
-			hasPublicKey: false,
-			tags: ["integration_test", "record_tags"],
-		};
-
-		const formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(groupPayload));
-        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
-            method: "POST",
-            body: formData,
-        });
-
-		expect(groupResponse.ok).toBe(true);
-		expect(groupResponse.status).toBe(200);
-
-		const body = await groupResponse.json();
-		expect(body).toHaveProperty("groupUrl"); // make sure that groupUrl property exists
-
-		// Get the group record key generated
-		const groupKeyStr = body.groupUrl;
-		const parts = groupKeyStr.split("/");
-		const groupKey = parts.pop();
-		
-		// Fetch group record key response
-		const groupProvenanceRes = await fetch(`${baseUrl}/provenance/${groupKey}`);
-		expect(groupProvenanceRes.ok).toBe(true);
-		const groupAttributes = await groupProvenanceRes.json();
-		expect(groupAttributes.length).toBeGreaterThan(0);
-		
-		// Verify group record key has the same parameters as the original payload
-		const groupRecord = groupAttributes[0].record;
-		expect(groupRecord.deviceName).toBe(groupPayload.title);
-		expect(groupRecord.description).toBe(groupPayload.description);
-
-		// Verify tags data
-		expect(groupRecord.tags).toContain("integration_test");
-		expect(groupRecord.tags).toContain("record_tags");
-		expect(groupRecord.tags.length).toBe(2);
-
-		const childKeys: string[] = groupRecord.children_key;
-		expect(childKeys.length).toBe(groupPayload.number_of_children);
-    }, 6000);
 });
 
 
 describe("Group Creation Tests", () => {
     // Test public key functionality
     it("should create a group record with a public key", async () => {
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-		
 		const groupPayload = {
 			deviceName: "group_record_with_public_key",
 			title: "group_record_with_public_key",
@@ -381,8 +322,6 @@ describe("Group Creation Tests", () => {
     }, 60000);
 
 	it("should create a group record with tags", async () => {
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        
 		const groupPayload = {
 			deviceName: "group_record_with_tags",
 			title: "group_record_with_tags",
@@ -429,14 +368,8 @@ describe("Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children);
     }, 60000);
-});
-
-
-describe("Group Creation v2 tests", () => {
 
     it("should create a group record with multiple attachments (one image, one PDF file), with multiple children", async () => {
-    const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-
     const payload = {
         deviceName: "group_record_with_attachments",
         description: "group record with attachents (image and pdf), and with two children",
@@ -512,12 +445,11 @@ describe("Group Creation v2 tests", () => {
         expect(childEntry).toBeDefined();
         expect(childEntry.record.hasParent).toBe(true);
     }
-  }, 60000);
+    }, 60000);
 
     // Tests group child custom titles
 	it("Custom Record Titles", async () => {
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-        const groupParentRecords = []
+		const groupParentRecords = []
         const groupedChildKeys = []
         const groupedChildTitles = []
 
@@ -676,18 +608,14 @@ describe("Group Creation v2 tests", () => {
 
 });
 
-describe("Update v2 tests", () => {
+describe("Update v2 Tests", () => {
 	it("Updates records with new entries", async () => {
-        // const baseUrl = "http://localhost:7071/api"
-		const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-
-        const groupRecord = {
+		const groupRecord = {
             deviceName: "Update v2 Tests",
             description: "Tests updates to records",
             tags: ["integration", "tests"],
             number_of_children: 2,
-            children_name: ["Update child 1", "Update child 2"],
-            annotate: true
+            children_name: ["Update child 1", "Update child 2"]
         }
         const testCases = [
             {
@@ -708,8 +636,9 @@ describe("Update v2 tests", () => {
                 attachments: [['./test/attachments/b200.jpg', 'b200.jpg'], ['./test/attachments/c200.jpg', 'c200.jpg']]
             },
             {
-                description: "record entry that annotates",
-                tags: ["test", "annotate", "demo"],
+                description: "record entry that gets sent to all children",
+                tags: ["test", "demo"],
+                send_to_all_children: true,
                 attachments: [['./test/attachments/a200.jpg', 'a200.jpg']]
             }
         ]
@@ -762,7 +691,7 @@ describe("Update v2 tests", () => {
             if (currCase.description) {
                 expect(currRecord.description).toBe(currCase.description)
             }
-            if (currCase.tags) {
+            if (i != 5 && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
                 expect(currRecord.tags).toStrictEqual(currCase.tags)
             }
             if (currCase.attachments) {
@@ -773,7 +702,7 @@ describe("Update v2 tests", () => {
         for (let i = 0; i < parentRecord.number_of_children; i ++) {
             let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
             expect(childProv[0].record.description).toBe(testCases[5].description);
-            expect(childProv[0].record.tags).toStrictEqual(testCases[5].tags);
+            expect(childProv[0].record.tags).toStrictEqual(["test", "demo", "sent_to_all_children"]);
         }
 	}, 60000);
 

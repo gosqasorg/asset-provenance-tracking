@@ -29,7 +29,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
 <template>
 <!-- This link is for the icon in mobile dropdown menu -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 <div v-if="isLoading">
 	<p class="text-center pb-5 pt-5">Loading record(s)...</p>
 </div>
@@ -112,10 +112,10 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 				</h1>
 				</div>
 
-				<div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
@@ -148,7 +148,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             </div>
 
             <!-- Email notifications modal -->
-            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode"/>
+            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
 
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -212,7 +212,7 @@ import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
 import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
 import { useRuntimeConfig } from '#app';
-import { hasParent } from '~/utils/descendantList';
+import { recordHasParent } from '~/utils/descendantList';
 
 let deviceRecord: any;
 let deviceCreationRecord, provenanceNoRecord;
@@ -294,7 +294,7 @@ async mounted() {
         deviceRecord = this.provenance[this.provenance.length - 1].record;
 
 		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
-		if (hasParent(this.provenance)) {
+		if (recordHasParent(this.provenance)) {
 			hiddenHasParent.value = true
 		}
 
@@ -418,7 +418,7 @@ methods: {
 	this.childKeys = getChildKeys(this.provenance);
 
 	// If record now has a parent hide the "Add to Group" field
-	if (hasParent(this.provenance)) {
+	if (recordHasParent(this.provenance)) {
 		hiddenHasParent.value = true
 	}
 
@@ -444,6 +444,11 @@ methods: {
 	this.isCreating = false;
 	this.isLoading = false;
 	},
+	clearModalEmailNotificationValues() {
+      // Completely clear the values to prevent the modal from remounting
+      this.autoToken = '';
+      this.autoCode = '';
+    }
 }
 };
 </script>
