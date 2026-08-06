@@ -13,6 +13,13 @@ nvm alias default 22
 
 
 #############
+# Install modules
+#############
+
+./nmp-install-everything.sh
+
+
+#############
 # Start GDT
 #############
 

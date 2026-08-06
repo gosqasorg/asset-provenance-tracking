@@ -16,6 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import learn_more from '~/layouts/learn_more.vue';
 
 const fullSpecUrl = '/GDT-OpenAPI-Spec.yaml'
+import learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <template>

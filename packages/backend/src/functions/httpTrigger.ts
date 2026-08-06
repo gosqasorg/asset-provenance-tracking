@@ -704,7 +704,7 @@ export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
 
-// Annotate: Send new record's tags to all children
+// Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
 
@@ -713,17 +713,17 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
-        if (records[0].record.tags.includes("annotate")) {
+        if (records[0].record.tags.includes("sent_to_all_children")) {
             let length = Object.keys(records).length;
             let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 
-            // Send annotated record to all children
+            // Send record entry to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                // Make sure key is NOT a public key (public keys do not have the ability to recieve records from the group)
                 if (!keyProvenance[0].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
@@ -736,7 +736,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                     const keyFormData = new FormData();
                     keyFormData.append("provenanceRecord", JSON.stringify({
                         blobType: 'deviceRecord',
-                        description: records[0].record.description || "Annotated by Group",
+                        description: records[0].record.description || "Record Entry sent from Group",
                         children_key: '',
                         tags: records[0].record.tags,
                     }));
@@ -755,7 +755,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        console.error(`Error annotating children: ${error}`);
+        context.error(`Error sending record entry to all children: ${error}`);
         return {
             status: 500
         }
@@ -938,8 +938,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         await tableClient.upsertEntity(entity);
 
-        // sendEmail() with the code attached
-        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string
         const frontendUrl = process.env['frontend_url'];
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
         
@@ -949,10 +947,10 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             // Validation email body with link included here for later work, see issue 1121. 
             // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
-                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
+                process.env['SENDER_EMAIL'],
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nExpires in 10 minutes. \nIf you didn't request this, ignore this email.`,
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
                 "GOSQAS Notification",
                 context
             )
@@ -1184,8 +1182,6 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         await tableClient.createEntity(updatedEntity);
 
-        // sendEmail() with the code attached
-        // from_address: string, to_address: string, subject: string, plainText: string, displayName: string;
         const frontendUrl = process.env['frontend_url'];
         const verifyLink = `${frontendUrl}/verify?token=${token}&code=${code}`;
 
@@ -1195,10 +1191,10 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             // Validation email body with link included here for later work, see issue 1121. 
             // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
-                "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net",
+                process.env['SENDER_EMAIL'],
                 entity.email as string,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
                 "GOSQAS Notification",
                 context
             ) 
@@ -1293,6 +1289,40 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
+async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
+    let response = undefined;
+    const MAX_RETRIES = 3;
+
+    for (let i = 1; i <= MAX_RETRIES; i++) {
+        response = undefined //resets each retry attempt
+        try {
+            if (typeof formData !== 'undefined') {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                response = await fetch(`${url}`, {
+                    method: "GET"
+                });
+            }
+
+            if (response !== undefined && response.ok) {
+                return response;
+            }
+        } catch (e) {
+            context.log(`Fetch attempt failed: ${url}: ` + e);
+        }
+    }
+
+    if (response !== undefined && !response.ok) {
+        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+    } else {
+        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
+    }
+}
+
 async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
@@ -1318,10 +1348,7 @@ async function createChild(context: InvocationContext, description: string, cust
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
-        const theResponse = await fetch(`${baseUrl}${childKey}`, {
-            method: "POST",
-            body: childFormData,
-        });
+        const theResponse = await fetchWithRetry(context, `${baseUrl}${childKey}`, childFormData);
 
         const theJson = await theResponse.json()
         const dataUrl = theResponse.url.split('/')
@@ -1338,32 +1365,26 @@ async function createChild(context: InvocationContext, description: string, cust
 async function createChildren(context, description: string, number_of_children: number,  custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
-    let j = 0;
     
-    for (let i = 0; i < 3 * number_of_children; i++) {  // Re: 3 * num: three retries per; attempts are identical
-        if(!(thisChild = await createChild(context, description, custom_child_titles[j], tags))) {
+    for (let i = 0; i < number_of_children; i++) {  // iterates the custom children names
+        if(!(thisChild = await createChild(context, description, custom_child_titles[i], tags))) {
             continue;
         }
-
-        j++;
         childrenKeys.push(thisChild)
-        if(childrenKeys.length == number_of_children) { 
-            // PublicKey is itself a record that is part of a group
-            if(hasPublicKey){
-                const publicTags = [...tags, "publickey"]
-                if(!(thisChild = await createChild(context, description, "Public Key", publicTags, true))) {
-                    continue;
-                }
-                childrenKeys.push(thisChild)
-            }
-            break;
+    }
+
+    if (hasPublicKey){
+        const publicTags = [...tags, "publickey"]
+        thisChild = await createChild(context,description,"Public Key", publicTags, true)
+        if(thisChild){ // checks to see that public key was made.
+            childrenKeys.push(thisChild)
         }
     }
 
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = [], annotate: boolean = false) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1423,24 +1444,6 @@ async function createGroup(context, name, description, n_children: number = 0, c
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
     }
-    if(annotate){
-        for (const key of childKeys){
-            if(key !== public_key){
-                const annotateFormData = new FormData();
-                annotateFormData.append("provenanceRecord", JSON.stringify({
-                    blobType: "deviceRecord",
-                    description: description || "Annotated by Group",
-                    children_key: '',
-                    tags: [...tags, "notify_all"],
-                }));
-
-                await fetch(`${backendUrl}${key}`, {
-                    method: "POST",
-                    body:annotateFormData,
-                });
-            }
-        }
-    }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
@@ -1457,8 +1460,7 @@ const GroupCreationOrderSchema = z.object({
     hasPublicKey: z.boolean().optional(),
     custom_record_titles: z.array(z.string()).optional(),
     children_name: z.array(z.string()).optional(),
-    create_public_key: z.boolean().optional(),
-    annotate: z.boolean().optional(),
+    create_public_key: z.boolean().optional()
 });
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -1486,8 +1488,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasPublicKey = theRequest['hasPublicKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let annotate = theRequest['annotate']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments, annotate)
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1643,19 +1644,66 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 // just a wrapper fxn for postProvenance
-export async function addEntryHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+    const backendUrl = process.env['backend_url'];
     const requestClone = request.clone();
-    const formData = await requestClone.formData();
-    const tagsExist = JSON.parse(formData.get("provenanceRecord") as string).tags
+    const deviceKey = requestClone.params.deviceKey;
+    let formData = await requestClone.formData();
+    const attachmentValues = formData.values();
+    const record = JSON.parse(formData.get("provenanceRecord") as string);
 
-    const postProvResponse = await postProvenance(request, context)
-    if (tagsExist && tagsExist.includes("annotate")) {
-        const notifChildrenResponse = await notifyChildren(request, context)
+    // Check the first record entry in the provenance to see if the key is a group or not
+    const provenance = await getProvenance(request, context);
+    const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
+    if (!creationRecord) {
+        return {
+            status: 400,
+            jsonBody: { error: "Provenance needs to exist before adding entries." }
+        }
+    }
+    const isGroup = Array.isArray(creationRecord.record.children_key);
+
+    // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
+    const sendEntryToAllChildren = record.send_to_all_children;
+    if (isGroup && sendEntryToAllChildren) {
+        record.tags.push("sent_to_all_children");
+
+        // Rebuild our formData to include the new tag
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(record));
+        
+        for (const attachment of attachmentValues) {
+            if (typeof attachment === 'string') continue;
+            formData.append(attachment.name, attachment);
+        }
     }
 
-    return postProvResponse
+    // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
+    const response = await fetch(`${backendUrl}${deviceKey}`, {
+        method: "POST",
+        body: formData,
+    });
+
+    if (response.status !== 200) { return { status: response.status }; }
+    let postProvResponse = await response.json();
+
+    // If we're sending the record to all children call notifyChildren
+    if (isGroup && sendEntryToAllChildren) {
+        const notifChildrenResponse = await notifyChildren(request, context);
+        if (notifChildrenResponse.status !== 200) {
+            return {
+                status: notifChildrenResponse.status,
+                jsonBody: { error: "Record entry was unable to be sent to children." }
+            }
+        }
+    }
+
+    return {
+        jsonBody: postProvResponse,
+        headers: { "Content-Type": "application/json" }
+    }
 }
 
 // Once per day update the total record, record entry, and attachment counts
@@ -1745,9 +1793,9 @@ app.get('getNewDeviceKey', {
     handler: getNewDeviceKey,
 })
 
-app.post('annotateChildren', {
+app.post('sendToAllChildren', {
     authLevel: 'anonymous',
-    route: 'provenance/annotate/{deviceKey}',
+    route: 'provenance/sendToChildren/{deviceKey}',
     handler: notifyChildren,
 })
 
