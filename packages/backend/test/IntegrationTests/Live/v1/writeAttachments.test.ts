@@ -6,7 +6,7 @@ import { readFile, writeFile } from 'fs/promises';
 describe("Creating records with attachments", () => {
 	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
-	// create a record with an attachement 
+	// Create a record with an attachement 
 	it("Create record with one attachment ", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
