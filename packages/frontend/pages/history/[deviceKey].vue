@@ -252,7 +252,7 @@ data() {
         autoCode: '' as string,
         onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
 		provenance: [] as any[],
-		recordHasParent: false,
+		hasParent: false,
 		hasRecalledRecord: false
 	}
 },
@@ -290,7 +290,7 @@ async mounted() {
 
 		this._recordKey = route.params.deviceKey as string;
 		this.provenance = await getProvenance(this._recordKey) || [];
-		this.recordHasParent = hasParent(this.provenance);
+		this.hasParent = recordHasParent(this.provenance);
         deviceRecord = this.provenance[this.provenance.length - 1].record;
 
 		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
