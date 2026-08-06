@@ -561,37 +561,12 @@ function _countryNameToAlpha3(world)
 function _filteredCountryData(selectedWindow,data)
 {
   // Filter the data based on the selected timewindow
-  if (selectedWindow === "6m") {
-    return data.map(d => ({
-      country: d.country,
-      requests: d.six_months
-    }));
-  } else if (selectedWindow === "3m") {
-    return data.map(d => ({
-      country: d.country,
-      requests: d.three_months
-    }));
-  } else if (selectedWindow === "1m") {
-    return data.map(d => ({
-      country: d.country,
-      requests: d.one_month
-    }));
-  } else if (selectedWindow === "1w") {
-    return data.map(d => ({
-      country: d.country,
-      requests: d.one_week
-    }));
-  } else if (selectedWindow === "1d") {
-    return data.map(d => ({
-      country: d.country,
-      requests: d.one_day
-    }));
-  } else {
-    return data.map(d => ({
-      country: d.country,
-      requests: d.one_year
-    }));
-  }
+  if (selectedWindow === "1d") return data.map(d => ({ country: d.country, requests: d.one_day }));
+  if (selectedWindow === "1w") return data.map(d => ({ country: d.country, requests: d.one_week }));
+  if (selectedWindow === "1m") return data.map(d => ({ country: d.country, requests: d.one_month }));
+  if (selectedWindow === "3m") return data.map(d => ({ country: d.country, requests: d.three_months }));
+  if (selectedWindow === "6m") return data.map(d => ({ country: d.country, requests: d.six_months }));
+  return data.map(d => ({ country: d.country, requests: d.one_year }));
 }
 
 
