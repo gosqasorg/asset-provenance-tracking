@@ -22,7 +22,7 @@ describe("Creating records with attachments", () => {
 				tags: {},
 				children_key: '',
 				hasParent: false,
-				isReportingKey: false,
+				isPublicKey: false,
 			}
 			const formData = new FormData();
     		formData.append("provenanceRecord", JSON.stringify(data));
@@ -55,7 +55,7 @@ describe("Creating records with attachments", () => {
 			expect(responseString.record.description).toBe('An API Feature Test-Attachments');
 			expect(responseString.record.children_key).toBe("");
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
             expect(responseString.attachments.length).toBe(1)
 
 		} catch(error) {

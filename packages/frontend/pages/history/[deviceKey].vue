@@ -21,7 +21,7 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { hasParent } from '~/utils/descendantList';
+import { recordHasParent } from '~/utils/descendantList';
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
@@ -34,13 +34,12 @@ try {
 } catch (e) {
 	provenance = [];
 }
-
-const recordHasParent = hasParent(provenance);
+const hasParent = recordHasParent(provenance);
 </script>
 
 <template>
 <!-- This link is for the icon in mobile dropdown menu -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 <div v-if="isLoading">
 	<p class="text-center pb-5 pt-5">Loading record(s)...</p>
 </div>
@@ -123,10 +122,10 @@ const recordHasParent = hasParent(provenance);
 				</h1>
 				</div>
 
-				<div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
@@ -144,11 +143,9 @@ const recordHasParent = hasParent(provenance);
 			</section>
 
             <div class="action-buttons">
-              <div v-if="onDev">
-	              <button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
-	          </div>
+	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
-              <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
+                <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
                 <ProvenanceShareDropdown
                   :deviceName="deviceRecord.deviceName"
@@ -161,7 +158,7 @@ const recordHasParent = hasParent(provenance);
             </div>
 
             <!-- Email notifications modal -->
-            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode"/>
+            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
 
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -190,10 +187,10 @@ const recordHasParent = hasParent(provenance);
 			User Manual
 			</a>
 
-			<div v-if="hasReportingKey"> Reporting Key:
-				<div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+			<div v-if="hasPublicKey"> Public Key:
+				<div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
 			</div>
-			<div v-if="(childKeys?.length > 0) || hasReportingKey">
+			<div v-if="(childKeys?.length > 0) || hasPublicKey">
 				<div> Child Keys:
 				<div>
 					<KeyList v-bind:keys="childKeys" />
@@ -233,6 +230,7 @@ let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
+export let hiddenHasParent = ref(false)
 
 let headers = [
 { id: "device-details", name: "Record details" },
@@ -254,7 +252,7 @@ data() {
         isCreating: false,
         isLoading: true,
         recordKeyFound: false,
-        hasReportingKey: false,
+        hasPublicKey: false,
         childKeys: [] as string[],
         _recordKey: "",
         valid: false,
@@ -300,6 +298,11 @@ async mounted() {
         const response = await getProvenance(this._recordKey);
         deviceRecord = response[response.length - 1].record;
 
+		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
+		if (recordHasParent(response)) {
+			hiddenHasParent.value = true
+		}
+
         this.addScrollListener();
 
         EventBus.on('feedRefresh', this.refreshFeed);
@@ -318,7 +321,7 @@ async mounted() {
 	} catch (error) {
         this.isCreating = false;
         this.recordKeyFound = false;
-        this.hasReportingKey = false;
+        this.hasPublicKey = false;
         setTimeout(() => {
           this.isLoading = false;
         }, 1000); // logs after 1 second
@@ -375,7 +378,7 @@ methods: {
 		});
 		this.isLoading = false;
 		this.recordKeyFound = false;
-		this.hasReportingKey = false;
+		this.hasPublicKey = false;
 		this.childKeys = [];
 		this.valid = false;
 		return;
@@ -399,20 +402,25 @@ methods: {
 	});
 
 	// This functionality could be pushed into a component...
-	this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+	this.hasPublicKey = (deviceRecord.publicKey ? true : false);
 
-	// We will remove the reportingKey, because although it is a child,
+	// We will remove the publicKey, because although it is a child,
 	// we have already rendered it.
-	if (this.hasReportingKey) {
-		const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+	if (this.hasPublicKey) {
+		const index = deviceRecord.children_key.indexOf(deviceRecord.publicKey, 0);
 		if (index > -1) {
 			deviceRecord.children_key.splice(index, 1);
 		}
 	}
 	this.childKeys = getChildKeys(provenance);
 
+	// If record now has a parent hide the "Add to Group" field
+	if (recordHasParent(provenance)) {
+		hiddenHasParent.value = true
+	}
+
 	// Add child key navigation if there are child keys
-	if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+	if ((this.childKeys?.length > 0) || this.hasPublicKey) {
 		headers = [
 		{ id: "device-details", name: "Record details" },
 		{ id: "priority-notices", name: "Priority notices" },
@@ -433,6 +441,11 @@ methods: {
 	this.isCreating = false;
 	this.isLoading = false;
 	},
+	clearModalEmailNotificationValues() {
+      // Completely clear the values to prevent the modal from remounting
+      this.autoToken = '';
+      this.autoCode = '';
+    }
 }
 };
 </script>

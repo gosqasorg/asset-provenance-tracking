@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" :isGroup="true" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Grouped Record Titles?
+                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Child Titles
             </h4>
             <div v-if="customized" class="text-iris" id="num-fields">
                 <div v-for="(item, index) in fieldSet">
@@ -46,11 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
-            </h4>
- 
-            <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Key
             </h4>
 
             <!-- Subscribe to tag notifications -->
@@ -137,7 +133,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -155,10 +151,12 @@ export default {
             name: '',
             description: '',
             tags: [] as string[],
+            childrenKey: [] as string[], // list of children keys
+            childrenName: [] as string[], // list of children names
+            childrenKeys: 0, // number of new children to create
+            publicKey: '',
             emailTags: [] as string[],  // tags for specified tag signup
-            childrenKeys: 0,
-            createReportingKey: false,
-            hasParent: false, // states whether this device is contained within a box/group
+            createPublicKey: false,
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
             notifyTags: false,      // email tag notification checkbox
@@ -168,10 +166,25 @@ export default {
             subscribeChecked: false,
             subscribeEmail: '',
             customized: false,
-            annotate: false,
             fieldSet: [{id: '', customName:''}],
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            deviceKey: '',
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
+        }
+    },
+    mounted() {
+        // If we're creating a group from the stash fill in the stashed information
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
 
+        // Only fill in stashed information if we redirected from the offline edits page
+        if (isGroup === "true" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.childrenKey = this.stashedRecord.children_key
+            this.childrenName = this.stashedRecord.children_name
+            this.publicKey = this.stashedRecord.publicKey
+            this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.name = this.stashedRecord.deviceName
+            this.description = this.stashedRecord.description
         }
     },
     computed: {
@@ -277,19 +290,10 @@ export default {
         },
 
         async submitForm() {
-            const deviceKey = await makeEncodedDeviceKey();
-
-            // This code is copied from Judith;
-            // I am going to retain her names even though they are
-            // redundant until I get this workin.
-            const childrenDeviceList = [];
-            const childrenDeviceName = [];
-            let reportingKey;
-     
             // Get all elements from the DOM
             if (this.annotate) {
                 this.tags = (this.tags).concat(['notify_all'])
-            } 
+            }
             
             // Emit an event to notify the gdt.vue page to display loading screen
             EventBus.emit('isLoading');
@@ -307,75 +311,117 @@ export default {
                     }
 
                     try {
+                        this.childrenKey.push(childKey);
+                        this.childrenName.push(childName);
+
                         await postProvenance(childKey, {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
-                            description: this.description,  // need to see if we want a special description when making a child
-                            tags:this.tags,
+                            description: '',
+                            tags: [],
                             children_key: '',
                             hasParent: true,
-                            isReportingKey: false
-                        }, this.pictures || [])
-                        
-                        childrenDeviceList.push(childKey);
-                        childrenDeviceName.push(childName);
+                            isPublicKey: false
+                        }, [])
                         
                         this.$snackbar.add({
                             type: 'success',
                             text: 'Successfully created child key'
                         })
                     } catch (error) {
+                        let errorMessage: string = error instanceof Error
+                            ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                            : error as string  // otherwise just show the whole error
+
+                        // If the record was stashed display a success message instead
+                        let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                        if (errorMessage.includes("202")) {
+                            snackbarType = "success";
+                        } else {
+                            errorMessage = `Error creating child key: ${errorMessage}`;
+                        }
+
                         this.$snackbar.add({
-                            type: 'error',
-                            text: `Error creating child key: ${error}`
-                        })
+                            type: snackbarType,
+                            text: errorMessage
+                        });
                     };                
                 }
             };
 
-            if (this.createReportingKey) {
+            if (this.createPublicKey) {
                 // Should be higher up?
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+                this.publicKey = await makeEncodedDeviceKey();  // reporting key = public key
+                let tag_set = (this.tags).concat(['publickey']);
 
                 try {
-                    await postProvenance(reportingKey, {
+                    this.childrenKey.push(this.publicKey);
+                    this.childrenName.push(this.name);
+
+                    await postProvenance(this.publicKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
+                        description: '',
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
+                        isPublicKey: true,
+                    }, [])
                     
                     this.$snackbar.add({
                         type: 'success',
-                        text: 'Successfully created reporting key'
+                        text: 'Successfully created public key'
                     })
                 } catch (error) {
+                    let errorMessage: string = error instanceof Error
+                        ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                        : error as string  // otherwise just show the whole error
+
+                    // If the record was stashed display a success message instead
+                    let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                    if (errorMessage.includes("202")) {
+                        snackbarType = "success";
+                    } else {
+                        errorMessage = `Error creating public key: ${errorMessage}`;
+                    }
+
                     this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
+                        type: snackbarType,
+                        text: errorMessage
+                    });
                 };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(this.name);
             }
 
+            // Get stashed group if we're creating a group from the stash
+            let stashedGroup = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+
             try {
-                const response = await postProvenance(deviceKey, {
+                // Create a new deviceKey if we didn't get one from a stashed group
+                if (!validateKey(this.deviceKey)) {
+                    this.deviceKey = await makeEncodedDeviceKey();
+                }
+                const response = await postProvenance(this.deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey, 
-                    children_key: childrenDeviceList,
-                    children_name: childrenDeviceName,
+                    publicKey: this.publicKey, 
+                    children_key: this.childrenKey,
+                    children_name: this.childrenName,
                     hasParent: false,
-                    isReportingKey: false
+                    isPublicKey: false
                 }, this.pictures || [])
+
+                // If the group is being created from the offline edits page move it to the fulfilled stash
+                const previousUrl = window.history.state.back;
+                
+                // Only update the stash if the stashed request is a group
+                let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+
+                if (JSON.stringify(stashedGroup) !== '{}' && isGroup == "true" && previousUrl === "/offline-edits") {
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
+                }
                 
                 this.$snackbar.add({
                     type: 'success',
@@ -389,13 +435,13 @@ export default {
                 //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();
-                    await postNotificationEmail(deviceKey,email);
+                    await postNotificationEmail(this.deviceKey, email);
                 } else if (!response && this.notify && this.emailInput) {
                     this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 // Navigate to the new group page
-                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${this.deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({
@@ -406,7 +452,7 @@ export default {
 
                 if (response && this.subscribeChecked && this.subscribeEmail) {
                     try {
-                        await postNotificationEmail(this.subscribeEmail, deviceKey);
+                        await postNotificationEmail(this.subscribeEmail, this.deviceKey);
                         this.$snackbar.add({
                             type: 'success',
                             text: 'Check your email to verify your notification subscription.'
@@ -421,26 +467,36 @@ export default {
             } catch (error) {
                 // If the user is offline navigate to the offline history page instead
                 if (!(await onlineTestFetch()) && offlineModeFeatureFlag) {
-                    await this.$router.push({ path: `/history/offline`, query: { key: deviceKey }});
+                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
                 }
 
-                // Remove the leading "Error:" text
-                let errorMessage;
-                if (error instanceof Error) {
-                    errorMessage = error.message;
+                let errorMessage: string = error instanceof Error
+                    ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                    : error as string  // otherwise just show the whole error
+
+                // If the record was stashed display a success message instead
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                if (errorMessage.includes("202")) {
+                    snackbarType = "success";
                 } else {
-                    errorMessage = error;
+                    errorMessage = `Error creating the group: ${errorMessage}`;
                 }
 
                 this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating the group: ${errorMessage}`
-                })
+                    type: snackbarType,
+                    text: errorMessage
+                });
 
-                // Otherwise just return to the /gdt page
+                // If we're online return to the /gdt page
                 EventBus.emit('isLoading')
             }
 
+            // If we were redirected to this page then remove the stashed record
+            if (JSON.stringify(stashedGroup) !== '{}') {
+                sessionStorage.removeItem("gdt-redirect-record");
+                sessionStorage.removeItem("gdt-redirect-isGroup");
+                sessionStorage.removeItem("gdt-redirect-key");
+            }
             
         },
     }

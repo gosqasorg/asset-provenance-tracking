@@ -55,8 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
             
             <h4 class="p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
-                    Annotate all children
+                <input type="checkbox" class="form-check-input" id="send-to-all-children" v-model="sendToAllChildren"/> 
+                    Send to all Children
             </h4>
 
             <h4 class="p-1 mt-0" v-if="isGroup">
@@ -150,10 +150,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <div class="popup" v-if="annotatePopUp">
+    <div class="popup" v-if="sendToAllChildrenPopUp">
         <div class="popup-inner">
-            <h2 class="text-iris">Annotate all children</h2>
-            <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
+            <h2 class="text-iris">Send to all Children</h2>
+            <p>You've selected “Send to all Children” for this record entry. If you proceed, this message will be posted to all child records.</p>
 
             <div>
                 <!-- Cancels the record creation (close pop up) -->
@@ -169,13 +169,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineDetectAndStash, offlineModeFeatureFlag } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
+ import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
 
  export default {
     data() {
@@ -188,9 +189,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
-            annotateAll: false,
+            sendToAllChildren: false,
             recallAll: false,
-            annotatePopUp: false,
+            sendToAllChildrenPopUp: false,
             recallPopUp: false,
             notify: false,
             notifyTags: false,
@@ -239,25 +240,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         // Checks whether record is a child, disables 'Add to Group' field if is a child
         isChild() {
-            return this.deviceRecord?.hasParent
+            return hiddenHasParent.value === true
         }
     },
     methods: {
         closePopUpA() {
-            this.annotatePopUp = false
+            this.sendToAllChildrenPopUp = false
         },
         closePopUpR() {
             this.recallPopUp = false
         },
         async trackingForm() {
 
-            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
+            if (Object.is(this.sendToAllChildren, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
             } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (this.annotateAll) {
-                this.annotatePopUp = true
+            } else if (this.sendToAllChildren) {
+                this.sendToAllChildrenPopUp = true
             } else {
                 this.submitRecord()
             }
@@ -304,35 +305,52 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.tags = [];
             this.groupKey = '';
             this.newChildKeys = [];
-            this.annotateAll = false;
+            this.sendToAllChildren = false;
             this.recallAll = false;
-            this.annotatePopUp = false;
+            this.sendToAllChildrenPopUp = false;
             this.recallPopUp = false;
-        },
-        async redirectIfOffline() {
-            // If the user is offline navigate to the offline history page instead
-            if (!(await onlineTestFetch()) && offlineModeFeatureFlag) {
-                await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
-            }
         },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
+
+            // Define the new record to post
+            const record = {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+            };
 
             // Get a refreshed copy of the records
             let records;
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
-                this.redirectIfOffline()
-                EventBus.emit('isCreating');
-            }
+                let errorMessage = 'No provenance record found';
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
 
-            if (!records || records.length === 0) {
+                // If we're offline stash the record and display the stashed message
+                if (offlineModeFeatureFlag.flag) {
+                    const formData = new FormData();
+                    formData.append("provenanceRecord", JSON.stringify(record));
+                    const checkOffline = await offlineDetectAndStash(this.recordKey, formData);
+
+                    if (checkOffline === 202) {
+                        errorMessage = 'Status 202: User is offline but the record has been stashed';
+                        snackbarType = "success";
+                    } else if (checkOffline === 507) {
+                        errorMessage = 'Storage limit has been reached, record not stashed';
+                    }
+                }
+                
+                // Otherwise the record doesn't exist
                 this.$snackbar.add({
-                    type: 'error',
-                    text: 'No provenance record found'
+                    type: snackbarType,
+                    text: errorMessage
                 })
+
+                EventBus.emit('isCreating');
                 return;
             }
 
@@ -345,7 +363,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
                     } catch (error) {
                         console.error('Error adding to group:', error);
-                        this.redirectIfOffline()
                         this.$snackbar.add({
                             type: 'error',
                             text: `Error adding to group: ${error}`
@@ -385,7 +402,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
             } catch (error: any) {
                 console.error('Error adding children:', error);
-                this.redirectIfOffline()
                 const badKeys = error.message.split(",");
                 
                 if (error.message.split(" ").length > badKeys.length) {
@@ -409,24 +425,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (this.recallAll) {
                 this.tags.push("recall");
-            } else if (this.annotateAll) {
-                this.tags.push("annotate");
+            } else if (this.sendToAllChildren) {
+                this.tags.push("sent_to_all_children");
             }
 
             // Append the record to the records.
             try {
-                const record = {
-                    blobType: 'deviceRecord',
-                    description: this.description,
-                    tags: this.tags,
-                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
-                };
-
                 await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
-                } else if (this.annotateAll) {
+                } else if (this.sendToAllChildren) {
                     notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
@@ -442,8 +451,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
-                this.redirectIfOffline()
-
                 // Remove the leading "Error:" text
                 let errorMessage;
                 if (error instanceof Error) {
@@ -452,10 +459,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     errorMessage = error;
                 }
 
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating record: ${errorMessage}`
-                });
+                console.log(error)
+                console.log(errorMessage)
+                if(errorMessage.includes('high volume of requests')) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error sending email: ${errorMessage}`
+                    });
+                } else {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating record: ${error}`
+                    });
+                }
+
+                // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('feedRefresh');
             }
         }
     }

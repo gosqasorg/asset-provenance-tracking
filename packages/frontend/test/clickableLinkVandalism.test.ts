@@ -24,7 +24,7 @@ async function createRecord(description: string): Promise<string> {
         tags: {},
         children_key: '',
         hasParent: false,
-        isReportingKey: false,
+        isPublicKey: false,
     }
 
     const formData = new FormData();

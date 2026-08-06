@@ -6,26 +6,11 @@ info:
 servers:
 #  - url: http://localhost:7071/api
 #    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
-#  - url: https://gdtprodbackend.azurewebsites.net/api
-#    description: Production server
+  # - url: https://gosqasbe.azurewebsites.net/api
+  #   description: Staging server
+ - url: https://gdtprodbackend.azurewebsites.net/api
+   description: Production server
 paths:
-  /getNewDeviceKey:
-    get:
-      tags:
-        - GDT API
-      summary: GET /getNewDeviceKey
-      operationId: getNewDeviceKey
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-        '404':
-          description: Not Found
 
   /createGroup:
     post:
@@ -60,10 +45,13 @@ paths:
                     number_of_children:
                       type: integer
                       example: 5
+                    children_name: 
+                      type: string array
+                      example: ["Child1", "Child2", "Child3", "Child4", "Child5"]
                     tags:
                       type: string array
                       example: ["tag1", "tag2"]
-                    hasReportingKey:
+                    hasPublicKey:
                       type: boolean
                       example: true
                 attachments:
@@ -103,33 +91,6 @@ paths:
                   data:
                     type: string
                     example: "Error: Internal server error."
-
-  /recall/{deviceKey}:
-    post:
-      tags:
-        - GDT API
-      summary: Propagate a recall to all descendant devices
-      description: Recalls a group record and its child records.
-      operationId: recall
-      parameters:
-        - name: deviceKey
-          in: path
-          required: true
-          description: The device key of the parent record
-          schema:
-            type: string
-            example: "XuYCKWWDUEyv9vE5iL7Pzg"
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Success
-        '500':
-          description: Internal server error
 
   /createRecord:
     post:
@@ -193,6 +154,203 @@ paths:
                     type: string
                     example: "Invalid input parameters"
 
+  /addEntry/{deviceKey}:
+    post:
+      tags:
+        - GDT API
+      summary: Add new entry to a provenance
+      description: Adds a new entry with a description and optional tags/attachments to an existing provenance. 
+                    Set the optional provenanceRecord value "send_to_all_children" to true to send the entry to 
+                    all child records (excluding the public key). Returns the record id and a list of attachments.
+      operationId: addEntry
+      requestBody:
+        description: Additional entry parameters
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                provenanceRecord:
+                  type: object
+                  description: JSON object containing the new entry metadata.
+                  properties:
+                      description:
+                        type: string
+                        example: "Description"
+                      tags:
+                        type: array
+                        items:
+                          type: string
+                          example: "example_tag"
+                      send_to_all_children:
+                        type: boolean
+                        example: false
+                attachments:
+                  type: array
+                  description: Optional binary files attached to the form data.
+                  items:
+                    type: string
+                    format: binary
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key
+          schema:
+            type: string
+            example: "V5p6CSuvTk76Qqq7fBTiUS"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  record:
+                    type: string
+                    example: "c3275af6bb3c20840f6a4d147d65569511db960f32c25541019c7ee068d106bc"
+                  attachments:
+                    type: array
+                    example: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Provenance needs to exist before adding entries."
+        '404':
+          description: Not Found  
+        '500':
+          description: Internal Server Error 
+
+  /recall/{deviceKey}:
+    post:
+      tags:
+        - GDT API
+      summary: Propagate a recall to all descendant devices
+      description: Recalls a group record and its child records.
+      operationId: recall
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the parent record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Success
+        '500':
+          description: Internal server error
+
+  /provenance/{deviceKey}:
+    get:
+      tags:
+        - GDT API
+      summary: Gets the device provenance history
+      description: Retrieves the decrypted provenance history for a device, sorted by newest to oldest.
+      operationId: getProvenance
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of a record whose provenance history is to be retrieved.
+          schema:
+            type: string
+            example: "6TzAdg1bei6QDNxJN1KnoV"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              examples:
+                RecordsFound:
+                  summary: Provenance record found
+                  description: Provenance record for the device, sorted by the newest first.
+                  value:
+                    - record: { description: "example record", children_key: "" }
+                NoRecords:
+                  summary: No record / container missing
+                  description: Returned when the storage container does not exist yet.
+                  value: []
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Invalid json stored in provenance"
+        '500':
+          description: Internal Server Error
+
+  /attachment/{deviceKey}/{attachmentID}:
+    get:
+      tags:
+        - GDT API
+      summary: Retrieve an attachment 
+      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachment
+      parameters:
+        - name: deviceKey
+          in: path
+          required: true
+          description: The device key of the record
+          schema:
+            type: string
+            example: "XuYCKWWDUEyv9vE5iL7Pzg"
+        - name: attachmentID
+          in: path
+          required: true
+          description: The attachment ID from the record's attachment array
+          schema:
+            type: string
+            example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Attachment not found
+
+  /getNewDeviceKey:
+    get:
+      tags:
+        - GDT API
+      summary: GET /getNewDeviceKey
+      operationId: getNewDeviceKey
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Not Found
+
   /upgrade/{deviceKey}:
     get:
       tags:
@@ -239,13 +397,13 @@ paths:
         '500':
           description: Internal Server Error
 
-  /attachment/{deviceKey}/{attachmentID}:
+  /attachment/{deviceKey}/{attachmentID}/name:
     get:
       tags:
         - GDT API
-      summary: Retrieve an attachment 
-      description: This endpoint retrieves an attachment associated with its record's device key and attachment ID.
-      operationId: getAttachment
+      summary: Get the name of an attachment 
+      description: This endpoint retrieves the name of an attachment associated with its record's device key and attachment ID.
+      operationId: getAttachmentName
       parameters:
         - name: deviceKey
           in: path
@@ -257,7 +415,7 @@ paths:
         - name: attachmentID
           in: path
           required: true
-          description: The attachment ID from the record's attachment array
+          description: The attachment ID from the record's attachments array
           schema:
             type: string
             example: "ad284762074b7099fd89c8dbd0ed6f4e2cbae058068a15d929040bc6a6d7249a"
@@ -265,9 +423,10 @@ paths:
         '200':
           description: Success
           content:
-            application/octet-stream:
+            text/plain:
               schema:
                 type: string
-                format: binary
+                example: photo.jpg
         '404':
           description: Attachment not found
+  

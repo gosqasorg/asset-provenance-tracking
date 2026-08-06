@@ -56,7 +56,7 @@ describe("Tests to see if we can create records while offline", async () => {
       tags: [],
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     }
 
     // Go "offline"
@@ -74,7 +74,7 @@ describe("Tests to see if we can create records while offline", async () => {
     }
 
     expect(localStorage.getItem('stash_counter')).toEqual('1');
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).not.toEqual({});
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
 
@@ -85,7 +85,7 @@ describe("Tests to see if we can create records while offline", async () => {
 
     // Confirm that the record was removed from stash, added to fulfilled stash, and that periodicChecker stopped running
     expect(localStorage.getItem('stash_counter')).toEqual('0');
-    requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).toEqual({});
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("false");
 
@@ -110,7 +110,7 @@ describe("Tests to see if we can create records while offline", async () => {
 			expect(responseString.record.description).toBe('A record created while offline');
 			expect(responseString.record.children_key).toBe('');
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isReportingKey).toBe(false);
+			expect(responseString.record.isPublicKey).toBe(false);
     } catch(error) {
       expect.fail("Create Record Offline: postProvenance failed to create the record: " + error)
     }
