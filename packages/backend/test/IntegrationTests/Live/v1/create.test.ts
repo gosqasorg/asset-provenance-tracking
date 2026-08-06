@@ -1076,7 +1076,7 @@ describe("Record Creation Tests", () => {
 				blobType: 'deviceInitializer',
 				deviceName: "Create Record Test",
 				description: "An API smoketest for creating the most basic record",
-				tags: {},
+				tags: [],
 				children_key: '',
 				hasParent: false,
 				isPublicKey: false,
