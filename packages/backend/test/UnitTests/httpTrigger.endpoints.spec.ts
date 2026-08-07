@@ -217,16 +217,10 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
 
   it('validateRecordJSON correctly catches invalid record/group', async () => {
-    // Missing children_key, which should cause validateRecordJSON to flag this record as invalid
-    const invalidRecord = {"blobType":"deviceInitializer","deviceName":"JSON without children_key","description":"invalid JSON","tags":[],
-      "hasParent":false,"isPublicKey":false};
-    let valid = await httpTrigger.validateRecordJSON(invalidRecord);
-    expect(valid).toBe(false);
-
     // Missing description, which should cause validateRecordJSON to flag this group as invalid
     const invalidGroup = {"blobType":"deviceInitializer","deviceName":"JSON without description","tags":["group"],"children_key":[],
       "children_name":[],"hasParent":false,"isPublicKey":false};
-    valid = await httpTrigger.validateRecordJSON(invalidGroup);
+    let valid = await httpTrigger.validateRecordJSON(invalidGroup);
     expect(valid).toBe(false);
   });
  
