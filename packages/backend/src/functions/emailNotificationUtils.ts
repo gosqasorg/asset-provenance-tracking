@@ -18,7 +18,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     const emailIDArray = extractedEmails[1] || [];
     if (emailSet.size === 0) {
         context.log("No subscribers found for this record.");
-        return;
+        return { status: 204 };
     }
 
     if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
@@ -47,10 +47,9 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
                 throw result.message
             }
         }
+        return { status: 200 };
     } catch (error) {
-        context.error("Error sending email: " + error);
-        context.error(error.statusCode)
-        context.error(error)
+        context.error("Error sending email: ", error.statusCode, error);
         throw error
     }
 }

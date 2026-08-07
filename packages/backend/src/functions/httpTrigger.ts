@@ -439,19 +439,24 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+  
+    return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    await containerClient.createIfNotExists();
+    const formData = await request.formData();
 
     try {
-        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+        return await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
     } catch(error) {
         return {
-            status: error.statusCode,
+            status: error.statusCode || 500,
             jsonBody: {
                 error: 'Failed to send email'
             }
         }
     }
-  
-    return { jsonBody: body ?? { converted: true}};
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -1834,4 +1839,10 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
+})
+
+app.post("notifySubscribers", {
+    authLevel: 'anonymous',
+    route: 'notifySubscribers/{deviceKey}',
+    handler: notifySubscribersHandler
 })
