@@ -484,7 +484,7 @@ export async function offlineDetectAndStash (recordKey: string, formData: FormDa
 
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/notificationsubscription`, {
+    const response = await fetch(`${baseUrl}/notificationSubscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, recordKey }),
