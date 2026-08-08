@@ -36,7 +36,7 @@ describe('postNotificationEmail', () => {
         const calledUrl = mockFetch.mock.calls[0][0] as string;
         const calledOptions = mockFetch.mock.calls[0][1];
 
-        expect(calledUrl).toContain('/notificationSubscription');
+        expect(calledUrl).toContain('/notificationsubscription');
         expect(calledOptions.method).toBe('POST');
         expect(calledOptions.headers['Content-Type']).toBe('application/json');
 
