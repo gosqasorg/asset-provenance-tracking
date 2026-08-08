@@ -249,6 +249,14 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              properties:
+                provenanceRecord:
+                  type: object
+                  description: JSON object containing the new entry metadata.
+                  properties:
+                      description:
+                        type: string
+                        example: "Recalled Record"
       responses:
         '200':
           description: Success
