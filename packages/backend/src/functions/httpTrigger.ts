@@ -725,7 +725,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
             // Send record entry to all children
             while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
+                let key = keysToCheck[0] as string;
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
@@ -751,6 +751,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -805,6 +809,10 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     await addRecordWithTags(baseUrl, deviceKey, tags, description)
 
+    // Email users if they are subscribed to the group
+    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
     try {
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
@@ -816,7 +824,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
+                let key = keysToCheck[0] as string;
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
@@ -843,6 +851,10 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1691,6 +1703,10 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         method: "POST",
         body: formData,
     });
+
+    // If users are subscribed to notifications email them
+    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
 
     if (response.status !== 200) { return { status: response.status }; }
     let postProvResponse = await response.json();

@@ -9,7 +9,8 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entered notifySubscribers')
-    const description = JSON.parse(formData.get('provenanceRecord')).description
+    const record = JSON.parse(formData.get('provenanceRecord'));
+    const description = record ? record.description : "";
 
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey);
