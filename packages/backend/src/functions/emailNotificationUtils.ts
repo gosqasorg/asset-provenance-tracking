@@ -154,9 +154,8 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
          - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */
 
-    // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    const exists = await blobClient.exists();
+    const baseUrl = process.env['backend_url'];
+    let keysToCheck = [deviceKey];
 
     // Confirm the email exists
     const normalized = (email ?? "").trim().toLowerCase();
@@ -164,42 +163,59 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
         return { jsonBody: { message: "Email not provided" }, status: 404 };
     }
 
-    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+    // Loop through record/children keys and subscribe to all of them
+    while (keysToCheck.length != 0) {
+        let key = keysToCheck[0];
+        let getKey = await fetch(`${baseUrl}${key}`);
+        const keyProvenance = await getKey.json();
 
-    // Add the specified email to the set
-    const sizeBeforeAdding = emailSet.size;
-    emailSet.add(normalized);
-
-    // If email is already stored return success
-    if (exists && emailSet.size === sizeBeforeAdding) {
-        return {
-        jsonBody: { message: "Success", name: blobName },
-        status: 200,
-        };
-    }
-
-    // Generate a unique string id to represent the new email
-    const uniqueString = await crypto.subtle.generateKey(
-        {
-        name: "AES-CBC",
-        length: 256
-        },
-        true,
-        ['encrypt', 'decrypt']
-    );
-
-    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-    const uniqueEmailString = base58encode(new Uint8Array(buffer));
-    emailIDSet.add(uniqueEmailString)
-
-    try {
-        // Update our stored emails to include the new email/id
-        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
-    } catch(error) {
-        return {
-            jsonBody: {message: 'Failed to subscribe to email notifications'},
-            status: 500,
+        let uniqueChildKeys = getChildKeys(keyProvenance);
+        if (uniqueChildKeys.includes(deviceKey.toString())) {
+            uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
         }
+
+        keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+        // Setup the blobClient and get emails subscribed to the record
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, key);
+        const exists = await blobClient.exists();
+        let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+        // Add the specified email to the set
+        const sizeBeforeAdding = emailSet.size;
+        emailSet.add(normalized);
+
+        // If email is already stored move on to the next key to check
+        if (exists && emailSet.size === sizeBeforeAdding) {
+            keysToCheck.shift();
+            continue;
+        }
+
+        // Generate a unique string id to represent the new email
+        const uniqueString = await crypto.subtle.generateKey(
+            {
+            name: "AES-CBC",
+            length: 256
+            },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+        const uniqueEmailString = base58encode(new Uint8Array(buffer));
+        emailIDSet.add(uniqueEmailString)
+
+        try {
+            // Update our stored emails to include the new email/id
+            uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
+        } catch(error) {
+            return {
+                jsonBody: {message: 'Failed to subscribe to email notifications'},
+                status: 500,
+            }
+        }
+
+        keysToCheck.shift();
     }
 }
 
@@ -295,4 +311,26 @@ export function extractEmailsFromResponse(response: any) {
         console.log("Failed to extract emails:", error.message)
     }
     return [emailSet, emailIDArray];
+}
+
+interface Provenance {
+    record: any;
+    attachments?: string[];
+    deviceID?: string;
+    timestamp: number;
+}
+
+function getChildKeys(provenance: Provenance[]): string[] {
+    let childKeys: string[] = []
+
+    for (const p of provenance) {
+        const child = p.record.children_key; // Can be "" if not a group or string[] if a group
+        // child may be undefined or an empty array
+        if (!child || !child.length) {
+            continue;
+        }
+        childKeys = [...childKeys, ...child];
+    }
+
+    return Array.from(new Set(childKeys));
 }
