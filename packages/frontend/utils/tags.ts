@@ -33,5 +33,6 @@ export enum InternalTagName {
     NotifyAll = "notify_all",
     Recall = "recall",
     Annotate = "annotate",
+    SentToAllChildren = "sent_to_all_children",
     PublicKey = "publickey", // This is in use so we can't change the formatting.
 }

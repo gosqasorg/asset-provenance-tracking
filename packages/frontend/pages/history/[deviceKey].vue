@@ -21,7 +21,7 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { hasParent } from '~/utils/descendantList';
+import { recordHasParent } from '~/utils/descendantList';
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
@@ -34,12 +34,12 @@ try {
 } catch (e) {
 	provenance = [];
 }
-const recordHasParent = hasParent(provenance);
+const hasParent = recordHasParent(provenance);
 </script>
 
 <template>
 <!-- This link is for the icon in mobile dropdown menu -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 <div v-if="isLoading">
 	<p class="text-center pb-5 pt-5">Loading record(s)...</p>
 </div>
@@ -122,10 +122,10 @@ const recordHasParent = hasParent(provenance);
 				</h1>
 				</div>
 
-				<div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
@@ -299,7 +299,7 @@ async mounted() {
         deviceRecord = response[response.length - 1].record;
 
 		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
-		if (hasParent(response)) {
+		if (recordHasParent(response)) {
 			hiddenHasParent.value = true
 		}
 
@@ -415,7 +415,7 @@ methods: {
 	this.childKeys = getChildKeys(provenance);
 
 	// If record now has a parent hide the "Add to Group" field
-	if (hasParent(provenance)) {
+	if (recordHasParent(provenance)) {
 		hiddenHasParent.value = true
 	}
 
