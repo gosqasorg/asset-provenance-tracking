@@ -44,7 +44,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
 
-
         <div class="row second-row" id="gdt-section">
             <div style="display:flex; flex-direction:column; gap: 17px;">
                 <h3>Global Distributed Tracking</h3>    
@@ -60,8 +59,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>  
         </div>
 
-        <div class="row odd-stripe"  >
-            <div class="row rowtest">
+        <div class="second-row latest">
+            <h5 id="latest-big-header">Latest News</h5>
+            <div class="latest-news">
+
+                 <div id="latest-news-item">
+                    <img src="/assets/images/dmdm_cropped.png"/>
+                    <div id="dmdm-div">
+                        <span id="latest-news-header">Decentralized Medical Device Manufacturing (DMDM)</span>
+                        <p id="latest-news-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.</p>
+                        <button id="latest-news-button" @click="$router.push('/dmdm')">View our pilot program</button>
+                    </div>
+                </div>
+
+                <div id="latest-news-item">
+                    <img src="/assets/images/ieee_cropped.jpg" style="border-radius: 10px"/>
+                    <div style="gap: 4px">
+                        <span id="latest-news-header">GDT Paper Published in the Institute of Electrical and Electronics Engineers</span>
+                        <p id="latest-news-text">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.</p>
+                        <button id="latest-news-button" @click="getPDF()">Read the paper now</button>
+                    </div>                    
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row odd-stripe about-us" >
+            <div class="row rowtest" id="about-us-desc">
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
                     <p style="font-weight: 400;">{{ item.descr }}</p>
@@ -73,30 +97,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
 
-        <div class="row second-row" >
-          <div class="lastest-news-container">
-            <img src="/ieee.png" alt="IEEE Logo" class="ieeeimage" />
-            <div id="flexright">
-              <h3>GDT Paper Published in the Institute of Electrical and Electronics Engineers</h3>
-              <p class="text" style="font-size:20px; line-height:30px; font-weight: 400;">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.
-              </p>
-              <div class="col" >
-                <button id="ieee-button" @click="getPDF()">Read the paper now</button>
-                <NavButton to="/heatmap" text="See Our Global Impact" id="dmdm-button" margin="0" padding="18px 22px" style="margin: 0 10px;"/>
-              </div>
-            </div>
-
-          </div>
-          
-        </div>
-
         <Learn_more id="learn-more"></Learn_more>
 
     </div>
 
 </template>
-
-
 
 <script lang="ts">
 import Learn_more from '~/layouts/learn_more.vue';
@@ -106,8 +111,8 @@ let showTrack = false;
 
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We believe that open-source projects should be simple to use and understand."},
-    { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."},
-    { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."}
+    { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."},
+    { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."}
 ];
 
 export default {
@@ -125,7 +130,6 @@ methods: {
 }
 }
 </script>
-
 
 <style scoped>
 
@@ -162,56 +166,20 @@ methods: {
     margin: 0;
 }
 
-:deep(#news-button) {
-    width: fit-content;
-    padding: 18px 22px !important;
-    border-radius: 10px;
-}
-
-#ieee-button {
-    padding: 18px 22px;
+#latest-news-button {
+    padding: 16px 20px;
     border-radius: 10px;
     border-width: 2px;
     border-style: solid;
     cursor: pointer;
     font-size: 20px;
+    gap: 10px;
 }
 
 #gdt-section {
     display: flex;
     flex-direction: column;
     gap: 50px;
-}
-
-.lastest-news-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;       /* Allows wrapping onto a new line */
-    align-items: stretch;
-    justify-content: space-around;
-}
-
-.ieeeimage {
-  max-width: 12em;
-  max-height: 12em;
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-  background-color: #FFFFFF;
-}
-
-.dmdm-image {
-    width: 158px;
-    height: 158px;
-    background-color: #FFFFFF;
-    border-radius: 10px;
-}
-
-#flexright {
-    max-width: 70%;
-    display: flex;
-    flex-direction: column;
-    gap: 20px
 }
 
 #first-row {
@@ -249,16 +217,6 @@ methods: {
     #first-row-col {
         width: 100% !important;
     }
-    .dmdm-image {
-        display: none;
-    }
-    :deep(#news-button) {
-        display: block !important;
-        text-decoration: none !important;
-        font-size: 18px !important;
-        margin: 0 auto !important;
-        padding: 14px 18px !important;
-    }
 
     #news-text-container h4 {
     font-size: 22px;
@@ -274,9 +232,8 @@ methods: {
         max-width: 100%;
     }
 
-    #ieee-button {
+    #latest-news-button {
         display:block;
-        margin: 0 auto;
         padding: 14px 18px;
     }
 }
@@ -301,6 +258,33 @@ methods: {
     .button{
         font-size: 18px;
     }
+    .latest-news {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 20px;
+    }
+    .latest-news img {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    #latest-big-header {
+        font-size: 24px;
+        font-weight: 500;
+    }
+    #latest-news-header {
+        font-size: 20px;
+    }
+    #latest-news-text {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 400;
+        letter-spacing: 0%;
+    }
+    #about-us-desc {
+        display: flex;
+        flex-direction: column;
+    }
     #first-row {
         background-size: 60% !important;
     }
@@ -311,9 +295,6 @@ methods: {
     #createRecordButton {
         order: 1;
         margin-top: 0px !important;
-    }
-    :deep(#news-button) {
-        text-align: center !important;
     }
 }
 
@@ -346,9 +327,43 @@ methods: {
     .button{
         font-size: 20px;
         padding: 1px;
-
     }
-
+    #latest-big-header {
+        font-size: 32px; 
+        position: sticky; 
+        margin-bottom: 40px
+    }
+    #latest-news-item {
+        display: flex; 
+        flex-direction: column; 
+        width: 356px; 
+        height: 524px
+    }
+    .latest-news {
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(400px, 400px)); 
+        gap: 60px
+    }
+    .latest-news img {
+        width: 356px; 
+        height: 172px;
+        margin-bottom: 20px;
+    }
+    #latest-news-text {
+        font-size: 18px; 
+        line-height: 27px; 
+        font-weight: 400; 
+        font-family: Poppins; 
+        letter-spacing: 0%
+    }
+    #latest-news-header {
+        font-size: 20px; 
+        font-weight: 500; 
+        font-style: medium; 
+        line-height:30px; 
+        letter-spacing: 0%; 
+        font-family: Poppins
+    }
 }
 
 @media (max-width: 1083px) {
@@ -375,6 +390,12 @@ methods: {
     .second-row{
             background-color: #4E3681;
     }
+    .about-us {
+        background-color: #322253;
+    }
+    .latest {
+        background-color: #1E2019
+    }
     h3 {
         color: #FFFFFF;
     }
@@ -386,13 +407,19 @@ methods: {
         background-color: transparent;
         border: 2px solid #FFFFFF;
     }
-    #ieee-button {
-        color: #FFFFFF;
-        background-color: #4E3681;
-        border: 2px solid #FFFFFF;
+    #latest-news-button {
+        color: #E6F6FF;
+        background-color: #1E2019 ;
+        border: 2px solid #E6F6FF;
     }
-    .ieeeimage {
-        border: 2px solid #FFFFFF;
+    #latest-big-header {
+        color: #CCECFD;
+    }
+    #latest-news-text {
+        color: #FFFFFF;
+    }
+    #latest-news-header {
+        color: #CCECFD;
     }
     #second-row-cols-h3 {
         color: #CCECFD;
@@ -401,43 +428,19 @@ methods: {
         background-color: white;
         color: black;
     }
-
-    :deep(#dmdm-button) {
-        color: #FFFFFF;
-        background-color: #4E3681;
-        border: 2px solid #FFFFFF;
-    }
-
-    #ieee-button:hover {
+    #latest-news-button:hover {
         background-color: white;
-        color: #4E3681;
+        color: #1E2019;
     }
     #latest-news-banner {
         background-color: #1E2019;
     }
-
     #news-text-container h4 {
         color: #CCECFD;
     }
 
     #news-text-container p {
         color: #FFFFFF;
-    }
-
-    :deep(#news-button) {
-        color: white !important;
-        background-color: transparent !important;
-        border: 2px solid white !important;
-    }
-
-    :deep(#news-button):hover {
-        background-color: white !important;
-        color: #000000 !important;
-    }
-
-    :deep(#dmdm-button:hover) {
-        background-color: white;
-        color: #4E3681;
     }
 }
 /* Light mode version of second row */
@@ -448,7 +451,15 @@ methods: {
     .second-row {
             background-color: #E6F6FF;
         }
-
+    .odd-stripe {
+        background-color: #FFFFFF;
+    }
+    .about-us {
+        background-color: #E6F6FF;
+    }
+    .second-row.latest {
+        background-color: #FFFFFF
+    }
     h3 {
         color: #4E3681;
     }
@@ -460,22 +471,26 @@ methods: {
         background-color: #CCECFD;
         border: 2px solid #CCECFD;
     }
-    #ieee-button {
+    #latest-big-header {
+        color: #4E3681;
+    }
+    #latest-news-button {
         color: #322253;
-        background-color: #E6F6FF;
+        background-color: #FFFFFF;
         border: 2px solid #4E3681;
+    }
+    #latest-news-text {
+        color: #1E2019;
+    }
+    #latest-news-header {
+        color: #4E3681;
     }
     :deep(#about-button:hover) {
         background-color: #E6F6FF;
         border: 2px solid #E6F6FF;
     }
 
-    :deep(#dmdm-button) {
-        color: #322253;
-        background-color: #E6F6FF;
-        border: 2px solid #4E3681;
-    }
-    #ieee-button:hover {
+    #latest-news-button:hover {
         background-color: #4E3681;
         color: white;
     }
@@ -489,22 +504,6 @@ methods: {
 
     #news-text-container p {
         color: #FFFFFF;
-    }
-
-    :deep(#news-button) {
-        color: white !important;
-        background-color: transparent !important;
-        border: 2px solid white !important;
-    }
-
-    :deep(#dmdm-button:hover) {
-        background-color: #4E3681;
-        color: white;
-    }
-
-    :deep(#news-button):hover {
-        background-color: white !important;
-        color: #4E3681 !important;
     }
 }
 
