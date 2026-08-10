@@ -75,7 +75,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         type="email"
                         class="form-control"
                         v-model="emailInput"
-                        placeholder="Email"
+                        required
+                        multiple
+                        placeholder="Email addresses (comma separated)"
                         @keyup.enter=""
                     />
                 </div>
@@ -269,6 +271,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         handleUpdateEmailTags(tags: string[]) {
             this.emailTags = tags;
         },
+        parseNotificationEmails(): string[] | null {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emails = this.emailInput
+                .split(',')
+                .map(email => email.trim().toLowerCase())
+                .filter(Boolean);
+
+            if (emails.length === 0 || emails.some(email => !emailRegex.test(email))) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'Please enter valid email addresses separated by commas.'
+                });
+                return null;
+            }
+
+            return [...new Set(emails)];
+        },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -311,6 +330,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            if (this.notify) {
+                const notificationEmails = this.parseNotificationEmails();
+                if (!notificationEmails) {
+                    return;
+                }
+                if (notificationEmails.length > 1) {
+                    this.$snackbar.add({
+                        type: 'info',
+                        text: 'Multiple email subscriptions are not available yet.'
+                    });
+                    return;
+                }
+                this.emailInput = notificationEmails.join(', ');
+            }
+
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
