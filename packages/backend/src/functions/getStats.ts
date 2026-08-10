@@ -70,7 +70,7 @@ async function getBrowserStats(request: HttpRequest, context: InvocationContext)
             | summarize count() by UserBrowsers
             | order by count_ desc
         `)
-        return { body: rows, status: 200 }
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } }
     } catch (error) {
         context.log("getBrowserStats error:", error);
         return { body: "Error fetching browser stats", status: 500 }
