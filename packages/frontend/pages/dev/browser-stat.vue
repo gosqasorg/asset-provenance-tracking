@@ -60,8 +60,8 @@
             </ul>
           </div>
         <div class="chart-card">
-          <h3>Scripts</h3>
-          <!-- Scripts Graph -->
+          <h3>Tools</h3>
+          <!-- Tools Graph -->
            <div class="canvas-wrap"><canvas ref="toolsCanvas"></canvas></div>
           <ul class ="chart-legend">
               <li v-for="item in chartLegends.tools" :key="item.label" class="legend-item">
@@ -86,8 +86,8 @@ Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
 
 // split into browser / bot / tool buckets
-const BROWSER_KEYS = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Internet Explorer', 'DuckDuckGo', 'Other'];
-const BOT_KEYS = ['ClaudeBot', 'Googlebot', 'Bingbot', 'Baiduspider', 'Other bot']
+const BROWSER_KEYS = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Internet Explorer', 'DuckDuckGo'];
+const BOT_KEYS = ['ClaudeBot', 'Googlebot', 'Bingbot', 'Baiduspider']
 const TOOL_KEYS = ['curl', 'Node', 'Python', '.NET', 'Unknown', 'Other']
 
 export default {
