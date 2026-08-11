@@ -108,6 +108,10 @@ export default {
     }
   },
 
+  mounted() {
+    this.fetchData()
+  },
+
   methods: {
     async fetchData() {
       // fetch data from stats/browsers endpoint
@@ -129,9 +133,9 @@ export default {
         }
         this.rawData = rows
 
-        // split data into its buckets, assuming there is data
+        // split data into its buckets, assuming there is data. 
         const map = Object.fromEntries(this.rawData!.map((item: any) => [item[0], item[1]]))
-        const browserMap = Object.fromEntries(BROWSER_KEYS.map(key => [key, map[key] ?? 0]))
+        const browserMap = Object.fromEntries(BROWSER_KEYS.map(key => [key, map[key] ?? 0])) // If not data found for key, return 0
         const botsMap = Object.fromEntries(BOT_KEYS.map(key => [key, map[key] ?? 0]))
         const toolsMap = Object.fromEntries(TOOL_KEYS.map(key => [key, map[key] ?? 0]))
 
@@ -170,7 +174,7 @@ export default {
       const total = entries.reduce((sum, [, count]) => sum + count, 0)
       this.chartLegends[label] = entries.map(([key,count], idx) => ({
         label: key,
-        color: colors[idx] ? colors[idx] : '#fff',
+        color: colors[idx] ?? '#fff',
         percent: ((count / total) * 100).toFixed(1) + '%',
       }))
       if (!entries.length) return
@@ -203,6 +207,7 @@ export default {
     },
 
   },
+
 
 
 

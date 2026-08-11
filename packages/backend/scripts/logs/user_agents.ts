@@ -93,32 +93,3 @@ await runQuery(
 | summarize count() by UserBrowsers
 | order by count_ desc`
 );
-
-
-// figure out what the "Other" user agents are 
-// await runQuery(
-//     "Others",
-//     `AppRequests
-// | extend ua = tostring(parse_json(Properties)["user_agent.original"])
-// | extend UserBrowsers = case(
-//     ua contains "ClaudeBot", "ClaudeBot",
-//     ua contains "Googlebot", "Googlebot",
-//     ua contains "bingbot", "Bingbot",
-//     ua contains "Baiduspider", "Baiduspider",
-//     ua contains "bot" or ua contains "crawler" or ua contains "spider", "Other bot",
-//     ua contains "curl", "curl",
-//     ua contains "node", "Node",
-//     ua contains "python" or ua contains "Python", "Python",
-//     ua contains "MSIE" or ua contains "Trident", "IE/.NET",
-//     ua contains ".NET", ".NET",
-//     ua contains "Edg/", "Edge",
-//     ua contains "Chrome", "Chrome",
-//     ua contains "Firefox", "Firefox",
-//     ua contains "Safari", "Safari",
-//     ua contains "DuckDuckGo", "DuckDuckGo",
-//     ua == "", "Unknown",
-//     "Other") 
-// | where UserBrowsers == "Other"
-// | project ua
-// | take 20`
-// );
