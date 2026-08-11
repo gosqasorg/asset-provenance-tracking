@@ -69,6 +69,7 @@ async function runQuery(label: string, query: string): Promise<void> {
 await runQuery(
     "User agents sample",
 `AppRequests
+| where TimeGenerated > ago(1)
 | extend ua = tostring(parse_json(Properties)["user_agent.original"])
 | extend UserBrowsers = case(
     ua contains "ClaudeBot", "ClaudeBot",

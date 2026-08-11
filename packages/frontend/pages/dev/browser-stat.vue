@@ -2,8 +2,9 @@
   <div class="stat-page">
     <div class="stat-header">
       <div class="stat-header-text"> 
-        <h2>Traffic Breakdown</h2>
-        <p>Classification of incoming requests by client type</p>
+        <h1>User Agents Breakdown</h1>
+        <!-- Azure only seems to keep the last 90 days of AppRquests data on default -->
+        <p>Classification of incoming requests by client type from the last 90 days</p>
       </div>
       <!-- hook up to refresh for data -->
       <button @click="fetchData" :disabled="loading" class="btn">{{loading ? 'Loading...' : 'Refresh'}}</button>
@@ -11,20 +12,20 @@
     <!-- stat summaries -->
      <div class="summary-row">
       <div class="summary-pill">
-        <span class="pill-num">{{totals ? totals.all : 0}}</span>
+        <span class="pill-num">{{totals ? totals.all?.toLocaleString() : 0}}</span>
         <span class="pill-label">Total Requests</span>
       </div>
       <div class="summary-pill">
-        <span class="pill-num">{{totals ? totals.browsers : 0}}</span>
-        <span class="pill-label">Browser Requests</span>
+        <span class="pill-num">{{totals ? totals.browsers?.toLocaleString() : 0}}</span>
+        <span class="pill-label">Browsers</span>
       </div>
       <div class="summary-pill">
-        <span class="pill-num">{{totals ? totals.bots : 0}}</span>
-        <span class="pill-label">Bot Requests</span>
+        <span class="pill-num">{{totals ? totals.bots?.toLocaleString() : 0}}</span>
+        <span class="pill-label">Bots</span>
       </div>
       <div class="summary-pill">
-        <span class="pill-num">{{totals ? totals.tools : 0}}</span>
-        <span class="pill-label">Tool Requests</span>
+        <span class="pill-num">{{totals ? totals.tools?.toLocaleString() : 0}}</span>
+        <span class="pill-label">Tools</span>
       </div>
      </div>
 
@@ -35,11 +36,12 @@
           <!-- Broswer Graph -->
            <div class="canvas-wrap"><canvas ref="browserCanvas"></canvas></div>
             <ul class ="chart-legend">
-              <li v-for="item in chartLegends.browsers" :key="item.label">
-                <span>
+              <li v-for="item in chartLegends.browsers" :key="item.label" class="legend-item">
+                <span class="legend-left">
+                  <span class="legend-dot" :style="{ backgroundColor: item.color }"></span>
                   <span>{{ item.label }}</span>
                 </span>
-                <span>{{ item.percent }}</span>
+                <span class="legend-percent">{{ item.percent }}</span>
               </li>
             </ul>
           </div>
@@ -48,11 +50,12 @@
           <!-- Bots Graph -->
            <div class="canvas-wrap"><canvas ref="botsCanvas"></canvas></div>
           <ul class ="chart-legend">
-              <li v-for="item in chartLegends.bots" :key="item.label">
-                <span>
+              <li v-for="item in chartLegends.bots" :key="item.label" class="legend-item">
+                <span class="legend-left">
+                  <span class="legend-dot" :style="{ backgroundColor: item.color }"></span>
                   <span>{{ item.label }}</span>
                 </span>
-                <span>{{ item.percent }}</span>
+                <span class="legend-percent">{{ item.percent }}</span>
               </li>
             </ul>
           </div>
@@ -61,19 +64,16 @@
           <!-- Scripts Graph -->
            <div class="canvas-wrap"><canvas ref="toolsCanvas"></canvas></div>
           <ul class ="chart-legend">
-              <li v-for="item in chartLegends.tools" :key="item.label">
-                <span>
+              <li v-for="item in chartLegends.tools" :key="item.label" class="legend-item">
+                <span class="legend-left">
+                  <span class="legend-dot" :style="{ backgroundColor: item.color }"></span>
                   <span>{{ item.label }}</span>
                 </span>
-                <span>{{ item.percent }}</span>
+                <span class="legend-percent">{{ item.percent }}</span>
               </li>
             </ul>
           </div>
     </div>
-
-    <!-- for testing! -->
-    <p>{{ rawData ? rawData.length : 0 }} records found</p>
-    <p>{{ rawData }}</p>
 
   </div>
 </template>
@@ -86,9 +86,9 @@ Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
 
 // split into browser / bot / tool buckets
-const BROWSER_KEYS = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Opera', 'Other'];
+const BROWSER_KEYS = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Internet Explorer', 'DuckDuckGo', 'Other'];
 const BOT_KEYS = ['ClaudeBot', 'Googlebot', 'Bingbot', 'Baiduspider', 'Other bot']
-const TOOL_KEYS = ['Node', 'Python', 'curl', '.NET', 'Unknown', 'Other'] 
+const TOOL_KEYS = ['curl', 'Node', 'Python', '.NET', 'Unknown', 'Other']
 
 export default {
   data() {
@@ -161,7 +161,7 @@ export default {
     },
     // render each bucket as a doughnut chart with chart.js
     buildChart(canvas: HTMLCanvasElement, label: string, dataMap: Record<string, number>) {
-      const colors = ['#4E3081', '#CCE6F0', '#8C72C9', '#6FA3B8', '#B9A6DE', '#6B6F76']
+      const colors = ['#4E3081', '#CCE6F0', '#8C72C9', '#6FA3B8', '#B9A6DE', '#6B6F76', '#A3785E']
 
       // grab only the entries with non-zero values
       const entries = Object.entries(dataMap).filter(([, count]) => count > 0)
@@ -189,6 +189,15 @@ export default {
         },
         options: {
           responsive: true,
+          plugins: {
+            legend: {
+              display: false,
+            },
+          },
+          cutout: '65%',
+          layout: {
+            padding: 10,
+          }
         }
       })
     },
@@ -202,26 +211,31 @@ export default {
 </script>
 
 <style scoped>
+
 .stat-page {
   font-size: 18px;
   color: #1e2019;
   display: flex;
   flex-direction: column;
   gap: 30px;
-  margin: 30px;
+  padding: 20px 126px 0px 126px;
+  /* margin: 30px; */
+  width: 100%;
+  margin: 32px 13.5px;
 }
 
-.stat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start
+h1 {
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 72px;
+  color: #4E3681;
 }
 
-.summary-row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  justify-content: space-between;
+p {
+  font-size: 20px;
+  line-height: 30px;
+  color: #1E2019;
+  margin: 0;
 }
 
 .btn {
@@ -231,31 +245,70 @@ export default {
   padding: 10px 20px;
 }
 
-.summary-pill {
-  background: #262820;
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
+.stat-header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.summary-pill, .chart-card {
+  background: rgba(204,204,204,.24);
   display: flex;
   flex-direction: column;
   flex: 1;
-  border: 2px solid rgba(255,255,255,.07);
+  border: 1px solid rgba(204,204,204,.24);
   border-radius: 10px;
-  padding: 12px;
+  padding: 22px 24px;
+  gap: 10px
 }
 
 .pill-num {
-  font-size: 2rem;
-  color: #4e3681;
+  font-size: 30px;
+  line-height: 1.2;
+  color: #1E2019;
   font-weight: 600;
 }
 
 .pill-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 30px;
+  color: rgba(30,32,25,.55);
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
+
+h3 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #4E3681;
+}
+
+
+
 
 .canvas-wrap {
   position: relative;
-  height: 280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.charts-row {
+  display: flex;
+  gap: 20px;
 }
 
 .chart-card {
@@ -267,31 +320,85 @@ export default {
   padding: 20px;
 }
 
-.charts-row {
+.chart-legend {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0 0;
+}
+
+.legend-item {
   display: flex;
-  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0; 
+  font-size: 20px;
+  line-height: 30px;
+  color: #1E2019;
+}
+
+.legend-item span {
+  font-size: 20px;
+  line-height: 30px;
+}
+
+.legend-left  { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+}
+
+.legend-dot   { 
+  width: 10px; 
+  height: 10px; 
+  border-radius: 50%; 
+  flex-shrink: 0; 
+}
+
+.legend-percent {
+  font-size: 20px;
+  line-height: 30px;
+  color: rgba(30,32,25,.55);
 }
 
 @media (prefers-color-scheme: dark) {
+  h1 {
+    color: #CCECFD
+  }
+
+  p {
+    color: #FFFFFF
+  }
+  
   .stat-page {
     color: #ffffff;
   }
 
-  .summary-pill {
-    color: #ffffff;
+  .summary-pill, .chart-card {
     background: #262820;
+    border: 1px solid #353535;
   }
 
   .pill-num {
-    color: #ccecfd;
+    color: #FFFFFF;
   }
 
   .pill-label {
-    color: #f2f2f2;
+    color: rgba(255,255,255,.55)
   }
 
-  .chart-card {
-    border-color: #444;
+  h3 {
+    color: #CCECFD;
   }
+
+  .legend-item {
+    color: rgba(255,255,255,.85);
+  }
+
+
+  .legend-percent {
+
+    color: rgba(255,255,255,.55);
+  }
+
 }
 </style>
