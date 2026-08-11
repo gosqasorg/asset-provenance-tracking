@@ -18,9 +18,10 @@ Page will be the forum where users can keep track of the provenance of
 their items.
 -->
 
+
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { hasParent } from '~/utils/descendantList';
+import { recordHasParent } from '~/utils/descendantList';
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
@@ -33,13 +34,12 @@ try {
 } catch (e) {
 	provenance = [];
 }
-
-const recordHasParent = hasParent(provenance);
+const hasParent = recordHasParent(provenance);
 </script>
 
 <template>
 <!-- This link is for the icon in mobile dropdown menu -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 <div v-if="isLoading">
 	<p class="text-center pb-5 pt-5">Loading record(s)...</p>
 </div>
@@ -89,7 +89,7 @@ const recordHasParent = hasParent(provenance);
 			class="left-col">
 
 			<!-- Offline Banner Top-->
-			<Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+			<Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
 				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
 				</div>
 				<div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
@@ -97,12 +97,21 @@ const recordHasParent = hasParent(provenance);
 				</div> 
 			</Banner>
 
-			<!-- Back Online Banner -->
-			<Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
-				<div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				<RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+			<!-- Banner to Offline History Create Page -->
+			<Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">offline creation page</RouterLink>.
 				</div>
 			</Banner>
+
+			<!-- Back Online Banner -->
+			<Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
+				</div>
+            </Banner>
 
 			<section id="device-details" class="details-container">
 			<div class="record-description">
@@ -113,14 +122,14 @@ const recordHasParent = hasParent(provenance);
 				</h1>
 				</div>
 
-				<div class="rec" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="deviceRecord.isReportingKey">Reporting Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
 				<div class="mb-3 rec">
-				<span v-html="clickableLink(deviceRecord?.description)" style="word-break: break-word;"></span>
+				<span v-html="clickableLink(deviceRecord?.description)" style="white-space: pre-wrap;"></span>
 				</div>
 
 				<section ref="section" id="priority-notices">
@@ -133,23 +142,24 @@ const recordHasParent = hasParent(provenance);
 			</div>
 			</section>
 
-			<div class="buttons-container">
-			<button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
+            <div class="action-buttons">
+	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
-              <ProvenanceShareDropdown 
-                :deviceName="deviceRecord.deviceName" 
-                :description="deviceRecord.description"
-                :fontSize="20"
-                :height="66">
-              </ProvenanceShareDropdown>
+                <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
 
-              <EmailNotificationSignup
-                :recordKey="_recordKey"
-                :fontSize="20"
-                :height="66">
-              </EmailNotificationSignup>
-              
+                <ProvenanceShareDropdown
+                  :deviceName="deviceRecord.deviceName"
+                  :description="deviceRecord.description"
+                  :fontSize="20"
+                  :height="66"
+                  :width="33"
+                  >
+                </ProvenanceShareDropdown>
             </div>
+
+            <!-- Email notifications modal -->
+            <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
+
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
             </section>
@@ -177,10 +187,10 @@ const recordHasParent = hasParent(provenance);
 			User Manual
 			</a>
 
-			<div v-if="hasReportingKey"> Reporting Key:
-				<div> <a :href="`/history/${deviceRecord?.reportingKey}`">{{ deviceRecord?.reportingKey }}</a></div>
+			<div v-if="hasPublicKey"> Public Key:
+				<div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
 			</div>
-			<div v-if="(childKeys?.length > 0) || hasReportingKey">
+			<div v-if="(childKeys?.length > 0) || hasPublicKey">
 				<div> Child Keys:
 				<div>
 					<KeyList v-bind:keys="childKeys" />
@@ -206,11 +216,12 @@ const recordHasParent = hasParent(provenance);
 </template>
 
 <script lang="ts">
-import { getProvenance, displayOnlineBanner, displayOfflineBanner } from '~/services/azureFuncs';
+import { getProvenance, displayOnlineBanner, displayOfflineBanner, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { ref } from 'vue'
 import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
 import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
+import { useRuntimeConfig } from '#app';
 
 let deviceRecord: any;
 let provenance, deviceCreationRecord, provenanceNoRecord;
@@ -219,6 +230,7 @@ let recordsInFeed = [];
 const currentSection = ref();
 let section = ref();
 let dropdownVisible = false;
+export let hiddenHasParent = ref(false)
 
 let headers = [
 { id: "device-details", name: "Record details" },
@@ -235,25 +247,30 @@ components: {
 	InvalidHistoryKey,
 },
 data() {
+    const config = useRuntimeConfig()
 	return {
         isCreating: false,
         isLoading: true,
         recordKeyFound: false,
-        hasReportingKey: false,
+        hasPublicKey: false,
         childKeys: [] as string[],
         _recordKey: "",
-        valid: false
+        valid: false,
+        // for email verification
+        autoToken: '' as string,
+        autoCode: '' as string,
+        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
 	}
 },
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
 			return true;
 		} else {
 			return false;
 		}
-		},
+	},
     // Controls the visibility of online banner based on global variable displayOnlineBanner
     onlineBannerToggle() {
         if (displayOnlineBanner === true) {
@@ -267,9 +284,24 @@ computed: {
 async mounted() {
 	try {
         const route = useRoute();
+
+        // grab token and code from params for email verif
+        const token = route.query.token as string;
+        const code = route.query.code as string;
+        if (token && code) {
+            this.autoToken = token;
+            this.autoCode = code;
+            this.$router.replace({query: {}}); // remove the token and code from the url after grabbing them- to prevent user from spam reloading.
+        }
+
         this._recordKey = route.params.deviceKey as string;
         const response = await getProvenance(this._recordKey);
         deviceRecord = response[response.length - 1].record;
+
+		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
+		if (recordHasParent(response)) {
+			hiddenHasParent.value = true
+		}
 
         this.addScrollListener();
 
@@ -282,18 +314,21 @@ async mounted() {
             this.isCreating = false;
         });
 
+		// preload the offline history page (so we can navigate to this page if the user goes offline)
+        await import('./offline.vue');
+
         await this.refreshFeed();
 	} catch (error) {
         this.isCreating = false;
         this.recordKeyFound = false;
-        this.hasReportingKey = false;
+        this.hasPublicKey = false;
         setTimeout(() => {
           this.isLoading = false;
         }, 1000); // logs after 1 second
         console.log(error)
 	}
 },
-beforeDestroy() {
+beforeUnmount() {
 	EventBus.off('feedRefresh', this.refreshFeed);
 	EventBus.off('isCreating', () => {
 	if (!this.isCreating) {
@@ -304,6 +339,12 @@ beforeDestroy() {
 	});
 },
 methods: {
+	sendRecordKey() {
+		this.$router.push({
+			path: '/history/offline',
+			query: { key: this._recordKey }
+		})
+	},
 	downloadQRCode() {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
@@ -337,7 +378,7 @@ methods: {
 		});
 		this.isLoading = false;
 		this.recordKeyFound = false;
-		this.hasReportingKey = false;
+		this.hasPublicKey = false;
 		this.childKeys = [];
 		this.valid = false;
 		return;
@@ -361,20 +402,25 @@ methods: {
 	});
 
 	// This functionality could be pushed into a component...
-	this.hasReportingKey = (deviceRecord.reportingKey ? true : false);
+	this.hasPublicKey = (deviceRecord.publicKey ? true : false);
 
-	// We will remove the reportingKey, because although it is a child,
+	// We will remove the publicKey, because although it is a child,
 	// we have already rendered it.
-	if (this.hasReportingKey) {
-		const index = deviceRecord.children_key.indexOf(deviceRecord.reportingKey, 0);
+	if (this.hasPublicKey) {
+		const index = deviceRecord.children_key.indexOf(deviceRecord.publicKey, 0);
 		if (index > -1) {
 			deviceRecord.children_key.splice(index, 1);
 		}
 	}
 	this.childKeys = getChildKeys(provenance);
 
+	// If record now has a parent hide the "Add to Group" field
+	if (recordHasParent(provenance)) {
+		hiddenHasParent.value = true
+	}
+
 	// Add child key navigation if there are child keys
-	if ((this.childKeys?.length > 0) || this.hasReportingKey) {
+	if ((this.childKeys?.length > 0) || this.hasPublicKey) {
 		headers = [
 		{ id: "device-details", name: "Record details" },
 		{ id: "priority-notices", name: "Priority notices" },
@@ -395,6 +441,11 @@ methods: {
 	this.isCreating = false;
 	this.isLoading = false;
 	},
+	clearModalEmailNotificationValues() {
+      // Completely clear the values to prevent the modal from remounting
+      this.autoToken = '';
+      this.autoCode = '';
+    }
 }
 };
 </script>
@@ -430,15 +481,17 @@ methods: {
     justify-content: space-between;
 }
 
-.buttons-container {
+/* .buttons-container */
+.action-buttons {
   margin-bottom: 20px;
   display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 16px;
+  justify-content: space-between; /* gone */
+  align-items: stretch; /* gone */
+  gap: 16px; /* 12px */
   flex-wrap: wrap;
 }
 
+/* 
 .buttons-container > :deep(.notify-btn) {
   margin-left: 0 !important;
   margin-top: 0 !important;
@@ -457,11 +510,12 @@ methods: {
 
 .buttons-container :deep(.share-btn) {
     width: 100%;
-}
+} */
 
+.notif-btn,
 .download-btn {
-  margin-top: 0;
-  flex: 1 1 300px;
+  flex: 1 1 0;
+  margin-top: 20px;
 }
 
 .btn-primary {
@@ -499,10 +553,12 @@ methods: {
 }
 
 /* Wrap buttons once screen gets below a certain size */
-@media (max-width: 991px) {
-.download-btn {
-	width: 100% !important;
-}
+@media (max-width: 1140px) {
+  .notif-btn,
+  .download-btn
+  {
+    flex: 1 1 100%;
+  }
 }
 
 #item-link {
@@ -632,16 +688,17 @@ a:visited {
 }
 
 .btn {
-    height: 66px;
-    padding: 18px 22px;
-    /*     margin: 5px;*/
-    border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 20px;
-    font-weight: 400;
-    text-align: center;
-    cursor: pointer;
-    border: none;
+  box-sizing: border-box;
+  height: 66px;
+  padding: 18px 22px;
+  /*     margin: 5px;*/
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  border: none;
 }
 
 /* Dark mode version*/
@@ -715,11 +772,17 @@ h1 {
 	color: black;
 }
 
-.download-btn {
-	background-color: #1E2019;
-	border: 2px solid #FFFFFF;
-	color: white;
-}
+  .download-btn {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
+    color: white;
+  }
+
+  .notif-btn {
+    background-color: #1E2019;
+    border: 2px solid #FFFFFF;
+    color: white;
+  }
 
 .share-btn {
 	background-color: #1E2019;
@@ -727,10 +790,15 @@ h1 {
 	color: white;
 }
 
-.download-btn:hover {
-	background-color: white;
-	color: black;
-}
+  .download-btn:hover {
+    background-color: white;
+    color: black;
+  }
+
+  .notif-btn:hover {
+    background-color: white;
+    color: black;
+  }
 
 .btn-secondary {
 	background-color: #1E2019;
@@ -742,17 +810,10 @@ h1 {
 	background-color: white;
 	color: black;
 }
-.banner {
-	background-color: #3e231c;
-	border-color: #fe9c9e;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: white;
-	}
+
+.banner-link {
+	color: #CCECFD;
+}
 }
 
 /* Light mode version*/
@@ -815,16 +876,19 @@ h1 {
 .download-btn:hover {
 	background-color: #e6f6ff !important;
 }
-.banner {
-	background-color: #ffe3e2;
-	border-color: #fa9e9f;
-	border-width: 2px;
-	border-style: solid;
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin: 0px;
-	font-size: 14px;
-	color: black;
-	}
+
+.notif-btn {
+  background-color: #CCECFD;
+  border: #CCECFD;
+  color: black;
+}
+
+.notif-btn:hover {
+  background-color: #e6f6ff !important;
+}
+
+.banner-link {
+	color: #4E3681;
+}
 }
 </style>

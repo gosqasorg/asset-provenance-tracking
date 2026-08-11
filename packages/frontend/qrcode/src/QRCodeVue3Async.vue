@@ -10,7 +10,7 @@ export interface Props {
   imgclass: string;
   myclass: string;
   downloadButton: string;
-  ButtonName: string;
+  buttonName: string;
   qrOptions: any;
   imageOptions: any;
   dotsOptions: any;
@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   imgclass: "",
   myclass: "",
   downloadButton: "",
-  ButtonName: "Download",
+  buttonName: "Download",
   qrOptions: {
     typeNumber: 0,
     mode: "Byte",
@@ -87,7 +87,7 @@ function onDownloadClick() {
     </div>
     <div v-if="imageUrl && download">
       <button @click="onDownloadClick" :class="downloadButton">
-        {{ ButtonName }}
+        {{ buttonName }}
       </button>
     </div>
   </div>

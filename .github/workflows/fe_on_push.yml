@@ -50,7 +50,9 @@ jobs:
       - name: build frontend
         working-directory: packages/frontend
         run: |
-          npm ci
+          [ -d node_modules ] && rm -r node_modules
+          rm package-lock.json 
+          npm install
           npx nuxi build --preset=azure
           npm run coverage
         env:

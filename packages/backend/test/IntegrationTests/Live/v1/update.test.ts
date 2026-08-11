@@ -23,7 +23,11 @@ describe("Group of tests", () => {
 
 */
 let timeout= 30000;
+const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+const apiUrl = "https://gosqasbe.azurewebsites.net/api/";
+
 // question for Vincent why put create a variable, is it to clean code?
+// from Vincent: the question is unclear, rephrase?
 let baseTestName;
 describe(baseTestName = 'Group + Record History Update Tests', () => {
 	let testName;
@@ -53,8 +57,26 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 
 });
 
+async function addRecordWithTags(baseUrl, deviceKey, tags) {
+    let theUrl = `${baseUrl}${deviceKey}`;
+
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: "Adding record with tags",
+      tags: tags,
+      children_key: '',
+    };
+    
+    const updateFormData = new FormData();
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+    
+    return await fetch(theUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+}
+
 describe("Record Update Tests", () => {
-  const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
   // updating a record
   it("Update descriptions", async () => {
@@ -70,7 +92,7 @@ describe("Record Update Tests", () => {
       tags: {},
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     };
     
     const setupFormData = new FormData();
@@ -110,11 +132,12 @@ describe("Record Update Tests", () => {
 
   // Update with tags
   it("Update record tags", async () => {
-    // Create initial record
+
+    // === Start Section 1/3: Create Initial Record === //
+
     const deviceKey = await makeEncodedDeviceKey();
     let fullUrl = `${baseUrl}${deviceKey}`;
-	  console.log("Update Test with tags: " + deviceKey);
-    
+
     const initialData = {
       blobType: 'deviceInitializer',
       deviceName: "Tag Test Record",
@@ -122,29 +145,24 @@ describe("Record Update Tests", () => {
       tags: [],
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     };
     
     const setupFormData = new FormData();
     setupFormData.append("provenanceRecord", JSON.stringify(initialData));
     
     await fetch(fullUrl, { method: "POST", body: setupFormData });
+    console.log("Update Test with tags: " + deviceKey);
 
-    // updating tags
-    const updateData = {
-      blobType: 'deviceRecord',
-      description: "Testing tag updates",
-      tags: ['updated', 'test', 'tags'],
-      children_key: '',
-    };
-    
-    const updateFormData = new FormData();
-    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
-    
-    const updateResponse = await fetch(fullUrl, {
-      method: "POST",
-      body: updateFormData,
-    });
+    // === End Section 1/3: Create Initial Record === //
+
+    // === Start Section 2/3: Update Tags === //
+
+    let updateResponse = await addRecordWithTags(baseUrl, deviceKey, ['updated', 'test', 'tags'])
+
+    // === End Section 2/3: Update Tags === //
+
+    // === Start Section 3/3: Validate Update Operation === //
 
     // Check if update worked
     expect(updateResponse.ok).toBe(true);
@@ -154,6 +172,8 @@ describe("Record Update Tests", () => {
     
     expect(record.record.tags.length).toBe(3);
     expect(JSON.stringify(record.record.tags)).toBe('["updated","test","tags"]');
+
+    // === End Section 3/3: Validate Update Operation === //
   });
 
   //  Update with attachment
@@ -170,7 +190,7 @@ describe("Record Update Tests", () => {
       tags: [],
       children_key: '',
       hasParent: false,
-      isReportingKey: false,
+      isPublicKey: false,
     };
     
     const setupFormData = new FormData();
@@ -227,7 +247,7 @@ describe("Record Update Tests", () => {
 			tags: [],
 			children_key: [childKey],
 			hasParent: false,
-			isReportingKey: false
+			isPublicKey: false
 		}));
 
 		const childFormData = new FormData();
@@ -238,7 +258,7 @@ describe("Record Update Tests", () => {
 			tags: [],
 			children_key: [grandchildKey],
 			hasParent: false,
-			isReportingKey: false
+			isPublicKey: false
 		}));
 
     const grandchildFormData = new FormData();
@@ -249,7 +269,7 @@ describe("Record Update Tests", () => {
 			tags: [],
 			children_key: "",
 			hasParent: false,
-			isReportingKey: false
+			isPublicKey: false
 		}));
 
 		const [groupResponse, childResponse, grandchildResponse] = await Promise.all([
@@ -288,7 +308,7 @@ describe("Record Update Tests", () => {
     });
 
     // Call the recall function to send recalled record to all the children and grandchildren
-    const recallResponse = await fetch(`${baseUrl}recall/${groupKey}`, {
+    const recallResponse = await fetch(`${apiUrl}recall/${groupKey}`, {
       method: "POST",
       body: updateFormData,
     });
@@ -317,48 +337,47 @@ describe("Record Update Tests", () => {
 
     expect(grandchildRecord.record.tags).toStrictEqual(['recall', 'testing_recall'])
     expect(grandchildRecord.record.description).toBe("Updated with recall");
-    }, timeout);
+  }, timeout);
 
-    // Update with annotate
-    it("Update with annotate", async () => {
+  // Update and send record entry to all children
+  it("Update and send to all children", async () => {
       // Create a group with one child
       const groupKey = await makeEncodedDeviceKey();
       const childKey = await makeEncodedDeviceKey();
       const grandchildKey = await makeEncodedDeviceKey();
-      let fullUrl = `${baseUrl}${groupKey}`;
-      console.log("Update to test annotate: " + groupKey);
+      console.log("Update to test sent_to_all_children: " + groupKey);
   
       const groupFormData = new FormData();
       groupFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: "grandparent_smoketest",
-        description: "grandparent group for testing an annotated record",
+        description: "grandparent group for testing sent_to_all_children",
         tags: [],
         children_key: [childKey],
         hasParent: false,
-        isReportingKey: false
+        isPublicKey: false
       }));
   
       const childFormData = new FormData();
       childFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: "parent_smoketest",
-        description: "parent group for testing an annotated record",
+        description: "parent group for testing sent_to_all_children",
         tags: [],
         children_key: [grandchildKey],
-        hasParent: false,
-        isReportingKey: false
+        hasParent: true,
+        isPublicKey: false
       }));
   
       const grandchildFormData = new FormData();
       grandchildFormData.append("provenanceRecord", JSON.stringify({
         blobType: "deviceInitializer",
         deviceName: "child_smoketest",
-        description: "child record for testing an annotated record",
+        description: "child record for testing sent_to_all_children",
         tags: [],
         children_key: "",
-        hasParent: false,
-        isReportingKey: false
+        hasParent: true,
+        isPublicKey: false
       }));
   
       const [groupResponse, childResponse, grandchildResponse] = await Promise.all([
@@ -380,53 +399,52 @@ describe("Record Update Tests", () => {
       expect(childResponse.ok).toBe(true);
       expect(grandchildResponse.ok).toBe(true);
   
-      // Add a new annotated record (aka a record w/ the annotate tag) to the parent group
+      // Add a new record to the parent group
       const updateData = {
         blobType: 'deviceRecord',
-        description: "Updated with annotate",
-        tags: ['annotate', 'testing_annotate'],
-        children_key: '',
+        description: "Record to be sent to all children",
+        tags: ['sent_to_all_children', 'update_test'],
       };
   
       const updateFormData = new FormData();
       updateFormData.append("provenanceRecord", JSON.stringify(updateData));
   
-      const updateResponse = await fetch(fullUrl, {
+      const updateResponse = await fetch(`${baseUrl}${groupKey}`, {
         method: "POST",
         body: updateFormData,
       });
 
-      // Call the annotate function to send annotated record to all the children and grandchildren
-      const annotateResponse = await fetch(`${baseUrl}annotate/${groupKey}`, {
+      // Call the notifyChildren function to send record to all the children and grandchildren
+      const sendToChildrenResponse = await fetch(`${baseUrl}sendToChildren/${groupKey}`, {
         method: "POST",
         body: updateFormData,
       });
       
-      expect(annotateResponse.ok).toBe(true);
+      expect(sendToChildrenResponse.ok).toBe(true);
   
-      // Test to see if the record was successfully annotated
+      // Test to see if the record was successfully sent to all children
       // To succeed, the record should exist in both group and child/grandchild record history
-      const getGroupResponse = await fetch(fullUrl);
+      const getGroupResponse = await fetch(`${baseUrl}${groupKey}`);
       const groupData = await getGroupResponse.json();
       const groupRecord = JSON.parse(JSON.stringify(groupData[0]));
   
-      expect(groupRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
-      expect(groupRecord.record.description).toBe("Updated with annotate");
+      expect(groupRecord.record.tags).toStrictEqual(['sent_to_all_children', 'update_test'])
+      expect(groupRecord.record.description).toBe("Record to be sent to all children");
   
       const getChildResponse = await fetch(`${baseUrl}${childKey}`);
       const childData = await getChildResponse.json();
       const childRecord = JSON.parse(JSON.stringify(childData[0]));
   
-      expect(childRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
-      expect(childRecord.record.description).toBe("Annotated by admin");
-  
-      const getGrandchildResponse = await fetch(`${baseUrl}${childKey}`);
+      expect(childRecord.record.tags).toStrictEqual(['sent_to_all_children', 'update_test'])
+      expect(childRecord.record.description).toBe("Record to be sent to all children");
+
+      const getGrandchildResponse = await fetch(`${baseUrl}${grandchildKey}`);
       const grandchildData = await getGrandchildResponse.json();
       const grandchildRecord = JSON.parse(JSON.stringify(grandchildData[0]));
-  
-      expect(grandchildRecord.record.tags).toStrictEqual(['annotate', 'testing_annotate'])
-      expect(grandchildRecord.record.description).toBe("Annotated by admin");
-      }, timeout);
+
+      expect(grandchildRecord.record.tags).toStrictEqual(['sent_to_all_children', 'update_test'])
+      expect(grandchildRecord.record.description).toBe("Record to be sent to all children");
+  }, timeout);
 });
 
 

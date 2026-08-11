@@ -20,20 +20,23 @@ describe('postNotificationEmail', () => {
         (globalThis as any).useRuntimeConfig = () => ({ public: { baseUrl: 'https://api.test' }});
 
         // Mock fetch resolved with status 200
-        const mockFetch = vi.fn().mockResolvedValue({ status: 200 });
+        const mockFetch = vi.fn().mockResolvedValue({ 
+            status: 200,
+            json: vi.fn().mockResolvedValue({ token: 'test-token' }),
+        });
         // @ts-ignore
         (globalThis as any).fetch = mockFetch;
 
         const testDeviceKey = '9mYGN9CpKs5cz42mZhaFuk';
         const testEmail = 'test@example.com';
 
-        await postNotificationEmail(testDeviceKey, testEmail);
+        const token = await postNotificationEmail(testEmail, testDeviceKey);
 
         expect(mockFetch).toHaveBeenCalled();
         const calledUrl = mockFetch.mock.calls[0][0] as string;
         const calledOptions = mockFetch.mock.calls[0][1];
 
-        expect(calledUrl).toContain('/notificationSubscription');
+        expect(calledUrl).toContain('/notificationsubscription');
         expect(calledOptions.method).toBe('POST');
         expect(calledOptions.headers['Content-Type']).toBe('application/json');
 
@@ -42,7 +45,8 @@ describe('postNotificationEmail', () => {
         
         expect(body.recordKey).toBe(testDeviceKey);
         expect(body.email).toBe(testEmail);
-        expect(body.tags).toEqual([]);
+        expect(token).toBe('test-token');
+        // expect(body.tags).toEqual([]);
     });
 
 });

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
-            <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
+            <ProvenanceTagInput v-model="tags" :isGroup="true" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
 
             <h4 class="mt-3 mb-2" for="children-keys">Number of Grouped Records (optional)
@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Grouped Record Titles?
+                <input type="checkbox" class="form-check-input" id="customize-yes" v-model="customized" name="customize" /> Customize Child Titles
             </h4>
             <div v-if="customized" class="text-iris" id="num-fields">
                 <div v-for="(item, index) in fieldSet">
@@ -46,33 +46,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createReportingKey" /> Create Reporting Key?
-            </h4>
- 
-            <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" v-model="annotate" id="annotate-all"/> Annotate all Children?
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Key
             </h4>
 
-            <!-- Sign up for email notifications-->
-            <h4 class="p-1 my-0">
-                <input v-model="notify" type="checkbox" class="form-check-input"/> Receive email notifications for this record
-            </h4>
+            <!-- Subscribe to tag notifications -->
+            <div v-if="onDev">
+                <h4 class="p-1 my-0">
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
 
-            <div v-if="notify">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    required placeholder="Email"
-                    @keyup.enter=""
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
                 />
                 </div>
 
+                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+                    
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
+            </div>            
+
             <!-- Volunteer Feedback Email --> 
-            <h4 class="p-1 my-0">
+            <h4 class="p-1">
                 <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
-    
+
             <div v-if="isChecked">
                 <!-- TODO: API call function -->
                 <input style="margin-bottom: 18px;"
@@ -86,17 +89,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <!-- Offline Banner -->
-            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
                 </div> 
             </Banner>
 
+            <!-- Banner to Offline History Create Page -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
+
             <!-- Back Online Banner -->
-            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				<RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
 				</div>
             </Banner>
 
@@ -121,7 +133,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -130,24 +142,49 @@ import { isNavigationFailure } from 'vue-router';
 import type { RefSymbol } from '@vue/reactivity';
 import { LazyClientOnly } from '#components';
 import Banner from '../Banner.vue';
+import { useRuntimeConfig } from '#app';
 
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
             tags: [] as string[],
-            childrenKeys: 0,
-            createReportingKey: false,
-            hasParent: false, // states whether this device is contained within a box/group
+            childrenKey: [] as string[], // list of children keys
+            childrenName: [] as string[], // list of children names
+            childrenKeys: 0, // number of new children to create
+            publicKey: '',
+            emailTags: [] as string[],  // tags for specified tag signup
+            createPublicKey: false,
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
+            notifyTags: false,      // email tag notification checkbox
             emailInput: '',
             isChecked: false,
             textInput: '',
+            subscribeChecked: false,
+            subscribeEmail: '',
             customized: false,
-            annotate: false,
             fieldSet: [{id: '', customName:''}],
+            deviceKey: '',
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
+        }
+    },
+    mounted() {
+        // If we're creating a group from the stash fill in the stashed information
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        // Only fill in stashed information if we redirected from the offline edits page
+        if (isGroup === "true" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.childrenKey = this.stashedRecord.children_key
+            this.childrenName = this.stashedRecord.children_name
+            this.publicKey = this.stashedRecord.publicKey
+            this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.name = this.stashedRecord.deviceName
+            this.description = this.stashedRecord.description
         }
     },
     computed: {
@@ -194,13 +231,16 @@ export default {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
+        },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;  // aka 2MB
+            const maxFileSize = 5242880;  // aka 5MB
 
             let validFileSize = true;
 
@@ -250,19 +290,10 @@ export default {
         },
 
         async submitForm() {
-            const deviceKey = await makeEncodedDeviceKey();
-
-            // This code is copied from Judith;
-            // I am going to retain her names even though they are
-            // redundant until I get this workin.
-            const childrenDeviceList = [];
-            const childrenDeviceName = [];
-            let reportingKey;
-     
             // Get all elements from the DOM
             if (this.annotate) {
                 this.tags = (this.tags).concat(['notify_all'])
-            } 
+            }
             
             // Emit an event to notify the gdt.vue page to display loading screen
             EventBus.emit('isLoading');
@@ -280,75 +311,117 @@ export default {
                     }
 
                     try {
+                        this.childrenKey.push(childKey);
+                        this.childrenName.push(childName);
+
                         await postProvenance(childKey, {
                             blobType: 'deviceInitializer',
                             deviceName: childName,
-                            description: this.description,  // need to see if we want a special description when making a child
-                            tags:this.tags,
+                            description: '',
+                            tags: [],
                             children_key: '',
                             hasParent: true,
-                            isReportingKey: false
-                        }, this.pictures || [])
-                        
-                        childrenDeviceList.push(childKey);
-                        childrenDeviceName.push(childName);
+                            isPublicKey: false
+                        }, [])
                         
                         this.$snackbar.add({
                             type: 'success',
                             text: 'Successfully created child key'
                         })
                     } catch (error) {
+                        let errorMessage: string = error instanceof Error
+                            ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                            : error as string  // otherwise just show the whole error
+
+                        // If the record was stashed display a success message instead
+                        let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                        if (errorMessage.includes("202")) {
+                            snackbarType = "success";
+                        } else {
+                            errorMessage = `Error creating child key: ${errorMessage}`;
+                        }
+
                         this.$snackbar.add({
-                            type: 'error',
-                            text: `Error creating child key: ${error}`
-                        })
+                            type: snackbarType,
+                            text: errorMessage
+                        });
                     };                
                 }
             };
 
-            if (this.createReportingKey) {
+            if (this.createPublicKey) {
                 // Should be higher up?
-                reportingKey =  await makeEncodedDeviceKey(); //reporting key = public key
-                let tag_set = (this.tags).concat(['reportingkey']);
+                this.publicKey = await makeEncodedDeviceKey();  // reporting key = public key
+                let tag_set = (this.tags).concat(['publickey']);
 
                 try {
-                    await postProvenance(reportingKey, {
+                    this.childrenKey.push(this.publicKey);
+                    this.childrenName.push(this.name);
+
+                    await postProvenance(this.publicKey, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
-                        // Is this a proper description? Should it say "reporting key" or something?
-                        description: this.description,
+                        description: '',
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
-                        isReportingKey: true,
-                    }, this.pictures || [])
+                        isPublicKey: true,
+                    }, [])
                     
                     this.$snackbar.add({
                         type: 'success',
-                        text: 'Successfully created reporting key'
+                        text: 'Successfully created public key'
                     })
                 } catch (error) {
+                    let errorMessage: string = error instanceof Error
+                        ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                        : error as string  // otherwise just show the whole error
+
+                    // If the record was stashed display a success message instead
+                    let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                    if (errorMessage.includes("202")) {
+                        snackbarType = "success";
+                    } else {
+                        errorMessage = `Error creating public key: ${errorMessage}`;
+                    }
+
                     this.$snackbar.add({
-                        type: 'error',
-                        text: `Error creating reporting key: ${error}`
-                    })
+                        type: snackbarType,
+                        text: errorMessage
+                    });
                 };
-                childrenDeviceList.push(reportingKey);
-                childrenDeviceName.push(this.name);
             }
 
+            // Get stashed group if we're creating a group from the stash
+            let stashedGroup = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+
             try {
-                const response = await postProvenance(deviceKey, {
+                // Create a new deviceKey if we didn't get one from a stashed group
+                if (!validateKey(this.deviceKey)) {
+                    this.deviceKey = await makeEncodedDeviceKey();
+                }
+                const response = await postProvenance(this.deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    reportingKey: reportingKey, 
-                    children_key: childrenDeviceList,
-                    children_name: childrenDeviceName,
+                    publicKey: this.publicKey, 
+                    children_key: this.childrenKey,
+                    children_name: this.childrenName,
                     hasParent: false,
-                    isReportingKey: false
+                    isPublicKey: false
                 }, this.pictures || [])
+
+                // If the group is being created from the offline edits page move it to the fulfilled stash
+                const previousUrl = window.history.state.back;
+                
+                // Only update the stash if the stashed request is a group
+                let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+
+                if (JSON.stringify(stashedGroup) !== '{}' && isGroup == "true" && previousUrl === "/offline-edits") {
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
+                }
                 
                 this.$snackbar.add({
                     type: 'success',
@@ -356,19 +429,19 @@ export default {
                 })
 
                 if (response && this.isChecked && this.textInput) {
-                        await postEmail(this.textInput);
+                    await postEmail(this.textInput);
                 }
-    
+                
                 //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();
-                    await postNotificationEmail(deviceKey,email);
+                    await postNotificationEmail(this.deviceKey, email);
                 } else if (!response && this.notify && this.emailInput) {
                     this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
 
                 // Navigate to the new group page
-                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${this.deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({
@@ -376,13 +449,54 @@ export default {
                         text: `Navigation failure from: ${failure.from} to: ${failure.to} type: ${failure.type} cause: ${failure.cause}!`
                     })
                 }
+
+                if (response && this.subscribeChecked && this.subscribeEmail) {
+                    try {
+                        await postNotificationEmail(this.subscribeEmail, this.deviceKey);
+                        this.$snackbar.add({
+                            type: 'success',
+                            text: 'Check your email to verify your notification subscription.'
+                        });
+                    } catch (error) {
+                        this.$snackbar.add({
+                            type: 'error',
+                            text: `Failed to send verification email: ${error}`
+                        });
+                    }
+                }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
+                }
+
+                let errorMessage: string = error instanceof Error
+                    ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                    : error as string  // otherwise just show the whole error
+
+                // If the record was stashed display a success message instead
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                if (errorMessage.includes("202")) {
+                    snackbarType = "success";
+                } else {
+                    errorMessage = `Error creating the group: ${errorMessage}`;
+                }
+
                 this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating the group: ${error}`
-                })
+                    type: snackbarType,
+                    text: errorMessage
+                });
+
+                // If we're online return to the /gdt page
+                EventBus.emit('isLoading')
             }
 
+            // If we were redirected to this page then remove the stashed record
+            if (JSON.stringify(stashedGroup) !== '{}') {
+                sessionStorage.removeItem("gdt-redirect-record");
+                sessionStorage.removeItem("gdt-redirect-isGroup");
+                sessionStorage.removeItem("gdt-redirect-key");
+            }
             
         },
     }
@@ -440,13 +554,17 @@ export default {
         border:5px;
         border-color:red;
     }
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
 
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #group-button {
@@ -468,16 +586,8 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
+    .banner-link {
+        color: #CCECFD;
     }
 }
 /* Light mode version*/
@@ -485,7 +595,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #group-button {
@@ -504,16 +614,8 @@ export default {
         background-color: #4E3681;  
         color: white;
     }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
+    .banner-link {
+        color: #4E3681;
     }
 }
 </style>

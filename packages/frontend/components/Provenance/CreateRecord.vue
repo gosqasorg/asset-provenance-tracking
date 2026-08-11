@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
    This component is a form. The form is used to create a new record that we will track the
    providence for.
    Resourses:
-   https://test-utils.fvuejs.org/guide/essentials/forms
+   https://test-utils.vuejs.org/guide/essentials/forms
 -->
 
 <template>
@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
-            <div v-else>
+            <div v-if="!isChild">
                 <input type="text" class="form-control" name="container-key" id="container-key" v-model="groupKey"
                     placeholder="Add to Group (key, optional)" />
             </div>
@@ -55,8 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
             
             <h4 class="p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
-                    Annotate all children
+                <input type="checkbox" class="form-check-input" id="send-to-all-children" v-model="sendToAllChildren"/> 
+                    Send to all Children
             </h4>
 
             <h4 class="p-1 mt-0" v-if="isGroup">
@@ -64,35 +64,57 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     Recall all children
             </h4>
 
-            <h4 class="p-1 mt-0">
-                <input type="checkbox" class="form-check-input" id="subscribe-notifications" v-model="notify"/>
-                    Receive email notifications for this record
-            </h4>
+            <!-- Subscribe to notifications -->
+            <div v-if="onDev">
+                <h4 class="p-1 mt-0">
+                    <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
+                </h4>
 
-            <div v-if="notify">
-                <input
-                    type="email"
-                    class="form-control"
-                    v-model="emailInput"
-                    placeholder="Email"
-                    @keyup.enter=""
+                <div v-if="notify">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        placeholder="Email"
+                        @keyup.enter=""
+                    />
+                </div>
+
+                <!-- Subscribe to tag notifications -->
+                <h4 class="p-1 my-0">
+                    <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                </h4>
+
+                <div v-if="notifyTags">
+                    <input
+                        type="email"
+                        class="form-control"
+                        v-model="emailInput"
+                        required placeholder="Email"
+                        @keyup.enter=""
                 />
-            </div>
+                </div>
 
+                <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                    tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+
+                <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
+            </div>
         </div>
         
         <!-- Offline Banner Bottom-->
-        <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
-            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+        <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px; color: #fe9c9e;">&#9888;
             </div>
-            <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+            <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
             </div> 
         </Banner>
 
         <!-- Back Online Banner -->
-        <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+        <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+            <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
             <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-            <RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+            <RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
             </div>
         </Banner>
 
@@ -128,10 +150,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <div class="popup" v-if="annotatePopUp">
+    <div class="popup" v-if="sendToAllChildrenPopUp">
         <div class="popup-inner">
-            <h2 class="text-iris">Annotate all children</h2>
-            <p>You've selected “Annotate all children” for this record entry. If you proceed, this message will be posted to all child records.</p>
+            <h2 class="text-iris">Send to all Children</h2>
+            <p>You've selected “Send to all Children” for this record entry. If you proceed, this message will be posted to all child records.</p>
 
             <div>
                 <!-- Cancels the record creation (close pop up) -->
@@ -147,28 +169,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineDetectAndStash, offlineModeFeatureFlag } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
  import Banner from '../Banner.vue';
+ import { useRuntimeConfig } from '#app';
+ import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
 
  export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             description: '',
             pictures: [] as File[] | null,
             tags: [] as string[],
+            emailTags: [] as string[],
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
-            annotateAll: false,
+            sendToAllChildren: false,
             recallAll: false,
-            annotatePopUp: false,
+            sendToAllChildrenPopUp: false,
             recallPopUp: false,
             notify: false,
-            emailInput: ''
+            notifyTags: false,
+            emailInput: '',
+            config: useRuntimeConfig(),
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
         }
     },
     props: {
@@ -209,23 +238,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 return false;
             }
         },
+        // Checks whether record is a child, disables 'Add to Group' field if is a child
+        isChild() {
+            return hiddenHasParent.value === true
+        }
     },
     methods: {
         closePopUpA() {
-            this.annotatePopUp = false
+            this.sendToAllChildrenPopUp = false
         },
         closePopUpR() {
             this.recallPopUp = false
         },
         async trackingForm() {
 
-            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
+            if (Object.is(this.sendToAllChildren, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
             } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (this.annotateAll) {
-                this.annotatePopUp = true
+            } else if (this.sendToAllChildren) {
+                this.sendToAllChildrenPopUp = true
             } else {
                 this.submitRecord()
             }
@@ -233,13 +266,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
+        },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;
+            const maxFileSize = 5242880; // 5MB
 
             let validFileSize = true;
 
@@ -269,28 +305,52 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.tags = [];
             this.groupKey = '';
             this.newChildKeys = [];
-            this.annotateAll = false;
+            this.sendToAllChildren = false;
             this.recallAll = false;
-            this.annotatePopUp = false;
+            this.sendToAllChildrenPopUp = false;
             this.recallPopUp = false;
         },
         async submitRecord() {
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
+            // Define the new record to post
+            const record = {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+            };
+
             // Get a refreshed copy of the records
             let records;
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
-                EventBus.emit('isCreating');
-            }
+                let errorMessage = 'No provenance record found';
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
 
-            if (!records || records.length === 0) {
+                // If we're offline stash the record and display the stashed message
+                if (offlineModeFeatureFlag.flag) {
+                    const formData = new FormData();
+                    formData.append("provenanceRecord", JSON.stringify(record));
+                    const checkOffline = await offlineDetectAndStash(this.recordKey, formData);
+
+                    if (checkOffline === 202) {
+                        errorMessage = 'Status 202: User is offline but the record has been stashed';
+                        snackbarType = "success";
+                    } else if (checkOffline === 507) {
+                        errorMessage = 'Storage limit has been reached, record not stashed';
+                    }
+                }
+                
+                // Otherwise the record doesn't exist
                 this.$snackbar.add({
-                    type: 'error',
-                    text: 'No provenance record found'
+                    type: snackbarType,
+                    text: errorMessage
                 })
+
+                EventBus.emit('isCreating');
                 return;
             }
 
@@ -341,6 +401,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     }
                 }
             } catch (error: any) {
+                console.error('Error adding children:', error);
                 const badKeys = error.message.split(",");
                 
                 if (error.message.split(" ").length > badKeys.length) {
@@ -364,31 +425,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (this.recallAll) {
                 this.tags.push("recall");
-            } else if (this.annotateAll) {
-                this.tags.push("annotate");
+            } else if (this.sendToAllChildren) {
+                this.tags.push("sent_to_all_children");
             }
 
             // Append the record to the records.
             try {
-                const record = {
-                    blobType: 'deviceRecord',
-                    description: this.description,
-                    tags: this.tags,
-                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
-                };
-
-                const response =await postProvenance(this.recordKey, record, this.pictures || []);
+                await postProvenance(this.recordKey, record, this.pictures || []);
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);
-                } else if (this.annotateAll) {
-                    notifyChildren(this.recordKey, this.tags);
+                } else if (this.sendToAllChildren) {
+                    notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
                 if (this.notify && this.emailInput) {
                     const email = this.emailInput.trim(); 
                     await postNotificationEmail(this.recordKey,email);
                 }
+
                 // Refresh CreateRecord component
                 this.refresh();
 
@@ -396,10 +451,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
-                this.$snackbar.add({
-                    type: 'error',
-                    text: `Error creating record: ${error}`
-                });
+                // Remove the leading "Error:" text
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
+                console.log(error)
+                console.log(errorMessage)
+                if(errorMessage.includes('high volume of requests')) {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error sending email: ${errorMessage}`
+                    });
+                } else {
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `Error creating record: ${error}`
+                    });
+                }
+
+                // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('feedRefresh');
             }
         }
     }
@@ -407,213 +482,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </script>
 
 <style scoped>
-form {
-    border-radius: 6px;
-    display: block;
-    margin-bottom: 70px;
-}
-
-#submit-button {
-    margin-top: 24px;
-}
-
-#provenance-description {
-    padding: 5px;
-    margin: 5px;
-    display: flex;
-    margin-left: auto;
-    margin-right:auto;
-    border-radius: 5px;
-    width: 100%;
-    border-radius: 7px;
-    width: 100%;
-    outline: none;
-    border: none;
-    padding-left: 14px;
-}
-
-#provenance-description::placeholder{
-        color: black;
-}
-
-input {
-    border: 0;
-}
-
-input[type=text] {
-    height: 36px;
-    font-size: 18px;
-}
-
-input[type=checkbox] {
-    margin-right: 10px;
-}
-
-#provenanceTag {
-    /* height: 36px; */
-    border-radius: 6px;
-    width: 100%;
-    font-size: 18px;
-}
-
-.popup {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 99;
-    background-color: rgba(0, 0, 0, 0.2);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .popup-inner {
-    background: white;
-    padding: 32px 32px 32px 32px;
-    width: 665px;
-    height: auto;
-    border-radius: 20px;
-  }
-
-  .confirmBtn {
-    display: inline-block;
-    width: 48%;
-  }
-
-
-/*  For screens smaller than 768px */
-@media (max-width: 768px) {
-    h5 {
-        margin-top: 20px;
-    }
-
-    input[type=text] {
-        margin-top: 12px;
-    }
-
-    form {
-        padding: 2px 17px 17px 17px;
-    }
-
-    .popup-inner {
-        width: auto;
-        margin: 0px 20px 0px 20px;
-    }
-    .confirmBtn {
-        width: 100%;
-    }
-    #continueBtn {
-        margin-top: 10px !important;
-    }
-}
-
-/* For screens larger than 768px */
-@media (min-width: 768px) {
-    h5 {
-        margin-top: 24px;
-    }
-
-    input[type=text] {
-        margin-top: 16px;
-    }
-
-    form {
-        padding: 2px 20px 20px 20px;
-    }
-}
-
-/* Dark mode version*/
-@media (prefers-color-scheme: dark) {
-    .record-form {
-        background-color: #4B4D47;
-    }
-
-    h5 {
-        color: #FFFFFF;
-    }
-
-    h4 {
-        color: #FFFFFF;
-    }
-
-    .record-button {
-        background-color: #CCECFD;
-        color: black;
-        border-color: #CCECFD;
-    }
-
-    input[type="file"]::file-selector-button {
-        background-color: #CCECFD;
-        color: black;
-    }
-
-    input[type="file"]::file-selector-button-hover {
-        background-color: #67b0d7 !important;
-        color: black;
-    }
-
-    input[type="file"]::-webkit-file-upload-button:hover {
-        background-color: #0056b3;
-    }
-    .record-button:hover { 
-        background-color: #e6f6ff;
-    }
-    input[type="file"]:hover::file-selector-button {
-        background-color: #e6f6ff !important;
-    }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
-    }
-}
-
-/* Light mode version*/
-@media (prefers-color-scheme: light) {
-    .record-form {
-        background-color: #E6F6FF;
-    }
-
-    h5 {
-        color: #4E3681;
-    }
-
-    h4 {
-        color: #4E3681;
-    }
-
-    .record-button {
-        background-color: #4E3681;
-        color: white;
-        border-color: #4E3681;
-    }
-
-    input[type="file"]::file-selector-button {
-        background-color: #4E3681;
-        color: white;
-    }
-    .record-button:hover { 
-        background-color: #322253;
-    }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
-    }
-}
+    @import '../../assets/css/history-form.css';
 </style>

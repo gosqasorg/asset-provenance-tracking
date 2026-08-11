@@ -43,8 +43,8 @@
               >
             </li>
             <li class="nav-item">
-              <RouterLink to="/data-privacy" class="nav-link"
-                >Data & Privacy</RouterLink
+              <RouterLink to="/features" class="nav-link"
+                >Features</RouterLink
               >
             </li>
             <li class="nav-item">
@@ -143,8 +143,8 @@
           <div class="col-md-2 text-md-start custom-row-about">
             <div class="row">
               <RouterLink to="/about" class="me-3 footer-link">About</RouterLink>
-              <RouterLink to="/data-privacy" class="me-3 footer-link"
-                >Data & Privacy</RouterLink
+              <RouterLink to="/features" class="me-3 footer-link"
+                >Features</RouterLink
               >
               <RouterLink to="/terms_and_conditions" class="me-3 footer-link"
                 >Terms and Conditions</RouterLink

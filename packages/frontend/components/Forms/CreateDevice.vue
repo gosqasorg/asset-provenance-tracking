@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
-
+ 
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
@@ -36,21 +36,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
-            <!-- Subscribe to notifications -->
-            <div class="my-3">
-                <h4>
-                    <input v-model="notify" type="checkbox" class="form-check-input" id="subscribe-notifications"/>
-                        Receive email notifications for this record
-                </h4>
+            <!-- Subscribe to tag notifications -->
+            <div v-if="onDev">
+                <div class="my-3">
+                    <h4>
+                        <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
+                    </h4>
 
-                <div v-if="notify">
-                    <input
-                        type="email"
-                        class="form-control"
-                        v-model="emailInput"
-                        required placeholder="Email"
-                        @keyup.enter=""
-                />
+                    <div v-if="notifyTags">
+                        <input
+                            type="email"
+                            class="form-control"
+                            v-model="tagsEmailInput"
+                            required placeholder="Email"
+                            @keyup.enter=""
+                    />
+                    </div>
+
+                    <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
+                        tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
+
+                    <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
                 </div>
             </div>
 
@@ -60,6 +66,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
                 <div v-if="isChecked">
+                    <!-- TODO: API call function -->
                     <input
                         type="text"
                         class="form-control"
@@ -72,17 +79,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <!-- Offline Banner -->
-            <Banner v-if="displayBanner" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
                 </div> 
             </Banner>
 
+            <!-- Banner to Offline History Create Page -->
+            <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
+				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
+				</div>
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
+				</div>
+			</Banner>
+
             <!-- Back Online Banner -->
-            <Banner v-if="onlineBannerToggle" class="banner" style="align-items: center; display: flex">
+            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+                <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				<RouterLink to="/back-online" class="banner-link">View my offline edits</RouterLink>.
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
 				</div>
             </Banner>
         </div>
@@ -107,28 +123,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail } from '~/services/azureFuncs';
-import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { makeEncodedDeviceKey, validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
 import ButtonComponent from '../ButtonComponent.vue';
 import { isNavigationFailure } from 'vue-router';
+import { useRuntimeConfig } from '#app';
 
 //TODO: add const for max limit of notification subscriptions
 export default {
     data() {
+        const config = useRuntimeConfig()
         return {
             name: '',
             description: '',
             tags: [] as string[],
+            emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
+            isPublicKey: false, // states whether this device is a reporting key
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
             isChecked: false,
             textInput: '',
-            notify: false,     // email notification checkbox
+            deviceKey: '',
+            notify: false,      // email notification checkbox
+            notifyTags: false,  // email tag notification checkbox
             emailInput: '',
+            tagsEmailInput: '', // email for specified tag signup
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
+        }
+    },
+    mounted() {
+        // If we're creating a record from the stash fill in the stashed information
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        const previousUrl = window.history.state.back;
+
+        // Only fill in stashed information if we redirected from the offline edits page
+        if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+            this.isPublicKey = this.stashedRecord.isPublicKey
+            this.hasParent = this.stashedRecord.hasParent
+            this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
+            this.name = this.stashedRecord.deviceName
+            this.description = this.stashedRecord.description
         }
     },
     computed: {
@@ -161,13 +200,16 @@ export default {
         handleUpdateTags(tags: string[]) {
             this.tags = tags;
         },
+        handleUpdateEmailTags(tags: string[]) {
+            this.emailTags = tags;
+        },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
 
             if (!files || files.length === 0) return;
 
-            const maxFileSize = 2097152;  // aka 2MB
+            const maxFileSize = 5242880;  // aka 5MB
 
             let validFileSize = true;
 
@@ -196,30 +238,36 @@ export default {
             EventBus.emit('isLoading');
 
             if (this.isSubmitting) return;
-            
             this.isSubmitting = true;
+
             try {
-                const deviceKey = await makeEncodedDeviceKey();
-                const response = await postProvenance(deviceKey, {
+                // Create a new deviceKey if we didn't get one from a stashed record
+                if (!validateKey(this.deviceKey)) {
+                    this.deviceKey = await makeEncodedDeviceKey();
+                }
+                const response = await postProvenance(this.deviceKey, {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
                     tags: this.tags,
                     children_key: '',
-                    hasParent: false,
-                    isReportingKey: false,
+                    hasParent: this.hasParent,
+                    isPublicKey: this.isPublicKey,
                 }, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
                 }
+
+                // If the record is being created from the offline edits page move it to the fulfilled stash
+                const previousUrl = window.history.state.back;
                 
-                // on successful record creation, subscribe user to notifs if they've opted in
-                if (response && this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); 
-                    await postNotificationEmail(deviceKey,email);
-                } else if (!response && this.notify && this.emailInput) {
-                    this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
+                // Only update the stash if the stashed request is a record
+                let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+
+                if (isGroup == "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
 
                 this.$snackbar.add({
@@ -228,7 +276,7 @@ export default {
                 });
 
                 // Navigate to the new record page
-                const failure = await this.$router.push({ path: `/record/${deviceKey}` });
+                const failure = await this.$router.push({ path: `/record/${this.deviceKey}` });
 
                 if (isNavigationFailure(failure)) {
                     this.$snackbar.add({
@@ -238,12 +286,39 @@ export default {
 
                 }
             } catch (error) {
+                // If the user is offline navigate to the offline history page instead
+                if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
+                }
+
+                let errorMessage: string = error instanceof Error
+                    ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
+                    : error as string  // otherwise just show the whole error
+
+                // If the record was stashed display a success message instead
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                if (errorMessage.includes("202")) {
+                    snackbarType = "success";
+                } else {
+                    errorMessage = `Failed to create record: ${errorMessage}`;
+                }
+
                 this.$snackbar.add({
-                    type: 'error',
-                    text: `Failed to create record: ${error}`
+                    type: snackbarType,
+                    text: errorMessage
                 });
+
+                // If we're online return to the /gdt page
+                EventBus.emit('isLoading');
             } finally {
                 this.isSubmitting = false;
+            }
+
+            // If we were redirected to this page then remove the stashed record
+            if (JSON.stringify(this.stashedRecord) !== '{}') {
+                sessionStorage.removeItem("gdt-redirect-record");
+                sessionStorage.removeItem("gdt-redirect-isGroup");
+                sessionStorage.removeItem("gdt-redirect-key");
             }
         },
     }
@@ -296,12 +371,17 @@ export default {
 
     }
 
+    .tags-note {
+        font-size: 12px;
+        margin-left: 2px;
+    }
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
         background-color: #4B4D47;
     }
-    h4 {
+    h4, div {
         color: #FFFFFF;
     }
     #record-button {
@@ -323,16 +403,8 @@ export default {
     input[type="file"]:hover::file-selector-button {
         background-color: #e6f6ff !important;
     }
-    .banner {
-        background-color: #634a45;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: white;
+    .banner-link {
+        color: #CCECFD;
     }
 }
 /* Light mode version*/
@@ -340,7 +412,7 @@ export default {
     #record-form {
         background-color: #E6F6FF;
     }
-    h4 {
+    h4, div {
         color: #4E3681;
     }
     #record-button {
@@ -355,16 +427,8 @@ export default {
     #record-button:hover { 
         background-color: #322253;
     }
-    .banner {
-        background-color: #ecdae1;
-        border-color: #fe9c9e;
-        border-width: 2px;
-        border-style: solid;
-        border-radius: 10px;
-        padding: 10px 20px;
-        margin: 0px;
-        font-size: 14px;
-        color: black;
+    .banner-link {
+        color: #4E3681;
     }
 }
 

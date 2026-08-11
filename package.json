@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
+    "vitest": "^4.1.9",
     "chart.js": "^4.5.1"
   },
   "devDependencies": {

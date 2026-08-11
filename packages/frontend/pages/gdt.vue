@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="container-md">
             <h1 class="my-4 fs-1">Global Distributed Tracking</h1>
 
-            <!-- create toggle for single or group  -->
+            <!-- create toggle for single or group -->
             <ButtonsLargeToggle
                 @toggle-change="toggleView"
                 :left-label="'New Record'"
@@ -86,14 +86,36 @@ export default {
             toggled: true
         }
     },
-    mounted() {
+    async mounted() {
+        // If we're redirecting from offline-edits and the record is a group, go to the group form on load
+        let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+        this.toggled = !(isGroup === "true");
+
         // switch to loading screen when a form is submitted
         EventBus.on('isLoading', () => {
-            this.isLoading = true;
+            this.toggled = true;
+            if (!this.isLoading) {
+                this.isLoading = true;
+                return
+            }
+            this.isLoading = false;
+        })
+
+        // preload the offline history page (so we can navigate to this page if the user goes offline)
+        await import('./history/offline.vue');
+    },
+    beforeUnmount() {
+        EventBus.off('isLoading', () => {
+            this.toggled = true;
+            if (!this.isLoading) {
+                this.isLoading = true;
+                return
+            }
+            this.isLoading = false;
         })
     },
     methods: {
-        toggleView(){
+        toggleView() {
             this.toggled = !this.toggled
         }
     }

@@ -64,7 +64,7 @@ export function isGroup(records: any): boolean {
     return false;
 }
 
-export function hasParent(records: any): boolean {
+export function recordHasParent(records: any): boolean {
     for (let record of records) {
         if (record.record.hasParent) {
             return true;
@@ -114,7 +114,7 @@ export async function addChildKeys(recordKey: any, record: any, childKeys: strin
                 throw new Error(`Child record is same as group record.`);
             }
 
-            if (hasParent(records)) {
+            if (recordHasParent(records)) {
                 console.log(`Child record ${childKey} could not be added.`);
                 badRecords.push(childKey);
             } else {
@@ -143,7 +143,7 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
         console.log("No child/parent key provided.");
         throw new Error("No child/parent key provided.");
     }
-    if (hasParent(records)) {
+    if (recordHasParent(records)) {
         throw new Error("This record already belongs to a group.");
     }
     let groupRecords = await getProvenance(groupKey);
@@ -175,20 +175,20 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
     }
 }
 
-// Annotate: Send new record's tags to all children
-export async function notifyChildren(recordKey: string, tags: string[], attachments?: File[]) {
+// Send to All Children: Send new record's tags and description to all children
+export async function notifyChildren(recordKey: string, tags: string[], description: string, attachments?: File[]) {
     try {
-        if (tags.includes(InternalTagName.Annotate)) {
+        if (tags.includes(InternalTagName.SentToAllChildren)) {
             let records = await getProvenance(recordKey);
             let keysToCheck = deduplicateKeys(getChildKeys(records));
 
-            // Send annotated record to all children
+            // Send the record entry to all children
             while (keysToCheck.length != 0) {
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to annotate)
-                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                // Make sure key is NOT a public key (public keys do not have the ability to recieve records from the group)
+                if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
                     if (uniqueChildKeys.includes(recordKey)) {
@@ -199,7 +199,7 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
 
                     await postProvenance(key, {
                         blobType: 'deviceRecord',
-                        description: "Annotated by admin",
+                        description: description || "Record Entry sent from Group",
                         children_key: '',
                         tags: tags,
                     }, attachments || [])
@@ -208,10 +208,10 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
                 keysToCheck.shift();
             }
 
-            console.log("Finished updating children with 'annotate' tag.");
+            console.log("Finished updating children with 'sent_to_all_children' tag.");
         }
     } catch (error) {
-        console.error(`Error annotating children: ${error}`);
+        console.error(`Error sending record entry to all children: ${error}`);
     }
  }
  
@@ -227,8 +227,8 @@ export async function notifyChildren(recordKey: string, tags: string[], attachme
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a reporting key (reporting keys do not have the ability to recall)
-                if (!keyProvenance[keyProvenance.length - 1].record.isReportingKey) {
+                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
                     if (uniqueChildKeys.includes(recordKey)) {
