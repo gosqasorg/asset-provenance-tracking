@@ -87,7 +87,11 @@ jobs:
           rm package-lock.json 
           npm install
           npx nuxi build --preset=azure
+        env:
+          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
 
       - name: Run frontend coverage tests
         working-directory: packages/frontend
         run: npm run coverage
+        env:
+          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
