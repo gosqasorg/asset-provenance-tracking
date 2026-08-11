@@ -81,7 +81,7 @@ describe('Tests to see if requests can be stashed', () => {
 
     // Remove item from stash
     localStorage.removeItem('gosqas_offline_stash_1');
-  }, 20000);
+  });
 
   it('Test to see if we can store multiple requests', async () => {
     resetStashValues();
