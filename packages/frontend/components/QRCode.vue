@@ -14,7 +14,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
-  <div ref="qrCode"></div>
+  <div ref="qrCode", class="qr"></div>
 </template>
 
 <script lang="ts">
@@ -41,6 +41,7 @@ export default {
       required: true
     }
   },
+
   data() {
     return {
       qrCode: null as HTMLElement | null,
@@ -50,6 +51,7 @@ export default {
         height: 361,
         type: 'canvas',
         data: this.url,
+
         imageOptions: {
           hideBackgroundDots: true,
           imageSize: 0.2,
@@ -71,6 +73,7 @@ export default {
       }
     };
   },
+
   mounted() {
     this.qrCode = this.$refs.qrCode as HTMLElement;
     const { $qrCodeStyling } = useNuxtApp();
@@ -80,6 +83,7 @@ export default {
       this.qrCodeStyling.append(this.qrCode);
     }
   },
+
   watch: {
     url(newValue: string | undefined) {
       if (newValue) {
@@ -88,6 +92,7 @@ export default {
       }
     }
   },
+
   methods: {
     /* Splits text into lines that fit maxWidth. Breaks at spaces first; a single
     "word" too wide on its own (e.g. a URL) breaks at natural delimiters
@@ -231,12 +236,14 @@ export default {
         qrCanvas.style.display = 'block';
       }
     },
+
     downloadQRCode() {
       this.qrCodeStyling?.download({
         name: 'vqr',
         extension: 'png'
       });
     },
+
     downloadQRCodeWithText(customText?: string) {
       setTimeout(() => {
         // Get the QR code canvas
@@ -264,5 +271,9 @@ export default {
 svg {
   width: 100%;
   height: 100%;
+}
+
+.qr {
+  margin-bottom: 30px; 
 }
 </style>
