@@ -80,9 +80,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install frontend dependencies
+      - name: Build Frontend
         working-directory: packages/frontend
-        run: npm install
+        run: |
+          [ -d node_modules ] && rm -r node_modules
+          rm package-lock.json 
+          npm install
+          npx nuxi build --preset=azure
 
       - name: Run frontend coverage tests
         working-directory: packages/frontend
