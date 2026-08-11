@@ -261,6 +261,7 @@ p {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+  width: 100%;
 }
 
 .summary-pill, .chart-card {
@@ -298,8 +299,6 @@ h3 {
 }
 
 
-
-
 .canvas-wrap {
   position: relative;
   width: 100%;
@@ -308,16 +307,8 @@ h3 {
 
 .charts-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
-}
-
-.chart-card {
-  flex: 1;
-  min-width: 300px;
-  background: #262820;
-  border: 2px solid rgba(255,255,255,.07);
-  border-radius: 10px;
-  padding: 20px;
 }
 
 .chart-legend {
@@ -398,6 +389,81 @@ h3 {
   .legend-percent {
 
     color: rgba(255,255,255,.55);
+  }
+
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .stat-page {
+      gap: 30px;
+      padding: 20px 30px 0px 30px;
+      width: 100%;
+      margin: 32px 13.5px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 50px;
+    }
+
+    p {
+      font-size: 18px;
+      line-height: 27px;
+    }
+
+    .btn {
+      padding: 14px 18px;
+    }
+
+    .stat-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px
+    }
+
+    .summary-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: space-evenly;
+    }
+
+
+    .pill-num {
+      font-size: 26px;
+    }
+
+    .pill-label {
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 25px;
+      letter-spacing: 0px;
+    }
+
+    h3 {
+      font-size: 20px;
+    }
+
+    .charts-row {
+      flex-direction: column;
+    }
+
+
+    .legend-item {
+      padding: 5px 0; 
+      font-size: 16px;
+    }
+
+    .legend-item span {
+      font-size: 16px;
+    }
+
+
+    .legend-percent {
+      font-size: 16px;
+    }
+
   }
 
 }
