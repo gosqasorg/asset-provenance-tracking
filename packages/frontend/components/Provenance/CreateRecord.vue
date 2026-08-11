@@ -272,13 +272,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.emailTags = tags;
         },
         parseNotificationEmails(): string[] | null {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic client-side validation for immediate feedback
             const emails = this.emailInput
                 .split(',')
                 .map(email => email.trim().toLowerCase())
                 .filter(Boolean);
 
-            if (emails.length === 0 || emails.some(email => !emailRegex.test(email))) {
+            const hasNoEmails = emails.length === 0;
+            const hasInvalidEmail = emails.some(email => !emailRegex.test(email));
+
+            if (hasNoEmails || hasInvalidEmail) {
                 this.$snackbar.add({
                     type: 'error',
                     text: 'Please enter valid email addresses separated by commas.'
@@ -286,7 +289,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 return null;
             }
 
-            return [...new Set(emails)];
+            const uniqueEmails = new Set(emails);
+            return Array.from(uniqueEmails);
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -330,19 +334,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            // Parse and validate notification addresses before starting the record update (catches input error early).
+            let notificationEmails: string[] = [];
             if (this.notify) {
-                const notificationEmails = this.parseNotificationEmails();
-                if (!notificationEmails) {
+                const parsedEmails = this.parseNotificationEmails();
+                if (!parsedEmails) {
                     return;
                 }
-                if (notificationEmails.length > 1) {
-                    this.$snackbar.add({
-                        type: 'info',
-                        text: 'Multiple email subscriptions are not available yet.'
-                    });
-                    return;
-                }
-                this.emailInput = notificationEmails.join(', ');
+                notificationEmails = parsedEmails;
+                this.emailInput = parsedEmails.join(', ');
             }
 
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
@@ -473,9 +473,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
-                if (this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); 
-                    await postNotificationEmail(this.recordKey,email);
+                // Request a separate verification email for each address after the record update succeeds.
+                if (notificationEmails.length > 0) {
+                    await Promise.all(
+                        notificationEmails.map(email =>
+                            postNotificationEmail(email, this.recordKey)
+                        )
+                    );
                 }
 
                 // Refresh CreateRecord component
