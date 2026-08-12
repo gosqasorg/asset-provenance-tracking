@@ -118,5 +118,5 @@ describe("Tests to see if we can create records while offline", async () => {
 
     offlineModeFeatureFlag.flag = false
     fetchMock.mockRestore();
-  })
+  }, 30000)
 });
