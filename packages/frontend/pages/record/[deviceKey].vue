@@ -52,18 +52,25 @@ const hasParent = recordHasParent(provenance);
                             </div>
                         </div>
 
-                        <div>
-                            <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
-                        </div>
                     </section>
 
                     <div class="buttons-container">
-                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
-                        <button class="btn px-3 device-btn secondary-btn" @click="downloadQRCode">Download QR Code</button>
+                        <button class="btn px-3 device-btn view-history" @click="viewRecord">
+                            View History Records
+                        </button>
+
+                        <ProvenanceDownloadDropdown
+                            :downloadQRCodeMethod="downloadQRCode"
+                            :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+                            :showWithTextMethod="showWithText"
+                            :resetToDefaultMethod="resetToDefaultImage">
+                        </ProvenanceDownloadDropdown>
+                        
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
                         </ProvenanceShareDropdown>
 
-                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">
+                            Get email notifications
                         </button>
                     </div>
 
@@ -74,6 +81,9 @@ const hasParent = recordHasParent(provenance);
                     <div class="col-sm-6 col-lg-3">
                         <QRCode :url="qrCodeUrl" ref="qrcode_component" />
                     </div>
+
+                    <!--QR Code modal-->
+                    <ModalsQRCode :url="qrCodeUrl" />
 
                     <div v-if="hasPublicKey"> Public Key:
                         <div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
@@ -156,8 +166,20 @@ export default {
             this.loadingKey += 1;
         },
         downloadQRCode() {
-            const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode(this._recordKey);
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.downloadQRCode();
+        },
+        downloadQRCodeWithText(customText?: string) {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.downloadQRCodeWithText(customText);
+        },
+        showWithText(customText?: string) {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.showWithText(customText);
+        },
+        resetToDefaultImage() {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.resetToDefault();
         },
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
@@ -267,6 +289,7 @@ export default {
     width: 100% !important;
     margin-top: 20px;
     margin-bottom: 0;
+    margin-right: 0;
 }
 
 .buttons-container :deep(.share-btn) {
