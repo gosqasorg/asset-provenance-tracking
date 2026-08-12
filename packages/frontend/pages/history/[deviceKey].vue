@@ -146,20 +146,20 @@ const hasParent = recordHasParent(provenance);
 	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
 				<ProvenanceDownloadDropdown
-				:downloadQRCodeMethod="downloadQRCode"
-				:downloadQRCodeWithTextMethod="downloadQRCodeWithText"
-				:showWithTextMethod="showWithText"
-				:resetToDefaultMethod="resetToDefaultImage">
+					:downloadQRCodeMethod="downloadQRCode"
+					:downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+					:showWithTextMethod="showWithText"
+					:resetToDefaultMethod="resetToDefaultImage">
 				</ProvenanceDownloadDropdown>
 
 
                 <ProvenanceShareDropdown
-                  :deviceName="deviceRecord.deviceName"
-                  :description="deviceRecord.description"
-                  :fontSize="20"
-                  :height="66"
-                  :width="33"
-                  >
+                    :deviceName="deviceRecord.deviceName"
+                    :description="deviceRecord.description"
+                    :fontSize="20"
+                    :height="66"
+                    :width="33"
+	              >
                 </ProvenanceShareDropdown>
             </div>
 

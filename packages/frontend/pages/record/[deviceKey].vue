@@ -55,17 +55,22 @@ const hasParent = recordHasParent(provenance);
                     </section>
 
                     <div class="buttons-container">
-                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
+                        <button class="btn px-3 device-btn view-history" @click="viewRecord">
+                            View History Records
+                        </button>
+
                         <ProvenanceDownloadDropdown
-                        :downloadQRCodeMethod="downloadQRCode"
-                        :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
-                        :showWithTextMethod="showWithText"
-                        :resetToDefaultMethod="resetToDefaultImage">
+                            :downloadQRCodeMethod="downloadQRCode"
+                            :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+                            :showWithTextMethod="showWithText"
+                            :resetToDefaultMethod="resetToDefaultImage">
                         </ProvenanceDownloadDropdown>
+                        
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
                         </ProvenanceShareDropdown>
 
-                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">
+                            Get email notifications
                         </button>
                     </div>
 
