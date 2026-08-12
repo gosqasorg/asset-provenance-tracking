@@ -81,7 +81,6 @@
 <script lang="ts">
 
 import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js';
-import type { HTMLCanvasElement } from 'happy-dom';
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
 
