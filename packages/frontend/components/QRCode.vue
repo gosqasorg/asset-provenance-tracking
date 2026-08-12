@@ -250,6 +250,7 @@ export default {
     },
 
     downloadQRCodeWithText(customText?: string) {
+      console.log(this.url)
       setTimeout(() => {
         // Get the QR code canvas
         const qrCanvas = this.$refs.qrCode.querySelector('canvas');
@@ -262,7 +263,7 @@ export default {
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = 'vpr-with-text.png';
+          link.download = 'GDT-QR-' + this.url.split('/').reverse()[0] + '.png';
           link.click();
           URL.revokeObjectURL(url); // cleanup to free up blob data in memory
         });
