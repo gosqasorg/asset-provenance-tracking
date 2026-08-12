@@ -68,11 +68,11 @@ export default {
           color: '#000000'
         },
         cornersSquareOptions: {
-          type: 'square',
+          type: 'rounded',
           color: '#000000'
         },
         cornersDotOptions: {
-          type: 'square',
+          type: 'rounded',
           color: '#4e3681' // Color of the dot corners
         }
       }
