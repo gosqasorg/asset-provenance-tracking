@@ -139,9 +139,9 @@ export default {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    align-items: flex-start;
-    width: 601px;
-    height: 371px;
+    align-items: center;
+    width: 100%;
+    height: 100%;
     padding: 20px;
     border: 2px solid #4e3681;
     border-radius: 20px;
@@ -152,13 +152,17 @@ export default {
 }
 
 .qr-preview > * {
+    width: 100%;
+    height: 100%;
     max-height: 100%;
     overflow: hidden;
 }
 
 .qr-preview :deep(canvas) {
-    width: 219px;
+    width: 75%;
     height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 .form-control {

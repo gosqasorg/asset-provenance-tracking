@@ -27,8 +27,8 @@ const CUSTOM_TEXT_FONT = 'bold 20px Arial, sans-serif';
 const CUSTOM_TEXT_LINE_HEIGHT = 24;
 
 // Styling for url
-const URL_FONT = '400 12px Poppins, sans-serif';
-const URL_LINE_HEIGHT = 12;
+const URL_FONT = '400 16px Poppins, sans-serif';
+const URL_LINE_HEIGHT = 24;
 const URL_TEXT_COLOR = '#1E2019';
 
 const PADDING = 5; // Padding between text blocks and the QR code
@@ -204,7 +204,7 @@ export default {
     showWithText(customText?: string) {
       // Check if temp canvas already exists, if so, remove it to update with new text
       // Was previous adding multiple lines of text
-      const existingTempCanvas = document.getElementById('temp-canvas-with-text');
+      const existingTempCanvas = document.getElementById('canvas-with-text');
       if (existingTempCanvas) {
         existingTempCanvas.remove();
       }
@@ -214,7 +214,7 @@ export default {
       if (!qrCanvas) return;
 
       const finalCanvas = this.buildCanvasWithText(qrCanvas, customText, true);
-      finalCanvas.id = 'temp-canvas-with-text'; // get id of canvas to keep track of it
+      finalCanvas.id = 'canvas-with-text'; // get id of canvas to keep track of it
 
       // Hide the original canvas
       qrCanvas.style.display = 'none';
