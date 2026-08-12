@@ -21,6 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { useNuxtApp } from '#app';
 import type QRCodeStyling from 'qr-code-styling';
 
+// QR Code Image
+import QRCodeImage from './gosqas_main_logo_white_border_64BitEncodedPng.txt?raw' with { type: 'text' };
+
 // Styling for custom text
 const CUSTOM_TEXT_MAX_LENGTH = 100;
 const CUSTOM_TEXT_FONT = 'bold 20px Arial, sans-serif';
@@ -33,6 +36,8 @@ const URL_TEXT_COLOR = '#1E2019';
 
 const PADDING = 5; // Padding between text blocks and the QR code
 const QR_SCALE_WITH_CUSTOM_TEXT = 0.9; // Scale down QR code when custom text is shown
+
+
 
 export default {
   props: {
@@ -50,24 +55,24 @@ export default {
         width: 322,
         height: 361,
         type: 'canvas',
+        image: "data:image/png;base64," + QRCodeImage,
         data: this.url,
-
         imageOptions: {
-          hideBackgroundDots: true,
-          imageSize: 0.2,
-          margin: 40,
+          hideBackgroundDots: false,
+          imageSize: 1,
+          margin: 0,
           crossOrigin: 'Anonymous'
         },
         dotsOptions: {
-          type: 'square' as 'square', // Cast to specific type
+          type: 'rounded',
           color: '#000000'
         },
         cornersSquareOptions: {
-          type: 'square' as 'square', // Cast to specific type
+          type: 'square',
           color: '#000000'
         },
         cornersDotOptions: {
-          type: 'square' as 'square', // Cast to specific type
+          type: 'square',
           color: '#4e3681' // Color of the dot corners
         }
       }
