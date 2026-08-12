@@ -81,6 +81,7 @@
 <script lang="ts">
 
 import { Chart, DoughnutController, ArcElement, Tooltip, Legend } from 'chart.js';
+import { getBrowserStats } from '~/services/azureFuncs'
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
 
@@ -118,19 +119,8 @@ export default {
       this.error = null
 
       try {
-        const baseUrl = useRuntimeConfig().public.baseUrl
-        const res = await fetch(baseUrl + '/stats/browsers')
 
-         const text = await res.text()
-        if (!text) throw new Error(`Empty response (status ${res.status})`)
-
-        let rows
-        try {
-          rows = JSON.parse(text)
-        } catch {
-          throw new Error(`Server error (status ${res.status}): ${text.slice(0, 200)}`)
-        }
-        this.rawData = rows
+        this.rawData = await getBrowserStats()
 
         // split data into its buckets, assuming there is data. 
         const map = Object.fromEntries(this.rawData!.map((item: any) => [item[0], item[1]]))

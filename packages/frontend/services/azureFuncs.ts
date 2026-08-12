@@ -543,12 +543,18 @@ export async function postResendCode(token: string) {
     }
 }
 export async function getBrowserStats() {
-    try {
+    
         const baseUrl = useRuntimeConfig().public.baseUrl;
-        const response = await fetch(baseUrl + "/stats/browsers");
-        return await response.json();
+        const response = await fetch(baseUrl + "/stats/browsers", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
     } catch (error) {
-        console.log(error);
-        throw error;
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
     }
 }
