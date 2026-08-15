@@ -165,15 +165,9 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 
     // Loop through record/children keys and subscribe to all of them
     while (keysToCheck.length != 0) {
+        // Add any children of the current key to the list to subscribe to
         let key = keysToCheck[0];
-        let getKey = await fetch(`${baseUrl}${key}`);
-        const keyProvenance = await getKey.json();
-
-        let uniqueChildKeys = getChildKeys(keyProvenance);
-        if (uniqueChildKeys.includes(deviceKey.toString())) {
-            uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
-        }
-
+        let uniqueChildKeys = await getChildKeys(key, deviceKey);
         keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
@@ -220,13 +214,14 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 }
 
 export async function unsubscribeFromNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailID: string, tags: string[] = []) {
-    // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    // Get the email that corresponds to the given email id
+    let keysToCheck = [deviceKey];
+
+    const [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
+    const [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
 
-    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
-
-    // Confirm the emailID exists and convert it to an email
+    // Confirm the emailID/email exists
     const emailIndex = Array.from(emailIDSet).indexOf(emailID);
     if (emailIndex < 0) {
         return { jsonBody: { message: "Email not found in the database" }, status: 200 };
@@ -235,27 +230,50 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     const email = existingEmails[emailIndex];
     const normalized = (email ?? "").trim().toLowerCase();
 
-    // Remove the specified email from the set
-    const sizeBeforeAdding = emailSet.size;
-    emailSet.delete(normalized);
-    emailIDSet.delete(emailID);
+    // Loop through record/children keys and unsubscribe from all of them
+    while (keysToCheck.length != 0) {
+        // Add any children of the current key to the list to unsubscribe from
+        let key = keysToCheck[0];
+        let uniqueChildKeys = await getChildKeys(key, deviceKey);
+        keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
-    // If the email wasn't stored originally return success
-    if (exists && emailSet.size === sizeBeforeAdding) {
-        return {
-        jsonBody: { message: "Success", name: blobName },
-        status: 200,
-        };
+        // Setup the blobClient and get emails subscribed to the record
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, key);
+        const exists = await blobClient.exists();
+        let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+        // Check if the email is subscribed to the child record
+        const emailIndex = Array.from(emailSet).indexOf(email);
+        if (emailIndex < 0) {
+            keysToCheck.shift();
+            continue
+        }
+
+        // Get the child record's id
+        const existingEmailIDs = Array.from(emailIDSet);
+        const emailID = existingEmailIDs[emailIndex];
+
+        // Remove the specified email and id from the set
+        emailSet.delete(normalized);
+        emailIDSet.delete(emailID);
+
+        try {
+            // Update our stored emails to no longer include the specified email/id
+            uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
+        } catch(error) {
+            return {
+                jsonBody: {message: 'Failed to unsubscribe from email notifications'},
+                status: 500,
+            }
+        }
+
+        keysToCheck.shift();
     }
 
-    try {
-        // Update our stored emails to no longer include the specified email/id
-        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
-    } catch(error) {
-        return {
-            jsonBody: {message: 'Failed to unsubscribe from email notifications'},
-            status: 500,
-        }
+    return {
+        jsonBody: { message: "Success",
+                    name: blobName },
+        status: 200
     }
 }
 
@@ -313,14 +331,11 @@ export function extractEmailsFromResponse(response: any) {
     return [emailSet, emailIDArray];
 }
 
-interface Provenance {
-    record: any;
-    attachments?: string[];
-    deviceID?: string;
-    timestamp: number;
-}
+async function getChildKeys(key: string, groupKey: string): Promise<string[]> {
+    const baseUrl = process.env['backend_url'];
+    let getKey = await fetch(`${baseUrl}${key}`);
+    const provenance = await getKey.json();
 
-function getChildKeys(provenance: Provenance[]): string[] {
     let childKeys: string[] = []
 
     for (const p of provenance) {
@@ -332,5 +347,12 @@ function getChildKeys(provenance: Provenance[]): string[] {
         childKeys = [...childKeys, ...child];
     }
 
-    return Array.from(new Set(childKeys));
+    let childrenKeys = Array.from(new Set(childKeys));
+
+    // Remove group key if it's stored to prevent infinite loops
+    if (childrenKeys.includes(groupKey.toString())) {
+        childrenKeys.splice(childrenKeys.indexOf(groupKey.toString()), 1);
+    }
+
+    return childrenKeys
 }
