@@ -14,6 +14,7 @@ import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
+import './getStats.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
