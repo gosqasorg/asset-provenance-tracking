@@ -24,15 +24,52 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h5 class="modal-title title" id="notifModalLabel">Turn on email notifications</h5>
             <div class="body">
                 <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
-                <input
-                    class="form-control"
-                    v-model="email"
-                    @input="emailError = null"
-                    placeholder="Email"
-                    aria-label="Email address"
-                    :class="{ 'input-error': emailError }"
-                />
-                <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
+                <div>
+                    <label for="email">Email</label>
+                    <input
+                        id="email"
+                        class="form-control"
+                        v-model="email"
+                        @input="emailError = null"
+                        placeholder="Email"
+                        aria-label="Email address"
+                        :class="{ 'input-error': emailError }"
+                    />
+                    <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
+                </div>
+                <div>
+                    <label for="tag">Notify me about</label>
+                    <input
+                        id="tag"
+                        class="form-control"
+                        v-model="tag"
+                        @keyup.enter="addTag(tag)" 
+                        placeholder="Type to search or add tags...."
+                        aria-label="Tag Selection"
+                    />
+                    <!-- TODO: Container for selected tags -->
+                    <div class="tag-container">
+                        <div v-for="(item, index) in tags" 
+                        :key="index" 
+                        class="chip" 
+                        :style="{ backgroundColor: getColorForTag(item), color: textColorForTag(item) }">
+                            <span>{{ item }}</span>
+                            <button class="close-btn" @click="removeTag(index)">x</button>
+                        </div>                    
+                    </div>
+                </div>
+
+                <div>
+                    <label for="tag">Suggested tags</label>
+                    <!-- TODO: Selectable Suggested Tags -->
+                     <div class="selectable-tag-container">
+                        <div v-for="(item, index) in TagName" :key="index" class="chip">
+                            <span>{{ item }}</span>
+                        </div>                    
+                    </div>
+                </div>
+
+                
             </div>
             <div class="footer">
                 <div class="btn-container">
@@ -113,18 +150,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
     import { getPendingVerification, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
+     import { TagName } from '~/utils/tags';
+    import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
+    import { getColorForTag, textColorForTag } from '~/utils/colorTag';
 
     export default {
         data() {
             return {
                 step: 'signup' as 'signup' | 'verify' | 'success' | 'expired',
                 email: '',
+                tag: '',
                 code: '',
                 error: null as string | null,
                 emailError: null as string | null,
                 isSubmitting: false,
                 isResending: false,
-                token: '',
+                token: '', 
+                tags: ['recieved'],
+
+                tagError: null as string | null,
+                suggestedTags: [] as string[],
 
                 // resend cooldown: 3 free resends, then 1m wait time /2m /4m. 8m. 15m
                 resendCount: 0,
@@ -326,6 +371,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
 
                 this.$emit('verification-completed'); // clearing data after verification
+            },
+            loadSuggestedTags(){
+                // TODO: Get Tags from provenance
+            },
+            cleanArray(array: string[]) {
+                // Remove any tags with forbidden words in them
+                const forbiddenWords = getDecipheredForbiddenTags(); // TODO: Ask Vincent why these tags are forbidden?
+                const cleanedArray = array.filter(tagName => !forbiddenWords.includes(tagName.toLowerCase()));
+                return cleanedArray;
+            },
+
+            // TODO: Add logic to check if tag is apart of suggested tags list
+            addTag(tag: string){
+                this.tagError = null;
+
+                const cleaned = tag.trim().toLowerCase();
+                if(!cleaned){
+                    this.tag = '';
+                    return;
+                }
+                
+                const cleanTag = this.cleanArray([cleaned]);
+                if(cleanTag.length === 0) {
+                    this.tagError = `"${tag.trim}" isn't allowed as a tag.`
+                    this.tag = '';
+                    return;
+                }
+
+                if (!this.tags.includes(cleaned)) {
+                    this.tags.push(cleaned);
+                }
+
+                this.tag = '';
+            },
+
+            // TODO: add logic to deselect from suggested tags list, if selected tag is one of them
+            removeTag(index: number) {
+                this.tags.splice(index, 1);
             }
         }
     }
@@ -452,6 +535,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 .form-control.input-error {
     border-color: #DC2626;
     box-shadow: 0 0 0 3px #DC2626;
+}
+
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    text-transform: capitalize;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+}
+
+.tag-container,
+.selectable-tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    
 }
 
 @media (prefers-color-scheme: dark) {
