@@ -64,16 +64,23 @@ async function hitAPI(inputFileName) {
     let url = ENDPOINT + 'contentsafety/image:analyze?api-version=2024-09-01'
     let response;
     if(! ((response = await fetch(url, body)).status == 200)) {
-        console.error(`Error: API Interaction Failed: ${result}`)
+        console.error(`Error: API Interaction Failed: ${await response.text()}`)
         process.exit(1);
     }
 
     // Write result
-    let result = await response.text()
+    let result = JSON.parse(await response.text())
+    console.log(result['categoriesAnalysis'])
 
     // Print result
     console.log(result)
+
+    let total_score = 0;
+    for(let i = 0; i < result['categoriesAnalysis'].length; ++i) {
+        total_score += result['categoriesAnalysis'][i]['severity']
+    }
+    return total_score > 0 ? 'Fail' : 'Pass'    
 }
 
 
-await hitAPI(inFile);
+console.log(await hitAPI(inFile))
