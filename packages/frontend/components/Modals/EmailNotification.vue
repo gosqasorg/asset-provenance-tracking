@@ -23,14 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div v-if="step === 'signup'" class="modal-content content">
             <h5 class="modal-title title" id="notifModalLabel">Turn on email notifications</h5>
             <div class="body">
-                <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email address(es) below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
+                <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email addresses below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
                 <input
                     type="email"
                     multiple
                     class="form-control"
                     v-model="email"
                     @input="emailError = null"
-                    placeholder="Email addresses separated by commas"
+                    placeholder="Email addresses (separated by commas)"
                     aria-label="Email addresses"
                     :class="{ 'input-error': emailError }"
                 />
