@@ -625,6 +625,17 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     }
 }
 
+const PostProvenanceSchema = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        children_name: z.array(z.string()).optional(),
+        description: z.string().optional(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         const decryptedBlob = await getDecryptedBlob(request, context);
@@ -827,71 +838,83 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        const deviceKey = decodeKey(request.params.deviceKey);
+        const deviceID = await calculateDeviceID(deviceKey);
+        await containerClient.createIfNotExists();
+        const formData = await request.formData();
+        context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
 
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    await containerClient.createIfNotExists();
-    const formData = await request.formData();
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
+        // --- Guard Clauses --- //
 
-    // --- Guard Clauses --- //
+        if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
 
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
+        const provenanceRecord = formData.get("provenanceRecord");
+        if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
 
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+        const record = JSON5.parse(provenanceRecord);
+        PostProvenanceSchema.parse(record);
 
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    let condition = "deviceName" in record && (!validateRecordJSON(record) || !validateEntryJSON(record))
-    if (condition) {
-        { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
-    }
-
-    // -- Handle Attachments -- // 
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        context.log("Attachment Type: " + typeof(attach))
-
-        // Content Moderation        
-        // Silently skip if not permitted
-        context.log('Checking attachment')
-        if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
-            context.log(`Content Moderation flagged image named: ${attach.name}`)
-            continue
+        let condition = "deviceName" in record && (!validateRecordJSON(record) || !validateEntryJSON(record))
+        if (condition) {
+            { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
         }
-        context.log('Image is permitted')
-        
-        attachments.push({ blob: attach, name: attach.name });
-    }
 
-    if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+        // -- Handle Attachments -- // 
 
-        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
-            return { status: 304 };
+        // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+        const timestamp = new Date().getTime();
+        const attachments = new Array<NamedBlob>();
+        for (const attach of formData.values()) {
+            if (typeof attach === 'string') continue;
+            context.log("Attachment Type: " + typeof(attach))
+
+            // Content Moderation        
+            // Silently skip if not permitted
+            context.log('Checking attachment')
+            if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
+                context.log(`Content Moderation flagged image named: ${attach.name}`)
+                continue
+            }
+            context.log('Image is permitted')
+            
+            attachments.push({ blob: attach, name: attach.name });
         }
-    }
 
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    if (body.oversizedAttachments) {
-        context.error('postProv: returning 400')
-        return {
-            status: 400,
-            jsonBody: {
-                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
-                oversizedAttachments: body.oversizedAttachments,
-                attachments: body.attachments
+        if (attachments.length > 0) {
+            const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+            if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+                return { status: 304 };
             }
         }
+
+        const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+        if (body.oversizedAttachments) {
+            context.error('postProv: returning 400')
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
+    
+        return { jsonBody: body ?? { converted: true}};
+    } catch(error){
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
+        }
+        return {
+            status: 500,
+            jsonBody: { message: "Internal Server Error" },
+        }
     }
-  
-    return { jsonBody: body ?? { converted: true}};
 }
 
 export function validateRecordJSON(json: any) {
