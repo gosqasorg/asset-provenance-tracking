@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import 'dotenv/config';
+import sharp from 'sharp'
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
@@ -24,18 +25,30 @@ if(! [KEY1,
 ) { console.error('Error: credentials not set'); process.exit(1) }
 
 /*
-Read file, base64encode, hand to api, print response
+Read file, downscale if needed, base64encode, return string
 */
-async function hitAPI(inputFileName) {
-    // Read file, base64encode
-    let base64File;
+async function downscaleIfNeeded(inputFileName) {
+    let base64EncodedFile;
     try {
-        base64File = (await readFile(inputFileName)).toString('base64')
+        base64EncodedFile = (await sharp(inputFileName)
+            .resize(2048, 2048, {
+                fit: 'inside',
+                withoutEnlargement: true
+            }).toBuffer()).toString('base64')
     } catch(err) {
         console.error('Error reading file')
         console.error(err)
         process.exit(1)
     }
+
+    return base64EncodedFile
+}
+
+/*
+Hand image to api, print response
+*/
+async function hitAPI(inputFileName) {
+    let base64File = await downscaleIfNeeded(inputFileName);
 
     // Build json
     let payload = {
