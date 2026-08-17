@@ -314,10 +314,15 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
     return records;
 }
 
+const AttachmentIDSchema = z.string().regex(/^[0-9a-f]{64}$/);
+
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
-    const deviceKey = decodeKey(request.params.deviceKey);
+    const rawDeviceKey =request.params.deviceKey;
+    DeviceKeySchema.parse(rawDeviceKey);
+    const deviceKey = decodeKey(rawDeviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
+    AttachmentIDSchema.parse(attachmentID);
     context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
 
     const containerExists = await containerClient.exists();
@@ -368,120 +373,193 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 /* ----- API Endpoints Section 1/2: Functions ----- */
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    try{
+        const rawDeviceKey = request.params.deviceKey;
+        DeviceKeySchema.parse(rawDeviceKey);
+        const deviceKey = decodeKey(rawDeviceKey);
+        
+        const deviceID = await calculateDeviceID(deviceKey);
+        context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+        const containerExists = await containerClient.exists();
+        if (!containerExists) { return { jsonBody: [] }; }
 
-    const provExists = await pathExists(containerClient, `prov/${deviceID}`);
-    if (!provExists) {
-        await convertLegacyProvenance(containerClient, deviceKey);
+        const provExists = await pathExists(containerClient, `prov/${deviceID}`);
+        if (!provExists) {
+            await convertLegacyProvenance(containerClient, deviceKey);
+        }
+
+        const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+        for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+            const blobClient = containerClient.getBlockBlobClient(blob.name);
+            const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            // if (!(await validateJSON(json))) { return { status: 400 }; }
+            // validateJSON is broken
+            const parsed_json = JSON.parse(json);
+            const provRecord = parsed_json as ProvenanceRecord;
+            records.push({ ...provRecord, deviceID, timestamp });
+        }
+        records.sort((a, b) => b.timestamp - a.timestamp)
+        return { jsonBody: records };
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format of device key." },
+            }
+        }
+        return {
+            status: 500,
+            jsonBody: { message: "Internal Server Error" },
+        }
     }
-
-    const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
-        const json = new TextDecoder().decode(data);
-        // if (!(await validateJSON(json))) { return { status: 400 }; }
-        // validateJSON is broken
-        const parsed_json = JSON.parse(json);
-        const provRecord = parsed_json as ProvenanceRecord;
-        records.push({ ...provRecord, deviceID, timestamp });
-    }
-    records.sort((a, b) => b.timestamp - a.timestamp)
-    return { jsonBody: records };
 }
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        const rawDeviceKey = request.params.deviceKey;
+        DeviceKeySchema.parse(rawDeviceKey);
+        const deviceKey = decodeKey(rawDeviceKey);
+        const deviceID = await calculateDeviceID(deviceKey);
+        context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+    
+        await containerClient.createIfNotExists();
 
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
- 
-    await containerClient.createIfNotExists();
+        const formData = await request.formData();
 
-    const formData = await request.formData();
+        if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
+        const provenanceRecord = formData.get("provenanceRecord");
+        if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+        const record = JSON5.parse(provenanceRecord);
+        if (!validateJSON(record)) { return { status: 404 }; }
 
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        console.log("attach type: " + typeof(attach))
-        attachments.push({ blob: attach, name: attach.name });
-    }
-
-    if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
-
-        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
-            return { status: 304 };
+        // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+        const timestamp = new Date().getTime();
+        const attachments = new Array<NamedBlob>();
+        for (const attach of formData.values()) {
+            if (typeof attach === 'string') continue;
+            console.log("attach type: " + typeof(attach))
+            attachments.push({ blob: attach, name: attach.name });
         }
-    }
 
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    if (body.oversizedAttachments) {
-        return {
-            status: 400,
-            jsonBody: {
-                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
-                oversizedAttachments: body.oversizedAttachments,
-                attachments: body.attachments
+        if (attachments.length > 0) {
+            const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+            if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+                return { status: 304 };
             }
         }
-    }
 
-    try {
-        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
-    } catch(error) {
-        return {
-            status: error.statusCode,
-            jsonBody: {
-                error: 'Failed to send email'
+        const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+        if (body.oversizedAttachments) {
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
             }
         }
+
+        try {
+            await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+        } catch(error) {
+            return {
+                status: error.statusCode,
+                jsonBody: {
+                    error: 'Failed to send email'
+                }
+            }
+        }
+
+        return { jsonBody: body ?? { converted: true}};
+    } catch(error){
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
+        }
+        return {
+            status: 500,
+            jsonBody: { message: "Internal Server Error" },
+        }
     }
-  
-    return { jsonBody: body ?? { converted: true}};
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const body = await convertLegacyProvenance(containerClient, deviceKey);
-    return { jsonBody: body ?? { "already-converted": true} };
+    try{
+        const rawDeviceKey = request.params.deviceKey;
+        DeviceKeySchema.parse(rawDeviceKey);
+        const deviceKey = decodeKey(rawDeviceKey);
+        const body = await convertLegacyProvenance(containerClient, deviceKey);
+        return { jsonBody: body ?? { "already-converted": true} };
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format of device key." },
+            }
+        }
+        return {
+            status: 500,
+            jsonBody: { message: "Internal Server Error" },
+        }
+    }
 }
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    try{
+        const decryptedBlob = await getDecryptedBlob(request, context);
+        if (!decryptedBlob) { return { status: 404 } }
 
-    const { data, contentType, filename } = decryptedBlob;
-    const headers = new Headers();
-    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
-    if (contentType) { headers.append("Content-Type", contentType); }
-    if (filename) {
-        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-        headers.append("Attachment-Name", filename);
+        const { data, contentType, filename } = decryptedBlob;
+        const headers = new Headers();
+        headers.append("Access-Control-Allow-Headers", "Attachment-Name");
+        if (contentType) { headers.append("Content-Type", contentType); }
+        if (filename) {
+            headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+            headers.append("Attachment-Name", filename);
+        }
+
+        return { body: data, headers };
+    } catch(error) {
+        context.error(error.message);
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
+        } 
+        return {
+            jsonBody: {message: "Internal Error"},
+            status: 500,
+        }  
     }
-
-    return { body: data, headers };
 };
 
 export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    try{
+        const decryptedBlob = await getDecryptedBlob(request, context);
+        if (!decryptedBlob) { return { status: 404 } }
 
-    const { filename } = decryptedBlob;
-    return { body: filename };
+        const { filename } = decryptedBlob;
+        return { body: filename };
+    } catch(error) {
+        context.error(error.message);
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
+        } 
+        return {
+            jsonBody: {message: "Internal Error"},
+            status: 500,
+        }  
+    }
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -705,12 +783,16 @@ export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
 
+const DeviceKeySchema = z.string().length(22).regex(/^[a-zA-Z0-9]+$/);
+
+
 // Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const baseUrl = process.env['backend_url'];
 
     try {
         const deviceKey = request.params.deviceKey;
+        DeviceKeySchema.parse(deviceKey);
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -757,6 +839,13 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
         }
     } catch (error) {
         context.error(`Error sending record entry to all children: ${error}`);
+        
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
+        }
         return {
             status: 500
         }
@@ -782,78 +871,99 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     });
 }
 
+const RecallTagsDescriptionSchema = z.object({
+    description: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+});
+
 // Recall: Pin and send new record entry to all children
 export async function recall(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const baseUrl = process.env['backend_url'];
-    const deviceKey = request.params.deviceKey;
+    try{
+        const deviceKey = request.params.deviceKey;
+        DeviceKeySchema.parse(deviceKey);
+        const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord"); 
+        const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
+        RecallTagsDescriptionSchema.parse(record);
 
-    const formData = await request.formData();
-    const recordStr = formData.get("provenanceRecord"); 
-    const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
+        record.tags ??= [];
+        if (!record.tags.includes("recall")) record.tags.push("recall");
+        const tags = record.tags
+        
+        const description = record.description || "";
 
-    record.tags ??= [];
-    if (!record.tags.includes("recall")) record.tags.push("recall");
-    const tags = record.tags
-    
-    const description = record.description || "";
+        await addRecordWithTags(baseUrl, deviceKey, tags, description)
 
-    await addRecordWithTags(baseUrl, deviceKey, tags, description)
-
-    try {
-        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
-        const records = await getRecords.json()
-
-
-        if (records[0].record.tags.includes("recall")) {
-            let length = Object.keys(records).length;
-            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
-
-            // Send recalled record to all children
-            while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
-                let getKey = await fetch(`${baseUrl}${key}`);
-                const keyProvenance = await getKey.json();
+        try {
+            let getRecords = await fetch(`${baseUrl}${deviceKey}`)
+            const records = await getRecords.json()
 
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recall)
-                if (!keyProvenance[0].record.isPublicKey) {
+            if (records[0].record.tags.includes("recall")) {
+                let length = Object.keys(records).length;
+                let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 
-                    let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
-                    if (uniqueChildKeys.includes(deviceKey.toString())) {
-                        uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                // Send recalled record to all children
+                while (keysToCheck.length != 0) {
+                    let key = keysToCheck[0];
+                    let getKey = await fetch(`${baseUrl}${key}`);
+                    const keyProvenance = await getKey.json();
+
+
+                    // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                    if (!keyProvenance[0].record.isPublicKey) {
+
+                        let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+                        if (uniqueChildKeys.includes(deviceKey.toString())) {
+                            uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                        }
+
+                        keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                        const keyFormData = new FormData();
+                        keyFormData.append("provenanceRecord", JSON.stringify({
+                            blobType: 'deviceRecord',
+                            description: records[0].record.description,
+                            children_key: '',
+                            tags: records[0].record.tags,
+                        }));
+                        
+                        let response = await fetch(`${baseUrl}${key}`, {
+                            method: "POST",
+                            body: keyFormData,
+                        })
                     }
 
-                    keysToCheck = keysToCheck.concat(uniqueChildKeys);
-
-                    const keyFormData = new FormData();
-                    keyFormData.append("provenanceRecord", JSON.stringify({
-                        blobType: 'deviceRecord',
-                        description: records[0].record.description,
-                        children_key: '',
-                        tags: records[0].record.tags,
-                    }));
-                    
-                    let response = await fetch(`${baseUrl}${key}`, {
-                        method: "POST",
-                        body: keyFormData,
-                    })
+                    keysToCheck.shift();
                 }
+            }
 
-                keysToCheck.shift();
+            return {
+                status: 200
+            }
+        } catch (error) {
+            console.error(`Error recalling children: ${error}`);
+            return {
+                status: 500
             }
         }
-
-        return {
-            status: 200
-        }
     } catch (error) {
-        console.error(`Error recalling children: ${error}`);
-        return {
-            status: 500
+        context.error(`Error recalling children: ${error}`);
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
         }
+        return { status: 500 };
     }
 }
+
+const EmailVerificationSchema = z.object({
+    email: z.email(),
+});
 
 export async function postEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -867,10 +977,9 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         const formData = await request.formData();
-        let email; if (typeof (email = formData.get('email')) !== 'string') {
-            throw new Error('postEmail: Unexpected non-string value received')
-            return { status: 404 };
-        }
+        const emailStr = formData.get('email');
+        let theRequest = EmailVerificationSchema.parse({ email: emailStr } );
+        let email = theRequest['email'];
 
         const entity = {
             partitionKey: 'UserFeedbackVolunteers',
@@ -887,25 +996,30 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+        if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
+        }
+        context.error('postEmail: Failed to add feedback volunteer contact info', error.message)
     }
 }
+
+const NotificationSubscribeSchema = z.object({
+    email: z.email(),
+    recordKey: z.string().length(22).regex(/^[a-zA-Z0-9]+$/),
+});
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
         context.log('body:', body);
+        NotificationSubscribeSchema.parse(body);
         const email = body.email;
         const recordKey = body.recordKey;
         // const tags = body.tags ?? [];
-
-        if (!email || !recordKey) {
-            return {
-                jsonBody: {error: "Error: email and record key required"},
-                status: 400
-            }
-        }
 
         context.log("Received signup for " + email)
 
@@ -981,6 +1095,11 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 jsonBody: { message: "" }, // Deliberately blank
                 status: 429
             }
+        } else if (error instanceof z.ZodError) {
+            return {
+                status: 400,
+                jsonBody: { message: "Error: Check argument format." },
+            }
         } else {
             return {
                 jsonBody: {message: "Internal Server Error"},
@@ -990,17 +1109,12 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
+const PendingVerificationTokenSchema = z.string().length(32).regex(/^[A-Za-z0-9_-]+$/);
 
 export async function getPendingVerification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        const token = request.query.get('token');   
- 
-        if (!token) { 
-            return {
-                jsonBody: { error: "Token required" }, 
-                status: 400
-            }
-        }
+        const token = request.query.get('token');
+        PendingVerificationTokenSchema.parse(token);
 
     const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1` 
@@ -1047,7 +1161,16 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     }
 
     } catch(error) {
-        console.error(error.message);
+        let message;
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
         return {
             jsonBody: { message: "Internal Error" },
             status: 500
@@ -1055,22 +1178,21 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     }
 }
 
+const VerifyCodeSchema = z.object({
+    token: z.string().length(32).regex(/^[A-Za-z0-9_-]+$/),
+    code: z.string().length(6).regex(/^\d{6}$/),
+});
+
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfies
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         // get email and code
         const body = await request.json() as any;
+        VerifyCodeSchema.parse(body);
         const token = body.token;
         const code = body.code;
         const tags = []
-
-        if (!token || !code) {
-            return {
-                jsonBody: { error: "Token and code required" },
-                status: 400
-            }
-        }
 
         // get the PendingVerifications table
         const tableUrl = accountName === "devstoreaccount1"
@@ -1113,7 +1235,16 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             status: 200
         } 
     } catch(error) {
-        console.error(error.message);
+        let message;
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        } 
         return {
             jsonBody: {message: "Internal Error"},
             status: 500,
@@ -1121,19 +1252,17 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
     }
 } 
 
+const ResendCodeSchema = z.object({
+    token: z.string().length(32).regex(/^[A-Za-z0-9_-]+$/),
+});
+
 // Additional helper function to resend code using the token instead of the email
 // keeping the email out of the url is better for privacy
 export async function postResendCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        const body = await request.json() as any;   
+        const body = await request.json() as any;
+        ResendCodeSchema.parse(body);
         const token = body.token;
-
-        if (!token) {
-            return {
-                jsonBody: {error: "Token required"},
-                status: 400
-            }
-        }
 
         // get the pendingemailver table
         const tableUrl = accountName === "devstoreaccount1"
@@ -1218,7 +1347,16 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         } 
         
     } catch(error) {
-        console.error(error.message);
+        let message;
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
@@ -1227,20 +1365,18 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
     }
 }
 
+const NotificationUnsubscribeSchema = z.object({
+    id: z.string().min(43).max(44).regex(/^[1-9A-HJ-NP-Za-km-z]+$/),
+    recordKey: z.string().length(22).regex(/^[a-zA-Z0-9]+$/),
+});
 
 export async function deleteNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const body = await request.json() as any;
+        NotificationUnsubscribeSchema.parse(body);
         const emailID = body.id;
         const recordKey = body.recordKey;
         const tags: string[] = [];
-
-        if (!emailID || !recordKey) {
-            return {
-                jsonBody: {error: "Error: email id and record key required"},
-                status: 400
-            }
-        }
 
         await containerClient.createIfNotExists();
         const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false); 
@@ -1249,7 +1385,16 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         return response;
         
     } catch(error) {
-        context.error(error.message);
+        let message;
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
@@ -1644,66 +1789,92 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
+const AddEntrySchema = z.object({
+    blobType: z.string().optional(),
+    deviceName: z.string().optional(),
+    description: z.string().optional(),
+    children_key: z.union([z.string(), z.array(z.string())]).optional(),
+    children_name: z.array(z.string()).optional(),
+    hasParent: z.boolean().optional(),
+    isPublicKey: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+    send_to_all_children: z.boolean().optional(),
+});
+
 // just a wrapper fxn for postProvenance
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
-    const backendUrl = process.env['backend_url'];
-    const requestClone = request.clone();
-    const deviceKey = requestClone.params.deviceKey;
-    let formData = await requestClone.formData();
-    const attachmentValues = formData.values();
-    const record = JSON.parse(formData.get("provenanceRecord") as string);
+    const backendUrl = process.env
+    ['backend_url'];
+    try {
+        const requestClone = request.clone();
+        const deviceKey = requestClone.params.deviceKey;
+        DeviceKeySchema.parse(deviceKey);
+        let formData = await requestClone.formData();
+        const attachmentValues = formData.values();
+        const record = JSON.parse(formData.get("provenanceRecord") as string);
+        AddEntrySchema.parse(record);
 
-    // Check the first record entry in the provenance to see if the key is a group or not
-    const provenance = await getProvenance(request, context);
-    const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
-    if (!creationRecord) {
-        return {
-            status: 400,
-            jsonBody: { error: "Provenance needs to exist before adding entries." }
-        }
-    }
-    const isGroup = Array.isArray(creationRecord.record.children_key);
-
-    // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
-    const sendEntryToAllChildren = record.send_to_all_children;
-    if (isGroup && sendEntryToAllChildren) {
-        record.tags.push("sent_to_all_children");
-
-        // Rebuild our formData to include the new tag
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(record));
-        
-        for (const attachment of attachmentValues) {
-            if (typeof attachment === 'string') continue;
-            formData.append(attachment.name, attachment);
-        }
-    }
-
-    // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
-    const response = await fetch(`${backendUrl}${deviceKey}`, {
-        method: "POST",
-        body: formData,
-    });
-
-    if (response.status !== 200) { return { status: response.status }; }
-    let postProvResponse = await response.json();
-
-    // If we're sending the record to all children call notifyChildren
-    if (isGroup && sendEntryToAllChildren) {
-        const notifChildrenResponse = await notifyChildren(request, context);
-        if (notifChildrenResponse.status !== 200) {
+        // Check the first record entry in the provenance to see if the key is a group or not
+        const provenance = await getProvenance(request, context);
+        const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
+        if (!creationRecord) {
             return {
-                status: notifChildrenResponse.status,
-                jsonBody: { error: "Record entry was unable to be sent to children." }
+                status: 400,
+                jsonBody: { error: "Provenance needs to exist before adding entries." }
             }
         }
-    }
+        const isGroup = Array.isArray(creationRecord.record.children_key);
 
-    return {
-        jsonBody: postProvResponse,
-        headers: { "Content-Type": "application/json" }
+        // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
+        const sendEntryToAllChildren = record.send_to_all_children;
+        if (isGroup && sendEntryToAllChildren) {
+            if (!record.tags){
+                record.tags = [];
+            }
+            record.tags.push("sent_to_all_children");
+
+            // Rebuild our formData to include the new tag
+            formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(record));
+            
+            for (const attachment of attachmentValues) {
+                if (typeof attachment === 'string') continue;
+                formData.append(attachment.name, attachment);
+            }
+        }
+
+        // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
+        const response = await fetch(`${backendUrl}${deviceKey}`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (response.status !== 200) { return { status: response.status }; }
+        let postProvResponse = await response.json();
+
+        // If we're sending the record to all children call notifyChildren
+        if (isGroup && sendEntryToAllChildren) {
+            const notifChildrenResponse = await notifyChildren(request, context);
+            if (notifChildrenResponse.status !== 200) {
+                return {
+                    status: notifChildrenResponse.status,
+                    jsonBody: { error: "Record entry was unable to be sent to children." }
+                }
+            }
+        }
+
+        return {
+            jsonBody: postProvResponse,
+            headers: { "Content-Type": "application/json" }
+        }
+    } catch (error) {
+        context.error(`Error adding entry: ${error}`);
+        if (error instanceof z.ZodError) {
+            return { status: 400, jsonBody: { message: "Error: Check argument format." } }
+        }
+        return { status: 500, jsonBody: { message: "Internal Server Error" } }
     }
 }
 
