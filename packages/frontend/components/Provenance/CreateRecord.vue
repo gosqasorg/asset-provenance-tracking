@@ -176,6 +176,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
+ import { parseNotificationEmails as parseNotificationEmailList } from '~/utils/notificationEmails';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
  import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
@@ -272,16 +273,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.emailTags = tags;
         },
         parseNotificationEmails(): string[] | null {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic client-side validation for immediate feedback
-            const emails = this.emailInput
-                .split(',')
-                .map(email => email.trim().toLowerCase())
-                .filter(Boolean);
-
-            const hasNoEmails = emails.length === 0;
-            const hasInvalidEmail = emails.some(email => !emailRegex.test(email));
-
-            if (hasNoEmails || hasInvalidEmail) {
+            const emails = parseNotificationEmailList(this.emailInput);
+            if (!emails) {
                 this.$snackbar.add({
                     type: 'error',
                     text: 'Please enter valid email addresses separated by commas.'
@@ -289,8 +282,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 return null;
             }
 
-            const uniqueEmails = new Set(emails);
-            return Array.from(uniqueEmails);
+            return emails;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;

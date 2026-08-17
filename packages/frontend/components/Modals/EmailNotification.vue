@@ -23,13 +23,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div v-if="step === 'signup'" class="modal-content content">
             <h5 class="modal-title title" id="notifModalLabel">Turn on email notifications</h5>
             <div class="body">
-                <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
+                <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email address(es) below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
                 <input
+                    type="email"
+                    multiple
                     class="form-control"
                     v-model="email"
                     @input="emailError = null"
-                    placeholder="Email"
-                    aria-label="Email address"
+                    placeholder="Email addresses separated by commas"
+                    aria-label="Email addresses"
                     :class="{ 'input-error': emailError }"
                 />
                 <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
@@ -50,10 +52,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <div class="body">
                 <p v-if="error" style="line-height: 30px; margin-bottom: 0;" id="code-error" aria-describedby="code-error">
-                    That code is incorrect or has expired. Please try again or request a new code to be sent to <strong>{{ email }}</strong>.
+                    That code is incorrect or has expired. Please try again or request a new code to be sent to <strong>{{ currentVerificationEmail }}</strong>.
                 </p>
                 <p v-else style="line-height: 30px; margin-bottom: 0;">
-                    A 6-digit verification code was sent to <strong>{{ email }}</strong>. It will expire in 10 minutes.
+                    A 6-digit verification code was sent to <strong>{{ currentVerificationEmail }}</strong>. It will expire in 10 minutes.
                 </p>
                 <input 
                     type="tel"
@@ -113,6 +115,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
     import { getPendingVerification, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
+    import { parseNotificationEmails as parseNotificationEmailList } from '~/utils/notificationEmails';
 
     export default {
         data() {
@@ -125,6 +128,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 isSubmitting: false,
                 isResending: false,
                 token: '',
+                pendingVerifications: [] as { email: string, token: string }[],
+                verificationIndex: 0,
 
                 // resend cooldown: 3 free resends, then 1m wait time /2m /4m. 8m. 15m
                 resendCount: 0,
@@ -180,6 +185,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             requestCodeLabel(): string {
                 if (this.isSubmitting) return 'Sending Code...';
                 return 'Request a new code';
+            },
+            currentVerificationEmail(): string {
+                return this.pendingVerifications[this.verificationIndex]?.email || this.email;
             }
         },
 
@@ -191,19 +199,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
 
         methods: {
+            parseNotificationEmails(): string[] | null {
+                const emails = parseNotificationEmailList(this.email);
+                if (!emails) {
+                    this.emailError = 'Please enter valid email addresses separated by commas.';
+                    return null;
+                }
+
+                return emails;
+            },
+
             async sendCode() {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
-                if (!this.email || !emailRegex.test(this.email)) {
-                    this.emailError = 'Please enter a valid email address.';
-                    return;
-                } 
+                const emails = this.parseNotificationEmails();
+                if (!emails) return;
 
                 this.isSubmitting = true;
                 this.error = null;
                 this.emailError = null;
                 try {
                     const deviceKey = this.$route.params.deviceKey as string;
-                    this.token = await postNotificationEmail(this.email, deviceKey);
+                    this.pendingVerifications = await Promise.all(
+                        emails.map(async email => ({
+                            email,
+                            // The backend returns the token needed to verify this address.
+                            token: await postNotificationEmail(email, deviceKey)
+                        }))
+                    );
+                    this.email = emails.join(', ');
+                    this.verificationIndex = 0;
+                    this.token = this.pendingVerifications[0].token;
                     this.step = 'verify';
                 } catch(error) {
                     this.$snackbar.add({ 
@@ -250,6 +274,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             },
 
+            // Prepare the modal to verify the next address in the list.
+            advanceToNextEmailVerification(): boolean {
+                const nextVerificationIndex = this.verificationIndex + 1;
+                const nextVerification = this.pendingVerifications[nextVerificationIndex];
+                if (!nextVerification) return false;
+
+                this.verificationIndex = nextVerificationIndex;
+                this.token = nextVerification.token;
+                this.code = '';
+                this.invalidAttempts = 0;
+                this.resendCount = 0;
+                this.verifyCooldownUntil = 0;
+                this.verifyCooldownRemaining = 0;
+                this.resendCooldownUntil = 0;
+                this.resendCooldownRemaining = 0;
+                return true;
+            },
+
             async verifyCode() {
                 // Button should be disabled if cooldown is active
                 if (!this.code || this.verifyCooldownRemaining > 0) return;
@@ -258,11 +300,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 try {
                     const token = this.token as string;
                     if (!localStorage.getItem(`${token}_verified`)) {
-                        // If token is not already verfied no need to hit the api
                         await postVerifyCode(token, this.code);
                     }
-                    this.step = 'success';
+
                     localStorage.setItem(`${token}_verified`, 'true');
+
+                    const startedNextVerification = this.advanceToNextEmailVerification();
+                    if (!startedNextVerification) {
+                        this.step = 'success';
+                    }
                 } catch {
                     this.invalidAttempts++;
                     const cooldownMs = this.getVerifyCooldownMs();
