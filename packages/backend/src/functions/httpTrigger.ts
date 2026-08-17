@@ -734,6 +734,16 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
+const PostProvenanceSchema = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        children_name: z.array(z.string()).optional(),
+        description: z.string().optional(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
@@ -865,9 +875,11 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         if (typeof provenanceRecord !== 'string') { return { status: 400 }; }
 
         const record = JSON5.parse(provenanceRecord);
+        PostProvenanceSchema.parse(record);
 
         // TODO: we need to parse out whether we're using an entry or a record. 
         let condition = "deviceName" in record && (!validateRecordJSON(record, context) && !validateEntryJSON(record, context))
+        
         if (condition) {
             { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
         }
