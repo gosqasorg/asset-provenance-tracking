@@ -694,7 +694,6 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     let deviceKey: Uint8Array<ArrayBuffer>;
     let deviceID: string;
     try{
-        DeviceKeySchema.parse(request.params.deviceKey);
         deviceKey = decodeKey(request.params.deviceKey);
         
         deviceID = await calculateDeviceID(deviceKey);
@@ -956,8 +955,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 }
 
 
-const DeviceKeySchema = z.string().length(22).regex(/^[a-zA-Z0-9]+$/);
-
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /*
     // Send to All Children: Send new record's tags and description to all children
@@ -966,7 +963,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(deviceKey);
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -1045,7 +1041,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     const baseUrl = process.env['backend_url'];
     try{
         const deviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(deviceKey);
         context.log(deviceKey)
         context.error(deviceKey)
 
@@ -2007,7 +2002,6 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     try {
         const requestClone = request.clone();
         const deviceKey = requestClone.params.deviceKey;
-        DeviceKeySchema.parse(deviceKey);
         let formData = await requestClone.formData();
         const attachmentValues = formData.values();
         const record = JSON.parse(formData.get("provenanceRecord") as string);
