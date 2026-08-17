@@ -1021,6 +1021,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     */
 
     const baseUrl = process.env['backend_url'];
+    
     try{
         const deviceKey = request.params.deviceKey;
         context.log(deviceKey)
@@ -1061,47 +1062,50 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
             let getRecords = await fetch(`${baseUrl}${deviceKey}`)
             const records = await getRecords.json()
 
+            if (!records[0].record.tags.includes("recall")) { 
+                return { status: 200 }
+            }
 
-            if (records[0].record.tags.includes("recall")) {
-                let length = Object.keys(records).length;
-                let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
+            let length = Object.keys(records).length;
+            let keysToCheck = Array.from(new Set(records[length - 1].record.children_key));
 
-                // Send recalled record to all children
-                while (keysToCheck.length != 0) {
-                    let key = keysToCheck[0] as string;
-                    let getKey = await fetch(`${baseUrl}${key}`);
-                    const keyProvenance = await getKey.json();
+            // Send recalled record to all children
+            while (keysToCheck.length != 0) {
+                let key = keysToCheck[0] as string;
+                let getKey = await fetch(`${baseUrl}${key}`);
+                const keyProvenance = await getKey.json();
 
-
-                    // Make sure key is NOT a public key (public keys do not have the ability to recall)
-                    if (!keyProvenance[0].record.isPublicKey) {
-
-                        let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
-                        if (uniqueChildKeys.includes(deviceKey.toString())) {
-                            uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
-                        }
-
-                        keysToCheck = keysToCheck.concat(uniqueChildKeys);
-
-                        const keyFormData = new FormData();
-                        keyFormData.append("provenanceRecord", JSON.stringify({
-                            blobType: 'deviceRecord',
-                            description: records[0].record.description,
-                            children_key: '',
-                            tags: records[0].record.tags,
-                        }));
-                        
-                        let response = await fetch(`${baseUrl}${key}`, {
-                            method: "POST",
-                            body: keyFormData,
-                        })
-
-                        // If users are subscribed to child records notify them
-                        let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                        if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
-                    }
-                    keysToCheck.shift();
+                // Make sure key is NOT a public key (public keys do not have the ability to recall)
+                if(keyProvenance[0].record.isPublicKey) { 
+                    keysToCheck.shift(); 
+                    continue
                 }
+
+
+                let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
+                if (uniqueChildKeys.includes(deviceKey.toString())) {
+                    uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                }
+
+                keysToCheck = keysToCheck.concat(uniqueChildKeys);
+
+                const keyFormData = new FormData();
+                keyFormData.append("provenanceRecord", JSON.stringify({
+                    blobType: 'deviceRecord',
+                    description: records[0].record.description,
+                    children_key: '',
+                    tags: records[0].record.tags,
+                }));
+                
+                let response = await fetch(`${baseUrl}${key}`, {
+                    method: "POST",
+                    body: keyFormData,
+                })
+                
+                // If users are subscribed to child records notify them
+                let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+                keysToCheck.shift();
             }
 
             return {
