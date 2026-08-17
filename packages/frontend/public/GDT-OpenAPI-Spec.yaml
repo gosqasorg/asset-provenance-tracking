@@ -335,6 +335,16 @@ paths:
                 format: binary
         '404':
           description: Attachment not found
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Error: Check argument format."
 
   /getNewDeviceKey:
     get:
@@ -395,6 +405,16 @@ paths:
                   description: Returned when the legacy record exists but is not valid JSON.
                   value:
                     status: 404
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Error: Check argument format."
         '500':
           description: Internal Server Error
 
@@ -430,4 +450,14 @@ paths:
                 example: photo.jpg
         '404':
           description: Attachment not found
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                    example: "Error: Check argument format."
   
