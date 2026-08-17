@@ -317,9 +317,7 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
 const AttachmentIDSchema = z.string().regex(/^[0-9a-f]{64}$/);
 
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
-    const rawDeviceKey =request.params.deviceKey;
-    DeviceKeySchema.parse(rawDeviceKey);
-    const deviceKey = decodeKey(rawDeviceKey);
+    const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
     AttachmentIDSchema.parse(attachmentID);
@@ -374,9 +372,7 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        const rawDeviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(rawDeviceKey);
-        const deviceKey = decodeKey(rawDeviceKey);
+        const deviceKey = decodeKey(request.params.deviceKey);
         
         const deviceID = await calculateDeviceID(deviceKey);
         context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -418,9 +414,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        const rawDeviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(rawDeviceKey);
-        const deviceKey = decodeKey(rawDeviceKey);
+        const deviceKey = decodeKey(request.params.deviceKey);
         const deviceID = await calculateDeviceID(deviceKey);
         context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
     
@@ -491,18 +485,10 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
-        const rawDeviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(rawDeviceKey);
-        const deviceKey = decodeKey(rawDeviceKey);
+        const deviceKey = decodeKey(request.params.deviceKey);
         const body = await convertLegacyProvenance(containerClient, deviceKey);
         return { jsonBody: body ?? { "already-converted": true} };
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return {
-                status: 400,
-                jsonBody: { message: "Error: Check argument format of device key." },
-            }
-        }
         return {
             status: 500,
             jsonBody: { message: "Internal Server Error" },
@@ -783,8 +769,6 @@ export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
 
-const DeviceKeySchema = z.string().length(22).regex(/^[a-zA-Z0-9]+$/);
-
 
 // Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -792,7 +776,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(deviceKey);
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -882,7 +865,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     const baseUrl = process.env['backend_url'];
     try{
         const deviceKey = request.params.deviceKey;
-        DeviceKeySchema.parse(deviceKey);
         const formData = await request.formData();
         const recordStr = formData.get("provenanceRecord"); 
         const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
@@ -1810,7 +1792,6 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     try {
         const requestClone = request.clone();
         const deviceKey = requestClone.params.deviceKey;
-        DeviceKeySchema.parse(deviceKey);
         let formData = await requestClone.formData();
         const attachmentValues = formData.values();
         const record = JSON.parse(formData.get("provenanceRecord") as string);
