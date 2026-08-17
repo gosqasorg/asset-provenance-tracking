@@ -28,9 +28,8 @@ if(! [KEY1,
 Read file, downscale if needed, base64encode, return string
 */
 async function downscaleIfNeeded(inputFileName) {
-    let base64EncodedFile;
     try {
-        base64EncodedFile = (await sharp(inputFileName)
+        return (await sharp(inputFileName)
             .resize(2048, 2048, {
                 fit: 'inside',
                 withoutEnlargement: true
@@ -40,8 +39,6 @@ async function downscaleIfNeeded(inputFileName) {
         console.error(err)
         process.exit(1)
     }
-
-    return base64EncodedFile
 }
 
 /*
