@@ -208,6 +208,62 @@ describe ("Send to All Children Tests", () => {
 
 });
 
+it("Should use default 'Sent from Group' description when entry has no description", async() => {
+    // Create the group/children
+    const payload = {
+        deviceName: "Sent Without Description Test",
+        description: "Testing that record entries sent to children without descriptions have the default description",
+        tags: [],
+        number_of_children: 1,
+    };
+
+    let formData = new FormData();
+    formData.append("provenanceRecord", JSON.stringify(payload));
+
+    let response = await fetch(`${baseUrl}/createGroup`, {
+        method: "POST",
+        body: formData,
+    });
+    expect(response.status).toBe(200);
+
+    const data = await response.json();
+    expect(data.groupUrl).toContain("/record/");
+    console.log("(Send to Children Default Description Test) Group Url:", data);
+
+    const groupKey = data.groupUrl.split('/').pop();
+    const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+    const groupProvenance = await groupResponse.json();
+    const groupRecord = groupProvenance[0].record;
+
+    const childKeys: string[] = groupRecord.children_key;
+
+    // Add an entry without a description to the group and send it to all children
+    const entryPayload = {
+        tags: ["Draco"],
+        send_to_all_children: true
+    };
+
+    formData = new FormData();
+    formData.append("provenanceRecord", JSON.stringify(entryPayload));
+
+    response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+        method: "POST",
+        body: formData,
+    });
+    expect(response.status).toBe(200);
+
+    // Look at the most recent record entry on the child and confirm they have the default description
+    for (const child of childKeys) {
+        const childData = await fetch(`${baseUrl}/provenance/${child}`);
+        const childProvenance = await childData.json();
+        const childRecord = childProvenance[0].record;
+
+        expect(childRecord.description).toBe("Record Entry sent from Group");
+        expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
+    }
+
+}, 60000);
+
 
 describe("Group Creation Tests", () => {
     // Test public key functionality
@@ -563,10 +619,15 @@ describe("Update v2 Tests", () => {
         }
         const testCases = [
             {
+
+            },
+            {
                 description: "record entry with description",
             },
             {
-                description: "record entry with attachments",
+                tags: ["entry", "with", "only", "tags"]
+            },
+            {
                 attachments: [['./test/attachments/a200.jpg', 'record-entry-with-attachment.jpg']]
             },
             {
@@ -630,7 +691,7 @@ describe("Update v2 Tests", () => {
             if (currCase.description) {
                 expect(currRecord.description).toBe(currCase.description)
             }
-            if (i != 3 && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
+            if (i != (testCases.length - 1) && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
                 expect(currRecord.tags).toStrictEqual(currCase.tags)
             }
             if (currCase.attachments) {
@@ -640,7 +701,7 @@ describe("Update v2 Tests", () => {
 
         for (let i = 0; i < parentRecord.number_of_children; i ++) {
             let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
-            expect(childProv[0].record.description).toBe(testCases[3].description);
+            expect(childProv[0].record.description).toBe(testCases[(testCases.length - 1)].description);
             expect(childProv[0].record.tags).toStrictEqual(["test", "demo", "sent_to_all_children"]);
         }
 	}, 60000);

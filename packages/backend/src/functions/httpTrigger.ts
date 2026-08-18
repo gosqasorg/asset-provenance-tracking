@@ -682,7 +682,7 @@ export function validateRecordJSON(json: any) {
         blobType: z.string().optional(),
         children_key: z.union([z.string(), z.array(z.string())]).optional(),
         children_name: z.array(z.string()).optional(),
-        description: z.string(),
+        description: z.string().optional(),
         deviceName: z.string().optional(),
         hasParent: z.boolean().optional(),
         isPublicKey: z.boolean().optional(),
