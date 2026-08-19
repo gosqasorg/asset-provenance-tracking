@@ -199,7 +199,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(valid).toBe(true);
 
     const recordWithoutOptional = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
-      "tags": ["apples", "plums"]};
+      "tags": ["apples", "plums"],"hasParent": false};
     valid = await httpTrigger.validateRecordJSON(recordWithoutOptional);
     expect(valid).toBe(true);
   });

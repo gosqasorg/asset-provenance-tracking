@@ -406,7 +406,12 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const provenanceRecord = formData.get("provenanceRecord");
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
     const record = JSON5.parse(provenanceRecord);
-    if (!validateRecordJSON(record)) { return { status: 400 }; }
+
+    if ("deviceName" in record) {
+        if (!validateRecordJSON(record)) { return { status: 400 }; }
+    } else {
+        if (!validateEntryJSON(record)) { return { status: 400 }; }
+    }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
@@ -677,7 +682,29 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
 }
 
 export function validateRecordJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    // Records/Groups require children_key, hasParent, deviceName, and description
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string(),
+        hasParent: z.boolean(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
+    }
+}
+
+export function validateEntryJSON(json: any) {
+    // Record entries only have blobType, description, childrenkeys, and tags (none required)
     const Valid = z.object({
         blobType: z.string().optional(),
         children_key: z.union([z.string(), z.array(z.string())]).optional(),
