@@ -35,10 +35,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Use Node.js 22
+      - name: Use Node.js 24
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Build Frontend
         working-directory: packages/frontend
