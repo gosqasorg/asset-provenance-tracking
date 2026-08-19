@@ -10,15 +10,6 @@ on:
       - main
 
 jobs:
-#  note: job currently not working
-#  frontend-ui-testing:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4.1.7
-#      - name: Run frontend UI tests
-#        uses: ./.github/actions/frontend-ui-testing
-
   detect-changes:
     runs-on: ubuntu-latest
     permissions:
@@ -36,6 +27,35 @@ jobs:
               - 'packages/frontend/**'
               - '.github/workflows/fe_on_push.yml'
 
+  frontend-coverage-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Build Frontend
+        working-directory: packages/frontend
+        run: |
+          [ -d node_modules ] && rm -r node_modules
+          rm package-lock.json 
+          npm install
+          npx nuxi build --preset=azure
+        env:
+          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
+
+      - name: Run frontend coverage tests
+        working-directory: packages/frontend
+        run: npm run coverage
+        env:
+          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
+          
   frontend-deploy:
     needs: [detect-changes, frontend-coverage-checks]
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
@@ -66,32 +86,3 @@ jobs:
         with:
           name: packages
           path: packages/frontend/.output/**
-
-  frontend-coverage-tests:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Use Node.js 22
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-
-      - name: Build Frontend
-        working-directory: packages/frontend
-        run: |
-          [ -d node_modules ] && rm -r node_modules
-          rm package-lock.json 
-          npm install
-          npx nuxi build --preset=azure
-        env:
-          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
-
-      - name: Run frontend coverage tests
-        working-directory: packages/frontend
-        run: npm run coverage
-        env:
-          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
