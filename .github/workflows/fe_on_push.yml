@@ -57,7 +57,7 @@ jobs:
           FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
 
   frontend-deploy:
-    needs: frontend-coverage-checks
+    needs: frontend-coverage-tests
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
