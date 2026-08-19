@@ -19,7 +19,7 @@ describe("Creating records with attachments", () => {
 				blobType: 'deviceInitializer',
 				deviceName: "Create Record Test",
 				description: "An API Feature Test-Attachments",
-				tags: {},
+				tags: [],
 				children_key: '',
 				hasParent: false,
 				isPublicKey: false,

@@ -148,8 +148,18 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
 
   it('postProvenance returns a body', async () => {
+    let record = JSON.stringify({
+			blobType: "deviceInitializer",
+			deviceName: "post_prov tests",
+			description: "test to see if postProvenance returns a body",
+			tags: [],
+			children_key: '',
+			hasParent: false,
+			isPublicKey: false
+		})
+
     const formData = {
-      get: vi.fn((key) => key === 'provenanceRecord' ? '{"foo":1}' : undefined),
+      get: vi.fn((key) => key === 'provenanceRecord' ? record : undefined),
       values: vi.fn(() => [].values()),
     };
     const req = makeHttpRequest({ method: 'POST', params: { deviceKey }, formData: async () => formData });
@@ -177,46 +187,40 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     expect(res).toHaveProperty('headers');
   });
 
-  it('validateJSON correctly validates record', async () => {
+  it('validateRecordJSON correctly validates record', async () => {
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
       "hasParent": false,"isPublicKey": false};
-    let valid = await httpTrigger.validateJSON(validRecord);
+    let valid = await httpTrigger.validateRecordJSON(validRecord);
     expect(valid).toBe(true);
 
     const recordWithTags = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
       "tags": ["peaches", "pears"],"hasParent": false,"isPublicKey": false};
-    valid = await httpTrigger.validateJSON(recordWithTags);
+    valid = await httpTrigger.validateRecordJSON(recordWithTags);
     expect(valid).toBe(true);
 
     const recordWithoutOptional = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
-      "tags": ["apples", "plums"]};
-    valid = await httpTrigger.validateJSON(recordWithoutOptional);
+      "tags": ["apples", "plums"],"hasParent": false};
+    valid = await httpTrigger.validateRecordJSON(recordWithoutOptional);
     expect(valid).toBe(true);
   });
 
-  it('validateJSON correctly validates group', async () => {
+  it('validateRecordJSON correctly validates group', async () => {
     const validGroup = {"blobType": "deviceInitializer","deviceName": "Group w/ no children","description": "Description",
       "children_key":[],"children_name":[],"tags": [],"hasParent": false,"isPublicKey": false};
-    let valid = await httpTrigger.validateJSON(validGroup);
+    let valid = await httpTrigger.validateRecordJSON(validGroup);
     expect(valid).toBe(true);
 
     const groupWithChildren = {"blobType": "deviceInitializer","deviceName": "Group w/ children","description": "Description",
       "children_key":["4YAfNMTra2VMvXhFQvpQZw"],"children_name":["Child 1"],"tags": ["hasChild"],"hasParent": false,"isPublicKey": false,};
-    valid = await httpTrigger.validateJSON(groupWithChildren);
+    valid = await httpTrigger.validateRecordJSON(groupWithChildren);
     expect(valid).toBe(true);
   });
 
-  it('validateJSON correctly catches invalid record/group', async () => {
-    // Missing children_key, which should cause validateJSON to flag this record as invalid
-    const invalidRecord = {"blobType":"deviceInitializer","deviceName":"JSON without children_key","description":"invalid JSON","tags":[],
-      "hasParent":false,"isPublicKey":false};
-    let valid = await httpTrigger.validateJSON(invalidRecord);
-    expect(valid).toBe(false);
-
-    // Missing description, which should cause validateJSON to flag this group as invalid
-    const invalidGroup = {"blobType":"deviceInitializer","deviceName":"JSON without description","tags":["group"],"children_key":[],
+  it('validateRecordJSON correctly catches invalid record/group', async () => {
+    // Name is of the wrong type, which should cause validateRecordJSON to flag this group as invalid
+    const invalidGroup = {"blobType":"deviceInitializer","deviceName":["Name is list", "instead of string"],"tags":["group"],"children_key":[],
       "children_name":[],"hasParent":false,"isPublicKey":false};
-    valid = await httpTrigger.validateJSON(invalidGroup);
+    let valid = await httpTrigger.validateRecordJSON(invalidGroup);
     expect(valid).toBe(false);
   });
  
