@@ -46,7 +46,7 @@ jobs:
         with:
           node-version: 24
       - name: Checkout
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v5
       - name: build frontend
         working-directory: packages/frontend
         run: |
