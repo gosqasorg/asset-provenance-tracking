@@ -447,6 +447,28 @@ describe("Group Creation Tests", () => {
     }
     }, 60000);
 
+    it("should reject an invalid group creation payload with a 400", async() => {
+        const invalidPayload = {
+            deviceName: "invalid_group_test_payload",
+            description: "this payload has tags as string",
+            tags: "[tag, string, invalid]",
+            number_of_children: 1,
+        };
+
+        const formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(invalidPayload));
+        const invalidResponse = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
+
+        expect(invalidResponse.ok).toBe(false);
+        expect(invalidResponse.status).toBe(400);
+
+        const body = await invalidResponse.json();
+        expect(body.data).toBe("Error: Check argument format.")
+    }, 60000);
+
     // Tests group child custom titles
 	it("Custom Record Titles", async () => {
 		const groupParentRecords = []
