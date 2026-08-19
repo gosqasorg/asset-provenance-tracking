@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineDetectAndStash, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, offlineDetectAndStash, offlineModeFeatureFlag, notifySubscribers } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -244,6 +244,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }
     },
     methods: {
+        async emailSubscribers(deviceKey: string, record: any) {
+            try {
+                // Notify all users subscribed to the record that it has been updated
+                let response = await notifySubscribers(deviceKey, record);
+
+                // Display success if emails were successfully sent
+                if (response.status == 200) {
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully emailed subscribers'
+                    });
+                }
+            } catch (error) {
+                let errorMessage;
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = error;
+                }
+
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error sending email: ${errorMessage}`
+                });
+            }
+        },
         closePopUpA() {
             this.sendToAllChildrenPopUp = false
         },
@@ -432,6 +458,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // Append the record to the records.
             try {
                 await postProvenance(this.recordKey, record, this.pictures || []);
+                this.emailSubscribers(this.recordKey, record);
 
                 if (this.recallAll) {
                     recallChildren(this.recordKey, this.tags, this.description);

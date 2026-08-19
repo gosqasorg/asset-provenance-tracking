@@ -117,6 +117,23 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     }
 }
 
+export async function notifySubscribers(deviceKey: string, record: any) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const formData = new FormData();
+    formData.append("provenanceRecord", JSON.stringify(record));
+
+    const response = await fetch(`${baseUrl}/notifySubscribers/${deviceKey}`, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.status != 200 && response.status != 204) {
+        throw new Error('notifySubscribers: Failed to notify all subscribers')
+    }
+
+    return response;
+}
+
 export async function postEmail(email: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
@@ -488,7 +505,7 @@ export async function offlineDetectAndStash (recordKey: string, formData: FormDa
 
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/notificationsubscription`, {
+    const response = await fetch(`${baseUrl}/notificationSubscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, recordKey }),
