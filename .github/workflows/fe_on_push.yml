@@ -37,7 +37,7 @@ jobs:
               - '.github/workflows/fe_on_push.yml'
 
   frontend-deploy:
-    needs: detect-changes
+    needs: [detect-changes, frontend-coverage-checks]
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +54,6 @@ jobs:
           rm package-lock.json 
           npm install
           npx nuxi build --preset=azure
-          npm run coverage
         env:
           FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
       - name: deploy frontend
@@ -68,3 +67,31 @@ jobs:
           name: packages
           path: packages/frontend/.output/**
 
+  frontend-coverage-tests:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Build Frontend
+        working-directory: packages/frontend
+        run: |
+          [ -d node_modules ] && rm -r node_modules
+          rm package-lock.json 
+          npm install
+          npx nuxi build --preset=azure
+        env:
+          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
+
+      - name: Run frontend coverage tests
+        working-directory: packages/frontend
+        run: npm run coverage
+        env:
+          FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
