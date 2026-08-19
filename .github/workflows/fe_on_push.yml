@@ -55,9 +55,9 @@ jobs:
         run: npm run coverage
         env:
           FRONTEND_URL: https://red-stone-00f5d251e.5.azurestaticapps.net/
-          
+
   frontend-deploy:
-    needs: [detect-changes, frontend-coverage-checks]
+    needs: frontend-coverage-checks
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
