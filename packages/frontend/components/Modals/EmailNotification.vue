@@ -115,7 +115,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
     import { getPendingVerification, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
-    import { parseNotificationEmails as parseNotificationEmailList } from '~/utils/notificationEmails';
+    import { parseNotificationEmails } from '~/utils/notificationEmails';
 
     export default {
         data() {
@@ -199,8 +199,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
 
         methods: {
-            parseNotificationEmails(): string[] | null {
-                const emails = parseNotificationEmailList(this.email);
+            // Calls the email list normalization utility and sets the frontend error state when validation fails.
+            validateNotificationEmails(): string[] | null {
+                const emails = parseNotificationEmails(this.email);
                 if (!emails) {
                     this.emailError = 'Please enter valid email addresses separated by commas.';
                     return null;
@@ -210,7 +211,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             },
 
             async sendCode() {
-                const emails = this.parseNotificationEmails();
+                const emails = this.validateNotificationEmails();
                 if (!emails) return;
 
                 this.isSubmitting = true;

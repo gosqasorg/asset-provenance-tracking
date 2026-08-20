@@ -99,7 +99,7 @@ describe('postNotificationEmail', () => {
             emailError: null
         };
 
-        const emails = emailNotificationMethods.parseNotificationEmails.call(component);
+        const emails = emailNotificationMethods.validateNotificationEmails.call(component);
 
         expect(emails).toEqual(['first@example.com', 'second@example.com']);
         expect(component.emailError).toBeNull();

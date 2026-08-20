@@ -176,7 +176,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
- import { parseNotificationEmails as parseNotificationEmailList } from '~/utils/notificationEmails';
+ import { parseNotificationEmails } from '~/utils/notificationEmails';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
  import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
@@ -272,8 +272,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         handleUpdateEmailTags(tags: string[]) {
             this.emailTags = tags;
         },
-        parseNotificationEmails(): string[] | null {
-            const emails = parseNotificationEmailList(this.emailInput);
+        // Calls the email list normalization utility and sets the frontend error state when validation fails.
+        validateNotificationEmails(): string[] | null {
+            const emails = parseNotificationEmails(this.emailInput);
             if (!emails) {
                 this.$snackbar.add({
                     type: 'error',
@@ -329,7 +330,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // Parse and validate notification addresses before starting the record update (catches input error early).
             let notificationEmails: string[] = [];
             if (this.notify) {
-                const parsedEmails = this.parseNotificationEmails();
+                const parsedEmails = this.validateNotificationEmails();
                 if (!parsedEmails) {
                     return;
                 }
