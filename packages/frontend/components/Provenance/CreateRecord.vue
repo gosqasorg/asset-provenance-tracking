@@ -75,7 +75,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         type="email"
                         class="form-control"
                         v-model="emailInput"
-                        placeholder="Email"
+                        required
+                        multiple
+                        placeholder="Email addresses (comma separated)"
                         @keyup.enter=""
                     />
                 </div>
@@ -174,6 +176,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
+ import { parseNotificationEmails } from '~/utils/notificationEmails';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
  import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
@@ -269,6 +272,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         handleUpdateEmailTags(tags: string[]) {
             this.emailTags = tags;
         },
+        // Calls the email list normalization utility and sets the frontend error state when validation fails.
+        validateNotificationEmails(): string[] | null {
+            const emails = parseNotificationEmails(this.emailInput);
+            if (!emails) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'Please enter valid email addresses separated by commas.'
+                });
+                return null;
+            }
+
+            return emails;
+        },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
             const files = target.files;
@@ -311,6 +327,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            // Parse and validate notification addresses before starting the record update (catches input error early).
+            let notificationEmails: string[] = [];
+            if (this.notify) {
+                const parsedEmails = this.validateNotificationEmails();
+                if (!parsedEmails) {
+                    return;
+                }
+                notificationEmails = parsedEmails;
+                this.emailInput = parsedEmails.join(', ');
+            }
+
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
@@ -439,9 +466,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     notifyChildren(this.recordKey, this.tags, this.description);
                 }
 
-                if (this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); 
-                    await postNotificationEmail(this.recordKey,email);
+                // Request a separate verification email for each address after the record update succeeds.
+                if (notificationEmails.length > 0) {
+                    await Promise.all(
+                        notificationEmails.map(email =>
+                            postNotificationEmail(email, this.recordKey)
+                        )
+                    );
                 }
 
                 // Refresh CreateRecord component
