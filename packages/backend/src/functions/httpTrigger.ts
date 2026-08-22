@@ -98,7 +98,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${theKey.length}`);
+            return new Uint8Array;
     }
 }
 
@@ -370,6 +370,9 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
+    if (deviceKey.length == 0) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
@@ -399,6 +402,9 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const deviceKey = decodeKey(request.params.deviceKey);
+    if (deviceKey.length == 0) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
  
