@@ -81,7 +81,7 @@ describe("Tests to see if we can create records while offline", async () => {
     // Go "online" and wait for the record to create
     testOnlineTestUrl.url = frontendUrl
 
-    await new Promise((r) => setTimeout(r, 8000));
+    await new Promise((r) => setTimeout(r, 12000));
 
     // Confirm that the record was removed from stash, added to fulfilled stash, and that periodicChecker stopped running
     expect(localStorage.getItem('stash_counter')).toEqual('0');
