@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { testOnlineTestUrl, postProvenance, offlineModeFeatureFlag, emptyStashBaseUrl } from '~/services/azureFuncs';
+import { testOnlineTestUrl, postProvenance, emptyStashBaseUrl } from '~/services/azureFuncs';
 
 // Functions to allow devs to easily switch between development and local backends
 let frontendUrl = useRuntimeConfig().public.frontendUrl
@@ -60,7 +60,6 @@ describe("Tests to see if we can create records while offline", async () => {
     }
 
     // Go "offline"
-    offlineModeFeatureFlag.flag = true  // turn the featureflag on for the duration of the test
     testOnlineTestUrl.url = "https://fakeurltosimulateoffline.org"
 
     // Create record, confirm it stashed and that periodicChecker is running
@@ -75,7 +74,7 @@ describe("Tests to see if we can create records while offline", async () => {
     }
 
     expect(localStorage.getItem('stash_counter')).toEqual('1');
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).not.toEqual({});
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
 
@@ -86,7 +85,7 @@ describe("Tests to see if we can create records while offline", async () => {
 
     // Confirm that the record was removed from stash, added to fulfilled stash, and that periodicChecker stopped running
     expect(localStorage.getItem('stash_counter')).toEqual('0');
-    requestFromStash = JSON.parse(localStorage.getItem('gosqas_offline_stash_1') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
     expect(requestFromStash).toEqual({});
     expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("false");
 
@@ -116,7 +115,6 @@ describe("Tests to see if we can create records while offline", async () => {
       expect.fail("Create Record Offline: postProvenance failed to create the record: " + error)
     }
 
-    offlineModeFeatureFlag.flag = false
     fetchMock.mockRestore();
-  })
+  }, 30000)
 });

@@ -1,9 +1,9 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
-import { ContainerClient } from "@azure/storage-blob";
+import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
 
 const NOTIFICATION_TYPE = 'notificationSignups';
-const FROM_ADDRESS = "DoNotReply@8577d69b-9011-4385-abec-cfe9325dbfe6.azurecomm.net"
+const FROM_ADDRESS = process.env['SENDER_EMAIL'];
 const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
@@ -55,32 +55,23 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     }
 }
 
-export async function updateNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailInfo: string, tags: string[] = [], subscribing: boolean) {
-    /*
-       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
-       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
-
-       Master docs here:
-       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-
-       * The BlockBlobUploadOptions Interface is where storage tier is set.
-         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
-    */
-
-    // 0: setup id
+async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
+    // 0: Setup id
     const deviceID = await calculateDeviceID(deviceKey);
 
-    // 1: setup data
-
-    // 2 Setup blob name & id
+    // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
     const blobClient = containerClient.getBlockBlobClient(blobName);
 
-    // 3 Update blob content：read existing content, merge email list, write back
-    const exists = await blobClient.exists();
+    // 2: Return blob content (so we can read existing content, merge email list, write back)
+    return [blobName, blobClient] as const;
+}
 
+async function getExisitingEmails(exists: boolean, blobClient: BlockBlobClient) {
+    // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
+
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
         const text = buffer.toString("utf8");
@@ -103,21 +94,6 @@ export async function updateNotifications(containerClient: ContainerClient, calc
         }
     }
 
-    let emailID = "";
-    let email = emailInfo;
-
-    // If we're unsubscribing convert the emailID to email
-    if (!subscribing) {
-        emailID = emailInfo;
-        const emailIndex = existingEmailIDs.indexOf(emailID);
-        email = existingEmails[emailIndex];
-    }
-
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
-        return { jsonBody: { message: "Email not found in the database" }, status: 404 };
-    }
-
     const emailSet = new Set(
         existingEmails
         .map(s => s.trim().toLowerCase())
@@ -130,37 +106,11 @@ export async function updateNotifications(containerClient: ContainerClient, calc
         .filter(Boolean)
     );
 
-    const sizeBeforeAdding = emailSet.size;
-    if (subscribing) {
-        emailSet.add(normalized);
-    } else {
-        emailSet.delete(normalized);
-        emailIDSet.delete(emailID);
-    }
+    return [emailSet, emailIDSet] as const;
+}
 
-    // Generate a unique string id to represent the new email (only if we're subscribing, skips if unsubscribing)
-    for (let i = emailIDSet.size; i < emailSet.size; i++) {
-        const uniqueString = await crypto.subtle.generateKey(
-            {
-            name: "AES-CBC",
-            length: 256
-            },
-            true,
-            ['encrypt', 'decrypt']
-        );
-
-        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-        const uniqueEmailString = base58encode(new Uint8Array(buffer));
-        emailIDSet.add(uniqueEmailString)
-    }
-
-    if (exists && emailSet.size === sizeBeforeAdding) {
-        return {
-        jsonBody: { message: "Success", name: blobName },
-        status: 200,
-        };
-    }
-
+async function uploadBlob(containerClient: ContainerClient, blobName: string, emailSet: Set<string>, emailIDSet: Set<string>, tags: string[]) {
+    // Setup data to upload
     const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
     const data = JSON.stringify(payloadObj);
 
@@ -171,30 +121,123 @@ export async function updateNotifications(containerClient: ContainerClient, calc
         },
     };
 
-    try {
-        // Note: do not reformat; leave as commented
-        let status = (await containerClient.uploadBlockBlob(
-                        blobName,        // 1. Blob name
-                        data,           // 2. body (can be a string)
-                        data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
-                        uploadOptions // 4. optional options
-        )).response._response.status
+    // Note: do not reformat; leave as commented
+    let status = (await containerClient.uploadBlockBlob(
+                    blobName,        // 1. Blob name
+                    data,           // 2. body (can be a string)
+                    data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
+                    uploadOptions // 4. optional options
+    )).response._response.status
 
-        if (status < 300 && status >= 200) {
-            return {
-                jsonBody: { message: "Success",
-                            name: blobName },
-                status: 200
-            }
-            // TODO: have frontend display in snackbar for status 4xx
-            // This means nothing for now since we're not validating that what we're being handed is an email.
-        } else {
-            throw Error('Failed to update email')
-        }
-    } catch(error) {
-        const msg = error instanceof Error ? error.message : String(error);
+    if (status < 300 && status >= 200) {
         return {
-            jsonBody: {message: error.message},
+            jsonBody: { message: "Success",
+                        name: blobName },
+            status: 200
+        }
+        // TODO: have frontend display in snackbar for status 4xx
+        // This means nothing for now since we're not validating that what we're being handed is an email.
+    } else {
+        throw new Error()
+    }
+}
+
+export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
+    /*
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
+
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+       * The BlockBlobUploadOptions Interface is where storage tier is set.
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    */
+
+    // Setup the blobClient
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    const exists = await blobClient.exists();
+
+    // Confirm the email exists
+    const normalized = (email ?? "").trim().toLowerCase();
+    if (!normalized) {
+        return { jsonBody: { message: "Email not provided" }, status: 404 };
+    }
+
+    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+    // Add the specified email to the set
+    const sizeBeforeAdding = emailSet.size;
+    emailSet.add(normalized);
+
+    // If email is already stored return success
+    if (exists && emailSet.size === sizeBeforeAdding) {
+        return {
+        jsonBody: { message: "Success", name: blobName },
+        status: 200,
+        };
+    }
+
+    // Generate a unique string id to represent the new email
+    const uniqueString = await crypto.subtle.generateKey(
+        {
+        name: "AES-CBC",
+        length: 256
+        },
+        true,
+        ['encrypt', 'decrypt']
+    );
+
+    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+    const uniqueEmailString = base58encode(new Uint8Array(buffer));
+    emailIDSet.add(uniqueEmailString)
+
+    try {
+        // Update our stored emails to include the new email/id
+        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
+    } catch(error) {
+        return {
+            jsonBody: {message: 'Failed to subscribe to email notifications'},
+            status: 500,
+        }
+    }
+}
+
+export async function unsubscribeFromNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailID: string, tags: string[] = []) {
+    // Setup the blobClient
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    const exists = await blobClient.exists();
+
+    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+    // Confirm the emailID exists and convert it to an email
+    const emailIndex = Array.from(emailIDSet).indexOf(emailID);
+    if (emailIndex < 0) {
+        return { jsonBody: { message: "Email not found in the database" }, status: 200 };
+    }
+    const existingEmails = Array.from(emailSet);
+    const email = existingEmails[emailIndex];
+    const normalized = (email ?? "").trim().toLowerCase();
+
+    // Remove the specified email from the set
+    const sizeBeforeAdding = emailSet.size;
+    emailSet.delete(normalized);
+    emailIDSet.delete(emailID);
+
+    // If the email wasn't stored originally return success
+    if (exists && emailSet.size === sizeBeforeAdding) {
+        return {
+        jsonBody: { message: "Success", name: blobName },
+        status: 200,
+        };
+    }
+
+    try {
+        // Update our stored emails to no longer include the specified email/id
+        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
+    } catch(error) {
+        return {
+            jsonBody: {message: 'Failed to unsubscribe from email notifications'},
             status: 500,
         }
     }
