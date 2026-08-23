@@ -18,7 +18,7 @@ import learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <template>
-  <div class="container-fluid" id="api-docs-container">
+  <div class="container-fluid" id="api-docs-container" style="padding-bottom: 75px;">
 
     <h1>API documentation</h1>
 
@@ -28,7 +28,9 @@ import learn_more from '~/layouts/learn_more.vue';
 
     <SwaggerUI :spec-url="fullSpecUrl" variant="page" />
 
-    <learn_more />
+    <div style="padding-top: 10px; padding-left: 18px;">
+      <learn_more />
+    </div>
     
   </div>
 </template>
