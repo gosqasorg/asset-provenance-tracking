@@ -46,9 +46,6 @@ if(! [KEY1,
 ) { console.error('Error: credentials not set'); process.exit(1) }
 
 
-/*
-
-*/
 async function readTheFile(inputFileName: String): File {
   const buffer = await readFile(inputFileName)
   let theFileObject = await new File([buffer], inputFileName)
@@ -59,16 +56,8 @@ async function readTheFile(inputFileName: String): File {
 }
 
 async function convertFileForSharp(inputFileObject: File): Buffer {
-
   if (! (inputFileObject instanceof File) ){ throw new Error('Not got: File') }
 
-  /*
-  const segments = []
-  for await (const segment of inputFileObject.stream()) {
-    segments.push(segment)
-  }
-  return Buffer.concat(segments)
-  */
   console.log(inputFileObject.constructor.name, Object.keys(inputFileObject))
   console.log(inputFileObject.constructor.name, Object.keys(inputFileObject), inputFileObject.size)
   let theBuffer = await Buffer.from(await inputFileObject.arrayBuffer())
@@ -76,10 +65,7 @@ async function convertFileForSharp(inputFileObject: File): Buffer {
   return theBuffer
 }
 
-/*
-Read file, downscale if needed, base64encode, return string
-*/
-async function downscaleAndBase64Encode(inputFileBuffer: Buffer): String {
+async function downscaleIfApplicableAndBase64Encode(inputFileBuffer: Buffer): String {
     if(! (inputFileBuffer instanceof Buffer) ){ throw new Error('not got: buffer') }
     try {
         let base64EncodedString = await (await sharp(inputFileBuffer)
@@ -87,12 +73,6 @@ async function downscaleAndBase64Encode(inputFileBuffer: Buffer): String {
                 fit: 'inside',
                 withoutEnlargement: true // only resize if necessary
             }).toBuffer()).toString('base64')
-        console.log(base64EncodedString.constructor.name)
-        console.log(base64EncodedString.constructor.name)
-        console.log(base64EncodedString.constructor.name)
-        console.log(base64EncodedString.constructor.name)
-        console.log(base64EncodedString.constructor.name)
-        console.log(base64EncodedString.constructor.name)
         if(! (typeof base64EncodedString == 'string') ){ throw new Error('not made: String') }
         return base64EncodedString;
     } catch(error) {
@@ -102,10 +82,8 @@ async function downscaleAndBase64Encode(inputFileBuffer: Buffer): String {
     }
 }
 
-/*
-Hand image to api, print response
-*/
-async function hitAPI(base64File: String) {
+// returns true if image is ok, return false if image is flagged
+async function checkImageAgainstContentModerationAPI(base64File: String) {
     if(! (typeof base64File == 'string') ){ throw new Error('not got: string') }
 
     // Build json
@@ -121,7 +99,6 @@ async function hitAPI(base64File: String) {
         ],
         "outputType": "FourSeverityLevels"
     }
-    console.log(payload)
 
     let body = {
         method: 'POST',
@@ -134,23 +111,16 @@ async function hitAPI(base64File: String) {
 
     // Perform HTTP Interaction
     let url = ENDPOINT + 'contentsafety/image:analyze?api-version=2024-09-01'
-    let response;
-    if(! ((response = await fetch(url, body)).status == 200)) {
-        console.error(`Error: API Interaction Failed: ${await response.text()}`)
-        process.exit(1);
-    }
+    let response, result; if(! ((response = await fetch(url, body)).status == 200)) {
+        throw new Error(`Error: API Interaction Failed: ${await response.text()}`)
+    } result = JSON.parse(await response.text())
 
-    // Write result
-    let result = JSON.parse(await response.text())
-    console.log(result['categoriesAnalysis'])
-
-    // Print result
-    console.log(result)
-
+    // Calculate score: Pass: score = 0; Fail: score > 0. 
     let total_score = 0;
     for(let i = 0; i < result['categoriesAnalysis'].length; ++i) {
         total_score += result['categoriesAnalysis'][i]['severity']
     }
+
     return total_score > 0 ? 'Fail' : 'Pass'    
 }
 
@@ -158,41 +128,21 @@ async function setup() {
   let inputFileName = 'test/Microtest/oversize-g-rated.jpeg'
   let file = await readTheFile(inputFileName)
   let buffer = await convertFileForSharp(file)
-  let base64File = await downscaleAndBase64Encode(buffer);
+  let base64File = await downscaleIfApplicableAndBase64Encode(buffer);
   return base64File
 }
 
 
 /* =============================================================== */
 
-async function getFileThatHasBeenTransformedIntoWhateverTypeSharpNeeds() {}
-
-async function moderateContent() {
-  let base_url = 'http://localhost:7071/'
-  let api_url = base_url + 'api/'
-  let content_safety_url = base_url + '/testContentSafetyAPI'
-
-
-
-  let response = await fetch(content_safety_url, {
-      method: "POST",
-      body: groupSpec,
-  }); response = await response.json()
-
-}
-
 
 describe('MicroTestLand', () => {
   it('AzureContentSafetyAPITest', async () => {
 
     let base64File = await setup()
-    let response = await hitAPI(base64File)
-    console.log(response)
-    console.log(response)
-    console.log(response)
-    console.log(response)
-    console.log(response)
+    let response = await checkImageAgainstContentModerationAPI(base64File)
 
-    expect(true).toBe(true)
+    expect(response).toBe('Pass')
+    
   });
 });
