@@ -1,8 +1,3 @@
-
-type BufferSource = any;
-namespace NodeJS { export type BufferSource = any; }
-// delete the top two lines, temporary for testing
-
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -246,7 +241,6 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     }
 }
 
-
 export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
@@ -315,7 +309,6 @@ app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
     handler: setStatisticsTotals
 })
-
 
 
 /* ===============================================================
@@ -465,6 +458,28 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
       method: "POST",
       body: updateFormData,
     });
+}
+
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
+    }
 }
 
 
@@ -675,6 +690,7 @@ async function createChildren(context, description: string, number_of_children: 
 
     return childrenKeys; 
 }
+
 
 /*=================  Endpoints + Endpoint handlers  =====================*/
 
@@ -936,28 +952,6 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
             body: "",
             headers: { "Content-Type": "text/plain" }
         }
-    }
-}
-
-export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),
-        description: z.string(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        console.log("Format of JSON provided was invalid.")
-        return false;
     }
 }
 
