@@ -8,13 +8,14 @@ import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 import './getStats.js';
+import { sendEmail } from './sendEmail.js'
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -1708,12 +1709,72 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
+export async function livenessChecker(livenessTimer: Timer, context: InvocationContext) {
+
+    const staging = 'https://red-stone-00f5d251e.5.azurestaticapps.net/'
+    const production = 'https://blue-stone-05ede120f.5.azurestaticapps.net/'
+    const frontendUrl = process.env['frontend_url']
+    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
+
+    if (frontendUrl === staging) {
+        const prodResponse = await fetch('production');
+        if (prodResponse.status != 200) {
+            try {
+                for (const email of emails) {
+                    const emailResponse = await sendEmail(
+                        process.env['SENDER_EMAIL'],
+                        email,
+                        'Important: Production Server Down',
+                        'Production server is down!',
+                        'GOSQAS DEVS',
+                        context
+                    )
+                if (emailResponse.status === "Failed") {
+                    throw emailResponse
+                    }
+                }
+            }
+            catch (error) {
+                console.log(error)
+            }
+        }
+    }
+    if (frontendUrl === production) {
+        const stageResponse = await fetch(staging);
+        if (stageResponse.status != 200) {
+            try {
+                for (const email of emails) {
+                    const emailResponse2 = await sendEmail(
+                        process.env['SENDER_EMAIL'],
+                        email,
+                        'Important: Staging Server Down',
+                        'Staging server is down!',
+                        'GOSQAS DEVS',
+                        context
+                    )
+                if (emailResponse2.status === "Failed") {
+                    throw emailResponse2
+                    }
+                }
+            }
+            catch (error) {
+                console.log(error)
+            }
+        }
+    }
+
+}
+
 // Once per day update the total record, record entry, and attachment counts
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
     handler: setStatisticsTotals
 })
 
+app.timer('livenessChecker', {
+    schedule: '0 0 * * * *', 
+    handler: livenessChecker,
+})
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
