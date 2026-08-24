@@ -48,7 +48,7 @@ if(! [KEY1,
 /*
 Read file, downscale if needed, base64encode, return string
 */
-/*
+
 async function downscaleIfNeeded(inputFileName) {
     try {
         return (await sharp(inputFileName)
@@ -62,11 +62,11 @@ async function downscaleIfNeeded(inputFileName) {
         process.exit(1)
     }
 }
-*/
+
 /*
 Hand image to api, print response
 */
-/*async function hitAPI(inputFileName) {
+async function hitAPI(inputFileName) {
     let base64File = await downscaleIfNeeded(inputFileName);
 
     // Build json
@@ -114,13 +114,9 @@ Hand image to api, print response
     return total_score > 0 ? 'Fail' : 'Pass'    
 }
 
-let inFile = './oversize-g-rated.jpeg'
-
-console.log(await hitAPI(inFile))
-*/
 
 /* =============================================================== */
-/*
+
 async function getFileThatHasBeenTransformedIntoWhateverTypeSharpNeeds() {}
 
 async function moderateContent() {
@@ -136,7 +132,7 @@ async function moderateContent() {
   }); response = await response.json()
 
 }
-*/
+
 
 describe('MicroTestLand', () => {
   it('AzureContentSafetyAPITest', async () => {
