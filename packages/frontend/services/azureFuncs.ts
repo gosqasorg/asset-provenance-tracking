@@ -15,8 +15,12 @@
 
 import { validateKey } from "~/utils/keyFuncs";
 
-// Feature flag to turn ON/OFF Offline Mode features while in development
-export var offlineModeFeatureFlag = { flag: false };
+// Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
+// If we're not on prod turn offline features on
+export var offlineModeFeatureFlag = false;
+if (!(useRuntimeConfig().public.baseUrl).includes("gdtprodbackend")) {
+    offlineModeFeatureFlag = true;
+}
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
@@ -97,7 +101,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         // offline mode feature flag toggle
-        if (offlineModeFeatureFlag.flag) {
+        if (offlineModeFeatureFlag) {
             // Checks to see if user is offline, stashes record if offline
             const checkOffline = await offlineDetectAndStash(deviceKey, formData);
             if (checkOffline === 202) {
@@ -220,70 +224,6 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
-export async function onlineTestFetch(url?: string): Promise<boolean> {
-    let result = true;
-
-    // This is added to make testing easier, if no parameter given -> defaults to pinging our frontend.
-    // Given parameter can be bogus url to mock offlineness
-    if (url === undefined) {
-        url = testOnlineTestUrl.url;
-    }
-
-    try {
-        let response = await fetch(url, { cache: 'no-store'});
-        if (response.status !== 200) {
-            result = false;
-
-            if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
-        } 
-
-
-    } catch (error) {
-        console.log("Fetch attempt failed: " + error);
-        result = false;
-        if (offlineModeFeatureFlag.flag) { displayOfflineBanner = true; }
-    }
-
-    return result
-
-}
-
-export async function connectivityChecker() {
-    // While offlineTestFetch returns false, test for onlineness every 5 seconds. Return when back online (offlineTestFetch returns true)
-    while (!(await onlineTestFetch())) {
-        await new Promise((r) => setTimeout(r, 5000));
-    }
-
-    return;
-}
-
-export async function stashRequest(recordKey: string, formData: FormData) {
-    try {
-        // Convert values to string and store them
-        let valuesToStore = [];
-        valuesToStore.push(['recordKey', recordKey]);
-        valuesToStore.push(['provenanceRecord', formData.get('provenanceRecord')]);
-
-        // Get stash_counter and add 1 to it
-        let current_request = localStorage.getItem('stash_counter');
-        if (current_request == null) {
-            current_request = '0';
-        }
-        let stash_counter = parseInt(current_request) + 1;
-        localStorage.setItem('stash_counter', stash_counter.toString());
-
-        // Store the request at a unique key (gosqas-offline-stash-#)
-        let request_name = 'gosqas-offline-stash-' + stash_counter;
-        localStorage.setItem(request_name, JSON.stringify(valuesToStore));
-    } catch (error: any) {
-        // This web API error is thrown when localStorage is full
-        if (error.name === "QuotaExceededError" ) {
-            console.log('localStorage is full: no more records can be stored')
-            throw error
-        }
-    }
-}
-
 export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
     // Function to stash an offline request (works for syncing, fulfilled, and failed stashes)
     try {
@@ -371,117 +311,6 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
     }
 }
 
-export async function emptyStash() {
-    // See how many requests are stored, if any
-    let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
-
-    for (stash_counter; stash_counter > 0; stash_counter--) {
-        // Get the last request stored
-        let request_name = 'gosqas-offline-stash-' + stash_counter;
-        let request = JSON.parse(localStorage.getItem(request_name) || '{}');
-        if (JSON.stringify(request) === '{}') {
-            localStorage.removeItem(request_name)
-            localStorage.setItem('stash_counter', (stash_counter - 1).toString())
-            continue
-        }
-
-        let baseUrl = emptyStashBaseUrl.url;
-        let currentKey = request[0][1];
-        let record = request[1][1];
-
-        // If the environment is local add /provenance/ to the url
-        let fullUrl = `${baseUrl}${currentKey}`;
-        if (baseUrl.includes('localhost')) {
-            fullUrl = `${baseUrl}/provenance/${currentKey}`;
-        }
-
-        try {
-            // Move key into the syncing stash
-            localStorage.removeItem(request_name);
-            stashOfflineRequest(currentKey, "gdt-stash-syncing", request);
-
-            // Fulfill the request and confirm it was created (this will throw an error if it fails)
-            const formData = new FormData();
-            formData.append('provenanceRecord', record);
-
-            await fetchUrl(fullUrl, formData);  // fetchUrl POST handles retries/errors
-            let response = await fetchUrl(fullUrl);  // fetchUrl GET returns [] if no record is found
-            if ((await response.json()).length == 0) { throw new Error('Record failed to POST') }
-
-            // Add created key to a list of successfully created keys to display later
-            stashOfflineRequest(currentKey, "gdt-stash-fulfilled", request);
-            removeOfflineRequest(currentKey, "gdt-stash-syncing");
-
-        } catch (error) {
-            // Move the request to the failed stash
-            console.log("Record from localStorage failed to create: " + error);
-            stashOfflineRequest(currentKey, "gdt-stash-failed", request);
-            removeOfflineRequest(currentKey, "gdt-stash-syncing");
-        }
-
-        // Update the stash counter
-        localStorage.setItem('stash_counter', (stash_counter - 1).toString());
-
-        if (!await(onlineTestFetch())) {
-            return 202;
-        }
-    }
-
-    // Make sure that stash counter is set to empty now that we're out of the loop
-    localStorage.setItem('stash_counter', '0');
-
-    // Disable the offline banner and enable the online banner
-    displayOfflineBanner = false;
-    // Online banner currently doesn't have a way to be disabled, so we'll avoid enabling it until that is implemented
-    // displayOnlineBanner = true;
-    return 200;
-}
-
-export async function periodicChecker() {
-    // Return if a checker is already running
-    if (localStorage.getItem('gdt-awaiting-conectivity') == "true") {
-        console.log("Instance of periodicChecker is already running, returning")
-        return;
-    }
-    localStorage.setItem('gdt-awaiting-conectivity', "true");
-
-    let stash_empty = false;
-    let response = 404
-
-    // Wait for the user to come back online then empty the stash
-    while (!stash_empty) {
-        await connectivityChecker();
-        response = await emptyStash();
-        if (response == 200) {
-            stash_empty = true;
-        }
-    }
-
-    localStorage.setItem('gdt-awaiting-conectivity', "false");
-}
-
-export async function offlineDetectAndStash (recordKey: string, formData: FormData) {
-    try {
-        // Check if the user is online or offline. Stash the request if the user is offline
-        if ((await(onlineTestFetch()))) {
-            return 200;
-        } else {
-            await stashRequest(recordKey, formData);
-            // Intentionally left unawaited
-            periodicChecker();
-            return 202;
-        }
-    } catch (error: any) {
-        if (error.name === "QuotaExceededError") {
-            console.log('Storage limit has been reached: your record has not been stored')
-            return 507;
-        }
-        else {
-          console.log('Error in offlineDetectAndStash: ' + error)
-        }
-    }
-}
-
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/notificationsubscription`, {
@@ -540,5 +369,21 @@ export async function postResendCode(token: string) {
     });
     if (response.status !== 200) {
         throw new Error('postResendCode: Failed to resend code')
+    }
+}
+export async function getBrowserStats() {
+    
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/browsers", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
+    } catch (error) {
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
     }
 }
