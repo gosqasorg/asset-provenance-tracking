@@ -4,14 +4,10 @@ import sharp from 'sharp'
 
 // Setup credentials
 let KEY1 = process.env.KEY1
-let KEY2 = process.env.KEY2
-let LOCATION = process.env.LOCATION
 let ENDPOINT = process.env.ENDPOINT
 
 // Check credentials
 if(! [KEY1, 
-      KEY2,
-      LOCATION, 
       ENDPOINT
      ].every(Boolean)
 ) { console.error('Error: credentials not set'); process.exit(1) }
@@ -77,7 +73,7 @@ export async function downscaleIfApplicableAndBase64Encode(inputFileBuffer: Buff
 }
 
 // returns true if image is ok, return false if image is flagged
-export async function checkImageAgainstContentModerationAPI(base64File: string/*, KEY1, ENDPOINT*/) {
+export async function checkImageAgainstContentModerationAPI(base64File: string) {
     if(! (typeof base64File == 'string') ){ throw new Error('not got: string') }
 
     // Build json
