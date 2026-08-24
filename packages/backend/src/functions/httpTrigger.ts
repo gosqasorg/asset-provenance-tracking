@@ -64,47 +64,6 @@ interface NamedBlob {
 }
 
 
-/*==============  Possibly obsolete functions that are no longer needed. Leaving commented for a time just in case. ============*/
-
-// async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-//     /* How this pseudo-smoketest works:
-//        1. Put a string into blobstore
-//        2. Get it back out
-//        3. Hand both responses back
-//      */
-
-//     try {
-//         const key = await makeEncodedDeviceKey()
-
-//         // Add it
-//         const putResponse = await updateNotifications(containerClient, calculateDeviceID, key, "email@email.foo", [], true)
-
-//         // Access it
-//         const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
-
-
-//         return {
-//             jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
-//             status: 200,
-//         }
-
-//     } catch(error) {
-
-//         console.log(error)
-        
-//         return {
-//             jsonBody: {message: error.message},
-//             status: 500,
-//         }
-//     }
-// }
-
-// app.get("emailSignupTestEndpoint", {
-//     authLevel: 'anonymous',
-//     route: 'emailSignupTestEndpoint',
-//     handler: emailSignupTestEndpoint
-// })
-
 /*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts  ============*/
 
 function findDeviceIdFromName(blobName: string): string {
