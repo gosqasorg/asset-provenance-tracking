@@ -28,12 +28,6 @@ export var displayOfflineBanner = false;
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
 
-// Global url for onlineTestFetch
-export var testOnlineTestUrl = { url: useRuntimeConfig().public.frontendUrl };
-
-// Global base url for emptyStash
-export var emptyStashBaseUrl = { url: useRuntimeConfig().public.baseUrl };
-
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
@@ -100,16 +94,6 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
-        // offline mode feature flag toggle
-        if (offlineModeFeatureFlag) {
-            // Checks to see if user is offline, stashes record if offline
-            const checkOffline = await offlineDetectAndStash(deviceKey, formData);
-            if (checkOffline === 202) {
-                throw new Error('Status 202: User is offline but the record has been stashed')
-            } else if (checkOffline === 507) {
-                throw new Error('Storage limit has been reached, record not stashed')
-            }
-        }
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
