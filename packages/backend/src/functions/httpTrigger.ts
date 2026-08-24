@@ -788,6 +788,19 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
 
+    // Prevent the record from being recalled more than once
+    let getRecords = await fetch(`${baseUrl}${deviceKey}`)
+    const records = await getRecords.json()
+
+    for (let record of records) {
+		if (record.record.tags && (record.record.tags).includes("recall")) {
+			context.error(`Record has already been recalled`);
+            return {
+                status: 500
+            }
+		}
+	}
+
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
     const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
