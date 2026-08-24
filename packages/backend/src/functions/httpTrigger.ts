@@ -1756,12 +1756,6 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 
 // --- GETs --- //
 
-app.get("getProvenance", {
-    authLevel: 'anonymous',
-    route: 'provenance/{deviceKey}',
-    handler: getProvenance,
-})
-
 app.get("getAttachment", {
     authLevel: 'anonymous',
     route: 'attachment/{deviceKey}/{attachmentID}',
@@ -1774,16 +1768,16 @@ app.get("getAttachmentName", {
     handler: getAttachmentName,
 })
 
-app.get("getVersion", {
-    authLevel: 'anonymous',
-    route: 'version',
-    handler: getVersion
-})
-
 app.get('getNewDeviceKey', {
     authLevel: 'anonymous',
     route: 'getNewDeviceKey',
     handler: getNewDeviceKey,
+})
+
+app.get("getProvenance", {
+    authLevel: 'anonymous',
+    route: 'provenance/{deviceKey}',
+    handler: getProvenance,
 })
 
 app.get('getPendingVerification', {
@@ -1796,6 +1790,12 @@ app.get("upgradeProvenance", {
     authLevel: 'anonymous',
     route: 'upgrade/{deviceKey}',
     handler: upgradeProvenanceHandler
+})
+
+app.get("getVersion", {
+    authLevel: 'anonymous',
+    route: 'version',
+    handler: getVersion
 })
 
 // --- POSTs --- //
