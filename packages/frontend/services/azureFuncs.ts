@@ -209,7 +209,7 @@ async function fetchUrl(url: string, formData?: FormData) {
 }
 
 export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
-    // Function to stash an offline request (works for syncing, fulfilled, and failed stashes)
+    // Function to stash an offline request (works for fulfilled and failed stashes)
     try {
         let requests = [];
         let stash = localStorage.getItem(stashName) || "{}";
@@ -250,7 +250,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
 }
 
 export function removeOfflineRequest(currentKey: string, stashName: string) {
-    // Function to remove an offline request from the stash (works for syncing, fulfilled, and failed stashes)
+    // Function to remove an offline request from the stash (works for fulfilled and failed stashes)
     try {
         let requests = [];
         let stash = localStorage.getItem(stashName) || "{}";
@@ -281,7 +281,7 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
             }
             localStorage.setItem(stashName, JSON.stringify(requests))
         } else {
-            // Remove key from other stashes (syncing/fulfilled)
+            // Remove key from fulfilled stash
             const index = existingRequests.indexOf(currentKey);
             if (typeof existingRequests != "string" && index > -1) {
                 existingRequests.splice(index, 1);
