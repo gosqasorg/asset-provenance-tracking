@@ -13,6 +13,8 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
+
+
 <template>
   <div ref="qrCode", class="qr"></div>
 </template>
@@ -42,6 +44,7 @@ function normalizeUrl(url: string): string {
   const cleanPath = url.replace(/^\//, "");
   return `$window.location.origin/${cleanPath}`;
 }
+
 
 export default {
   props: {
@@ -169,7 +172,7 @@ export default {
         customLines = this.wrapText(limitedText, CUSTOM_TEXT_FONT, qrCanvas.width - 20);
         customTextHeight = customLines.length * CUSTOM_TEXT_LINE_HEIGHT + 10;
 
-        urlLines = this.wrapText(this.url, URL_FONT, qrCanvas.width - 20);
+        urlLines = this.wrapText(window.location.href, URL_FONT, qrCanvas.width - 20);
         urlHeight = urlLines.length * URL_LINE_HEIGHT + PADDING;
       }
 
