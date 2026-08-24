@@ -29,3 +29,9 @@ function resetStashValues(): void {
   localStorage.setItem('gdt-stash-failed', '');
   localStorage.setItem('gdt-awaiting-conectivity', 'false');
 }
+
+describe("Placeholder tests", () => {
+    it("Future offline tests will go here", () => {
+        expect(true).toBe(true);
+    });
+});
