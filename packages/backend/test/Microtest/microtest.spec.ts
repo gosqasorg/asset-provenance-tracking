@@ -188,6 +188,10 @@ describe('MicroTestLand', () => {
     let base64File = await setup()
     let response = await hitAPI(base64File)
     console.log(response)
+    console.log(response)
+    console.log(response)
+    console.log(response)
+    console.log(response)
 
     expect(true).toBe(true)
   });
