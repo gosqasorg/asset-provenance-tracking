@@ -2,11 +2,13 @@
 
 trap "kill 0" EXIT
 
-tsc -w > /dev/null &
+npx tsc -w > /dev/null &
 
-cd ../../..
+cd ../..
 
 while true; do
     npm run microtest
     sleep 5
 done
+
+cd -
