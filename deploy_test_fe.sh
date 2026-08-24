@@ -18,6 +18,7 @@ export BACKEND_URL=https://gosqasbe.azurewebsites.net/api
 export FRONTEND_URL=/
 
 # Build
+./npm-install-everything.sh
 cd packages/frontend
 rm -rf .nuxt .output
 npm run build
