@@ -21,9 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { useNuxtApp } from '#app';
 import type QRCodeStyling from 'qr-code-styling';
 
-// QR Code Image
-import QRCodeImage from './gosqas_main_logo_white_border_64BitEncodedPng.txt?raw' with { type: 'text' };
-
 // Styling for custom text
 const CUSTOM_TEXT_MAX_LENGTH = 100;
 const CUSTOM_TEXT_FONT = 'bold 20px Arial, sans-serif';
@@ -37,7 +34,14 @@ const URL_TEXT_COLOR = '#1E2019';
 const PADDING = 5; // Padding between text blocks and the QR code
 const QR_SCALE_WITH_CUSTOM_TEXT = 0.9; // Scale down QR code when custom text is shown
 
-
+function normalizeUrl(url: string): string { 
+  /* when dev is deployed the frontend url is `/` which is why there is a bug for qrCode on dev */ 
+  if(/^https?:\/\//i.test(url)){
+    return url;
+  }
+  const cleanPath = url.replace(/^\//, "");
+  return `$window.location.origin/${cleanPath}`;
+}
 
 export default {
   props: {
@@ -55,7 +59,6 @@ export default {
         width: 322,
         height: 361,
         type: 'canvas',
-        image: "data:image/png;base64," + QRCodeImage,
         data: this.url,
         imageOptions: {
           hideBackgroundDots: false,
@@ -92,7 +95,7 @@ export default {
   watch: {
     url(newValue: string | undefined) {
       if (newValue) {
-        this.options.data = newValue;
+        this.options.data = normalizeUrl(newValue);
         this.qrCodeStyling?.update(this.options);
       }
     }
