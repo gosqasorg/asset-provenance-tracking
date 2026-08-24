@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Something we need everyone to run
+git update-index --skip-worktree packages/backend/local.settings.json
+
 #############
 # Ensure correct node version is in use
 #############
