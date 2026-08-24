@@ -1,14 +1,17 @@
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
+
 import { webcrypto as crypto } from 'node:crypto';
+import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
+
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
+import { contentModerationImageCheck } from './httpTriggerUtils';
 import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
-import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -479,6 +482,40 @@ export async function validateJSON(json: any) {
     } catch (e) {
         console.log("Format of JSON provided was invalid.")
         return false;
+    }
+}
+
+async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
+    let response = undefined;
+    const MAX_RETRIES = 3;
+
+    for (let i = 1; i <= MAX_RETRIES; i++) {
+        response = undefined //resets each retry attempt
+        try {
+            if (typeof formData !== 'undefined') {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                response = await fetch(`${url}`, {
+                    method: "GET"
+                });
+            }
+
+            if (response !== undefined && response.ok) {
+                return response;
+            }
+        } catch (e) {
+            context.log(`Fetch attempt failed: ${url}: ` + e);
+        }
+    }
+
+    if (response !== undefined && !response.ok) {
+        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+    } else {
+        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
 }
 
@@ -955,8 +992,10 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
     }
 }
 
-// Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    /*
+    // Send to All Children: Send new record's tags and description to all children
+    */
     const baseUrl = process.env['backend_url'];
 
     try {
@@ -1013,8 +1052,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     }
 }
 
-// Recall: Pin and send new record entry to all children
 export async function recall(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    /*
+    // Recall: Pin and send new record entry to all children
+    */
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
@@ -1486,40 +1527,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
     }
 }
 
-async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
-    let response = undefined;
-    const MAX_RETRIES = 3;
-
-    for (let i = 1; i <= MAX_RETRIES; i++) {
-        response = undefined //resets each retry attempt
-        try {
-            if (typeof formData !== 'undefined') {
-                response = await fetch(`${url}`, {
-                    method: "POST",
-                    body: formData,
-                });
-            } else {
-                response = await fetch(`${url}`, {
-                    method: "GET"
-                });
-            }
-
-            if (response !== undefined && response.ok) {
-                return response;
-            }
-        } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
-        }
-    }
-
-    if (response !== undefined && !response.ok) {
-        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
-    } else {
-        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
-    }
-}
-
 
 /* ----- True Handlers ----- */
 
@@ -1747,6 +1754,52 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
+// --- GETs --- //
+
+app.get("getProvenance", {
+    authLevel: 'anonymous',
+    route: 'provenance/{deviceKey}',
+    handler: getProvenance,
+})
+
+app.get("getAttachment", {
+    authLevel: 'anonymous',
+    route: 'attachment/{deviceKey}/{attachmentID}',
+    handler: getAttachment,
+})
+
+app.get("getAttachmentName", {
+    authLevel: 'anonymous',
+    route: 'attachment/{deviceKey}/{attachmentID}/name',
+    handler: getAttachmentName,
+})
+
+app.get("getVersion", {
+    authLevel: 'anonymous',
+    route: 'version',
+    handler: getVersion
+})
+
+app.get('getNewDeviceKey', {
+    authLevel: 'anonymous',
+    route: 'getNewDeviceKey',
+    handler: getNewDeviceKey,
+})
+
+app.get('getPendingVerification', {
+    authLevel: 'anonymous',
+    route: 'pendingVerification',
+    handler: getPendingVerification,
+})
+
+app.get("upgradeProvenance", {
+    authLevel: 'anonymous',
+    route: 'upgrade/{deviceKey}',
+    handler: upgradeProvenanceHandler
+})
+
+// --- POSTs --- //
+
 app.post("createRecord", {
     authLevel: 'anonymous',
     route: 'createRecord',
@@ -1765,28 +1818,10 @@ app.post('deleteNotificationEmail', {
     handler: deleteNotificationEmail,
 })
 
-app.get("getProvenance", {
-    authLevel: 'anonymous',
-    route: 'provenance/{deviceKey}',
-    handler: getProvenance,
-})
-
 app.post("postProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
     handler: postProvenance
-})
-
-app.get("getAttachment", {
-    authLevel: 'anonymous',
-    route: 'attachment/{deviceKey}/{attachmentID}',
-    handler: getAttachment,
-})
-
-app.get("getAttachmentName", {
-    authLevel: 'anonymous',
-    route: 'attachment/{deviceKey}/{attachmentID}/name',
-    handler: getAttachmentName,
 })
 
 app.get("getStatistics", {
@@ -1799,18 +1834,6 @@ app.post('postEmail', {
     authLevel: 'anonymous',
     route: 'feedbackVolunteer',
     handler: postEmail,
-})
-
-app.get("getVersion", {
-    authLevel: 'anonymous',
-    route: 'version',
-    handler: getVersion
-})
-
-app.get('getNewDeviceKey', {
-    authLevel: 'anonymous',
-    route: 'getNewDeviceKey',
-    handler: getNewDeviceKey,
 })
 
 app.post('sendToAllChildren', {
@@ -1843,20 +1866,8 @@ app.post("postNotificationEmail", {
     handler: postNotificationEmail
 })
 
-app.get('getPendingVerification', {
-    authLevel: 'anonymous',
-    route: 'pendingVerification',
-    handler: getPendingVerification,
-})
-
 app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
-})
-
-app.get("upgradeProvenance", {
-    authLevel: 'anonymous',
-    route: 'upgrade/{deviceKey}',
-    handler: upgradeProvenanceHandler
 })
