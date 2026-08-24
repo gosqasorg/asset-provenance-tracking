@@ -1,13 +1,6 @@
 import sharp from 'sharp'
 
-// --- Setup Credentials --- //
-
-// dotenv specific imports
-import { config } from 'dotenv';          
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';           // this file
-const the_dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: join(the_dirname, '.env') });
+// --- Setup --- //
 
 // Setup credentials
 let KEY1 = process.env.KEY1
@@ -26,7 +19,37 @@ if(! [KEY1,
 
 // --- Code --- //
 
-export async function convertFileForSharp(inputFileObject: File): Buffer {
+export async function isImage(someBlob, context) {
+  context.log('Entering isImage')
+
+  let theBuffer = await convertFileForSharp(someBlob)
+  let magic_bytes = theBuffer.slice(0, 25).toString('hex')
+
+  if(magic_bytes.slice(0, 6) == 'ffd8ff') {
+    return true  // jpg
+  } else if(magic_bytes.slice(0, 8) == '89504e47') {
+    return true  // png
+  } else if(magic_bytes.slice(0, 8) == '47494638') {
+    return true  // gif
+  } else if(magic_bytes.slice(0, 8) == '52494646') {
+    return true  // webp
+  } else if(magic_bytes.slice(0, 8) == '49492a00') {
+    return true  // tiff, little-endian
+  } else if(magic_bytes.slice(0, 8) == '4d4d002a') {
+    return true  // tiff, big-endian
+  } else if(magic_bytes.slice(0, 2) == '424d') {
+    return true  // bmp
+  } else if(magic_bytes.slice(0, 25) == '0000001C6674797061766966') {
+    return true  // avif
+  } else if(magic_bytes.slice(0, 25) == '0000001C6674797068656963') {
+    return true  // heic (iPhone)
+  }
+
+  context.log('Leaving isImage. Attachment is not an image')
+  return false;
+}
+
+export async function convertFileForSharp(inputFileObject: File) {
   if (! (inputFileObject instanceof File) ){ throw new Error('Not got: File') }
 
   console.log(inputFileObject.constructor.name, Object.keys(inputFileObject))
@@ -36,7 +59,7 @@ export async function convertFileForSharp(inputFileObject: File): Buffer {
   return theBuffer
 }
 
-export async function downscaleIfApplicableAndBase64Encode(inputFileBuffer: Buffer): string {
+export async function downscaleIfApplicableAndBase64Encode(inputFileBuffer: Buffer) {
     if(! (inputFileBuffer instanceof Buffer) ){ throw new Error('not got: buffer') }
     try {
         let base64EncodedString = await (await sharp(inputFileBuffer)
@@ -95,10 +118,14 @@ export async function checkImageAgainstContentModerationAPI(base64File: string/*
     return total_score > 0 ? 'Fail' : 'Pass'    
 }
 
-// returns 'Pass' or 'Fail'
-export async function contentModerationImageCheck(inputFileObject: File): string {
+export async function imageIsNotPermitted(inputFileObject: File, context) {
+  context.log('Entering imageIsNotPermitted')
   let buffer = await convertFileForSharp(inputFileObject)
   let base64EncodedString: string = await downscaleIfApplicableAndBase64Encode(buffer)
   let contentModerationResult = await checkImageAgainstContentModerationAPI(base64EncodedString)
-  return contentModerationResult;
+  context.log(`Leaving imageIsNotPermitted. Result: ${
+    contentModerationResult == 'Fail' ? 'Flagged.' : 'Not flagged.'
+  }`)
+
+  return contentModerationResult == 'Fail' ? true : false;
 }
