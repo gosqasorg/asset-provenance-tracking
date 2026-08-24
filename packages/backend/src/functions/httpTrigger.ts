@@ -64,7 +64,7 @@ interface NamedBlob {
 }
 
 
-/*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts  ============*/
+/*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts)  ============*/
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -206,6 +206,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
 export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
 }
+
 
 /* ===============================================================
    ============= Section 1 of 2: Time Triggers ===================
