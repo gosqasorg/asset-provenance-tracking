@@ -7,10 +7,10 @@ let KEY1 = process.env.KEY1
 let ENDPOINT = process.env.ENDPOINT
 
 // Check credentials
-if(! [KEY1, 
-      ENDPOINT
-     ].every(Boolean)
-) { console.error('Error: credentials not set'); process.exit(1) }
+if(![KEY1,  ENDPOINT].every(Boolean)) {
+  console.error('Error: credentials not set'); 
+  throw new Error('Error: Content Moderation Credentials not set.') 
+}
 
 
 // --- Code --- //

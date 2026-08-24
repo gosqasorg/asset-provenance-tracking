@@ -10,7 +10,7 @@ async function readTheFile(inputFileName: String) {
   return theFileObject
 }
 
-describe('MicroTestLand', () => {
+describe('Tests for httpTriggerUtils', () => {
   it('Determine whether file is image', async () => {
     let fileObject, classification;
 
