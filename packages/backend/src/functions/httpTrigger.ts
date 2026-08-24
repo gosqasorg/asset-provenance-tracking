@@ -10,7 +10,7 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { contentModerationImageCheck } from './httpTriggerUtils';
+import { isImage, imageIsNotPermitted } from './httpTriggerUtils';
 import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
 
 // To deploy this project from the command line, you need:
@@ -317,7 +317,6 @@ app.timer('updateRecordCounts', {
 /* ===============================================================
    ============= Section 2 of 2: API =============================
 /* =============================================================== */
-
 
 /*==============  Core Utility Functions (to remain in this file)  ============*/
  
@@ -733,6 +732,50 @@ async function createChildren(context, description: string, number_of_children: 
 
 /* ----- Pseudo handlers (to be split into handler/operator) ----- */
 
+// --- GETs --- //
+
+export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { data, contentType, filename } = decryptedBlob;
+    const headers = new Headers();
+    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
+    if (contentType) { headers.append("Content-Type", contentType); }
+    if (filename) {
+        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+        headers.append("Attachment-Name", filename);
+    }
+
+    return { body: data, headers };
+};
+
+export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const decryptedBlob = await getDecryptedBlob(request, context);
+    if (!decryptedBlob) { return { status: 404 } }
+
+    const { filename } = decryptedBlob;
+    return { body: filename };
+};
+
+export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    try{
+        const key = await makeEncodedDeviceKey();
+        return {
+            status: 200, 
+            body: key,  //makeEncodedDeviceKey(),
+            headers: { "Content-Type": "text/plain" }
+        }
+    } catch(error) {
+        console.error('getNewDeviceKey: Failed to create a new key', error.message)
+        return {
+            status: 500,
+            body: "",
+            headers: { "Content-Type": "text/plain" }
+        }
+    }
+}
+
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
@@ -761,89 +804,6 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
 }
-
-export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
- 
-    await containerClient.createIfNotExists();
-
-    const formData = await request.formData();
-
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        console.log("attach type: " + typeof(attach))
-        attachments.push({ blob: attach, name: attach.name });
-    }
-
-    if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
-
-        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
-            return { status: 304 };
-        }
-    }
-
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    if (body.oversizedAttachments) {
-        return {
-            status: 400,
-            jsonBody: {
-                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
-                oversizedAttachments: body.oversizedAttachments,
-                attachments: body.attachments
-            }
-        }
-    }
-
-    try {
-        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
-    } catch(error) {
-        return {
-            status: error.statusCode,
-            jsonBody: {
-                error: 'Failed to send email'
-            }
-        }
-    }
-  
-    return { jsonBody: body ?? { converted: true}};
-}
-
-export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
-
-    const { data, contentType, filename } = decryptedBlob;
-    const headers = new Headers();
-    headers.append("Access-Control-Allow-Headers", "Attachment-Name");
-    if (contentType) { headers.append("Content-Type", contentType); }
-    if (filename) {
-        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-        headers.append("Attachment-Name", filename);
-    }
-
-    return { body: data, headers };
-};
-
-export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
-
-    const { filename } = decryptedBlob;
-    return { body: filename };
-};
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // TODO: need to create below env variables for this code to work, in testing it runs
@@ -974,22 +934,80 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
-export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    try{
-        const key = await makeEncodedDeviceKey();
-        return {
-            status: 200, 
-            body: key,  //makeEncodedDeviceKey(),
-            headers: { "Content-Type": "text/plain" }
+
+// --- POSTS --- //
+
+export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    await containerClient.createIfNotExists();
+    const formData = await request.formData();
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
+
+    // --- Guard Clauses --- //
+
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
+
+    const provenanceRecord = formData.get("provenanceRecord");
+    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+
+    const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
+
+
+    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+    const timestamp = new Date().getTime();
+    const attachments = new Array<NamedBlob>();
+    for (const attach of formData.values()) {
+        if (typeof attach === 'string') continue;
+        context.log("attach type: " + typeof(attach))
+
+        
+        // Silently skip if not permitted
+        context.log('Checking attachment')
+        if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
+            context.log(`Content Moderation flagged image named: ${attach.name}`)
+            continue
         }
-    } catch(error) {
-        console.error('getNewDeviceKey: Failed to create a new key', error.message)
-        return {
-            status: 500,
-            body: "",
-            headers: { "Content-Type": "text/plain" }
+
+        context.log('Image is permitted')
+        
+        attachments.push({ blob: attach, name: attach.name });
+    }
+
+    if (attachments.length > 0) {
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+            return { status: 304 };
         }
     }
+
+    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    if (body.oversizedAttachments) {
+        return {
+            status: 400,
+            jsonBody: {
+                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                oversizedAttachments: body.oversizedAttachments,
+                attachments: body.attachments
+            }
+        }
+    }
+
+    try {
+        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+    } catch(error) {
+        return {
+            status: error.statusCode,
+            jsonBody: {
+                error: 'Failed to send email'
+            }
+        }
+    }
+  
+    return { jsonBody: body ?? { converted: true}};
 }
 
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -1530,11 +1548,16 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
 
 /* ----- True Handlers ----- */
 
+// --- GETs --- //
+
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const body = await upgradeProvenance(containerClient, deviceKey);
     return { jsonBody: body ?? { "already-converted": true} };
 }
+
+
+// --- POSTs --- //
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
