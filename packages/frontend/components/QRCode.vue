@@ -23,6 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import { useNuxtApp } from '#app';
 import type QRCodeStyling from 'qr-code-styling';
 
+// QR Code Image
+import QRCodeImage from './gosqas_main_logo_white_border_64BitEncodedPng.txt?raw' with { type: 'text' };
+
 // Styling for custom text
 const CUSTOM_TEXT_MAX_LENGTH = 100;
 const CUSTOM_TEXT_FONT = 'bold 20px Arial, sans-serif';
@@ -62,7 +65,12 @@ export default {
         width: 322,
         height: 361,
         type: 'canvas',
+        image: "data:image/png;base64," + QRCodeImage,
         data: this.url,
+        qrOptions: {
+          typeNumber: 10,
+          errorCorrectionLevel: 'H'
+        },
         imageOptions: {
           hideBackgroundDots: false,
           imageSize: 1,
