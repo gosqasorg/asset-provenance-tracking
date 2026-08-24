@@ -36,7 +36,7 @@ export async function convertFileForSharp(inputFileObject: File): Buffer {
   return theBuffer
 }
 
-export async function downscaleIfApplicableAndBase64Encode(inputFileBuffer: Buffer): String {
+export async function downscaleIfApplicableAndBase64Encode(inputFileBuffer: Buffer): string {
     if(! (inputFileBuffer instanceof Buffer) ){ throw new Error('not got: buffer') }
     try {
         let base64EncodedString = await (await sharp(inputFileBuffer)
@@ -93,4 +93,12 @@ export async function checkImageAgainstContentModerationAPI(base64File: string/*
     }
 
     return total_score > 0 ? 'Fail' : 'Pass'    
+}
+
+// returns 'Pass' or 'Fail'
+export async function contentModerationImageCheck(inputFileObject: File): string {
+  let buffer = await convertFileForSharp(inputFileObject)
+  let base64EncodedString: string = await downscaleIfApplicableAndBase64Encode(buffer)
+  let contentModerationResult = await checkImageAgainstContentModerationAPI(base64EncodedString)
+  return contentModerationResult;
 }

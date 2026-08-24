@@ -38,11 +38,7 @@ describe('MicroTestLand', () => {
   it('AzureContentSafetyAPITest', async () => {
 
     let fileObject = await setup()
-
-    let buffer = await htUtils.convertFileForSharp(fileObject)
-    let base64File = await htUtils.downscaleIfApplicableAndBase64Encode(buffer)
-    let response = await htUtils.checkImageAgainstContentModerationAPI(base64File)
-
+    let response = await htUtils.contentModerationImageCheck(fileObject)
     expect(response).toBe('Pass')
 
   });
