@@ -11,7 +11,7 @@ import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@a
 import './getStats.js';
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { isImage, imageIsNotPermitted } from './httpTriggerUtils';
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 
 // To deploy this project from the command line, you need:
