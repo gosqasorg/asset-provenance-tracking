@@ -9,7 +9,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest",
-    "coverage": "vitest run --coverage --changed=origin/main",
+    "coverage": "vitest run --coverage",
     "update-version": "tsx ./scripts/updateVersion.ts",
     "build-with-version": "npm run update-version && npm run build",
     "test-headless": "vitest run"
