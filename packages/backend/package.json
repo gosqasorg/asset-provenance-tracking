@@ -16,7 +16,7 @@
     "microtest": "npx vitest run test/UnitTests/microtest",
     "unittest": "npx vitest run test/UnitTests",
     "api_integration_tests": "npx vitest run test/IntegrationTests",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage --coverage.changed"
   },
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
