@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 ./stop.sh
-
-#npm i
+npm install
 ./scripts/start-azurite.sh &
 ./scripts/start-shell.sh &

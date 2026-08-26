@@ -4,9 +4,9 @@ Note: All icons, images, and logos are © 2024 Global Open Source Quality Assura
 We are committed to keeping our code open source, but all GOSQAS and GDT 
 branding, including logos, is subject to the copyright above.
 
-## A Live MVP
+## Try It Out
 
-We are developing a Minimal Viable Product. Although still a work in progress, you can try it out here:
+GOSQAS is in production. Our API and Notification System are complete. Try it out here:
 
 [https://gosqas.org/](https://gosqas.org/)
 
