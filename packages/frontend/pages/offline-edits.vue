@@ -76,14 +76,6 @@ while offline.
         </div>
     </div>
 
-    <!----------------Syncing Keys Banner-------------------->
-    <div v-for="(key, index) in syncingKeys">
-        <div class="key-box sync" style="border: solid; border-width: 2px; border-color: #efcc9b;">
-            <p style="font-size: 17px">{{ key }}</p>
-            <div class="status-bubble" style="background-color: #df892a;">Syncing</div>
-        </div>
-    </div>
-
     <!------------------Failed Keys Banner------------------->
     <div v-for="(key, index) in failedKeys">
         <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
@@ -109,7 +101,6 @@ data() {
         dismissSingleEditPopUp: false,
         offlineKeys: [] as string[],
         fulfilledKeys: [] as string[],
-        syncingKeys: [] as string[],
         failedKeys: [] as string[],
 	}
 },
@@ -118,7 +109,6 @@ async mounted() {
     try {
         this.getFailedKeys();
         this.getOfflineKeys();
-        this.getSyncingKeys();
         this.getFulfilledKeys();
         this.clearOneEdit();
     } catch (error) {
@@ -147,15 +137,6 @@ methods: {
         for (const key of fulfilled.split(",")) {
             if (key !== "{}") {
                 this.fulfilledKeys.push(key) 
-            } 
-        }
-    },
-    getSyncingKeys() {
-        // Get all keys in the stash that are syncing
-        let syncing = (localStorage.getItem('gdt-stash-syncing') || "{}")
-        for (const key of syncing.split(",")) {
-            if (key !== "{}") {
-                this.syncingKeys.push(key)  
             }
         }
     },
