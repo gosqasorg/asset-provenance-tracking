@@ -1718,11 +1718,11 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
     const stageResponse = await fetch(staging);
     const prodResponse = await fetch(production);
 
-    if (frontendUrl.includes('dev') || frontendUrl.includes('red') && prodResponse.status != 200) {
+    if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
         await livenessCheckEmailer('Production')
         }
 
-    if (frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/') && stageResponse.status !=200) {
+    if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
         await livenessCheckEmailer('Staging')
         }
 }
