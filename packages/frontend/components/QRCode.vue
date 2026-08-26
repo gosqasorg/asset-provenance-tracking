@@ -22,7 +22,7 @@ import { useNuxtApp } from '#app';
 import type QRCodeStyling from 'qr-code-styling';
 
 // QR Code Image
-import QRCodeImage from './gosqas_main_logo_white_border_64BitEncodedPng.txt?raw' with { type: 'text' };
+import QRCodeImage from './gosqas_logo_64bitEncodedPng_for_qr.txt?raw' with { type: 'text' };
 
 // Styling for custom text
 const CUSTOM_TEXT_MAX_LENGTH = 100;
@@ -48,18 +48,20 @@ export default {
   },
 
   data() {
+    console.log(window.location.href)
     return {
+      theUrl: window.location.href,
       qrCode: null as HTMLElement | null,
       qrCodeStyling: null as QRCodeStyling | null,
       options: {
-        width: 322,
-        height: 361,
+        width: 360,
+        height: 360,
         type: 'canvas',
         image: "data:image/png;base64," + QRCodeImage,
-        data: this.url,
+        data: window.location.href,
         imageOptions: {
           hideBackgroundDots: false,
-          imageSize: 1,
+          imageSize: 0.8,
           margin: 0,
           crossOrigin: 'Anonymous'
         },
@@ -254,7 +256,7 @@ export default {
     },
 
     downloadQRCodeWithText(customText?: string) {
-      console.log(this.url)
+      console.log(this.theUrl)
       setTimeout(() => {
         // Get the QR code canvas
         const qrCanvas = this.$refs.qrCode.querySelector('canvas');
@@ -267,7 +269,7 @@ export default {
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = 'GDT-QR-' + this.url.split('/').reverse()[0] + '.png';
+          link.download = 'GDT-QR-' + this.theUrl.split('/').reverse()[0] + '.png';
           link.click();
           URL.revokeObjectURL(url); // cleanup to free up blob data in memory
         });
