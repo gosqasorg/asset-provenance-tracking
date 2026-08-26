@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -329,22 +329,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             } catch (e) {
                 let errorMessage = 'No provenance record found';
                 let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
-
-                // If we're offline stash the record and display the stashed message
-                if (offlineModeFeatureFlag.flag) {
-                    const formData = new FormData();
-                    formData.append("provenanceRecord", JSON.stringify(record));
-                    const checkOffline = await offlineDetectAndStash(this.recordKey, formData);
-
-                    if (checkOffline === 202) {
-                        errorMessage = 'Status 202: User is offline but the record has been stashed';
-                        snackbarType = "success";
-                    } else if (checkOffline === 507) {
-                        errorMessage = 'Storage limit has been reached, record not stashed';
-                    }
-                }
                 
-                // Otherwise the record doesn't exist
                 this.$snackbar.add({
                     type: snackbarType,
                     text: errorMessage
