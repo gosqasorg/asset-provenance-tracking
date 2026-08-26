@@ -13,6 +13,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
+// TODO: Figure out TagsColor to be more contrasting to the background
 
 <template>
     <!-- Email notifications modal -->
@@ -49,12 +50,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     />
                     <!-- TODO: Container for selected tags -->
                     <div class="tag-container">
-                        <div v-for="(item, index) in tags" 
-                        :key="index" 
+                        <div v-for="(item) in tags" 
+                        :key="item" 
                         class="chip" 
                         :style="{ backgroundColor: getColorForTag(item), color: textColorForTag(item) }">
                             <span>{{ item }}</span>
-                            <button class="close-btn" @click="removeTag(index)">x</button>
+                            <button class="close-btn" @click="removeTag(item)">x</button>
                         </div>                    
                     </div>
                 </div>
@@ -63,9 +64,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     <label for="tag">Suggested tags</label>
                     <!-- TODO: Selectable Suggested Tags -->
                      <div class="selectable-tag-container">
-                        <div v-for="(item, index) in TagName" :key="index" class="chip">
-                            <span>{{ item }}</span>
-                        </div>                    
+                        <button 
+                        type="button"
+                        class="suggested-chip"
+                        v-for="item in suggestedTags"
+                        :key="item"
+                        :class="{ 'suggested-chip-selected': tags.includes(item)}"
+                        :style="tags.includes(item) 
+                        ? {backgroundColor: getColorForTag(item), color: textColorForTag(item)} 
+                        : {borderColor: getColorForTag(item), color: getColorForTag(item)}"
+                        @click="toggleSuggestedTag(item)"
+                        >
+                            {{ item }}
+                        </button>               
                     </div>
                 </div>
 
@@ -149,10 +160,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-    import { getPendingVerification, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
+    import { getPendingVerification, getProvenance, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
      import { TagName } from '~/utils/tags';
     import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
     import { getColorForTag, textColorForTag } from '~/utils/colorTag';
+import { record } from 'zod';
 
     export default {
         data() {
@@ -233,6 +245,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (this.autoToken && this.autoCode) {
                 await this.autoVerify();
             } 
+            await this.loadSuggestedTags();
         },
 
         methods: {
@@ -372,8 +385,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 this.$emit('verification-completed'); // clearing data after verification
             },
-            loadSuggestedTags(){
+            async loadSuggestedTags(){
                 // TODO: Get Tags from provenance
+                const staticTags = Object.values(TagName) as string[];
+
+                // Grab the used tags from the record
+                let recordTags: string[] = [];
+                try {
+                    const deviceKey = this.$route.params.deviceKey as string;
+                    if (deviceKey) {
+                        const provenance = await getProvenance(deviceKey);
+                        const seen = new Set<string>(); // only want the unique tags
+
+                        // loop through records in provenance and get their tags
+                        provenance.forEach((entry: any) => {
+                            (entry.record?.tags || []).array.forEach((t: string) => {
+                                seen.add(t.toLowerCase())
+                            });
+                        });
+                        recordTags = Array.from(seen);
+                    }
+                } catch (error) {
+                    console.error(' Failed to load suggested tags from provenance: ', error);
+                }
+                const merged = new Set([...staticTags, ...recordTags]);
+                this.suggestedTags = Array.from(merged);
             },
             cleanArray(array: string[]) {
                 // Remove any tags with forbidden words in them
@@ -407,8 +443,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             },
 
             // TODO: add logic to deselect from suggested tags list, if selected tag is one of them
-            removeTag(index: number) {
-                this.tags.splice(index, 1);
+            removeTag(tag: string) {
+                const idx = this.tags.indexOf(tag);
+                this.tags.splice(idx, 1);
+            },
+
+            toggleSuggestedTag(tag: string) {
+                const idx = this.tags.indexOf(tag);
+                if (idx === -1){
+                    this.addTag(tag);
+                } else {
+                    this.tags.splice(idx, 1);
+                }
             }
         }
     }
@@ -566,6 +612,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     
 }
 
+.suggested-chip {
+    padding: 5px 10px;
+    border-radius: 15px;
+    border: 2px solid;
+    background: transparent;
+    font-size: 14px;
+    cursor: pointer;
+    text-transform: capitalize;
+}
+
+.suggested-chip-selected {
+    border-color: transparent;
+}
+
 @media (prefers-color-scheme: dark) {
     /* // modal background, text color, button colors, border colors */
     .content {
@@ -623,6 +683,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     .resend-container p {
         color: #FFFFFF
     }
+
+    /* Work in prog */
+    /* .suggested-chip:not(.suggested-chip-selected) {
+        background-color: #e5ecf0;
+    } */
 
 }
 
