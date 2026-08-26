@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Something we need everyone to run
+git update-index --skip-worktree packages/backend/local.settings.json
+
 #############
 # Ensure correct node version is in use
 #############
@@ -28,9 +31,11 @@ nvm alias default 22
 
 # 2. Start frontend and backend
 cd packages/backend
+npm run build
 ./start.sh &
 cd -
 cd packages/frontend
+npm run build
 ./start.sh &
 cd -
 
