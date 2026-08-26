@@ -1718,10 +1718,12 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
     const stageResponse = await fetch(staging);
     const prodResponse = await fetch(production);
 
+    // On dev and checking if production is down then send email stating prod is down
     if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
         await livenessCheckEmailer('Production')
         }
 
+    // On prod and checking if dev is down then send email staing dev is down
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
         await livenessCheckEmailer('Staging')
         }
