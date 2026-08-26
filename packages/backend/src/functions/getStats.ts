@@ -7,7 +7,7 @@ const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
 if(![directoryId, appRegistrationId, secretValue, workspaceId].every(Boolean)) {
     console.error('getStats Error: credentials not set'); 
-    throw new Error('Error: getStats credentials not set not set.') 
+    //throw new Error('Error: getStats credentials not set not set.') 
 }
 
 const tokenResponse = await fetch(
