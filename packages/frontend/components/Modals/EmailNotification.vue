@@ -13,8 +13,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
-// TODO: Figure out TagsColor to be more contrasting to the background
-
 <template>
     <!-- Email notifications modal -->
     <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
@@ -45,24 +43,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         class="form-control"
                         v-model="tag"
                         @keyup.enter="addTag(tag)" 
-                        placeholder="Type to search or add tags...."
+                        placeholder="Type to add tags...."
                         aria-label="Tag Selection"
                     />
-                    <!-- TODO: Container for selected tags -->
+                    
+                </div>
+
+                <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
+
+                <div>
                     <div class="tag-container">
-                        <div v-for="(item) in tags" 
-                        :key="item" 
-                        class="chip" 
+                        <div v-for="(item) in tags"
+                        :key="item"
+                        class="chip"
                         :style="{ backgroundColor: getColorForTag(item), color: textColorForTag(item) }">
-                            <span>{{ item }}</span>
-                            <button class="close-btn" @click="removeTag(item)">x</button>
+                            {{ item }}
+                            <button class="close-btn" @click="removeTag(item)"><i class="uit uit-multiply"></i></button>
                         </div>                    
                     </div>
                 </div>
 
                 <div>
                     <label for="tag">Suggested tags</label>
-                    <!-- TODO: Selectable Suggested Tags -->
                      <div class="selectable-tag-container">
                         <button 
                         type="button"
@@ -70,9 +72,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         v-for="item in suggestedTags"
                         :key="item"
                         :class="{ 'suggested-chip-selected': tags.includes(item)}"
-                        :style="tags.includes(item) 
-                        ? {backgroundColor: getColorForTag(item), color: textColorForTag(item)} 
-                        : {borderColor: getColorForTag(item), color: getColorForTag(item)}"
+                        :style="tags.includes(item)
+                        ? {backgroundColor: getColorForTag(item), color: textColorForTag(item)}
+                        : {borderColor: getColorForTag(item)}"
                         @click="toggleSuggestedTag(item)"
                         >
                             {{ item }}
@@ -178,7 +180,7 @@ import { record } from 'zod';
                 isSubmitting: false,
                 isResending: false,
                 token: '', 
-                tags: ['recieved'],
+                tags: [] as string[],
 
                 tagError: null as string | null,
                 suggestedTags: [] as string[],
@@ -386,7 +388,7 @@ import { record } from 'zod';
                 this.$emit('verification-completed'); // clearing data after verification
             },
             async loadSuggestedTags(){
-                // TODO: Get Tags from provenance
+                // Get the static suggested tags used in the create record entry form
                 const staticTags = Object.values(TagName) as string[];
 
                 // Grab the used tags from the record
@@ -397,9 +399,9 @@ import { record } from 'zod';
                         const provenance = await getProvenance(deviceKey);
                         const seen = new Set<string>(); // only want the unique tags
 
-                        // loop through records in provenance and get their tags
+                        // loop through records in provenance and grab their tags, adding them to the seen set
                         provenance.forEach((entry: any) => {
-                            (entry.record?.tags || []).array.forEach((t: string) => {
+                            (entry.record?.tags || []).forEach((t: string) => {
                                 seen.add(t.toLowerCase())
                             });
                         });
@@ -418,7 +420,6 @@ import { record } from 'zod';
                 return cleanedArray;
             },
 
-            // TODO: Add logic to check if tag is apart of suggested tags list
             addTag(tag: string){
                 this.tagError = null;
 
@@ -442,7 +443,6 @@ import { record } from 'zod';
                 this.tag = '';
             },
 
-            // TODO: add logic to deselect from suggested tags list, if selected tag is one of them
             removeTag(tag: string) {
                 const idx = this.tags.indexOf(tag);
                 this.tags.splice(idx, 1);
@@ -497,9 +497,8 @@ import { record } from 'zod';
   display: flex;
   flex-direction: column;
   gap: 14px;
-  
-  /* text-wrap: balance; */
 }
+
 
 .form-control {
     border: 1px solid #CBD5E1;
@@ -588,17 +587,20 @@ import { record } from 'zod';
     align-items: center;
     gap: 6px;
     padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 14px;
+    border-radius: 10px;
+    font-size: 16px;
     text-transform: capitalize;
 }
 
 .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     color: inherit;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 10px;
     line-height: 1;
     padding: 0;
 }
@@ -614,10 +616,11 @@ import { record } from 'zod';
 
 .suggested-chip {
     padding: 5px 10px;
-    border-radius: 15px;
-    border: 2px solid;
+    border-radius: 10px;
+    border: 3px solid;
     background: transparent;
-    font-size: 14px;
+    color: inherit;
+    font-size: 16px;
     cursor: pointer;
     text-transform: capitalize;
 }
@@ -627,7 +630,6 @@ import { record } from 'zod';
 }
 
 @media (prefers-color-scheme: dark) {
-    /* // modal background, text color, button colors, border colors */
     .content {
         background-color: #353535;
         border: 2px solid #CCECFD;
@@ -684,10 +686,10 @@ import { record } from 'zod';
         color: #FFFFFF
     }
 
-    /* Work in prog */
-    /* .suggested-chip:not(.suggested-chip-selected) {
-        background-color: #e5ecf0;
-    } */
+    .suggested-chip:not(.suggested-chip-selected) {
+        background-color: #454545;
+        color: #fff;
+    }
 
 }
 
