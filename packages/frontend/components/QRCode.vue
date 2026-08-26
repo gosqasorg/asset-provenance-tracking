@@ -63,6 +63,10 @@ export default {
           margin: 0,
           crossOrigin: 'Anonymous'
         },
+        qrOptions: {
+          typeNumber: 6,
+          errorCorrectionLevel: 'H'
+        },
         dotsOptions: {
           type: 'rounded',
           color: '#000000'
