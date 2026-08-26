@@ -257,16 +257,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     });
                 }
             } catch (error) {
-                let errorMessage;
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = error;
-                }
-
                 this.$snackbar.add({
                     type: 'error',
-                    text: `Error sending email: ${errorMessage}`
+                    text: `Error sending email: ${error instanceof Error ? error.message : error}`
                 });
             }
         },
