@@ -250,7 +250,7 @@ export default {
 
     downloadQRCode() {
       this.qrCodeStyling?.download({
-        name: 'vqr',
+        name: 'GDT-QR-' + this.theUrl.split('/').reverse()[0],
         extension: 'png'
       });
     },
