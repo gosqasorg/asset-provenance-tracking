@@ -1714,55 +1714,41 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
     const staging = 'https://red-stone-00f5d251e.5.azurestaticapps.net/'
     const production = 'https://blue-stone-05ede120f.5.azurestaticapps.net/'
     const frontendUrl = process.env['frontend_url']
+
+    const stageResponse = await fetch(staging);
+    const prodResponse = await fetch(production);
+
+    if (frontendUrl.includes('dev') || frontendUrl.includes('red') && prodResponse.status != 200) {
+        await livenessCheckEmailer('Production')
+        }
+
+    if (frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/') && stageResponse.status !=200) {
+        await livenessCheckEmailer('Staging')
+        }
+}
+
+export async function livenessCheckEmailer (str: string, context?: InvocationContext) {
+
     const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
 
-    if (frontendUrl === staging) {
-        const prodResponse = await fetch('production');
-        if (prodResponse.status != 200) {
-            try {
-                for (const email of emails) {
-                    const emailResponse = await sendEmail(
-                        process.env['SENDER_EMAIL'],
-                        email,
-                        'Important: Production Server Down',
-                        'Production server is down!',
-                        'GOSQAS DEVS',
-                        context
-                    )
-                if (emailResponse.status === "Failed") {
-                    throw emailResponse
-                    }
-                }
-            }
-            catch (error) {
-                console.log(error)
+    try {
+        for (const email of emails) {
+            const emailResponse = await sendEmail(
+                process.env['SENDER_EMAIL'],
+                email,
+                `Important: ${str} Server Down`,
+                `${str} server is down!`,
+                'GOSQAS DEVS',
+                context
+            )
+        if (emailResponse.status === "Failed") {
+            throw emailResponse
             }
         }
     }
-    if (frontendUrl === production) {
-        const stageResponse = await fetch(staging);
-        if (stageResponse.status != 200) {
-            try {
-                for (const email of emails) {
-                    const emailResponse2 = await sendEmail(
-                        process.env['SENDER_EMAIL'],
-                        email,
-                        'Important: Staging Server Down',
-                        'Staging server is down!',
-                        'GOSQAS DEVS',
-                        context
-                    )
-                if (emailResponse2.status === "Failed") {
-                    throw emailResponse2
-                    }
-                }
-            }
-            catch (error) {
-                console.log(error)
-            }
-        }
+    catch (error) {
+        context.error(error)
     }
-
 }
 
 // Once per day update the total record, record entry, and attachment counts
