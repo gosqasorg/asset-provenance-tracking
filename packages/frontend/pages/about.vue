@@ -56,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <div style="display: flex; flex-direction: row; gap: 30px; margin-top: 25px; overflow: auto; max-width: 100%;">
                 <img style="width: 235px; height: 235px; border-radius: 13px;" class="ieee-image" src="/IEEE.png">
                 <div class="ieee-button-container" style="display: flex; flex-direction: column; margin-left: 40px;">
-                    <h class="ieee-header" style="max-width: 100%; font-weight: 600; font-size: 20px; margin-bottom: 12px">GDT Papers Published in the Institute of Electrical and Electronics Engineers</h>
+                    <p class="ieee-header" style="max-width: 100%; font-weight: 600; font-size: 20px; margin-bottom: 12px">GDT Papers Published in the Institute of Electrical and Electronics Engineers</p>
                     <p class="ieee-text" style="margin-bottom: 12px;font-weight: 400; font-size: 20px;">Our paper "Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication" was recently published in the October 2025 publication of IEEE.</p>
                     <button class="ieee-button" style="width: fit-content; height: 65px; white-space: nowrap; padding: 10px 20px; border: solid; flex-shrink: 0; border-width: 2px; border-radius: 10px; margin-top: 10px" @click="getPDF()">Read the paper now</button>
                 </div>

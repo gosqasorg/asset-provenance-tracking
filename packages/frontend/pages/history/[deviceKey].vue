@@ -135,20 +135,29 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
             <div class="action-buttons">
 	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
-                <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
+				<ProvenanceDownloadDropdown
+					:downloadQRCodeMethod="downloadQRCode"
+					:downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+					:showWithTextMethod="showWithText"
+					:resetToDefaultMethod="resetToDefaultImage">
+				</ProvenanceDownloadDropdown>
+
 
                 <ProvenanceShareDropdown
-                  :deviceName="deviceRecord.deviceName"
-                  :description="deviceRecord.description"
-                  :fontSize="20"
-                  :height="66"
-                  :width="33"
-                  >
+                    :deviceName="deviceRecord.deviceName"
+                    :description="deviceRecord.description"
+                    :fontSize="20"
+                    :height="66"
+                    :width="33"
+	              >
                 </ProvenanceShareDropdown>
             </div>
 
             <!-- Email notifications modal -->
             <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
+
+			<!--QR Code modal-->
+			<ModalsQRCode :url="qrCodeUrl" />
 
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -247,6 +256,8 @@ data() {
         childKeys: [] as string[],
         _recordKey: "",
         valid: false,
+        customText: '',
+		showTextInput: false,
         // for email verification
         autoToken: '' as string,
         autoCode: '' as string,
@@ -259,7 +270,7 @@ data() {
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag) {
 			return true;
 		} else {
 			return false;
@@ -344,6 +355,18 @@ methods: {
 	downloadQRCode() {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
+	},
+	downloadQRCodeWithText(customText?: string) {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.downloadQRCodeWithText(customText);
+	},
+	showWithText(customText?: string) {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.showWithText(customText);
+	},
+	resetToDefaultImage() {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.resetToDefault();
 	},
 	addScrollListener() {
 	// When user scrolls, the nav bar is updated
@@ -509,11 +532,25 @@ methods: {
     width: 100% !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+	margin-right: 0;
 }
 
 .buttons-container :deep(.share-btn) {
     width: 100%;
 } */
+
+.action-buttons :deep(.buttons-container) {
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    margin-top: 20px !important;
+    margin-bottom: 0 !important;
+    margin-right: 0 !important;
+}
+
+.action-buttons :deep(.share-btn) {
+    width: 100%;
+}
+
 
 .notif-btn,
 .download-btn {
@@ -561,6 +598,10 @@ methods: {
   .download-btn
   {
     flex: 1 1 100%;
+  }
+
+  .action-buttons :deep(.buttons-container) {
+    flex: 1 1 100% !important;
   }
 }
 

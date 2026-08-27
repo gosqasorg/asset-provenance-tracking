@@ -12,8 +12,9 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, updateNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
+import './getStats.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -439,19 +440,24 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+  
+    return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    await containerClient.createIfNotExists();
+    const formData = await request.formData();
 
     try {
-        await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+        return await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
     } catch(error) {
         return {
-            status: error.statusCode,
+            status: error.statusCode || 500,
             jsonBody: {
                 error: 'Failed to send email'
             }
         }
     }
-  
-    return { jsonBody: body ?? { converted: true}};
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -485,7 +491,6 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // TODO: need to create below env variables for this code to work, in testing it runs
     const directory_id = process.env['AZURE_TENANT_ID'];
     const app_registration_id = process.env['AZURE_CLIENT_ID'];
     const secret_value = process.env['AZURE_CLIENT_SECRET'];
@@ -720,7 +725,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
             // Send record entry to all children
             while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
+                let key = keysToCheck[0] as string;
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
@@ -746,6 +751,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -813,6 +822,10 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     await addRecordWithTags(baseUrl, deviceKey, tags, description)
 
+    // Email users if they are subscribed to the group
+    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
     try {
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
@@ -824,7 +837,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
+                let key = keysToCheck[0] as string;
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
@@ -851,6 +864,10 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1069,7 +1086,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 }
 
 // setup TableClient for PendingVerifications
-// on success should call signupForNotifications - cause email is now verfies
+// on success should call signupForNotifications - cause email is now verfied
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         // get email and code
@@ -1118,7 +1135,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await updateNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags, true);
+        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags);
         // return response
 
         return {
@@ -1256,7 +1273,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
 
         await containerClient.createIfNotExists();
-        const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false); 
+        const response = await unsubscribeFromNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags); 
 
         context.log("Unsubscribed from the record");
         return response;
@@ -1281,7 +1298,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await updateNotifications(containerClient, calculateDeviceID, key, "email@email.foo", [], true)
+        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", []);
 
         // Access it
         const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
@@ -1700,6 +1717,10 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         body: formData,
     });
 
+    // If users are subscribed to notifications email them
+    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
     if (response.status !== 200) { return { status: response.status }; }
     let postProvResponse = await response.json();
 
@@ -1750,6 +1771,12 @@ app.post('deleteNotificationEmail', {
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
+    handler: getProvenance,
+})
+
+app.get("getProvenanceAlt", {
+    authLevel: 'anonymous',
+    route: 'getProvenance/{deviceKey}',
     handler: getProvenance,
 })
 
@@ -1847,4 +1874,10 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
+})
+
+app.post("notifySubscribers", {
+    authLevel: 'anonymous',
+    route: 'notifySubscribers/{deviceKey}',
+    handler: notifySubscribersHandler
 })
