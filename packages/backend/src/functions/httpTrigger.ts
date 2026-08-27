@@ -98,7 +98,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            return new Uint8Array;
+            throw new Error(`Invalid Key Length ${theKey.length}`);
     }
 }
 
@@ -316,6 +316,7 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
 }
 
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
+    if (request.params.deviceKey.length != 22) { return undefined; }
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
@@ -369,10 +370,10 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 /* ----- API Endpoints Section 1/2: Functions ----- */
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    if (deviceKey.length == 0) {
+    if (request.params.deviceKey.length != 22) {
         return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
     }
+    const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
@@ -401,10 +402,10 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
-    const deviceKey = decodeKey(request.params.deviceKey);
-    if (deviceKey.length == 0) {
+    if (request.params.deviceKey.length != 22) {
         return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
     }
+    const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
  
@@ -462,14 +463,19 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 }
 
 async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     const body = await convertLegacyProvenance(containerClient, deviceKey);
     return { jsonBody: body ?? { "already-converted": true} };
 }
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    if (!decryptedBlob) { return { status: 400, body: "HTTP Error 400: Invalid Key/AttachmentID Length." } }
 
     const { data, contentType, filename } = decryptedBlob;
     const headers = new Headers();
@@ -485,7 +491,7 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
 
 export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    if (!decryptedBlob) { return { status: 400, body: "HTTP Error 400: Invalid Key/AttachmentID Length." } }
 
     const { filename } = decryptedBlob;
     return { body: filename };
@@ -717,6 +723,9 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
+        if (deviceKey.length != 22) {
+            return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+        }
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -793,6 +802,9 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+    if (deviceKey.length != 22) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
@@ -1657,6 +1669,9 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     const backendUrl = process.env['backend_url'];
     const requestClone = request.clone();
     const deviceKey = requestClone.params.deviceKey;
+    if (deviceKey.length != 22) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     let formData = await requestClone.formData();
     const attachmentValues = formData.values();
     const record = JSON.parse(formData.get("provenanceRecord") as string);
