@@ -712,12 +712,8 @@ export function validateEntryJSON(json: any) {
     // Record entries only have blobType, description, childrenkeys, and tags (none required)
     const Valid = z.object({
         blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
-        children_name: z.array(z.string()).optional(),
         description: z.string().optional(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
         tags: z.array(z.string()).optional(),
     });
 

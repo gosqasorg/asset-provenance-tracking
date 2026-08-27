@@ -218,9 +218,44 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
 
   it('validateRecordJSON correctly catches invalid record/group', async () => {
     // Name is of the wrong type, which should cause validateRecordJSON to flag this group as invalid
-    const invalidGroup = {"blobType":"deviceInitializer","deviceName":["Name is list", "instead of string"],"tags":["group"],"children_key":[],
-      "children_name":[],"hasParent":false,"isPublicKey":false};
-    let valid = await httpTrigger.validateRecordJSON(invalidGroup);
+    let invalidName = {"blobType":"deviceInitializer","deviceName":["Name is list", "instead of string"],"description": "Description",
+      "tags":["group"],"children_key":[],"children_name":[],"hasParent":false,"isPublicKey":false};
+    let valid = await httpTrigger.validateRecordJSON(invalidName);
+    expect(valid).toBe(false);
+
+    // Description is missing, which should cause validateRecordJSON to flag this record as invalid
+    const invalidDescription = {"blobType":"deviceInitializer","deviceName":"No Description",
+      "tags":["record"],"children_key":"","hasParent":false,"isPublicKey":false};
+    valid = await httpTrigger.validateRecordJSON(invalidDescription);
+    expect(valid).toBe(false);
+
+    // hasParent is of the wrong type, which should cause validateRecordJSON to flag this group as invalid
+    const invalidParent = {"blobType":"deviceInitializer","deviceName":"Invalid hasParent","description": "Description",
+      "tags":[],"children_key":[],"children_name":[],"hasParent":"false","isPublicKey":false};
+    valid = await httpTrigger.validateRecordJSON(invalidParent);
+    expect(valid).toBe(false);
+
+    // children_key is missing, which should cause validateRecordJSON to flag this group as invalid
+    const invalidChildren = {"blobType":"deviceInitializer","deviceName":"No children_key","description": "Description",
+      "tags":[],"children_name":[],"hasParent":false,"isPublicKey":false};
+    valid = await httpTrigger.validateRecordJSON(invalidChildren);
+    expect(valid).toBe(false);
+  });
+
+  it('validateEntryJSON correctly validates entries', async () => {
+    // Entries are allowed to be empty
+    const emptyEntry = {};
+    let valid = await httpTrigger.validateEntryJSON(emptyEntry);
+    expect(valid).toBe(true);
+
+    // Valid entries are accepted
+    const validEntry = {"blobType":"deviceInitializer","description":"Valid entry","tags":["group"],"children_key":[]};
+    valid = await httpTrigger.validateEntryJSON(validEntry);
+    expect(valid).toBe(true);
+
+    // If the type is wrong the entry is reject (ex. invalid description)
+    let invalidDescription = {"blobType":"deviceInitializer","description":["Description is list", "instead of string"],"tags":["group"],"children_key":[]};
+    valid = await httpTrigger.validateEntryJSON(invalidDescription);
     expect(valid).toBe(false);
   });
  

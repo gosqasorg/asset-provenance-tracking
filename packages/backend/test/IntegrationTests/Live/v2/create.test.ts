@@ -208,59 +208,59 @@ describe ("Send to All Children Tests", () => {
 
 });
 
-it("Should use default 'Sent from Group' description when entry has no description", async() => {
-    // Create the group/children
-    const payload = {
-        deviceName: "Sent Without Description Test",
-        description: "Testing that record entries sent to children without descriptions have the default description",
-        tags: [],
-        number_of_children: 1,
-    };
+    it("Should use default 'Sent from Group' description when entry has no description", async() => {
+        // Create the group/children
+        const payload = {
+            deviceName: "Sent Without Description Test",
+            description: "Testing that record entries sent to children without descriptions have the default description",
+            tags: [],
+            number_of_children: 1,
+        };
 
-    let formData = new FormData();
-    formData.append("provenanceRecord", JSON.stringify(payload));
+        let formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(payload));
 
-    let response = await fetch(`${baseUrl}/createGroup`, {
-        method: "POST",
-        body: formData,
-    });
-    expect(response.status).toBe(200);
+        let response = await fetch(`${baseUrl}/createGroup`, {
+            method: "POST",
+            body: formData,
+        });
+        expect(response.status).toBe(200);
 
-    const data = await response.json();
-    expect(data.groupUrl).toContain("/record/");
-    console.log("(Send to Children Default Description Test) Group Url:", data);
+        const data = await response.json();
+        expect(data.groupUrl).toContain("/record/");
+        console.log("(Send to Children Default Description Test) Group Url:", data);
 
-    const groupKey = data.groupUrl.split('/').pop();
-    const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
-    const groupProvenance = await groupResponse.json();
-    const groupRecord = groupProvenance[0].record;
+        const groupKey = data.groupUrl.split('/').pop();
+        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupProvenance = await groupResponse.json();
+        const groupRecord = groupProvenance[0].record;
 
-    const childKeys: string[] = groupRecord.children_key;
+        const childKeys: string[] = groupRecord.children_key;
 
-    // Add an entry without a description to the group and send it to all children
-    const entryPayload = {
-        tags: ["Draco"],
-        send_to_all_children: true
-    };
+        // Add an entry without a description to the group and send it to all children
+        const entryPayload = {
+            tags: ["Draco"],
+            send_to_all_children: true
+        };
 
-    formData = new FormData();
-    formData.append("provenanceRecord", JSON.stringify(entryPayload));
+        formData = new FormData();
+        formData.append("provenanceRecord", JSON.stringify(entryPayload));
 
-    response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
-        method: "POST",
-        body: formData,
-    });
-    expect(response.status).toBe(200);
+        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+            method: "POST",
+            body: formData,
+        });
+        expect(response.status).toBe(200);
 
-    // Look at the most recent record entry on the child and confirm they have the default description
-    for (const child of childKeys) {
-        const childData = await fetch(`${baseUrl}/provenance/${child}`);
-        const childProvenance = await childData.json();
-        const childRecord = childProvenance[0].record;
+        // Look at the most recent record entry on the child and confirm they have the default description
+        for (const child of childKeys) {
+            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childProvenance = await childData.json();
+            const childRecord = childProvenance[0].record;
 
-        expect(childRecord.description).toBe("Record Entry sent from Group");
-        expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
-    }
+            expect(childRecord.description).toBe("Record Entry sent from Group");
+            expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
+        }
 
 }, 60000);
 
