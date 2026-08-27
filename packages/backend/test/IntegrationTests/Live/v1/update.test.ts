@@ -302,11 +302,6 @@ describe("Record Update Tests", () => {
     const updateFormData = new FormData();
     updateFormData.append("provenanceRecord", JSON.stringify(updateData));
 
-    const updateResponse = await fetch(fullUrl, {
-      method: "POST",
-      body: updateFormData,
-    });
-
     // Call the recall function to send recalled record to all the children and grandchildren
     const recallResponse = await fetch(`${apiUrl}recall/${groupKey}`, {
       method: "POST",
