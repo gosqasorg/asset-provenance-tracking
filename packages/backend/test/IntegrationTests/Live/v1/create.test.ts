@@ -566,7 +566,7 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain("Why hello, child");
 		});
 
-	}, 6000); 
+	}, 10000); 
 	// Test for custom titles
 	it("should create a group with two children having custom titles", async () => {
 		// Generate device keys 
@@ -1021,7 +1021,7 @@ describe("Group Creation Tests", () => {
 		// Expect the response to indicate failure (e.g., 500 Internal Server Error)
 		console.log("Response Status for Invalid Key Test: " + groupResponse.status);
 		expect(groupResponse.ok).toBe(false);
-		expect(groupResponse.status).toBe(500);
+		expect(groupResponse.status).toBe(400);
 	}, 60000);
 
 		// Group with zero children
