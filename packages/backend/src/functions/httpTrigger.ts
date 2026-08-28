@@ -12,7 +12,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, setupBlobClient, getExisitingEmails } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 
 // To deploy this project from the command line, you need:
@@ -1107,7 +1107,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags);
+        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags, context);
         // return response
 
         return {
@@ -1272,7 +1272,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", []);
+        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", [], context);
 
         // Access it
         const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
@@ -1527,6 +1527,45 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
             jsonBody: { data: message },
             headers: { "Content-Type": "text/plain" }
         }
+    }
+}
+
+async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // parse email, recordKey, and tags from body
+    const body = await request.json() as any;
+    const groupKey = body.groupKey;
+    const childKey = body.childKey;
+    const tags = body.tags ?? [];
+
+    if (!groupKey || !childKey) {
+        return {
+            jsonBody: {error: "Error: group and child keys required"},
+            status: 400
+        }
+    }
+
+    await containerClient.createIfNotExists();
+
+    // 1. Get emails subscribed to the groupKey
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, groupKey);
+    const exists = await blobClient.exists();
+    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+    // 2. Subscribe all emails from the groupKey to the childKey
+    for (let email of emailSet) {
+        let response = await subscribeToNotifications(containerClient, calculateDeviceID, childKey, email, tags, context);
+        if (response.status !== 200) {
+            return {
+                jsonBody: {error: "Error: Failed to subscribe group to children"},
+                status: 500
+            }
+        }
+    }
+    
+    // 3. If all emails are succesfully subscribed return success
+    return {
+        jsonBody: { message: "Successfully subscribed group to children email notifications" },
+        status: 200
     }
 }
 
@@ -1786,4 +1825,10 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
+})
+
+app.post("subscribeGroupToChildren", {
+    authLevel: 'anonymous',
+    route: 'subscribeGroupToChildren',
+    handler: subscribeGroupToChildren
 })

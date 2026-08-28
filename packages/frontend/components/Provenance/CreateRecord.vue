@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag, subscribeGroupToChildren } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -341,8 +341,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (validateKey(this.groupKey)) {
                     try {
                         console.log("Adding to group...", this.groupKey);
-                        const groupRecords = await getProvenance(this.groupKey);
-                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
+                        await addToGroup(this.recordKey, this.groupKey, records, []);
+                        await subscribeGroupToChildren(this.groupKey, this.recordKey, this.tags);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.redirectIfOffline()
@@ -376,6 +376,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                     if (this.newChildKeys.length > 0) {
                         await addChildKeys(this.recordKey, records, this.newChildKeys, []);
+
+                        for (const childKey of this.newChildKeys) {
+                            await subscribeGroupToChildren(this.recordKey, childKey, []);
+                        }
                     } else {
                         this.$snackbar.add({
                             type: 'warning',

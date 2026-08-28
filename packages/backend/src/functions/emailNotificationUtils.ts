@@ -55,7 +55,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     }
 }
 
-async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
+export async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
     // 0: Setup id
     const deviceID = await calculateDeviceID(deviceKey);
 
@@ -67,7 +67,7 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
     return [blobName, blobClient] as const;
 }
 
-async function getExisitingEmails(exists: boolean, blobClient: BlockBlobClient) {
+export async function getExisitingEmails(exists: boolean, blobClient: BlockBlobClient) {
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
@@ -142,7 +142,7 @@ async function uploadBlob(containerClient: ContainerClient, blobName: string, em
     }
 }
 
-export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
+export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = [], context: InvocationContext) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
@@ -154,7 +154,6 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
          - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */
 
-    const baseUrl = process.env['backend_url'];
     let keysToCheck = [deviceKey];
 
     // Confirm the email exists
@@ -210,6 +209,11 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
         }
 
         keysToCheck.shift();
+    }
+
+    return {
+        jsonBody: { message: "Success" },
+        status: 200
     }
 }
 
