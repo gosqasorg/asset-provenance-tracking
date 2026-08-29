@@ -345,7 +345,7 @@ async function getChildKeys(key: string, groupKey: string): Promise<string[]> {
     for (const p of provenance) {
         const child = p.record.children_key; // Can be "" if not a group or string[] if a group
         // child may be undefined or an empty array
-        if (!child || !child.length) {
+        if (!child || !child.length || child == '') {
             continue;
         }
         childKeys = [...childKeys, ...child];

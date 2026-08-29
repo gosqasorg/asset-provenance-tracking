@@ -334,6 +334,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             EventBus.emit('isCreating');
 
             // Define the new record to post
+            if (this.childKeyText.length > 0) { this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim()) };
+
             const record = {
                 blobType: 'deviceRecord',
                 description: this.description,
@@ -383,7 +385,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // The record already is a group - add the child keys.
             try {
                 if (this.childKeyText.length > 0) {
-                    this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim());
                     for (const childKey of this.newChildKeys) {
                         if (!validateKey(childKey)) {
                             this.$snackbar.add({
