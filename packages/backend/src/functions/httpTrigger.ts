@@ -751,10 +751,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
-
-                    // If users are subscribed to child records notify them
-                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -851,10 +847,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                         method: "POST",
                         body: keyFormData,
                     })
-
-                    // If users are subscribed to child records notify them
-                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1122,7 +1114,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags, context);
+        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags);
         // return response
 
         return {
@@ -1285,7 +1277,7 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
         const key = await makeEncodedDeviceKey()
 
         // Add it
-        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", [], context);
+        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", []);
 
         // Access it
         const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
@@ -1571,7 +1563,7 @@ async function subscribeGroupToChildren(request: HttpRequest, context: Invocatio
 
     // 2. Subscribe all emails from the groupKey to the childKey
     for (let email of emailSet) {
-        let response = await subscribeToNotifications(containerClient, calculateDeviceID, childKey, email, tags, context);
+        let response = await subscribeToNotifications(containerClient, calculateDeviceID, childKey, email, tags);
         if (response.status !== 200) {
             return {
                 jsonBody: {error: "Error: Failed to subscribe group to children"},
