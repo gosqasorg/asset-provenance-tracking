@@ -372,6 +372,7 @@ export async function postResendCode(token: string) {
         throw new Error('postResendCode: Failed to resend code')
     }
 }
+
 export async function getBrowserStats() {
     
         const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -386,5 +387,19 @@ export async function getBrowserStats() {
         return JSON.parse(stats);
     } catch (error) {
         throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}
+
+export async function subscribeGroupToChildren(groupKey: string, childKey: string, tags: string[]) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/subscribeGroupToChildren`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupKey, childKey, tags }),
+    });
+    
+    if (response.status != 200) {
+        console.log("subscribeGroupToChildren Error:", response)
+        throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
     }
 }

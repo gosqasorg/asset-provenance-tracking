@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers, subscribeGroupToChildren } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -334,6 +334,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             EventBus.emit('isCreating');
 
             // Define the new record to post
+            if (this.childKeyText.length > 0) { this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim()) };
+
             const record = {
                 blobType: 'deviceRecord',
                 description: this.description,
@@ -363,8 +365,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (validateKey(this.groupKey)) {
                     try {
                         console.log("Adding to group...", this.groupKey);
-                        const groupRecords = await getProvenance(this.groupKey);
-                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
+                        await addToGroup(this.recordKey, this.groupKey, records, []);
+                        await subscribeGroupToChildren(this.groupKey, this.recordKey, this.tags);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.$snackbar.add({
@@ -383,7 +385,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             // The record already is a group - add the child keys.
             try {
                 if (this.childKeyText.length > 0) {
-                    this.newChildKeys = this.childKeyText.split(',').map(childKey => childKey.trim());
                     for (const childKey of this.newChildKeys) {
                         if (!validateKey(childKey)) {
                             this.$snackbar.add({
@@ -397,6 +398,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                     if (this.newChildKeys.length > 0) {
                         await addChildKeys(this.recordKey, records, this.newChildKeys, []);
+
+                        for (const childKey of this.newChildKeys) {
+                            await subscribeGroupToChildren(this.recordKey, childKey, []);
+                        }
                     } else {
                         this.$snackbar.add({
                             type: 'warning',
