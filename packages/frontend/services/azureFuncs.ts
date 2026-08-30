@@ -224,6 +224,30 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
+export async function fetchUrlWithErrorHandling(
+    url: string,
+    options: RequestInit = {},
+    statusMessages: Readonly<Record<number, string>> = {}
+): Promise<Response> {
+    let response: Response;
+
+    try {
+        response = await fetch(url, options);
+    } catch {
+        throw new Error("Could not connect to the server, check your internet connection and try again");
+    }
+
+    if (response.ok) {
+        return response;
+    }
+
+    const fallbackMessage = response.statusText
+        ? `${response.status} ${response.statusText}`
+        : `Request failed with status ${response.status}`;
+
+    throw new Error(statusMessages[response.status] ?? fallbackMessage);
+}
+
 export async function onlineTestFetch(url?: string): Promise<boolean> {
     let result = true;
 
@@ -488,19 +512,20 @@ export async function offlineDetectAndStash (recordKey: string, formData: FormDa
 
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/notificationsubscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, recordKey }),
-    });
+    const response = await fetchUrlWithErrorHandling(
+        `${baseUrl}/notificationsubscription`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, recordKey }),
+        },
+        {
+            429: "We are experiencing a high volume of requests. Please try again later.",
+            500: "We could not send the verification email. Please try again later.",
+        }
+    );
 
     console.log('postNotificationEmail status:', response.status);
-
-    if(response.status == 429) {
-        throw new Error("We are experiencing a high volume of requests. Please try again later.")
-    } else if (response.status != 200) {
-        throw new Error('postNotificationEmail: Failed to send verification code')
-    }
 
     const data = await response.json();
     return data.token as string;
