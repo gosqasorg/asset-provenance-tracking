@@ -133,7 +133,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, onlineTestFetch, stashOfflineRequest, removeOfflineRequest, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import { ref } from 'vue';
@@ -465,11 +465,6 @@ export default {
                     }
                 }
             } catch (error) {
-                // If the user is offline navigate to the offline history page instead
-                if (!(await onlineTestFetch()) && offlineModeFeatureFlag) {
-                    await this.$router.push({ path: `/history/offline`, query: { key: this.deviceKey }});
-                }
-
                 let errorMessage: string = error instanceof Error
                     ? error.message  // if error.message exists show it (removes extra "Error:" at beginning)
                     : error as string  // otherwise just show the whole error
