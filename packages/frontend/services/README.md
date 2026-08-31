@@ -7,18 +7,24 @@ postProvenance adds records that fail to create while offline to the queue stash
 ## localStorage
 
 localStorage is a way for us to store data that persists between pages/instances of the site. Here we store all of the records created offline in three stashes:
-- **queue stash (gdt-stash-queue):** stores records to create once back online (FIFO, we added new records to the end of the stash and remove from the beginning)
-  - queue stash layout: [{“key”: key, “data”: formData}, {“key”: key2, “data”: formData2}, ...]
+- **queue stash (gdt-stash-queued):** stores records to create once back online (FIFO, we added new records to the end of the stash and remove from the beginning)
+  - queue stash layout: [{“key”: key, “data”: record}, {“key”: key2, “data”: record2}, ...]
  
 - **failed stash (gdt-stash-failed):** stores records that failed to create from the queue
-  - failed stash layout: [{“key”: key, “data”: formData}, {“key”: key2, “data”: formData2}, ...]
+  - failed stash layout: [{“key”: key, “data”: record}, {“key”: key2, “data”: record2}, ...]
 
 - **fulfilled stash (gdt-stash-fulfilled):** stores records successfully created from the queue
   - fulfilled stash layout: [key, key2, …]
 
-
 We have a few other variables that we store in localStorage as well:
 - **workerIsActive:** a boolean that tells us whether or not a worker is already running (this is to prevent multiple workers running on the same device)
+
+## sessionStorage
+
+sessionStorage is similar to localStorage, however unlike localStorage, sessionStorage only exists so long as the page is open. For offline mode we use this feature to send individual records between pages. Currently its main use is the "edit submission" button on the offline edits page, which takes users back to the create page and autofills the stored information. We use a few variables to do this:
+- **gdt-redirect-record:** a string version of the record from the stash
+- **gdt-redirect-isGroup:** a boolean (converted to a string for storage) that tracks whether the record is a group or not
+- **gdt-redirect-key:** the device key from the stash
 
 ## Functions for Offline Mode
 
@@ -30,6 +36,7 @@ Offline mode has a couple of functions that allow it to work:
 - **displayInSnackbar:** display success snackbar to the frontend
 
 ## Our Diagrams
+
 Below are a couple of diagrams to help visualize how offline mode works.
 
 ### PostProvenance
