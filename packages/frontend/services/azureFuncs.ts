@@ -312,6 +312,38 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
     }
 }
 
+export function getFirstQueueItem() {
+    // Get the first request from the stash and return it
+    try {
+        let stash = localStorage.getItem("gdt-stash-queued") || "[]";
+        let existingRequests = JSON.parse(stash);
+        return existingRequests[0];
+
+    } catch (error) {
+        console.log("Failed to Return First Queue Item: " + error);
+        throw error;
+    }
+}
+
+export function removeFirstQueueItem() {
+    // Get the first request from the stash and remove it
+    try {
+        let stash = localStorage.getItem("gdt-stash-queued") || "[]";
+        let existingRequests = JSON.parse(stash);
+        
+        const index = existingRequests.indexOf(existingRequests[0]);
+        if (index > -1) {
+            existingRequests.splice(index, 1);
+        }
+
+        localStorage.setItem("gdt-stash-queued", JSON.stringify(existingRequests))
+
+    } catch (error) {
+        console.log("Failed to Remove First Queue Item: " + error);
+        throw error;
+    }
+}
+
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/notificationSubscription`, {

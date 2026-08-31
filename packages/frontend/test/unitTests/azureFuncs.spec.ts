@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
+import { stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -142,3 +142,61 @@ describe("Stash and Remove Offline Requests", () => {
     expect(returnedKey).toEqual('');
   });
 });
+
+describe("Get/Remove First Queued Request", async() => {
+  it("Get First Queued Request", async() => {
+    resetStashValues();
+
+    // Attempt to get a request when none are in the queue and confirm there's no error
+    let firstQueueItem = getFirstQueueItem();
+    expect(firstQueueItem).toBeUndefined();
+
+    // Attempt to get the only request in the queue
+    let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
+    let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
+
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    firstQueueItem = getFirstQueueItem();
+
+    expect(firstQueueItem["key"]).toEqual(queuedKey);
+    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+
+    // Attempt to get the first request of multiple and confirm we got the correct one
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    firstQueueItem = getFirstQueueItem();
+
+    expect(firstQueueItem["key"]).toEqual(queuedKey);
+    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["key"]).not.toEqual(queuedKey2);
+    expect(firstQueueItem["data"]).not.toEqual(queuedData2.get('provenanceRecord'));
+  });
+
+  it("Remove First Queued Request", async() => {
+    resetStashValues();
+
+    // Attempt to remove a request when none are in the queue and confirm there's no error
+    removeFirstQueueItem();
+    let firstQueueItem = getFirstQueueItem(); // todo is this how we want to test this one..?
+    expect(firstQueueItem).toBeUndefined();
+
+    // Attempt to remove the only request in the queue
+    let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
+    let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
+
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    removeFirstQueueItem();
+    firstQueueItem = getFirstQueueItem();
+    expect(firstQueueItem).toBeUndefined();
+
+    // Attempt to remove the first request of multiple and confirm we removed the correct one
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    removeFirstQueueItem();
+    firstQueueItem = getFirstQueueItem();
+
+    expect(firstQueueItem["key"]).not.toEqual(queuedKey);
+    expect(firstQueueItem["data"]).not.toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["key"]).toEqual(queuedKey2);
+    expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
+  });
+})
