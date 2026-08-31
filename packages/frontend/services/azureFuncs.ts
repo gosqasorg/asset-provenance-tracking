@@ -225,25 +225,25 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
-export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
-    // Function to stash an offline request (works for fulfilled and failed stashes)
+export function stashOfflineRequest(currentKey: string, stashName: string, request?: any) {
+    // Function to stash an offline request (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
-        let stash = localStorage.getItem(stashName) || "{}";
+        let stash = localStorage.getItem(stashName) || "[]";
         let existingRequests;
 
         // Get the previous requests from the stash
-        if (stashName.includes("failed")) {
-            existingRequests = JSON.parse(stash);
-        } else {
+        if (stashName.includes("fulfilled")) {
             existingRequests = stash.split(",");
+        } else {
+            existingRequests = JSON.parse(stash);
         }
 
         // Get the existing stashed requests, skip the loop if there are none
-        if (JSON.stringify(existingRequests) !== "{}" && JSON.stringify(existingRequests) !== '["{}"]') {
+        if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
             for (const storedRequest of existingRequests) {
                 // If new request == existing request, exit without updating the stash
-                if ((request && storedRequest[0][1] == request[0][1]) || storedRequest == currentKey) {
+                if ((request && storedRequest["data"] == request) || storedRequest == currentKey) {
                     return;
                 }
 
@@ -252,12 +252,12 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         }
 
         // Add the new request and set the new stash value
-        if (stashName.includes("failed")) {
-            requests.push(request);
-            localStorage.setItem(stashName, JSON.stringify(requests));
-        } else {
+        if (stashName.includes("fulfilled")) {
             requests.push(currentKey);
             localStorage.setItem(stashName, requests.toString());
+        } else {
+            requests.push({"key": currentKey, "data": request});
+            localStorage.setItem(stashName, JSON.stringify(requests));
         }
 
     } catch (error) {
@@ -267,29 +267,36 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
 }
 
 export function removeOfflineRequest(currentKey: string, stashName: string) {
-    // Function to remove an offline request from the stash (works for fulfilled and failed stashes)
+    // Function to remove an offline request from the stash (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
-        let stash = localStorage.getItem(stashName) || "{}";
+        let stash = localStorage.getItem(stashName) || "[]";
         let existingRequests;
 
         // Get the previous requests from the stash
-        if (stashName.includes("failed")) {
-            existingRequests = JSON.parse(stash);
-        } else {
+        if (stashName.includes("fulfilled")) {
             existingRequests = stash.split(",");
+        } else {
+            existingRequests = JSON.parse(stash);
         }
 
         // If there are no previous requests exit the function (nothing to remove)
-        if (JSON.stringify(existingRequests) == "{}" || JSON.stringify(existingRequests) == '["{}"]') {
+        if (JSON.stringify(existingRequests) == "[]" || JSON.stringify(existingRequests) == '["[]"]') {
             return;
         }
 
-        if (stashName.includes("failed")) {
-            // Remove request from failed stash
+        if (stashName.includes("fulfilled")) {
+            // Remove key from the fulfilled stash
+            const index = existingRequests.indexOf(currentKey);
+            if (index > -1) {
+                existingRequests.splice(index, 1);
+            }
+            localStorage.setItem(stashName, existingRequests.toString())
+            
+        } else {
+            // Remove request from the queue/failed stash
             for (let i = 0; i < existingRequests.length; i++) {
-                let fullUrl = existingRequests[i][0][1];
-                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                let requestKey = existingRequests[i]["key"];
 
                 // Add back all requests except the one we're removing 
                 if (requestKey != currentKey) {
@@ -297,13 +304,6 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
                 }
             }
             localStorage.setItem(stashName, JSON.stringify(requests))
-        } else {
-            // Remove key from fulfilled stash
-            const index = existingRequests.indexOf(currentKey);
-            if (typeof existingRequests != "string" && index > -1) {
-                existingRequests.splice(index, 1);
-            }
-            localStorage.setItem(stashName, existingRequests.toString())
         }
 
     } catch (error) {
