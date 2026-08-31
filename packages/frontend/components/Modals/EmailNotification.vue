@@ -42,6 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         id="tag"
                         class="form-control"
                         v-model="tag"
+                        @keyup.space="addTag(tag)" 
                         @keyup.enter="addTag(tag)" 
                         placeholder="Type to add tags...."
                         aria-label="Tag Selection"
@@ -163,10 +164,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script lang="ts">
     import { getPendingVerification, getProvenance, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
-     import { TagName } from '~/utils/tags';
+    import { TagName } from '~/utils/tags';
     import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
     import { getColorForTag, textColorForTag } from '~/utils/colorTag';
-import { record } from 'zod';
 
     export default {
         data() {
@@ -431,10 +431,15 @@ import { record } from 'zod';
                 
                 const cleanTag = this.cleanArray([cleaned]);
                 if(cleanTag.length === 0) {
-                    this.tagError = `"${tag.trim}" isn't allowed as a tag.`
+                    this.tagError = `"${tag.trim()}" isn't allowed as a tag.`
                     this.tag = '';
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `${this.tagError}`
+                    });
                     return;
                 }
+
 
                 if (!this.tags.includes(cleaned)) {
                     this.tags.push(cleaned);
