@@ -225,14 +225,19 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
+/**
+ * @param options Optional. If omitted, fetch makes a GET request. Callers can set the method, headers, and body.
+ * @param statusMessages Optional. Map of HTTP status codes to custom error messages.
+ */
 export async function fetchUrlWithErrorHandling(
     url: string,
-    options: RequestInit = {},
-    statusMessages: Readonly<Record<number, string>> = {}
+    options?: RequestInit,
+    statusMessages?: Readonly<Record<number, string>>
 ): Promise<Response> {
     let response: Response;
 
     try {
+        // Supports any HTTP method accepted by fetch. Without options, fetch defaults to GET.
         response = await fetch(url, options);
     } catch {
         throw new Error("Could not connect to the server, check your internet connection and try again");
@@ -242,11 +247,18 @@ export async function fetchUrlWithErrorHandling(
         return response;
     }
 
-    const fallbackMessage = response.statusText
-        ? `${response.status} ${response.statusText}`
-        : `Request failed with status ${response.status}`;
+    let errorMessage = `Request failed with status ${response.status}`;
+    if (response.statusText) {
+        errorMessage = `${response.status} ${response.statusText}`;
+    }
 
-    throw new Error(statusMessages[response.status] ?? fallbackMessage);
+    // Example of statusMessages: { 429: "We are experiencing a high volume of requests." }
+    const statusErrorMessage = statusMessages?.[response.status];
+    if (statusErrorMessage !== undefined) {
+        errorMessage = statusErrorMessage;
+    }
+
+    throw new Error(errorMessage);
 }
 
 export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
@@ -339,7 +351,7 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetchUrlWithErrorHandling(
-        `${baseUrl}/notificationsubscription`,
+        `${baseUrl}/notificationSubscription`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
