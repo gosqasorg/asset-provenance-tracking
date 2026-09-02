@@ -13,7 +13,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
-
 <template>
     <!-- Email notifications modal -->
     <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" role="dialog" aria-modal="true">
@@ -24,15 +23,67 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h5 class="modal-title title" id="notifModalLabel">Turn on email notifications</h5>
             <div class="body">
                 <p style="line-height: 30px; margin-bottom: 0;">You're turning on email notifications for this record.<br>Please enter your email below to begin receiving notifications. You can unsubscribe at any time through the link in your notification emails.</p>
-                <input
-                    class="form-control"
-                    v-model="email"
-                    @input="emailError = null"
-                    placeholder="Email"
-                    aria-label="Email address"
-                    :class="{ 'input-error': emailError }"
-                />
-                <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
+                <div>
+                    <label for="email">Email</label>
+                    <input
+                        id="email"
+                        class="form-control"
+                        v-model="email"
+                        @input="emailError = null"
+                        placeholder="Email"
+                        aria-label="Email address"
+                        :class="{ 'input-error': emailError }"
+                    />
+                    <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
+                </div>
+                <div>
+                    <label for="tag">Notify me about</label>
+                    <input
+                        id="tag"
+                        class="form-control"
+                        v-model="tag"
+                        @keyup.space="addTag(tag)" 
+                        @keyup.enter="addTag(tag)" 
+                        placeholder="Type to add tags...."
+                        aria-label="Tag Selection"
+                    />
+                    
+                </div>
+
+                <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
+
+                <div>
+                    <div class="tag-container">
+                        <div v-for="(item) in tags"
+                        :key="item"
+                        class="chip"
+                        :style="{ backgroundColor: getColorForTag(item), color: textColorForTag(item) }">
+                            {{ item }}
+                            <button class="close-btn" @click="removeTag(item)"><i class="uit uit-multiply"></i></button>
+                        </div>                    
+                    </div>
+                </div>
+
+                <div>
+                    <label for="tag">Suggested tags</label>
+                     <div class="selectable-tag-container">
+                        <button 
+                        type="button"
+                        class="suggested-chip"
+                        v-for="item in suggestedTags"
+                        :key="item"
+                        :class="{ 'suggested-chip-selected': tags.includes(item)}"
+                        :style="tags.includes(item)
+                        ? {backgroundColor: getColorForTag(item), color: textColorForTag(item)}
+                        : {borderColor: getColorForTag(item)}"
+                        @click="toggleSuggestedTag(item)"
+                        >
+                            {{ item }}
+                        </button>               
+                    </div>
+                </div>
+
+                
             </div>
             <div class="footer">
                 <div class="btn-container">
@@ -112,19 +163,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-    import { getPendingVerification, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
+    import { getPendingVerification, getProvenance, postNotificationEmail, postResendCode, postVerifyCode } from '~/services/azureFuncs';
+    import { TagName } from '~/utils/tags';
+    import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
+    import { getColorForTag, textColorForTag } from '~/utils/colorTag';
 
     export default {
         data() {
             return {
                 step: 'signup' as 'signup' | 'verify' | 'success' | 'expired',
                 email: '',
+                tag: '',
                 code: '',
                 error: null as string | null,
                 emailError: null as string | null,
                 isSubmitting: false,
                 isResending: false,
-                token: '',
+                token: '', 
+                tags: [] as string[],
+
+                tagError: null as string | null,
+                suggestedTags: [] as string[],
 
                 // resend cooldown: 3 free resends, then 1m wait time /2m /4m. 8m. 15m
                 resendCount: 0,
@@ -188,6 +247,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             if (this.autoToken && this.autoCode) {
                 await this.autoVerify();
             } 
+            await this.loadSuggestedTags();
         },
 
         methods: {
@@ -326,6 +386,80 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
 
                 this.$emit('verification-completed'); // clearing data after verification
+            },
+            async loadSuggestedTags(){
+                // Get the static suggested tags used in the create record entry form
+                const staticTags = Object.values(TagName) as string[];
+
+                // Grab the used tags from the record
+                let recordTags: string[] = [];
+                try {
+                    const deviceKey = this.$route.params.deviceKey as string;
+                    if (deviceKey) {
+                        const provenance = await getProvenance(deviceKey);
+                        const seen = new Set<string>(); // only want the unique tags
+
+                        // loop through records in provenance and grab their tags, adding them to the seen set
+                        provenance.forEach((entry: any) => {
+                            (entry.record?.tags || []).forEach((t: string) => {
+                                seen.add(t.toLowerCase())
+                            });
+                        });
+                        recordTags = Array.from(seen);
+                    }
+                } catch (error) {
+                    console.error(' Failed to load suggested tags from provenance: ', error);
+                }
+                const merged = new Set([...staticTags, ...recordTags]);
+                this.suggestedTags = Array.from(merged);
+            },
+            cleanArray(array: string[]) {
+                // Remove any tags with forbidden words in them
+                const forbiddenWords = getDecipheredForbiddenTags(); // TODO: Ask Vincent why these tags are forbidden?
+                const cleanedArray = array.filter(tagName => !forbiddenWords.includes(tagName.toLowerCase()));
+                return cleanedArray;
+            },
+
+            addTag(tag: string){
+                this.tagError = null;
+
+                const cleaned = tag.trim().toLowerCase();
+                if(!cleaned){
+                    this.tag = '';
+                    return;
+                }
+                
+                const cleanTag = this.cleanArray([cleaned]);
+                if(cleanTag.length === 0) {
+                    this.tagError = `"${tag.trim()}" isn't allowed as a tag.`
+                    this.tag = '';
+                    this.$snackbar.add({
+                        type: 'error',
+                        text: `${this.tagError}`
+                    });
+                    return;
+                }
+
+
+                if (!this.tags.includes(cleaned)) {
+                    this.tags.push(cleaned);
+                }
+
+                this.tag = '';
+            },
+
+            removeTag(tag: string) {
+                const idx = this.tags.indexOf(tag);
+                this.tags.splice(idx, 1);
+            },
+
+            toggleSuggestedTag(tag: string) {
+                const idx = this.tags.indexOf(tag);
+                if (idx === -1){
+                    this.addTag(tag);
+                } else {
+                    this.tags.splice(idx, 1);
+                }
             }
         }
     }
@@ -368,9 +502,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
   display: flex;
   flex-direction: column;
   gap: 14px;
-  
-  /* text-wrap: balance; */
 }
+
 
 .form-control {
     border: 1px solid #CBD5E1;
@@ -454,8 +587,54 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     box-shadow: 0 0 0 3px #DC2626;
 }
 
+.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 16px;
+    text-transform: capitalize;
+}
+
+.close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 1;
+    padding: 0;
+}
+
+.tag-container,
+.selectable-tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    
+}
+
+.suggested-chip {
+    padding: 5px 10px;
+    border-radius: 10px;
+    border: 3px solid;
+    background: transparent;
+    color: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    text-transform: capitalize;
+}
+
+.suggested-chip-selected {
+    border-color: transparent;
+}
+
 @media (prefers-color-scheme: dark) {
-    /* // modal background, text color, button colors, border colors */
     .content {
         background-color: #353535;
         border: 2px solid #CCECFD;
@@ -510,6 +689,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     
     .resend-container p {
         color: #FFFFFF
+    }
+
+    .suggested-chip:not(.suggested-chip-selected) {
+        background-color: #454545;
+        color: #fff;
     }
 
 }
