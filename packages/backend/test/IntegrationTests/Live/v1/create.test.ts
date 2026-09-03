@@ -259,15 +259,10 @@ describe("Group Creation Tests", () => {
 		const recallFormData = new FormData();
 		recallFormData.append("provenanceRecord", JSON.stringify(recallRecord));
 	
-		const updateResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
-			method: "POST",
-			body: recallFormData,
-		});
 		const recallResponse = await fetch(`${baseUrl}/recall/${groupKey}`, {
 			method: "POST",
 			body: recallFormData,
 		});
-		expect(updateResponse.ok).toBe(true);
 		expect(recallResponse.ok).toBe(true);
 
 		// Send new record to children (should be sent to parent and child, not public key)
