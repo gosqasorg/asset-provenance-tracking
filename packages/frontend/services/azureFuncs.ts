@@ -225,6 +225,42 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
+/**
+ * @param options Optional. If omitted, fetch makes a GET request. Callers can set the method, headers, and body.
+ * @param statusMessages Optional. Map of HTTP status codes to custom error messages.
+ */
+export async function fetchUrlWithErrorHandling(
+    url: string,
+    options?: RequestInit,
+    statusMessages?: Readonly<Record<number, string>>
+): Promise<Response> {
+    let response: Response;
+
+    try {
+        // Supports any HTTP method accepted by fetch. Without options, fetch defaults to GET.
+        response = await fetch(url, options);
+    } catch {
+        throw new Error("Could not connect to the server, check your internet connection and try again");
+    }
+
+    if (response.ok) {
+        return response;
+    }
+
+    let errorMessage = `Request failed with status ${response.status}`;
+    if (response.statusText) {
+        errorMessage = `${response.status} ${response.statusText}`;
+    }
+
+    // Example of statusMessages: { 429: "We are experiencing a high volume of requests." }
+    const statusErrorMessage = statusMessages?.[response.status];
+    if (statusErrorMessage !== undefined) {
+        errorMessage = statusErrorMessage;
+    }
+
+    throw new Error(errorMessage);
+}
+
 export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
     // Function to stash an offline request (works for fulfilled and failed stashes)
     try {
@@ -314,19 +350,20 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
 
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/notificationSubscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, recordKey }),
-    });
+    const response = await fetchUrlWithErrorHandling(
+        `${baseUrl}/notificationSubscription`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, recordKey }),
+        },
+        {
+            429: "We are experiencing a high volume of requests. Please try again later.",
+            500: "We could not send the verification email. Please try again later.",
+        }
+    );
 
     console.log('postNotificationEmail status:', response.status);
-
-    if(response.status == 429) {
-        throw new Error("We are experiencing a high volume of requests. Please try again later.")
-    } else if (response.status != 200) {
-        throw new Error('postNotificationEmail: Failed to send verification code')
-    }
 
     const data = await response.json();
     return data.token as string;
