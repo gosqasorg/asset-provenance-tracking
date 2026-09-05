@@ -312,6 +312,26 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
     }
 }
 
+export async function confirmRequestFulfilled(recordKey: string, record?: any): Promise<boolean> {
+    try {
+        let response = await getProvenance(recordKey)
+
+        // For history entry addition in existing record
+        if (response && response[0].record.description === record?.description) {
+            return true
+        } 
+        // For checking newly created record
+        else if (response) {
+            return true
+        }
+
+    } catch(error) {
+        throw error
+    }
+
+    return false
+}
+
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/notificationSubscription`, {
