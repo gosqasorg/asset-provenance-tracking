@@ -1729,7 +1729,7 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
         }
 }
 
-export async function livenessCheckEmailer (str: string, context?: InvocationContext) {
+export async function livenessCheckEmailer (server: string, context?: InvocationContext) {
 
     const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
 
@@ -1738,8 +1738,8 @@ export async function livenessCheckEmailer (str: string, context?: InvocationCon
             const emailResponse = await sendEmail(
                 process.env['SENDER_EMAIL'],
                 email,
-                `Important: ${str} Server Down`,
-                `${str} server is down!`,
+                `Important: ${server} Server Down`,
+                `${server} server is down!`,
                 'GOSQAS DEVS',
                 context
             )
