@@ -321,7 +321,7 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
             return true
         } 
         // For checking newly created record
-        else if (response) {
+        else if (response && record === undefined) {
             return true
         }
 

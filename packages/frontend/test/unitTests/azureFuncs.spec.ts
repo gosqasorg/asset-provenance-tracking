@@ -43,7 +43,8 @@ describe("Placeholder tests", () => {
       const mockRecord = [{record: {description: 'mockRecord'}}];
       mockFetch.mockResolvedValue({ok: true, status: 200,json: () => Promise.resolve(mockRecord),})
 
-      const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', 'mockRecord')
+      const record = {description : 'mockRecord'}
+      const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', record)
       const resultNewRecord = await confirmRequestFulfilled('123456789101112asdfghi')
 
       expect(resultEntryAddition).toBe(true)
