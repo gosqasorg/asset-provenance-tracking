@@ -317,7 +317,7 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
         let response = await getProvenance(recordKey)
 
         // For history entry addition in existing record
-        if (response && response[0].record.description === record?.description) {
+        if (response[0] && response[0].record.description === record?.description) {
             return true
         } 
         // For checking newly created record

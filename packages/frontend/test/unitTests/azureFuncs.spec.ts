@@ -31,17 +31,14 @@ function resetStashValues(): void {
   localStorage.setItem('gdt-awaiting-conectivity', 'false');
 }
 
-  // Mock global fetch so a real network isn't made when fetch is called in functions to be tested
-  const mockFetch = vi.fn();
-  global.fetch = mockFetch
+// Mock global fetch so a real network isn't made when fetch is called in functions to be tested
+const mockFetch = vi.fn();
+global.fetch = mockFetch
 
-describe("Placeholder tests", () => {
-    it("Future offline tests will go here", () => {
-        expect(true).toBe(true);
-    }),
+describe("Offline Function Tests", () => {
     it("Test to confirmRequestFulfilled for new record and record entry created offline", async () => {
       const mockRecord = [{record: {description: 'mockRecord'}}];
-      mockFetch.mockResolvedValue({ok: true, status: 200,json: () => Promise.resolve(mockRecord),})
+      mockFetch.mockResolvedValue({ok: true, status: 200,json: () => Promise.resolve(mockRecord)})
 
       const record = {description : 'mockRecord'}
       const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', record)
