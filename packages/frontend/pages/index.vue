@@ -81,6 +81,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     </div>                    
                 </div>
 
+                <div id="latest-news-item">
+                    <img src="/assets/images/impact_heatmap.jpg" style="border-radius: 10px"/>
+                    <div style="gap: 4px">
+                        <span id="latest-news-header">Global Impact</span>
+                        <p id="latest-news-text">Our services are used around the world. From indie tourniquet manufacturers to wartorn hospitals to Doctors Without Borders, GDT stabilizes supply chains that save lives.</p>
+                        <button id="latest-news-button" @click="$router.push('/heatmap')">View our impact</button>
+                    </div>
+
+                </div>
+
             </div>
         </div>
 
@@ -337,12 +347,12 @@ methods: {
         display: flex; 
         flex-direction: column; 
         width: 356px; 
-        height: 524px
+        height: 524px;
     }
     .latest-news {
         display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(400px, 400px)); 
-        gap: 60px
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+        gap: 60px;
     }
     .latest-news img {
         width: 356px; 
