@@ -159,3 +159,4 @@ describe("Stash and Remove Offline Requests", () => {
     expect(requestFromStash).toEqual('');
     expect(returnedKey).toEqual('');
   });
+});
