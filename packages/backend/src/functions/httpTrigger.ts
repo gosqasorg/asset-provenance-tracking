@@ -466,6 +466,10 @@ async function upgradeProvenance(request: HttpRequest, context: InvocationContex
     return { jsonBody: body ?? { "already-converted": true} };
 }
 
+// TODO: Make a function to encode attachment filenames using utf-8
+// This will allow us to keep special characters without them getting corruted during transit
+// content-disposition header get the encoded filename and also a fallback filename that uses '_'.
+
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
