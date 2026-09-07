@@ -65,7 +65,13 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
 
         // Check for the attachment name
         let fileName = response.headers.get('Attachment-Name');
-        // TODO: Decode Filename 
+        if (fileName) {
+            try {
+                fileName = decodeURIComponent(fileName);
+            } catch {
+                fileName = null; // use the attachment name instead
+            }
+        }
 
         // If the header is not present, fetch the attachment name
         if(!fileName) {
