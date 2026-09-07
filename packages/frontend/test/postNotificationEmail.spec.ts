@@ -77,7 +77,6 @@ describe('postNotificationEmail', () => {
         expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
-});
 
     it('normalizes and removes duplicate notification email addresses', () => {
         const result = parseNotificationEmails(
