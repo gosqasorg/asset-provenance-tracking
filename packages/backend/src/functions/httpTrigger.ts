@@ -468,7 +468,7 @@ async function upgradeProvenance(request: HttpRequest, context: InvocationContex
 
 // Headers can only hold plain ASCII text, so encoding filenames incase they have special characters
 // then decoding them on the frontend
-function encodeAttachmentFilename(filename: string) : {fallback: string; encoded: string } {
+export function encodeAttachmentFilename(filename: string) : {fallback: string; encoded: string } {
     const encoded = encodeURIComponent(filename); 
 
     // some tools don't use filename* so a fallback is made where unwanted chars are replaces with an underscore
