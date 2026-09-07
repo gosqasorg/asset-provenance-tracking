@@ -9,7 +9,8 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entered notifySubscribers')
-    const description = JSON.parse(formData.get('provenanceRecord')).description
+    const record = JSON.parse(formData.get('provenanceRecord'));
+    const description = record ? record.description : "";
 
     // Notify users who subscribed to this record.
     const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey);
@@ -18,7 +19,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     const emailIDArray = extractedEmails[1] || [];
     if (emailSet.size === 0) {
         context.log("No subscribers found for this record.");
-        return;
+        return { status: 204 };
     }
 
     if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
@@ -47,10 +48,9 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
                 throw result.message
             }
         }
+        return { status: 200 };
     } catch (error) {
-        context.error("Error sending email: " + error);
-        context.error(error.statusCode)
-        context.error(error)
+        context.error("Error sending email: ", error.statusCode, error);
         throw error
     }
 }
