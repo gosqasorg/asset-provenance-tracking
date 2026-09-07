@@ -98,6 +98,7 @@ describe('postNotificationEmail', () => {
         // @ts-ignore
         (globalThis as any).useRuntimeConfig = () => ({ public: { baseUrl: 'https://api.test' }});
         const mockFetch = vi.fn().mockResolvedValue({
+            ok: true,
             status: 200,
             json: vi.fn().mockResolvedValue({ token: 'test-token' }),
         });
