@@ -122,7 +122,7 @@ async mounted() {
 
 methods: {
     getQueuedKeys() {
-        let queued = localStorage.getItem("gdt-stash-failed") || '{}';
+        let queued = localStorage.getItem("gdt-stash-queued") || '{}';
         if (queued == '[{}]' || queued == '{}') {
             return
         }
