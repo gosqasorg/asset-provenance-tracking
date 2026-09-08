@@ -472,8 +472,7 @@ export function encodeAttachmentFilename(filename: string) : {fallback: string; 
     const encoded = encodeURIComponent(filename); 
 
     // some tools don't use filename* so a fallback is made where unwanted chars are replaces with an underscore
-    let fallback = filename.replace(/[^a-zA-Z0-9._-]+/g, '_') // incase broswer doesnt accept fi
-    
+    let fallback = filename.replace(/[^a-zA-Z0-9._-]+/g, '_') 
     fallback = fallback.trim() || 'attachment'; // incase filename is empty
     
     return { fallback, encoded };
