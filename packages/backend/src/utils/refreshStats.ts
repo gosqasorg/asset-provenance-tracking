@@ -1,0 +1,1 @@
+// TODO: Make time trigger that calls updateStats function every hour

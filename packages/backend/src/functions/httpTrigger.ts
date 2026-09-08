@@ -490,6 +490,7 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
     return { body: filename };
 };
 
+// TODO: Update getStatistics to call StatsCache for retrieving statistics 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const directory_id = process.env['AZURE_TENANT_ID'];
     const app_registration_id = process.env['AZURE_CLIENT_ID'];
@@ -610,6 +611,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     }; 
 };
 
+// TODO: update setStatisticsTotals to call StatsCache for retrieving statistics 
 async function setStatisticsTotals() {
     await containerClient.createIfNotExists();
     const containerExists = await containerClient.exists();

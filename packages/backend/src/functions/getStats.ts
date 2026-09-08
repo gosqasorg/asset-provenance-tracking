@@ -52,7 +52,7 @@ async function runQuery(query: string, context): Promise<[string, number][]> {
     }
 }
 
-
+// TODO: update getBrowserStats to call StatsCache for retrieving statistics 
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
     try {
