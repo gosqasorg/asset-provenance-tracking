@@ -67,11 +67,11 @@ export default {
     props: {
         deviceName: {
             type: String,
-            required: true
+            default: ""
         },
         description: {
             type: String,
-            required: true
+            default: ""
         },
         fontSize: { type: [String, Number], default: () => "18px" },
         height: { type: [String, Number], default: () => "61px" },
