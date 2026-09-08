@@ -274,7 +274,7 @@ export async function fetchUrlWithErrorHandling(
     throw new Error(errorMessage);
 }
 
-export function stashOfflineRequest(currentKey: string, stashName: string, request?: any) {
+export function stashOfflineRequest(currentKey: string, stashName: string, request?: object) {
     // Function to stash an offline request (works for queued, failed, fulfilled, and provenance stashes)
     try {
         let requests = [];
@@ -291,7 +291,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         // Get the existing stashed requests, skip the loop if there are none
         if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
             for (let storedRequest of existingRequests) {
-                if (request && storedRequest["data"] == request || storedRequest == currentKey ) {
+                if ((request && JSON.stringify(storedRequest["data"]) == JSON.stringify(request)) || storedRequest == currentKey) {
                     // If new request == existing request, exit without updating the stash
                     return;
                 } else if (stashName.includes("provenance") && storedRequest["key"] == currentKey) {
@@ -388,6 +388,8 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
     return false
 }
 
+// TODO: does this need to be async?? (if not remove await from calls)
+    // New name getProvenanceOffline..?
 export async function offlineGetProvenance(deviceKey: string) {
     // Check the stash and see if the provenance of the given key is stored
     try {

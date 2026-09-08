@@ -169,7 +169,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers, stashOfflineRequest } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -330,6 +330,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            // TODO: Remove below, using it for testing offline get
+            // EventBus.emit('feedRefresh');
+
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
@@ -457,11 +460,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             } catch (error) {
                 // Remove the leading "Error:" text
-                let errorMessage;
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = error;
+                const errorMessage = error instanceof Error ? error.message : error;
+
+                if (error && error.toString().includes("Could not connect")) {
+                    stashOfflineRequest(this.recordKey, "gdt-stash-queued", record);
                 }
 
                 console.log(error)
@@ -474,12 +476,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 } else {
                     this.$snackbar.add({
                         type: 'error',
-                        text: `Error creating record: ${error}`
+                        text: `Error creating record: ${errorMessage}`
                     });
                 }
 
                 // Emit an event to notify history/[deviceKey].vue to refresh
-                EventBus.emit('feedRefresh');
+                EventBus.emit('isCreating');
             }
         }
     }
