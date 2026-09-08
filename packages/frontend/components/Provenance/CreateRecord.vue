@@ -462,13 +462,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 // Remove the leading "Error:" text
                 const errorMessage = error instanceof Error ? error.message : error;
 
-                if (error && error.toString().includes("Could not connect")) {
-                    stashOfflineRequest(this.recordKey, "gdt-stash-queued", record);
-                }
-
                 console.log(error)
                 console.log(errorMessage)
-                if(errorMessage.includes('high volume of requests')) {
+
+                if (error && error.toString().includes("Could not connect")) {
+                    stashOfflineRequest(this.recordKey, "gdt-stash-queued", record);
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: `Status 202: User is offline but the record has been stashed`
+                    });
+                } else if (errorMessage.includes('high volume of requests')) {
                     this.$snackbar.add({
                         type: 'error',
                         text: `Error sending email: ${errorMessage}`
