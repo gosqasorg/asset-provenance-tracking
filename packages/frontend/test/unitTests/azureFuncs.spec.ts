@@ -1,7 +1,8 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, getAttachment } from '~/services/azureFuncs';
+import { blob } from 'stream/consumers';
 
 async function createRequest (
   name: string,
@@ -48,3 +49,21 @@ describe("Offline Function Tests", () => {
       expect(resultNewRecord).toBe(true)
     })
 });
+
+// test for the getAttachment function
+describe("getAttachment decoding", () => {
+    it('decodes encoded attachment header correctly', async () => {
+    const originalName = '🎲.png';
+    mockFetch.mockResolvedValue({
+      headers: new Headers({'Attachment-Name': encodeURIComponent(originalName)}),
+      blob: () => Promise.resolve(new Blob(['data'], { type: 'image/png' }))
+    });
+
+    const key = await makeEncodedDeviceKey();
+    const result = await getAttachment('http://test', key, 'testid');
+
+    expect(result.fileName).toBe(originalName);
+    
+  });
+
+})
