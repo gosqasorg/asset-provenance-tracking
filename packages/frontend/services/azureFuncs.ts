@@ -41,21 +41,17 @@ export async function getProvenance(deviceKey: string) {
         try {
             let response = await fetchUrl(fullUrl);
             let responseJSON = await response.json() as { record: any, attachments?: string[], timestamp: number }[];
-            if (responseJSON.length !== 0) {
-                stashOfflineRequest(deviceKey, "gdt-stash-provenance", responseJSON);
-            }
             return responseJSON;
         } catch (error) {
             throw error;
         }
     } catch (error) {
         // If we're offline and the provenance is stashed then return the stashed provenance
-        if (error && error.toString().includes("Could not connect")) {
+        if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
             let offlineProvenance = await offlineGetProvenance(deviceKey);
-            if (offlineProvenance) {
+            if (offlineProvenance.length > 0) {
                 return offlineProvenance;
             }
-            // TODO: throw custom offline error?
         }
 
         console.log(`Key not found: ${deviceKey}.`);
@@ -110,6 +106,11 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
+        // If we're offline stash the record to create later
+        if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+            stashOfflineRequest(deviceKey, "gdt-stash-queued", record);
+            throw new Error('Status 202: User is offline but the record has been stashed');
+        }
         throw error;
     }
 }
@@ -274,29 +275,23 @@ export async function fetchUrlWithErrorHandling(
     throw new Error(errorMessage);
 }
 
-export function stashOfflineRequest(currentKey: string, stashName: string, request?: object) {
+export function stashOfflineRequest(currentKey: string, stashName: string, request: object) {
     // Function to stash an offline request (works for queued, failed, fulfilled, and provenance stashes)
     try {
         let requests = [];
         let stash = localStorage.getItem(stashName) || "[]";
         let existingRequests;
+        const timestamp = new Date().getTime();
 
         // Get the previous requests from the stash
-        if (stashName.includes("fulfilled")) {
-            existingRequests = stash.split(",");
-        } else {
-            existingRequests = JSON.parse(stash);
-        }
+        existingRequests = JSON.parse(stash);
 
         // Get the existing stashed requests, skip the loop if there are none
         if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
             for (let storedRequest of existingRequests) {
-                if ((request && JSON.stringify(storedRequest["data"]) == JSON.stringify(request)) || storedRequest == currentKey) {
+                if ((request && JSON.stringify(storedRequest["data"]) == JSON.stringify(request))) {
                     // If new request == existing request, exit without updating the stash
                     return;
-                } else if (stashName.includes("provenance") && storedRequest["key"] == currentKey) {
-                    // If new provenance == existing provenance, remove the old provenance and re-add at the end
-                    continue;
                 }
 
                 requests.push(storedRequest);
@@ -304,16 +299,8 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         }
 
         // Add the new request and set the new stash value
-        if (stashName.includes("fulfilled")) {
-            requests.push(currentKey);
-            localStorage.setItem(stashName, requests.toString());
-        } else if (stashName.includes("provenance")) {
-            requests.push({"key": currentKey, "provenance": request});
-            localStorage.setItem(stashName, JSON.stringify(requests));
-        } else {
-            requests.push({"key": currentKey, "data": request});
-            localStorage.setItem(stashName, JSON.stringify(requests));
-        }
+        requests.push({"key": currentKey, "data": request, "timestamp": timestamp});
+        localStorage.setItem(stashName, JSON.stringify(requests));
 
     } catch (error) {
         console.log("Failed to Stash: " + error);
@@ -321,7 +308,6 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
     }
 }
 
-// TODO: Update removeOfflineRequest to work for gdt-stash-provenance (see stash function)
 export function removeOfflineRequest(currentKey: string, stashName: string) {
     // Function to remove an offline request from the stash (works for queued, failed, and fulfilled stashes)
     try {
@@ -330,37 +316,23 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
         let existingRequests;
 
         // Get the previous requests from the stash
-        if (stashName.includes("fulfilled")) {
-            existingRequests = stash.split(",");
-        } else {
-            existingRequests = JSON.parse(stash);
-        }
+        existingRequests = JSON.parse(stash);
 
         // If there are no previous requests exit the function (nothing to remove)
         if (JSON.stringify(existingRequests) == "[]" || JSON.stringify(existingRequests) == '["[]"]') {
             return;
         }
 
-        if (stashName.includes("fulfilled")) {
-            // Remove key from the fulfilled stash
-            const index = existingRequests.indexOf(currentKey);
-            if (index > -1) {
-                existingRequests.splice(index, 1);
-            }
-            localStorage.setItem(stashName, existingRequests.toString())
-            
-        } else {
-            // Remove request from the queue/failed stash
-            for (let i = 0; i < existingRequests.length; i++) {
-                let requestKey = existingRequests[i]["key"];
+        // Remove request from the stash
+        for (let i = 0; i < existingRequests.length; i++) {
+            let requestKey = existingRequests[i]["key"];
 
-                // Add back all requests except the one we're removing 
-                if (requestKey != currentKey) {
-                    requests.push(existingRequests[i]);
-                }
+            // Add back all requests except the one we're removing 
+            if (requestKey != currentKey) {
+                requests.push(existingRequests[i]);
             }
-            localStorage.setItem(stashName, JSON.stringify(requests))
         }
+        localStorage.setItem(stashName, JSON.stringify(requests))
 
     } catch (error) {
         console.log("Failed to Remove from Stash: " + error);
@@ -390,19 +362,31 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
 
 // TODO: does this need to be async?? (if not remove await from calls)
     // New name getProvenanceOffline..?
-export async function offlineGetProvenance(deviceKey: string) {
-    // Check the stash and see if the provenance of the given key is stored
-    try {
-        let stashedProvenances = JSON.parse(localStorage.getItem("gdt-stash-provenance") || '[]');
 
-        for (let i = 0; i < stashedProvenances.length; i++) {
-            // If the provenance we're looking for is stashed then return it
-            if (stashedProvenances[i]["key"] == deviceKey) {
-                return stashedProvenances[i]["provenance"];
+interface ProvenanceRecord {
+    record: any,
+    attachments?: readonly string[], // todo remove this or format attachments from here instead??
+}
+
+export async function offlineGetProvenance(deviceKey: string) {
+    // Check all stashes and see if provenance records of the given key are stored
+    const stashes = ["gdt-stash-queued", "gdt-stash-fulfilled", "gdt-stash-failed"];
+    let records = new Array<ProvenanceRecord & { attachments: string[], timestamp: number }>();
+
+    try {
+        for (let stash of stashes) {
+            let stashedProvenances = JSON.parse(localStorage.getItem(stash) || '[]');
+
+            for (let i = 0; i < stashedProvenances.length; i++) {
+                // If a provenance record we're looking for is stashed then add it to our records to return
+                if (stashedProvenances[i]["key"] == deviceKey) {
+                    records.push({ "record": stashedProvenances[i]["data"], "attachments": [], "timestamp": stashedProvenances[i]["timestamp"] })
+                }
             }
         }
 
-        return;
+        records.sort((a, b) => b["timestamp"] - a["timestamp"])
+        return records;
 
     } catch (error) {
         console.log("Failed to Retrieve Provenance History from Stash: " + error);

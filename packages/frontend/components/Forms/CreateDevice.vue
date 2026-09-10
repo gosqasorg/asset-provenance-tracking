@@ -245,7 +245,7 @@ export default {
                 if (!validateKey(this.deviceKey)) {
                     this.deviceKey = await makeEncodedDeviceKey();
                 }
-                const response = await postProvenance(this.deviceKey, {
+                const record = {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -253,7 +253,8 @@ export default {
                     children_key: '',
                     hasParent: this.hasParent,
                     isPublicKey: this.isPublicKey,
-                }, this.pictures || []);
+                }
+                const response = await postProvenance(this.deviceKey, record, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
@@ -266,7 +267,7 @@ export default {
                 let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
 
                 if (isGroup == "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled", record);
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
 
@@ -303,8 +304,13 @@ export default {
                     text: errorMessage
                 });
 
-                // If we're online return to the /gdt page
-                EventBus.emit('isLoading');
+                if (errorMessage.includes("Status 202")) {
+                    // If we're offline go the history page in offline mode
+                    await this.$router.push({ path: `/record/${this.deviceKey}` });
+                } else {
+                    // If we're online return to the /gdt page
+                    EventBus.emit('isLoading');
+                }
             } finally {
                 this.isSubmitting = false;
             }

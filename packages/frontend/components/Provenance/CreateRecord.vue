@@ -465,7 +465,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 console.log(error)
                 console.log(errorMessage)
 
-                if (error && error.toString().includes("Could not connect")) {
+                if (error && error.toString().includes("202")) {
                     stashOfflineRequest(this.recordKey, "gdt-stash-queued", record);
                     this.$snackbar.add({
                         type: 'success',
@@ -485,6 +485,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 // Emit an event to notify history/[deviceKey].vue to refresh
                 EventBus.emit('isCreating');
+                EventBus.emit('feedRefresh');
             }
         }
     }
