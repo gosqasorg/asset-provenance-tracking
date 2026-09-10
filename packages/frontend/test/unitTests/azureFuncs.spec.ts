@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, postProvenance, getProvenance, offlineGetProvenance } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, postProvenance, getProvenance, getProvenanceOffline } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -165,7 +165,7 @@ describe("Stash and Remove Offline Requests", () => {
   });
 });
 
-describe("postProvenance, getProvenance, and offlineGetProvenance", () => {
+describe("postProvenance, getProvenance, and getProvenanceOffline", () => {
   it("Test postProvenance Offline Stashing", async () => {
     // Create a provenance to stash
     resetStashValues();
@@ -228,18 +228,18 @@ describe("postProvenance, getProvenance, and offlineGetProvenance", () => {
     expect(stashedProvenance["data"]).toStrictEqual(provenanceRecord);
   });
 
-  it("Test offlineGetProvenance", async () => {
+  it("Test getProvenanceOffline", async () => {
     // Create a provenance to stash
     resetStashValues();
     let [key, data] = await createRequest(
-      'offlineGetProvenance Test',
-      'Test for the offlineGetProvenance function'
+      'getProvenanceOffline Test',
+      'Test for the getProvenanceOffline function'
     );
     let provenanceRecord = JSON.parse(data.get('provenanceRecord') as string);
 
-    // Stash the provenance and confirm offlineGetProvenance can retreive it
+    // Stash the provenance and confirm getProvenanceOffline can retreive it
     stashOfflineRequest(key, "gdt-stash-queued", provenanceRecord);
-    let stashedProvenance = await offlineGetProvenance(key);
+    let stashedProvenance = getProvenanceOffline(key);
     let stashedRecord = stashedProvenance[0] || {record: ""};
     expect(stashedProvenance.length).toBe(1);
     expect(stashedRecord["record"]).toStrictEqual(provenanceRecord);
@@ -248,17 +248,17 @@ describe("postProvenance, getProvenance, and offlineGetProvenance", () => {
     await new Promise((r) => setTimeout(r, 1000));
     const provenanceRecord2 = {
       blobType: 'deviceInitializer',
-      deviceName: 'offlineGetProvenance Test 2',
-      description: 'Test for multiple records in the offlineGetProvenance function',
+      deviceName: 'getProvenanceOffline Test 2',
+      description: 'Test for multiple records in the getProvenanceOffline function',
       tags: [],
       children_key: '',
       hasParent: false,
       isPublicKey: false
     };
 
-    // Stash the new provenance and confirm offlineGetProvenance can retreive both of them
+    // Stash the new provenance and confirm getProvenanceOffline can retreive both of them
     stashOfflineRequest(key, "gdt-stash-queued", provenanceRecord2);
-    stashedProvenance = await offlineGetProvenance(key);
+    stashedProvenance = getProvenanceOffline(key);
     stashedRecord = stashedProvenance[1] || {record: ""};
     let stashedRecord2 = stashedProvenance[0] || {record: ""};
     expect(stashedProvenance.length).toBe(2);
@@ -266,10 +266,10 @@ describe("postProvenance, getProvenance, and offlineGetProvenance", () => {
     expect(stashedRecord2["record"]).toStrictEqual(provenanceRecord2);
 
     // Attempt to get a provenance that was not stashed and confirm it returns nothing
-    stashedProvenance = await offlineGetProvenance("123456789101112asdfghi");
+    stashedProvenance = getProvenanceOffline("123456789101112asdfghi");
     expect(stashedProvenance).toEqual([]);
 
-    stashedProvenance = await offlineGetProvenance("invalidKey");
+    stashedProvenance = getProvenanceOffline("invalidKey");
     expect(stashedProvenance).toEqual([]);
   });
 });

@@ -6,15 +6,15 @@ postProvenance adds records that fail to create while offline to the queue stash
 
 ## localStorage
 
-localStorage is a way for us to store data that persists between pages/instances of the site. Here we store all of the records created offline in three stashes:
+localStorage is a way for us to store data that persists between pages/instances of the site. Here we store all of the records created offline in three stashes (which all have the same layout):
 - **queue stash (gdt-stash-queued):** stores records to create once back online (FIFO, we added new records to the end of the stash and remove from the beginning)
-  - queue stash layout: [{“key”: key, “data”: record}, {“key”: key2, “data”: record2}, ...]
+  - queue stash layout: [{“key”: key, “data”: record, "timestamp": time-stashed}, ...]
  
 - **failed stash (gdt-stash-failed):** stores records that failed to create from the queue
-  - failed stash layout: [{“key”: key, “data”: record}, {“key”: key2, “data”: record2}, ...]
+  - failed stash layout: [{“key”: key, “data”: record, "timestamp": time-stashed}, ...]
 
 - **fulfilled stash (gdt-stash-fulfilled):** stores records successfully created from the queue
-  - fulfilled stash layout: [key, key2, …]
+  - fulfilled stash layout: [{“key”: key, “data”: record, "timestamp": time-stashed}, ...]
 
 We have a few other variables that we store in localStorage as well:
 - **workerIsActive:** a boolean that tells us whether or not a worker is already running (this is to prevent multiple workers running on the same device)
@@ -34,6 +34,7 @@ Offline mode has a couple of functions that allow it to work:
 - **getFirstQueueItem/removeFirstQueueItem:** add/remove _first_ request from stash (works for all 3 stashes)
 - **confirmRequestFulfilled:** calls getProvenance on new item to confirm it exists
 - **displayInSnackbar:** display success snackbar to the frontend
+- **getProvenanceOffline:** gets stashed provenance records and compiles them for the history page's offline mode to display
 
 ## Our Diagrams
 

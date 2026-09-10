@@ -48,7 +48,7 @@ export async function getProvenance(deviceKey: string) {
     } catch (error) {
         // If we're offline and the provenance is stashed then return the stashed provenance
         if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
-            let offlineProvenance = await offlineGetProvenance(deviceKey);
+            let offlineProvenance = getProvenanceOffline(deviceKey);
             if (offlineProvenance.length > 0) {
                 return offlineProvenance;
             }
@@ -360,18 +360,10 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
     return false
 }
 
-// TODO: does this need to be async?? (if not remove await from calls)
-    // New name getProvenanceOffline..?
-
-interface ProvenanceRecord {
-    record: any,
-    attachments?: readonly string[], // todo remove this or format attachments from here instead??
-}
-
-export async function offlineGetProvenance(deviceKey: string) {
+export function getProvenanceOffline(deviceKey: string) {
     // Check all stashes and see if provenance records of the given key are stored
     const stashes = ["gdt-stash-queued", "gdt-stash-fulfilled", "gdt-stash-failed"];
-    let records = new Array<ProvenanceRecord & { attachments: string[], timestamp: number }>();
+    let records = new Array<{record: any} & { attachments: string[], timestamp: number }>();
 
     try {
         for (let stash of stashes) {
