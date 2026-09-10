@@ -805,7 +805,8 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 		if (record.record.tags && (record.record.tags).includes("recall")) {
 			context.error(`Record has already been recalled`);
             return {
-                status: 500
+                status: 400,
+                body: "Record has already been recalled"
             }
 		}
 	}
