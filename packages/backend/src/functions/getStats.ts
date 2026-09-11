@@ -5,9 +5,17 @@ const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
 const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
+console.log(`directoryId: ${directoryId}`)
+console.error(`appRegistrationId: ${appRegistrationId}`)
+console.error(`secretValue: ${secretValue}`)
+console.error(`workspaceId: ${workspaceId}`)
+
 if(![directoryId, appRegistrationId, secretValue, workspaceId].every(Boolean)) {
-    console.error('getStats Error: credentials not set'); 
-    //throw new Error('Error: getStats credentials not set not set.') 
+    console.error('getStats Error: credentials not set: '
+     + `directoryId: ${directoryId}`
+     + `appRegistrationId: ${appRegistrationId}` 
+     + `secretValue: ${secretValue}` 
+     + `workspaceId: ${workspaceId}`)
 }
 
 const tokenResponse = await fetch(
@@ -46,12 +54,36 @@ async function runQuery(query: string, context): Promise<[string, number][]> {
         context.log(`Query result: ${JSON.stringify(result)}`)
         const data = await result.json();
         context.log('Returning from runQuery: Success')
-        return data.tables[0].rows
+        return data.tables?.[0]?.rows ?? []
     } catch(error) {
         context.log(`Leaving runQuery: error occurred: ${error}`)
     }
 }
 
+async function boop(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering boop')
+    let query = `
+AppExceptions
+| where TimeGenerated > ago(365d)
+| where ExceptionType contains "RpcException"
+| summarize FailureCount = count() by bin(TimeGenerated, 1d)
+    `
+    const rows = await runQuery(query, context)
+
+    let response = { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } }
+    context.log(rows)
+    context.log(response)
+    context.log('Returning from boop')
+    return response   
+}
+
+
+
+app.get("boop", {
+    authLevel: 'anonymous',
+    route: 'stats/boop',
+    handler: boop
+})
 
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
