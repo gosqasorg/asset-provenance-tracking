@@ -40,8 +40,7 @@ export async function getProvenance(deviceKey: string) {
 
         try {
             let response = await fetchUrl(fullUrl);
-            let responseJSON = await response.json() as { record: any, attachments?: string[], timestamp: number }[];
-            return responseJSON;
+            return await response.json() as { record: any, attachments?: string[], timestamp: number }[];
         } catch (error) {
             throw error;
         }

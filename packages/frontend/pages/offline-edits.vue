@@ -137,9 +137,14 @@ methods: {
     getFulfilledKeys() {
         // Get all keys that were fullfilled from the stash
         let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
-        for (const key of fulfilled.split(",")) {
-            if (key !== "{}") {
-                this.fulfilledKeys.push(key) 
+        if (fulfilled == '[{}]' || fulfilled == '{}') {
+            return
+        }
+
+        for (const request of JSON.parse(fulfilled)) {
+            if (JSON.stringify(request) !== "{}") {
+                let key = request["key"];
+                this.fulfilledKeys.push(key);
             }
         }
     },
@@ -252,7 +257,7 @@ methods: {
             if (!stashedRecord.deviceName) {
                 // If the request doesn't have a name then it is part of an existing record/group
                 this.$router.push({
-                    path: '/history/offline'
+                    path: `/history/${key}`
                 });
             } else {
                 // Otherwise it is either a new record or group

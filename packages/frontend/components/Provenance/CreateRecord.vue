@@ -330,9 +330,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
-            // TODO: Remove below, using it for testing offline get
-            // EventBus.emit('feedRefresh');
-
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
