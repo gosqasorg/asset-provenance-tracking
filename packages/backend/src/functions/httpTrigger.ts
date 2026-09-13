@@ -409,9 +409,9 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const record = JSON5.parse(provenanceRecord);
 
     if ("deviceName" in record) {
-        if (!validateRecordJSON(record)) { return { status: 400 }; }
+        if (!validateRecordJSON(record)) { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
     } else {
-        if (!validateEntryJSON(record)) { return { status: 400 }; }
+        if (!validateEntryJSON(record)) { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
     }
 
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
