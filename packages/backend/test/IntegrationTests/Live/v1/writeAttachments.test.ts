@@ -1,15 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
-import { readFile } from 'fs/promises';
-import { writeFile } from 'fs/promises';
-
-
+import { readFile, writeFile } from 'fs/promises';
 
 
 describe("Creating records with attachments", () => {
 	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
-	// create a record with an attachement 
+	// Create a record with an attachement 
 	it("Create record with one attachment ", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
@@ -24,7 +21,7 @@ describe("Creating records with attachments", () => {
 				blobType: 'deviceInitializer',
 				deviceName: "Create Record Test",
 				description: "An API Feature Test-Attachments",
-				tags: {},
+				tags: [],
 				children_key: '',
 				hasParent: false,
 				isPublicKey: false,
@@ -97,7 +94,7 @@ describe("Creating records with attachments", () => {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test - Multiple Attachments",
             description: "An API Feature Test - Multiple Attachments",
-            tags: {},
+            tags: [],
             children_key: '',
             hasParent: false,
             isPublicKey: false,
@@ -182,7 +179,7 @@ describe("Creating records with attachments", () => {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test - PDF",
             description: "An API Feature Test - PDF Attachment",
-            tags: {},
+            tags: [],
             children_key: '',
             hasParent: false,
             isPublicKey: false,
@@ -252,7 +249,7 @@ describe("Creating records with attachments", () => {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test - Large File",
             description: "An API Feature Test - Large Attachment (>2MB)",
-            tags: {},
+            tags: [],
             children_key: '',
             hasParent: false,
             isPublicKey: false,
