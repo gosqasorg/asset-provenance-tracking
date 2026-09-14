@@ -12,7 +12,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@a
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, setupBlobClient, getExisitingEmails } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 import './getStats.js';
 import { sendEmail } from './sendEmail.js'
@@ -776,10 +776,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
-
-                    // If users are subscribed to child records notify them
-                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -892,10 +888,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                         method: "POST",
                         body: keyFormData,
                     })
-
-                    // If users are subscribed to child records notify them
-                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1598,6 +1590,45 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // parse email, recordKey, and tags from body
+    const body = await request.json() as any;
+    const groupKey = body.groupKey;
+    const childKey = body.childKey;
+    const tags = body.tags ?? [];
+
+    if (!groupKey || !childKey) {
+        return {
+            jsonBody: {error: "Error: group and child keys required"},
+            status: 400
+        }
+    }
+
+    await containerClient.createIfNotExists();
+
+    // 1. Get emails subscribed to the groupKey
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, groupKey);
+    const exists = await blobClient.exists();
+    let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+    // 2. Subscribe all emails from the groupKey to the childKey
+    for (let email of emailSet) {
+        let response = await subscribeToNotifications(containerClient, calculateDeviceID, childKey, email, tags);
+        if (response.status !== 200) {
+            return {
+                jsonBody: {error: "Error: Failed to subscribe group to children"},
+                status: 500
+            }
+        }
+    }
+    
+    // 3. If all emails are succesfully subscribed return success
+    return {
+        jsonBody: { message: "Successfully subscribed group to children email notifications" },
+        status: 200
+    }
+}
+
 async function createRecord(context, name, description, tags, attachments) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
@@ -1969,4 +2000,10 @@ app.post("notifySubscribers", {
     authLevel: 'anonymous',
     route: 'notifySubscribers/{deviceKey}',
     handler: notifySubscribersHandler
+})
+
+app.post("subscribeGroupToChildren", {
+    authLevel: 'anonymous',
+    route: 'subscribeGroupToChildren',
+    handler: subscribeGroupToChildren
 })
