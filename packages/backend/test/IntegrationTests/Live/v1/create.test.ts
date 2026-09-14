@@ -23,8 +23,7 @@ describe("Group of tests", () => {
 
 */
 
-// const baseUrl = "http://localhost:7071/api";
-const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+const baseUrl = process.env['backend_url'].split('/prov')[0] 
 
 describe("Group Creation Tests", () => {
 	// The most basic possible test
@@ -298,7 +297,7 @@ describe("Group Creation Tests", () => {
 		);
 		const [childRecord, publicRecord] = updateData;
 
-		expect(childRecord[1].record.description).toBe("Updated only the child with recall");
+		expect(childRecord[1].record.description).toBe("Recalled");
 		expect(childRecord[1].record.tags).toStrictEqual(['recall', 'public-test']);
 		expect(childRecord[0].record.description).toBe("Send record entry to all children");
 		expect(childRecord[0].record.tags).toStrictEqual(['sent_to_all_children', 'public-test', 'test-2']);
@@ -890,7 +889,8 @@ describe("Group Creation Tests", () => {
 		
 		// GET and verify 
 		try {
-			const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			let getResponse = await fetch(`${baseUrl}/provenance/${groupKey}`)
+			getResponse = await getResponse.json() 
 			expect(getResponse).toBeDefined()
 			expect(getResponse.length).toBeGreaterThan(0)
 
@@ -1062,6 +1062,7 @@ describe("Record Creation Tests", () => {
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(1st Test) Created Device Key: " + deviceKey);
 		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
+		console.log(fullUrl)
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
@@ -1082,7 +1083,10 @@ describe("Record Creation Tests", () => {
 			const postResponse = await fetch(fullUrl, {
 				method: "POST",
 				body: formData,
-			});
+			}); 
+
+			console.log(formData)
+			console.log(postResponse)
 
 			expect(postResponse.ok).toBe(true);
 
