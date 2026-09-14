@@ -8,7 +8,7 @@ import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
@@ -63,8 +63,23 @@ interface NamedBlob {
     name?: string,
     blob: Blob,
 }
+interface UsageStats {
+    records1h: number;
+    records24h: number;
+    records7d: number;
+    devices1h: number;
+    devices24h: number;
+    devices7d: number;
+    recordsPerDayY: number[];
+    recordsPerHourY: number[];
+    totalFailures: number;
+    totalSuccesses: number;
+    generatedAt: number;
+}
 
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
+
+const ONE_HOUR = 60 * 60 * 1000;
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -490,7 +505,7 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
     return { body: filename };
 };
 
-export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function getUsageStats(context?: InvocationContext): Promise<UsageStats> {
     const directory_id = process.env['AZURE_TENANT_ID'];
     const app_registration_id = process.env['AZURE_CLIENT_ID'];
     const secret_value = process.env['AZURE_CLIENT_SECRET'];
@@ -584,7 +599,83 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     });
     let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
 
-    // Get total statistics counts (updates once per day)
+    return {
+        records1h, records24h, records7d, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalFailures, totalSuccesses, generatedAt: Date.now()
+    }; 
+}
+
+const usageDataObject = {
+	theStatistics: undefined as UsageStats | undefined,
+
+	setStats: async function(myTimer?: Timer, context?: InvocationContext): Promise<UsageStats> { 
+        const newStats = await getUsageStats(context);
+        const data = JSON.stringify(newStats);
+
+        const uploadOptions = {
+            blobHTTPHeaders: {
+                blobContentType: "application/json; charset=utf-8",
+            },
+        };
+
+        try{
+            await containerClient.createIfNotExists();
+            await containerClient.uploadBlockBlob(
+                `statistics/usage`,
+                data,
+                Buffer.byteLength(data),
+                uploadOptions  
+            )
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            context?.error( `Error setting statistics data to blob storage: ${msg}`)
+        }
+		usageDataObject.theStatistics = newStats;
+        context?.log(`Statistics refreshed at ${newStats.generatedAt}`)
+        return newStats;
+	},
+	getStats: async function(context?: InvocationContext): Promise<UsageStats> {
+        if (isFresh(usageDataObject.theStatistics)){
+            return usageDataObject.theStatistics;
+        }
+
+        const blobClient = containerClient.getBlockBlobClient(`statistics/usage`);
+
+        let cached: UsageStats | undefined = undefined;
+        try{
+            if((await blobClient.exists())) {
+                const buffer = await blobClient.downloadToBuffer();
+                const text = buffer.toString("utf8");
+                if(text) {
+                    cached = JSON.parse(text) as UsageStats;
+                }
+            }
+        } catch ( error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            context?.error( `Error getting cached data: ${msg}`)
+        }
+        
+        if(isFresh(cached)){
+            usageDataObject.theStatistics = cached;
+            return cached;
+        }
+        return await usageDataObject.setStats(undefined, context);
+	}
+}
+
+function isFresh(stats: UsageStats | undefined){
+    // checks the freshness of the usage data
+    if(!stats){
+        return false;
+    }
+    return (Date.now() - stats.generatedAt) < 2 * ONE_HOUR;
+}
+
+export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // updated getStatistics function that merges the usageDataObject data with the data from the `statistics/totals` blob
+    const {
+        records1h, records24h, records7d, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalFailures, totalSuccesses 
+    } = await usageDataObject.getStats(context);
+
     let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
 
     await containerClient.createIfNotExists();
@@ -603,7 +694,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
             totalDevices = parsed?.totalDevices || 0
         }
     }
-
+    
     return {
         jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
         headers: { "Content-Type": "application/json" }
@@ -1732,6 +1823,11 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
     handler: setStatisticsTotals
+})
+
+app.timer('update_usageDataObject', {
+    schedule: `0 * * * *`,
+    handler: usageDataObject.setStats
 })
 
 
