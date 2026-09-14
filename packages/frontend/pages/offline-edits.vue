@@ -59,7 +59,7 @@ while offline.
         </div>
     </div>
     <!----------------Queued Keys Banner-------------------->
-    <div v-for="(key, index) in offlineKeys">
+    <div v-for="(key, index) in queuedKeys">
         <div class="key-box">
             <p style="font-size: 17px;">{{ key }}</p>
             <div style="background-color: #91bdf5; border-radius: 20px; width: 105px; color: black; text-align: center; height:40px; display:flex; justify-content: center; align-items: center;">Queued</div>
@@ -99,7 +99,7 @@ data() {
         dismissAllEditsPopUp: false,
         dismissPublishedEditsPopUp: false,
         dismissSingleEditPopUp: false,
-        offlineKeys: [] as string[],
+        queuedKeys: [] as string[],
         fulfilledKeys: [] as string[],
         failedKeys: [] as string[],
 	}
@@ -107,10 +107,9 @@ data() {
 
 async mounted() {
     try {
-        this.getFailedKeys();
-        this.getOfflineKeys();
-        this.getFulfilledKeys();
-        this.clearOneEdit();
+        this.getKeysFromStash("gdt-stash-failed");
+        this.getKeysFromStash("gdt-stash-queued");
+        this.getKeysFromStash("gdt-stash-fulfilled");
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({
@@ -121,51 +120,25 @@ async mounted() {
 },
 
 methods: {
-    getOfflineKeys() {
-        // Get all keys that were successfully stashed while offline
-        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
-        for (stash_counter; stash_counter > 0; stash_counter--) {
-            let stashedRequest = JSON.parse(localStorage.getItem('gosqas-offline-stash-' + stash_counter) || '{}')
-            let fullUrl = stashedRequest[0][1]
-            let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
-            this.offlineKeys.push(record)   
-        }
-    },
-    getFulfilledKeys() {
-        // Get all keys that were fullfilled from the stash
-        let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
-        for (const key of fulfilled.split(",")) {
-            if (key !== "{}") {
-                this.fulfilledKeys.push(key) 
-            }
-        }
-    },
-    getFailedKeys() {
-        // Get all keys in the stash that failed to create
-        let failed = localStorage.getItem("gdt-stash-failed") || '{}';
-        if (failed == '[{}]' || failed == '{}') {
-            return
-        }
+    getKeysFromStash(stashName: string) {
+        let stashedRequests = localStorage.getItem(stashName) || '[]';
 
-        for (const request of JSON.parse(failed)) {
-            if (JSON.stringify(request) !== "{}") {
-                let fullUrl = request[0][1];
-                this.failedKeys.push(fullUrl.split("/")[fullUrl.split("/").length - 1]);
+        for (const request of JSON.parse(stashedRequests)) {
+            if (JSON.stringify(request) == "{}") {
+                continue
+            } else if (stashName.includes("queued")) {
+                this.queuedKeys.push(request["key"]);
+            } else if (stashName.includes("failed")) {
+                this.failedKeys.push(request["key"]);
+            } else {
+                this.fulfilledKeys.push(request["key"]);
             }
         }
     },
     clearAllEdits() {
-        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
-        for (stash_counter; stash_counter > 0; stash_counter--) {
-            let request_name = 'gosqas-offline-stash-' + stash_counter;
-            let old_request_name = 'gosqas_offline_stash_' + stash_counter;
-            localStorage.removeItem(request_name);
-            localStorage.removeItem(old_request_name);
-        }
-        localStorage.setItem('stash_counter', '0');
-        localStorage.removeItem('gdt-stash-syncing');
-        localStorage.removeItem('gdt-stash-fulfilled');
+        localStorage.removeItem('gdt-stash-queued');
         localStorage.removeItem('gdt-stash-failed');
+        localStorage.removeItem('gdt-stash-fulfilled');
         window.location.reload();
     },
     clearPublishedEdits() {
@@ -181,15 +154,14 @@ methods: {
         sessionStorage.removeItem("gdt-redirect-key");
     },
     clearOneEdit() {
-        // Removes key from fulfilled array then resets and copies this array to gdt stash fullfilled
+        // Removes key from fulfilled array then removes it from fulfilled stash
         const index = this.fulfilledKeys.indexOf(this.dismissOneKey);
         if (index > -1) {
+            removeOfflineRequest(this.dismissOneKey, "gdt-stash-fulfilled");
             this.fulfilledKeys.splice(index, 1);
             this.dismissOneKey = '';
             this.dismissSingleEditPopUp = false;
         }
-        localStorage.setItem('gdt-stash-fulfilled', '')
-        localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
     async retrySyncing(key: string, index: number) {
         try {
@@ -207,13 +179,13 @@ methods: {
                 return;
             }
 
-            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+            let stashedRecord = JSON.parse(stashedRequest["data"] || '{}');
 
             // Try to post the record/group and display an error if it fails
             await postProvenance(key, stashedRecord, []);
 
             // If the request creates successfully move the key to the fulfilled stash
-            stashOfflineRequest(key, "gdt-stash-fulfilled");
+            stashOfflineRequest(key, "gdt-stash-fulfilled", stashedRequest);
             removeOfflineRequest(key, "gdt-stash-failed");
 
             // Reload the page
@@ -242,7 +214,7 @@ methods: {
                 return;
             }
 
-            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+            let stashedRecord = JSON.parse(stashedRequest["data"] || '{}');
             let isGroup = false;
 
             if (stashedRecord.children_name) {
@@ -258,7 +230,7 @@ methods: {
             if (!stashedRecord.deviceName) {
                 // If the request doesn't have a name then it is part of an existing record/group
                 this.$router.push({
-                    path: '/history/offline'
+                    path: `/history/${key}`
                 });
             } else {
                 // Otherwise it is either a new record or group

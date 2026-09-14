@@ -12,7 +12,6 @@
                     borderColor="#CCECFD" color="#1E2019" padding="14px 95px" style="font-size: 20px;"></button-component></RouterLink>
             </div>
         </div>
-        <Learn_more id="learn"></Learn_more>
     </div>
 
 </template>

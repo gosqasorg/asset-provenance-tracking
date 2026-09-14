@@ -400,7 +400,7 @@ export default {
                 if (!validateKey(this.deviceKey)) {
                     this.deviceKey = await makeEncodedDeviceKey();
                 }
-                const response = await postProvenance(this.deviceKey, {
+                const record = {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -410,7 +410,8 @@ export default {
                     children_name: this.childrenName,
                     hasParent: false,
                     isPublicKey: false
-                }, this.pictures || [])
+                }
+                const response = await postProvenance(this.deviceKey, record, this.pictures || [])
 
                 // If the group is being created from the offline edits page move it to the fulfilled stash
                 const previousUrl = window.history.state.back;
@@ -419,7 +420,7 @@ export default {
                 let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
 
                 if (JSON.stringify(stashedGroup) !== '{}' && isGroup == "true" && previousUrl === "/offline-edits") {
-                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled", record);
                     removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
                 }
                 
@@ -482,8 +483,13 @@ export default {
                     text: errorMessage
                 });
 
-                // If we're online return to the /gdt page
-                EventBus.emit('isLoading')
+                if (errorMessage.includes("Status 202")) {
+                    // If we're offline go the history page in offline mode
+                    await this.$router.push({ path: `/record/${this.deviceKey}` });
+                } else {
+                    // If we're online return to the /gdt page
+                    EventBus.emit('isLoading');
+                }
             }
 
             // If we were redirected to this page then remove the stashed record
