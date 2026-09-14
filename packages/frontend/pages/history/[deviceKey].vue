@@ -21,20 +21,10 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { recordHasParent } from '~/utils/descendantList';
+
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
-
-// Catches the error when the key is invalid / not found and prevents it from not crashing
-//i.e., not sending the invalid url
-let provenance: any[] = [];
-try {
-	provenance = await getProvenance(recordKey);
-} catch (e) {
-	provenance = [];
-}
-const hasParent = recordHasParent(provenance);
 </script>
 
 <template>
@@ -145,20 +135,29 @@ const hasParent = recordHasParent(provenance);
             <div class="action-buttons">
 	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
-                <button class="btn download-btn" @click="downloadQRCode">Download QR Code</button>
+				<ProvenanceDownloadDropdown
+					:downloadQRCodeMethod="downloadQRCode"
+					:downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+					:showWithTextMethod="showWithText"
+					:resetToDefaultMethod="resetToDefaultImage">
+				</ProvenanceDownloadDropdown>
+
 
                 <ProvenanceShareDropdown
-                  :deviceName="deviceRecord.deviceName"
-                  :description="deviceRecord.description"
-                  :fontSize="20"
-                  :height="66"
-                  :width="33"
-                  >
+                    :deviceName="deviceRecord.deviceName"
+                    :description="deviceRecord.description"
+                    :fontSize="20"
+                    :height="66"
+                    :width="33"
+	              >
                 </ProvenanceShareDropdown>
             </div>
 
             <!-- Email notifications modal -->
             <ModalsEmailNotification ref="emailModal" :auto-token="autoToken" :auto-code="autoCode" @verification-completed="clearModalEmailNotificationValues" />
+
+			<!--QR Code modal-->
+			<ModalsQRCode :url="qrCodeUrl" />
 
             <section id="recalled">
               <ProvenanceFeed border="2px solid #4e3681" :disabled="!valid" :recordKey="_recordKey" :provenance="recalledRecords"/>
@@ -170,7 +169,7 @@ const hasParent = recordHasParent(provenance);
               <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
             </section>
             <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" />
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" :hasRecalledRecord="hasRecalledRecord" />
             </section>
 
 			<section id="child-keys">
@@ -222,9 +221,10 @@ import KeyList from '~/components/KeyList.vue';
 import Banner from '~/components/Banner.vue';
 import InvalidHistoryKey from '~/components/InvalidHistoryKey.vue';
 import { useRuntimeConfig } from '#app';
+import { recordHasParent } from '~/utils/descendantList';
 
 let deviceRecord: any;
-let provenance, deviceCreationRecord, provenanceNoRecord;
+let deviceCreationRecord, provenanceNoRecord;
 let recalledRecords = [];
 let recordsInFeed = [];
 const currentSection = ref();
@@ -256,16 +256,21 @@ data() {
         childKeys: [] as string[],
         _recordKey: "",
         valid: false,
+        customText: '',
+		showTextInput: false,
         // for email verification
         autoToken: '' as string,
         autoCode: '' as string,
-        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+        onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
+		provenance: [] as any[],
+		hasParent: false,
+		hasRecalledRecord: false
 	}
 },
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag) {
 			return true;
 		} else {
 			return false;
@@ -294,12 +299,13 @@ async mounted() {
             this.$router.replace({query: {}}); // remove the token and code from the url after grabbing them- to prevent user from spam reloading.
         }
 
-        this._recordKey = route.params.deviceKey as string;
-        const response = await getProvenance(this._recordKey);
-        deviceRecord = response[response.length - 1].record;
+		this._recordKey = route.params.deviceKey as string;
+		this.provenance = await getProvenance(this._recordKey) || [];
+		this.hasParent = recordHasParent(this.provenance);
+        deviceRecord = this.provenance[this.provenance.length - 1].record;
 
 		// Crawl through JSON response to look for hidden hasParent value that's changed when added to a group
-		if (recordHasParent(response)) {
+		if (recordHasParent(this.provenance)) {
 			hiddenHasParent.value = true
 		}
 
@@ -319,6 +325,7 @@ async mounted() {
 
         await this.refreshFeed();
 	} catch (error) {
+		this.hasRecalledRecord = false;
         this.isCreating = false;
         this.recordKeyFound = false;
         this.hasPublicKey = false;
@@ -349,6 +356,18 @@ methods: {
         const qrCodeComponent = this.$refs.qrcode_component as any;
         qrCodeComponent?.downloadQRCode()
 	},
+	downloadQRCodeWithText(customText?: string) {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.downloadQRCodeWithText(customText);
+	},
+	showWithText(customText?: string) {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.showWithText(customText);
+	},
+	resetToDefaultImage() {
+		const qrCodeComponent = this.$refs.qrcode_component as any;
+		qrCodeComponent?.resetToDefault();
+	},
 	addScrollListener() {
 	// When user scrolls, the nav bar is updated
 	window.addEventListener('scroll', () => {
@@ -367,11 +386,11 @@ methods: {
 	});
 	},
 	async refreshFeed() {
-	    console.log("Refreshing feed...");
+	console.log("Refreshing feed...");
 	
-	const provenance = await getProvenance(this._recordKey);
+	this.provenance = await getProvenance(this._recordKey);
 
-	if (!provenance || provenance.length === 0) {
+	if (!this.provenance || this.provenance.length === 0) {
 		this.$snackbar.add({
             type: 'error',
             text: 'No provenance record found'
@@ -387,7 +406,7 @@ methods: {
 	this.recordKeyFound = true;
 
 	// Decompose the provenance records into parts to be rendered.
-	({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(provenance));
+	({ provenanceNoRecord, deviceCreationRecord, deviceRecord } = decomposeProvenance(this.provenance));
 
 	// Pin recalled records to the top of the feed
 	recalledRecords = [];
@@ -401,6 +420,13 @@ methods: {
 		}
 	});
 
+	// Hide recall checkbox if there's already a recalled record
+	for (let record of this.provenance) {
+		if (record.record.tags && (record.record.tags).includes("recall")) {
+			this.hasRecalledRecord = true;
+		}
+	}
+
 	// This functionality could be pushed into a component...
 	this.hasPublicKey = (deviceRecord.publicKey ? true : false);
 
@@ -412,10 +438,10 @@ methods: {
 			deviceRecord.children_key.splice(index, 1);
 		}
 	}
-	this.childKeys = getChildKeys(provenance);
+	this.childKeys = getChildKeys(this.provenance);
 
 	// If record now has a parent hide the "Add to Group" field
-	if (recordHasParent(provenance)) {
+	if (recordHasParent(this.provenance)) {
 		hiddenHasParent.value = true
 	}
 
@@ -506,11 +532,25 @@ methods: {
     width: 100% !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+	margin-right: 0;
 }
 
 .buttons-container :deep(.share-btn) {
     width: 100%;
 } */
+
+.action-buttons :deep(.buttons-container) {
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    margin-top: 20px !important;
+    margin-bottom: 0 !important;
+    margin-right: 0 !important;
+}
+
+.action-buttons :deep(.share-btn) {
+    width: 100%;
+}
+
 
 .notif-btn,
 .download-btn {
@@ -558,6 +598,10 @@ methods: {
   .download-btn
   {
     flex: 1 1 100%;
+  }
+
+  .action-buttons :deep(.buttons-container) {
+    flex: 1 1 100% !important;
   }
 }
 
