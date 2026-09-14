@@ -107,8 +107,8 @@ data() {
 
 async mounted() {
     try {
-        this.getFailedKeys();
-        this.getQueuedKeys();
+        this.getKeysFromStash("gdt-stash-failed");
+        this.getKeysFromStash("gdt-stash-queued");
         this.getFulfilledKeys();
         this.clearOneEdit();
     } catch (error) {
@@ -121,39 +121,25 @@ async mounted() {
 },
 
 methods: {
-    getQueuedKeys() {
-        let queued = localStorage.getItem("gdt-stash-queued") || '{}';
-        if (queued == '[{}]' || queued == '{}') {
-            return
-        }
+    getKeysFromStash(stashName: string) {
+        let stashedRequests = localStorage.getItem(stashName) || '[]';
 
-        for (const request of JSON.parse(queued)) {
-            if (JSON.stringify(request) !== "{}") {
-                let key = request["key"];
-                this.queuedKeys.push(key);
+        for (const request of JSON.parse(stashedRequests)) {
+            if (JSON.stringify(request) == "{}") {
+                continue
+            } else if (stashName.includes("queued")) {
+                this.queuedKeys.push(request["key"]);
+            } else {
+                this.failedKeys.push(request["key"]);
             }
         }
     },
     getFulfilledKeys() {
         // Get all keys that were fullfilled from the stash
-        let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
+        let fulfilled = localStorage.getItem('gdt-stash-fulfilled') || "[]";
         for (const key of fulfilled.split(",")) {
-            if (key !== "{}") {
+            if (key !== "[]") {
                 this.fulfilledKeys.push(key) 
-            }
-        }
-    },
-    getFailedKeys() {
-        // Get all keys in the stash that failed to create
-        let failed = localStorage.getItem("gdt-stash-failed") || '{}';
-        if (failed == '[{}]' || failed == '{}') {
-            return
-        }
-
-        for (const request of JSON.parse(failed)) {
-            if (JSON.stringify(request) !== "{}") {
-                let key = request["key"];
-                this.failedKeys.push(key);
             }
         }
     },

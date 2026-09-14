@@ -324,7 +324,7 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
         if (stashName.includes("fulfilled")) {
             // Remove key from the fulfilled stash
             const index = existingRequests.indexOf(currentKey);
-            if (index > -1) {
+            if (index >= 0) {
                 existingRequests.splice(index, 1);
             }
             localStorage.setItem(stashName, existingRequests.toString())
