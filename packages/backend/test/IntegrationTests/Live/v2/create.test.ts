@@ -566,7 +566,8 @@ describe("Group Creation Tests", () => {
 
                 // retrieves and stores parent records and tests that parent deviceName matches test cases
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
-                let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+                let prov = await fetch(`${baseUrl}/provenance/${parentKey}`)
+                prov = await prov.json();
                 let parentRecord = prov[0].record
                 // console.log(parentRecord)
                 expect(parentRecord.deviceName).toBe(currCase.deviceName)
@@ -579,7 +580,8 @@ describe("Group Creation Tests", () => {
                 // retrieves and stores custom child titles by group
                 let tempGroup = []
                 for (let j = 0; j < currCase.number_of_children; j ++) {
-                    let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
+                    let childProv = await fetch(`${baseUrl}/provenance/${childKeys[j]}`)
+                    childProv = await childProv.json();
                     let childTitle = childProv[0].record.deviceName
                     tempGroup.push(childTitle)
 
@@ -650,6 +652,8 @@ describe("Update v2 Tests", () => {
             method: "POST",
             body: groupFormData
         })
+        console.log(groupResponse)
+        console.log(JSON.stringify(groupResponse))
         expect(groupResponse.ok).toBe(true);
         const url = (await groupResponse.json()).groupUrl;
         console.log("Update tests group url:", url)
