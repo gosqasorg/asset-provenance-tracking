@@ -432,6 +432,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
     const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
     if (body.oversizedAttachments) {
+        context.error('postProv: returning 400')
         return {
             status: 400,
             jsonBody: {
@@ -698,7 +699,10 @@ export async function validateJSON(json: any) {
         Valid.parse(json);
         return true;
     } catch (e) {
-        console.log("Format of JSON provided was invalid.")
+        console.error("Format of JSON provided was invalid.")
+        console.error(JSON.stringify(json))
+        console.error(e.cause)
+        console.error(e.message)
         return false;
     }
 }
@@ -770,7 +774,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
 
     const updateData = {
       blobType: 'deviceRecord',
-      description: description || "Adding record with tags",
+      description: description || "",
       tags: tags,
       children_key: '',
     };
@@ -789,6 +793,8 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+    context.log(deviceKey)
+    context.error(deviceKey)
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
@@ -800,7 +806,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     
     const description = record.description || "";
 
-    await addRecordWithTags(baseUrl, deviceKey, tags, description)
+    await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
 
     try {
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
@@ -903,6 +909,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // const tags = body.tags ?? [];
 
         if (!email || !recordKey) {
+            context.error('postNotificationEmail: returning 400')
             return {
                 jsonBody: {error: "Error: email and record key required"},
                 status: 400
@@ -965,7 +972,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
 
         } catch (error) {
-            context.log("Error sending email: " + error); 
+            context.error("Error sending email: " + error); 
             throw error  
         }
 
@@ -998,6 +1005,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
         const token = request.query.get('token');   
  
         if (!token) { 
+            context.error('getPendingVerification: returning 400')
             return {
                 jsonBody: { error: "Token required" }, 
                 status: 400
@@ -1068,6 +1076,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const tags = []
 
         if (!token || !code) {
+            context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Token and code required" },
                 status: 400
@@ -1096,6 +1105,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 
         // not found, expired - same generic msg
         if (!entity || Date.now() > entity.expiresAt) {
+            context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Invalid or expired code" },
                 status: 400
@@ -1131,6 +1141,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         const token = body.token;
 
         if (!token) {
+            context.error('postResendCode: returning 400')
             return {
                 jsonBody: {error: "Token required"},
                 status: 400
@@ -1209,7 +1220,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             }
 
         } catch (error) {
-            context.log("Error sending email: " + error);   
+            context.error("Error sending email: " + error);   
             throw error
         }
 
@@ -1238,6 +1249,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         const tags: string[] = [];
 
         if (!emailID || !recordKey) {
+            context.error('deleteNotificationEmail: returning 400')
             return {
                 jsonBody: {error: "Error: email id and record key required"},
                 status: 400
@@ -1247,7 +1259,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         await containerClient.createIfNotExists();
         const response = await updateNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags, false); 
 
-        context.log("Unsubscribed from the record");
+        context.error("Unsubscribed from the record");
         return response;
         
     } catch(error) {
@@ -1314,12 +1326,12 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
                 return response;
             }
         } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
+            context.error(`Fetch attempt failed: ${url}: ` + e);
         }
     }
 
     if (response !== undefined && !response.ok) {
-        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
         throw new Error(url + " failed: " + response.status + " " + response.statusText)
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
@@ -1360,7 +1372,7 @@ async function createChild(context: InvocationContext, description: string, cust
         return theRecordKey
 
     } catch(e) {
-        context.log('createChild Error: Failed to create child record')
+        context.error('createChild Error: Failed to create child record')
         return '';
     }
 }
@@ -1506,6 +1518,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
+            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1516,6 +1529,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
+            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1555,6 +1569,7 @@ async function createRecord(context, name, description, tags, attachments) {
         const timestamp = new Date().getTime();
         const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
         if (body.oversizedAttachments) {
+            context.error('createRecord: returning 400')
             return {
                 status: 400,
                 jsonBody: {
@@ -1619,6 +1634,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
+            context.error('createRecordHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1629,6 +1645,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
+            context.error('createRecordHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1661,6 +1678,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     const provenance = await getProvenance(request, context);
     const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
     if (!creationRecord) {
+        context.error('addEntryHandler: returning 400')
         return {
             status: 400,
             jsonBody: { error: "Provenance needs to exist before adding entries." }
