@@ -1721,12 +1721,12 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
     // On dev and checking if production is down then send email stating prod is down
     if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
         await livenessCheckEmailer('Production')
-        }
+    }
 
     // On prod and checking if dev is down then send email staing dev is down
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
         await livenessCheckEmailer('Staging')
-        }
+    }
 }
 
 export async function livenessCheckEmailer (server: string, context?: InvocationContext) {
@@ -1734,7 +1734,7 @@ export async function livenessCheckEmailer (server: string, context?: Invocation
     const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
 
     try {
-        for (const email of emails) {
+        for (const email of emails.split(',')) {
             const emailResponse = await sendEmail(
                 process.env['SENDER_EMAIL'],
                 email,
