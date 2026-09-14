@@ -59,6 +59,7 @@ import { useRuntimeConfig } from '#app';
 
 export default {
     data() {
+      const config = useRuntimeConfig()
       return {
         deviceKey: "",
         emailID: "",

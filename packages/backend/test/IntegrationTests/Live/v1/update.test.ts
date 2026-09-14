@@ -289,7 +289,7 @@ describe("Record Update Tests", () => {
 		expect(groupResponse.ok).toBe(true);
     expect(childResponse.ok).toBe(true);
     expect(grandchildResponse.ok).toBe(true);
-  
+
     // Call the recall function to send recalled record to all the children and grandchildren
     const updateFormData = new FormData();
     updateFormData.append("provenanceRecord", JSON.stringify({deviceKey: groupKey}))

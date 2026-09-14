@@ -136,7 +136,7 @@ data() {
 computed: {
     // Controls the visibility of offline banner based on global variable displayOfflineBanner
 	displayBanner() {
-		if (displayOfflineBanner === true && offlineModeFeatureFlag.flag) {
+		if (displayOfflineBanner === true && offlineModeFeatureFlag) {
 			return true;
 		} else {
 			return false;
