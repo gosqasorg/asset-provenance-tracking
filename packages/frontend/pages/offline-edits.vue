@@ -107,10 +107,9 @@ data() {
 
 async mounted() {
     try {
-        this.getFailedKeys();
-        this.getQueuedKeys();
-        this.getFulfilledKeys();
-        this.clearOneEdit();
+        this.getKeysFromStash("gdt-stash-failed");
+        this.getKeysFromStash("gdt-stash-queued");
+        this.getKeysFromStash("gdt-stash-fulfilled");
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({
@@ -121,44 +120,18 @@ async mounted() {
 },
 
 methods: {
-    getQueuedKeys() {
-        let queued = localStorage.getItem("gdt-stash-queued") || '{}';
-        if (queued == '[{}]' || queued == '{}') {
-            return
-        }
+    getKeysFromStash(stashName: string) {
+        let stashedRequests = localStorage.getItem(stashName) || '[]';
 
-        for (const request of JSON.parse(queued)) {
-            if (JSON.stringify(request) !== "{}") {
-                let key = request["key"];
-                this.queuedKeys.push(key);
-            }
-        }
-    },
-    getFulfilledKeys() {
-        // Get all keys that were fullfilled from the stash
-        let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
-        if (fulfilled == '[{}]' || fulfilled == '{}') {
-            return
-        }
-
-        for (const request of JSON.parse(fulfilled)) {
-            if (JSON.stringify(request) !== "{}") {
-                let key = request["key"];
-                this.fulfilledKeys.push(key);
-            }
-        }
-    },
-    getFailedKeys() {
-        // Get all keys in the stash that failed to create
-        let failed = localStorage.getItem("gdt-stash-failed") || '{}';
-        if (failed == '[{}]' || failed == '{}') {
-            return
-        }
-
-        for (const request of JSON.parse(failed)) {
-            if (JSON.stringify(request) !== "{}") {
-                let key = request["key"];
-                this.failedKeys.push(key);
+        for (const request of JSON.parse(stashedRequests)) {
+            if (JSON.stringify(request) == "{}") {
+                continue
+            } else if (stashName.includes("queued")) {
+                this.queuedKeys.push(request["key"]);
+            } else if (stashName.includes("failed")) {
+                this.failedKeys.push(request["key"]);
+            } else {
+                this.fulfilledKeys.push(request["key"]);
             }
         }
     },
@@ -181,14 +154,14 @@ methods: {
         sessionStorage.removeItem("gdt-redirect-key");
     },
     clearOneEdit() {
-        // Removes key from fulfilled array then resets and copies this array to gdt stash fullfilled
+        // Removes key from fulfilled array then removes it from fulfilled stash
         const index = this.fulfilledKeys.indexOf(this.dismissOneKey);
         if (index > -1) {
+            removeOfflineRequest(this.dismissOneKey, "gdt-stash-fulfilled");
             this.fulfilledKeys.splice(index, 1);
             this.dismissOneKey = '';
             this.dismissSingleEditPopUp = false;
         }
-        localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
     async retrySyncing(key: string, index: number) {
         try {
