@@ -89,7 +89,7 @@ describe("Record Update Tests", () => {
       blobType: 'deviceInitializer',
       deviceName: "Update Record Descripion",
       description: "Original description",
-      tags: {},
+      tags: [],
       children_key: '',
       hasParent: false,
       isPublicKey: false,
