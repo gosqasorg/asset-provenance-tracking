@@ -41,7 +41,7 @@ const baseUrl = accountName === "devstoreaccount1"
     : `https://${accountName}.blob.core.windows.net`;
 
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
-const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
+export const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
 
