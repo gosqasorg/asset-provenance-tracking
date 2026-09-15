@@ -194,7 +194,7 @@ describe("Get/Remove First Queued Request", async() => {
 
     // Attempt to remove a request when none are in the queue and confirm there's no error
     removeFirstQueueItem();
-    let firstQueueItem = getFirstQueueItem(); // todo is this how we want to test this one..?
+    let firstQueueItem = getFirstQueueItem();
     expect(firstQueueItem).toBeUndefined();
 
     // Attempt to remove the only request in the queue
