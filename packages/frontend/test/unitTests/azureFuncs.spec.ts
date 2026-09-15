@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -29,6 +29,24 @@ function resetStashValues(): void {
   localStorage.setItem('gdt-stash-failed', '');
   localStorage.setItem('gdt-stash-fulfilled', '');
 }
+
+// Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
+const mockFetch = vi.fn();
+global.fetch = mockFetch
+
+describe("Offline Function Tests", () => {
+    it("Test to confirmRequestFulfilled for new record and record entry created offline", async () => {
+      const mockRecord = [{record: {description: 'mockRecord'}}];
+      mockFetch.mockResolvedValue({ok: true, status: 200,json: () => Promise.resolve(mockRecord)})
+
+      const record = {description : 'mockRecord'}
+      const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', record)
+      const resultNewRecord = await confirmRequestFulfilled('123456789101112asdfghi')
+
+      expect(resultEntryAddition).toBe(true)
+      expect(resultNewRecord).toBe(true)
+    })
+});
 
 describe("Stash and Remove Offline Requests", () => {
   it("Stash and Remove from Queue Stash", async () => {
@@ -199,4 +217,4 @@ describe("Get/Remove First Queued Request", async() => {
     expect(firstQueueItem["key"]).toEqual(queuedKey2);
     expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
   });
-})
+});
