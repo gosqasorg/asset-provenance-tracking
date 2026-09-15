@@ -318,9 +318,8 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     if (request.params.deviceKey.length != 22) { return undefined; }
     const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
     const attachmentID = request.params.attachmentID;
-    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, attachmentID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return undefined; }
@@ -480,7 +479,7 @@ async function upgradeProvenance(request: HttpRequest, context: InvocationContex
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 400, body: "HTTP Error 400: Invalid Key/AttachmentID Length." } }
+    if (!decryptedBlob) { return { status: 404 } }
 
     const { data, contentType, filename } = decryptedBlob;
     const headers = new Headers();
@@ -496,7 +495,7 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
 
 export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 400, body: "HTTP Error 400: Invalid Key/AttachmentID Length." } }
+    if (!decryptedBlob) { return { status: 404 } }
 
     const { filename } = decryptedBlob;
     return { body: filename };
