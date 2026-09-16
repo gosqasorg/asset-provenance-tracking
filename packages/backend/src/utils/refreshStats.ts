@@ -24,8 +24,8 @@ export async function usageRefresh (myTimer: Timer, context: InvocationContext, 
 
 // Timer trigger to refresh usage stats every hour, and on startup.
 app.timer('refreshUsageStats', {
-    // schedule: '0 0 * * * *',
-    schedule: '*/10 * * * * *',
+    schedule: '0 0 * * * *',
+    // schedule: '*/10 * * * * *', // for testing runs every 10 secs
     runOnStartup: true, 
     handler: usageRefresh,
 });
