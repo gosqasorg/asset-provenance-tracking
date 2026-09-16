@@ -1,60 +1,84 @@
-// TODO: statscache class todos:
-// - make updater fucntions for totals, stats, browsers for the time trigger to call
-// - make variables for cache storage for the getters
-// - make getters for totals, stats, browsers for http requests to use
-
-// Figure out how to populat variables for cache storage- since they get there vals from time trigger everyhour
-// Maybe Call updater functions on launch? discuss with vincent
 import { ContainerClient } from "@azure/storage-blob";
 import { ClientSecretCredential } from "@azure/identity";
 
-
-interface TotalsData {
-    totalRecords: number;
-    totalDevices: number;
-    totalAttachments: number;
-}
-
-interface QueryStatsData {
-    records1h: number; records24h: number; records7d: number;
-    devices1h: number; devices24h: number; devices7d: number;
-    recordsPerDayY: number[];
-    recordsPerHourY: number[];
-    totalFailures: number;
-    totalSuccesses: number;
-}
-
-interface BrowserStats {
-    UserBrowsers: string;
-    count: number;
-}
-
-// Helper Functoin
+// Helper Function
 export function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
     // where the id is that last part (before the last slash)
     return blobName.split("/", 4)[1];
 }
 
+// Query Helper Funtions
+const directoryId = process.env["AZURE_TENANT_ID"];
+const appRegistrationId = process.env["AZURE_CLIENT_ID"];
+const secretValue = process.env["AZURE_CLIENT_SECRET"];
+const workspaceId = process.env["AZURE_WORKSPACE_ID"];
+
+if(![directoryId, appRegistrationId, secretValue, workspaceId].every(Boolean)) {
+    console.error('getStats Error: credentials not set'); 
+}
+
+const tokenResponse = await fetch(
+    `https://login.microsoftonline.com/${directoryId}/oauth2/v2.0/token`,
+    {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: appRegistrationId!,
+            client_secret: secretValue!,
+            grant_type: "client_credentials",
+            scope: "https://api.loganalytics.io/.default"
+        })
+    }
+);
+
+const { access_token: token } = await tokenResponse.json();
+
+export async function runQuery(query: string, context): Promise<[string, number][]> {
+    context.log('Entering runQuery')
+
+    try {
+        const result = await fetch(
+            `https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ query })
+            }
+        );
+
+        context.log(`Query result: ${JSON.stringify(result)}`)
+        const data = await result.json();
+        context.log('Returning from runQuery: Success')
+        return data.tables[0].rows
+    } catch(error) {
+        context.log(`Leaving runQuery: error occurred: ${error}`)
+    }
+}
+
 class StatsCache {
-    private totals: TotalsData = { totalRecords: 0, totalDevices: 0, totalAttachments: 0 };;
-    private queryStats: QueryStatsData | null = null;
-    private browserStats: BrowserStats[] = [];
+    // Cache storage variables
+    private totals = { totalRecords: 0, totalDevices: 0, totalAttachments: 0 };;
+    private queryStats = null;
+    private browserStats = [];
 
     // Getters
-    getTotals() : TotalsData {
+    getTotals()  {
         return this.totals;
     }
 
-    getQueryStats() : QueryStatsData {
+    getQueryStats() {
         return this.queryStats;
     }
 
-    getBrowserStats() : BrowserStats[] {
+    getBrowserStats() {
         return this.browserStats;
     }
 
-    // Updaters
+    // Updater Functions that get called by the time trigger in refreshStats.ts to update the cache storage variables
     async updateTotals(containerClient: ContainerClient) : Promise<void> {
         const containerExists = await containerClient.exists();
         let totalRecords = 0;
@@ -76,7 +100,7 @@ class StatsCache {
         this.totals = { totalRecords, totalDevices: uniqueRecords.size, totalAttachments };    
     }
 
-    async updateStats(containerClient: ContainerClient) : Promise<void> {
+    async updateStats() : Promise<void> {
         const directory_id = process.env['AZURE_TENANT_ID'];
         const app_registration_id = process.env['AZURE_CLIENT_ID'];
         const secret_value = process.env['AZURE_CLIENT_SECRET'];
@@ -171,10 +195,10 @@ class StatsCache {
         let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
 
 
-        this.queryStats = {records1h, records24h, records7d, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalFailures, totalSuccesses} as QueryStatsData
+        this.queryStats = {records1h, records24h, records7d, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalFailures, totalSuccesses}
     }
 
-    async updateBrowser(runQuery: (query: string, context) => Promise<any>, context): Promise<void> {
+    async updateBrowser(context): Promise<void> {
         const rows = await runQuery(`
             AppRequests
             | extend ua = tostring(parse_json(Properties)["user_agent.original"])
@@ -202,7 +226,7 @@ class StatsCache {
         `, context);
         
 
-        this.browserStats = rows;
+        this.browserStats = rows
         context.log(this.browserStats);
     }
 

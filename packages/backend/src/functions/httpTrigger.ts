@@ -14,7 +14,6 @@ import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
-import './getStats.js';
 import '../utils/refreshStats.js';
 import { usageStatsCache } from '../utils/statsCache.js';
 
@@ -492,7 +491,7 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
     return { body: filename };
 };
 
-// TODO: Update getStatistics to call StatsCache for retrieving statistics 
+
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const queryStats = usageStatsCache.getQueryStats();
     const totals = usageStatsCache.getTotals();
@@ -502,6 +501,17 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
         headers: { "Content-Type": "application/json" }
     }; 
 };
+
+async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering getBrowserStats')
+    try {
+        const rows = usageStatsCache.getBrowserStats();
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } };
+    } catch (error) {
+        context.log("getBrowserStats error:", error);
+        return { body: "Error fetching browser stats", status: 500 }
+    }
+}
  
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
@@ -1640,6 +1650,12 @@ app.get("getStatistics", {
     authLevel: 'anonymous',
     route: 'statistics',
     handler: getStatistics
+})
+
+app.get("getBrowserStats", {
+    authLevel: 'anonymous',
+    route: 'stats/browsers',
+    handler: getBrowserStats
 })
 
 app.post('postEmail', {
