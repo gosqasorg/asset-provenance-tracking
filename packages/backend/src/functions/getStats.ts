@@ -1,4 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { usageStatsCache } from '../utils/statsCache.js';
 
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
@@ -27,7 +28,7 @@ const tokenResponse = await fetch(
 const { access_token: token } = await tokenResponse.json();
 
 
-async function runQuery(query: string, context): Promise<[string, number][]> {
+export async function runQuery(query: string, context): Promise<[string, number][]> {
     context.log('Entering runQuery')
 
     try {
@@ -56,37 +57,8 @@ async function runQuery(query: string, context): Promise<[string, number][]> {
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
     try {
-        const rows = await runQuery(`
-            AppRequests
-            | extend ua = tostring(parse_json(Properties)["user_agent.original"])
-            | extend UserBrowsers = case(
-                ua contains "ClaudeBot", "ClaudeBot",
-                ua contains "Googlebot", "Googlebot",
-                ua contains "bingbot", "Bingbot",
-                ua contains "Baiduspider", "Baiduspider",
-                ua contains "bot" or ua contains "crawler" or ua contains "spider", "Other bot",
-                ua contains "curl", "curl",
-                ua contains "node", "Node",
-                ua contains "python" or ua contains "Python", "Python",
-                ua contains "MSIE" or ua contains "Trident", "Internet Explorer",
-                ua contains ".NET", ".NET",
-                ua contains "Edg/", "Edge",
-                ua contains "Chrome", "Chrome",
-                ua contains "Firefox", "Firefox",
-                ua contains "Safari", "Safari",
-                ua contains "DuckDuckGo", "DuckDuckGo",
-                ua == "", "Unknown",
-                "Other"
-            )
-            | summarize count() by UserBrowsers
-            | order by count_ desc
-        `, context)
-
-        let response = { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } }
-        context.log(rows)
-        context.log(response)
-        context.log('Returning successfully from getBrowserStats')
-        return response
+        const rows = usageStatsCache.getBrowserStats();
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } };
     } catch (error) {
         context.log("getBrowserStats error:", error);
         return { body: "Error fetching browser stats", status: 500 }
