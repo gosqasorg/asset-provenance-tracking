@@ -1,19 +1,12 @@
 import { ContainerClient } from "@azure/storage-blob";
 import { ClientSecretCredential } from "@azure/identity";
 
-// Helper Function
-export function findDeviceIdFromName(blobName: string): string {
-    // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
-    // where the id is that last part (before the last slash)
-    return blobName.split("/", 4)[1];
-}
-
-// Query Helper Funtions
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
 const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
+// Helper Function 
 async function getToken(): Promise<string> {
     const credential = new ClientSecretCredential(directoryId, appRegistrationId, secretValue);
     const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
@@ -43,11 +36,18 @@ export async function runQuery(query: string, context): Promise<[string, number]
     }
 }
 
+export function findDeviceIdFromName(blobName: string): string {
+    // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
+    // where the id is that last part (before the last slash)
+    return blobName.split("/", 4)[1];
+}
+
 class StatsCache {
     // Cache storage variables
     private totals = { totalRecords: 0, totalDevices: 0, totalAttachments: 0 };;
     private queryStats = null;
     private browserStats = [];
+    private failureStats = null;
 
     // Getters
     getTotals()  {
@@ -60,6 +60,10 @@ class StatsCache {
 
     getBrowserStats() {
         return this.browserStats;
+    }
+
+    getFailureStats() {
+        return this.failureStats;
     }
 
     // Updater Functions that get called by the time trigger in refreshStats.ts to update the cache storage variables
@@ -202,6 +206,17 @@ class StatsCache {
         
 
         this.browserStats = rows
+    }
+
+    async updateFailureStats(context): Promise<void> {
+        let query = `
+        AppExceptions
+        | where TimeGenerated > ago(365d)
+        | where ExceptionType contains "RpcException"
+        | summarize FailureCount = count() by bin(TimeGenerated, 1d)
+            `
+        const rows = await runQuery(query, context)
+        this.failureStats = rows
     }
 
 }

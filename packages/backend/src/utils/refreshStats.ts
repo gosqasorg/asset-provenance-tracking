@@ -5,12 +5,13 @@ import { containerClient } from '../functions/httpTrigger.js';
 
 export async function usageRefresh (myTimer: Timer, context: InvocationContext, ): Promise<void> {
     context.log('Refreshing usage stats cache');
-    // Using allSettled (not all) so one failing update can't cause the invocation to complete
-    // while the others are still running in the background.
+    // allSettled so one failing update can't cause the invocation to complete
+    // while the others are still running in the background. 
     const results = await Promise.allSettled([
         usageStatsCache.updateTotals(containerClient),
         usageStatsCache.updateStats(),
-        usageStatsCache.updateBrowser(context)
+        usageStatsCache.updateBrowser(context),
+        usageStatsCache.updateFailureStats(context)
     ]);
     
     for (const result of results) {
