@@ -14,28 +14,14 @@ const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
 const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
-if(![directoryId, appRegistrationId, secretValue, workspaceId].every(Boolean)) {
-    console.error('getStats Error: credentials not set'); 
+async function getToken(): Promise<string> {
+    const credential = new ClientSecretCredential(directoryId, appRegistrationId, secretValue);
+    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
+    return tokenResponse.token;
 }
 
-const tokenResponse = await fetch(
-    `https://login.microsoftonline.com/${directoryId}/oauth2/v2.0/token`,
-    {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: appRegistrationId!,
-            client_secret: secretValue!,
-            grant_type: "client_credentials",
-            scope: "https://api.loganalytics.io/.default"
-        })
-    }
-);
-
-const { access_token: token } = await tokenResponse.json();
-
 export async function runQuery(query: string, context): Promise<[string, number][]> {
-    context.log('Entering runQuery')
+    const token = await getToken();
 
     try {
         const result = await fetch(
@@ -50,9 +36,7 @@ export async function runQuery(query: string, context): Promise<[string, number]
             }
         );
 
-        context.log(`Query result: ${JSON.stringify(result)}`)
         const data = await result.json();
-        context.log('Returning from runQuery: Success')
         return data.tables[0].rows
     } catch(error) {
         context.log(`Leaving runQuery: error occurred: ${error}`)
@@ -101,23 +85,14 @@ class StatsCache {
     }
 
     async updateStats() : Promise<void> {
-        const directory_id = process.env['AZURE_TENANT_ID'];
-        const app_registration_id = process.env['AZURE_CLIENT_ID'];
-        const secret_value = process.env['AZURE_CLIENT_SECRET'];
-        const workspace_id = process.env['AZURE_WORKSPACE_ID'];
-        let client_id = app_registration_id
-        let client_secret = secret_value
-
-        const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
-        const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
-        let token = tokenResponse.token;
+        let token = await getToken();
 
         const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
         let valsAtTimes = [0, 0, 0]
 
         // Get time-based record entry counts
         for (let v in timesToCheck) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
@@ -130,7 +105,7 @@ class StatsCache {
 
         // Get time-based unique record counts
         for (let v in timesToCheck) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
@@ -150,7 +125,7 @@ class StatsCache {
 
         // Get record entries per day (last 7 days) for the graph
         for (let i = 0; i <= today; i++) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
@@ -168,7 +143,7 @@ class StatsCache {
         let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         for (let hour = 0; hour < 24; hour++) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 // Gets number of records created in the last 7 days at 'hour'
@@ -179,7 +154,7 @@ class StatsCache {
         }
 
         // Get number of calls to postProvenance that failed in the last 3 months
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
             method: "POST",
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
@@ -187,7 +162,7 @@ class StatsCache {
         let totalFailures = (await logs.json()).tables[0].rows[0][0];
 
         // Get number of calls to postProvenance that succeeded in the last 3 months
-        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
+        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
             method: "POST",
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
@@ -227,7 +202,6 @@ class StatsCache {
         
 
         this.browserStats = rows
-        context.log(this.browserStats);
     }
 
 }

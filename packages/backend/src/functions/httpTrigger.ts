@@ -1583,13 +1583,6 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
-// Once per day update the total record, record entry, and attachment counts
-// app.timer('updateRecordCounts', {
-//     schedule: `0 0 * * *`,
-//     handler: setStatisticsTotals
-// })
-
-
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
 app.post("createRecord", {
