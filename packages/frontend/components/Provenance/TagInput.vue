@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <template>
   <div>
-    <ul :id="tagListID" class="ulTagsList"><input ref="inputField" type="text" :id="inputID" class="form-control" :placeholder="placeholder" @input="updateTagsWithInput" :value="editableValue" /></ul>
+    <ul :id="tagListID" class="ulTagsList"><input ref="inputField" type="text" :id="inputID" class="form-control" :placeholder="placeholder" @input="updateTagsWithInput" @keyup.enter="handleEnter" :value="editableValue" /></ul>
 
     <!-- UI Toolkit (for x icon on tags) -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
@@ -48,6 +48,10 @@ export default {
     separator: {
       type: String,
       default: ' ',
+    },
+    isGroup: {
+      type: Boolean,
+      default: false
     },
     tagListID: {
       type: String,
@@ -100,6 +104,31 @@ export default {
       EventBus.on('feedRefresh2', this.refreshFeed);
       this.createdTags = [];
       this.storedTags = [];
+
+      // If we have tags from a redirect update our form to display/store them
+      let stashedRecord = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
+      let recordIsGroup = sessionStorage.getItem("gdt-redirect-isGroup");
+      const previousUrl = window.history.state.back;
+
+      if (JSON.stringify(stashedRecord) !== '{}' && stashedRecord.tags.length !== 0 && previousUrl === "/offline-edits") {
+        // Display the tags either on the group page or the record page
+        if ((this.isGroup && recordIsGroup === "true") || (!this.isGroup && recordIsGroup === "false")) {
+          stashedRecord.tags.forEach((tag) => {
+            let cleanTag = this.cleanArray([tag]);
+            this.editableValue = '';
+
+            if (tag == cleanTag[0]) {
+              this.storedTags.push(tag);
+              this.createdTags.push(tag);
+              redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
+            }
+          })
+        }
+
+        // Hide placeholder text if any tags were added
+        this.updateTagsWithInput();
+      }
+
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;
@@ -130,23 +159,30 @@ export default {
       redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
     },
     updateTags(tagInput) {
-      // Get the last char of tag input, if it's a space then remove the space and add the tag to the list
-      if (this.storedTags.includes(tagInput.substring(0, tagInput.length - 1)) || tagInput == ' ') {
-        this.editableValue = "";
-      } else if (tagInput[tagInput.length - 1] == ' ') {
-        // Check to make sure the word is clean before creating the tag
-        let tag = tagInput.substring(0, tagInput.length - 1);
-        let cleanTag = this.cleanArray([tag]);
-
-        if (tag == cleanTag[0]) {
-          this.storedTags.push(tag);
-          this.createdTags.push(tag);
-          redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
-        }
-
-        // Remove the text from the input field
-        this.editableValue = "";
+      // Only act when the user finishes a word with a trailing space
+      if (tagInput[tagInput.length - 1] != ' ') {
+        return;
       }
+
+      let tag = tagInput.substring(0, tagInput.length - 1);
+
+      // Blank input or a tag that's already stored: just clear, nothing new to add.
+      if (tag == '' || this.storedTags.includes(tag)) {
+        this.editableValue = "";
+        return;
+      }
+
+      // Check to make sure the word is clean before creating the tag
+      let cleanTag = this.cleanArray([tag]);
+
+      if (tag == cleanTag[0]) {
+        this.storedTags.push(tag);
+        this.createdTags.push(tag);
+        redrawTags(this.storedTags, this.createdTags, this.tagListID, this.inputID);
+      }
+
+      // Remove the text from the input field
+      this.editableValue = "";
     },
     updatePlaceholder() {
       // Only show the placeholder text if no tags are stored
@@ -166,6 +202,9 @@ export default {
 
       // Hide the placeholder if any tags are stored
       this.updatePlaceholder();
+    },
+    handleEnter() {
+      this.updateTags(this.editableValue + ' ');
     },
   },
 };

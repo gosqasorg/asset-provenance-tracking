@@ -14,7 +14,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { hasParent } from '~/utils/descendantList';
+import { recordHasParent } from '~/utils/descendantList';
 
 const route = useRoute();
 const recordKey = route.params.deviceKey;
@@ -22,7 +22,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
 const provenance = await getProvenance(String(recordKey));
 
-const recordHasParent = hasParent(provenance);
+const hasParent = recordHasParent(provenance);
 
 </script>
 
@@ -41,10 +41,10 @@ const recordHasParent = hasParent(provenance);
                                 </h1>
                             </div>
 
-                            <div class="h5" v-if="deviceRecord?.children_key && recordHasParent">Group & Child Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
-                            <div class="h5" v-else-if="recordHasParent">Child Record Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
                             <div class="mb-3">
@@ -52,18 +52,25 @@ const recordHasParent = hasParent(provenance);
                             </div>
                         </div>
 
-                        <div>
-                            <QRCode :url="qrCodeUrl" ref="qrcode_component" style="overflow: hidden;" />
-                        </div>
                     </section>
 
                     <div class="buttons-container">
-                        <button class="btn px-3 device-btn view-history" @click="viewRecord">View History Records</button>
-                        <button class="btn px-3 device-btn secondary-btn" @click="downloadQRCode">Download QR Code</button>
+                        <button class="btn px-3 device-btn view-history" @click="viewRecord">
+                            View History Records
+                        </button>
+
+                        <ProvenanceDownloadDropdown
+                            :downloadQRCodeMethod="downloadQRCode"
+                            :downloadQRCodeWithTextMethod="downloadQRCodeWithText"
+                            :showWithTextMethod="showWithText"
+                            :resetToDefaultMethod="resetToDefaultImage">
+                        </ProvenanceDownloadDropdown>
+                        
                         <ProvenanceShareDropdown :deviceName="deviceRecord.deviceName" :description="deviceRecord.description">
                         </ProvenanceShareDropdown>
 
-                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications
+                        <button class="btn px-3 device-btn secondary-btn" data-bs-toggle="modal" data-bs-target="#notifModal">
+                            Get email notifications
                         </button>
                     </div>
 
@@ -74,6 +81,9 @@ const recordHasParent = hasParent(provenance);
                     <div class="col-sm-6 col-lg-3">
                         <QRCode :url="qrCodeUrl" ref="qrcode_component" />
                     </div>
+
+                    <!--QR Code modal-->
+                    <ModalsQRCode :url="qrCodeUrl" />
 
                     <div v-if="hasPublicKey"> Public Key:
                         <div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
@@ -156,8 +166,20 @@ export default {
             this.loadingKey += 1;
         },
         downloadQRCode() {
-            const qrCodeComponent = this.$refs.qrcode_component as any;
-            qrCodeComponent?.downloadQRCode(this._recordKey);
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.downloadQRCode();
+        },
+        downloadQRCodeWithText(customText?: string) {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.downloadQRCodeWithText(customText);
+        },
+        showWithText(customText?: string) {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.showWithText(customText);
+        },
+        resetToDefaultImage() {
+          const qrCodeComponent = this.$refs.qrcode_component as any;
+          qrCodeComponent?.resetToDefault();
         },
         viewRecord() {
             const route = useRouter().currentRoute.value; // Bug workaround: https://stackoverflow.com/questions/76127659/route-params-are-undefined-in-layouts-components-in-nuxt-3
@@ -180,7 +202,7 @@ export default {
                     deviceRecord.children_key.splice(index, 1);
                 }
             }
-            this.childKeys = deviceRecord.children_key;
+            this.childKeys = getChildKeys(response)
             this.isLoading = false;
         } catch (error) {
             this.recordKeyFound = false;
@@ -267,6 +289,7 @@ export default {
     width: 100% !important;
     margin-top: 20px;
     margin-bottom: 0;
+    margin-right: 0;
 }
 
 .buttons-container :deep(.share-btn) {

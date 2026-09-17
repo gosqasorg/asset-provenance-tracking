@@ -14,10 +14,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 const fullSpecUrl = '/GDT-OpenAPI-Spec.yaml'
+import learn_more from '~/layouts/learn_more.vue';
 </script>
 
 <template>
-  <div class="container-fluid" id="api-docs-container">
+  <div class="container-fluid" id="api-docs-container" style="padding-bottom: 75px;">
 
     <h1>API documentation</h1>
 
@@ -27,7 +28,9 @@ const fullSpecUrl = '/GDT-OpenAPI-Spec.yaml'
 
     <SwaggerUI :spec-url="fullSpecUrl" variant="page" />
 
-    <learn_more />
+    <div style="padding-top: 10px; padding-left: 18px;">
+      <learn_more />
+    </div>
     
   </div>
 </template>

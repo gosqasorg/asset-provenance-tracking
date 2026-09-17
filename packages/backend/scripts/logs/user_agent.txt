@@ -1,0 +1,50 @@
+
+===** test 1 **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "MinTime",
+          "type": "datetime"
+        },
+        {
+          "name": "MaxTime",
+          "type": "datetime"
+        },
+        {
+          "name": "Total",
+          "type": "long"
+        }
+      ],
+      "rows": [
+        [
+          "2026-05-12T23:52:40.4400776Z",
+          "2026-08-10T22:01:51.5601775Z",
+          21009
+        ]
+      ]
+    }
+  ]
+}
+
+===** test 2 **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "count_",
+          "type": "long"
+        }
+      ],
+      "rows": [
+        [
+          21009
+        ]
+      ]
+    }
+  ]
+}

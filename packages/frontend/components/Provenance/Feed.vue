@@ -138,16 +138,15 @@ export default {
         filteredProvenance(){
             return this.provenance.filter(item => item.record.blobType != 'deviceInitializer')
         },
-        filteredProvenanceDeviceInit(){
-            return this.provenance.filter(item => item.record.blobType === 'deviceInitializer')
-        }
-    },
+        filteredProvenanceDeviceInit() {
+            return this.provenance.filter(item => (item.record.blobType === 'deviceInitializer'))
+    }},
     data() {
         return {
             attachmentURLs: {},
             modalImage: "",
             recalledRecord: false,
-            showModal: false
+            showModal: false,
         };
     },
     mounted() {

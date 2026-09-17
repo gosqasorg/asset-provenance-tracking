@@ -136,8 +136,15 @@ h1 {
     line-height: 27px;
  }
  
-  //Normal Text Regular
+  // Normal Text Regular
   p {
+    font-size: 18px;
+    line-height: 27px;
+    font-weight: $font-weight-base;
+ }
+
+ // Normal list items and link
+ ol, li, a {
     font-size: 18px;
     line-height: 27px;
     font-weight: $font-weight-base;
@@ -181,6 +188,11 @@ h1 {
     }
  
     p {
+        font-size: 20px;
+        line-height: 30px;
+    }
+
+    ol, li, a {
         font-size: 20px;
         line-height: 30px;
     }

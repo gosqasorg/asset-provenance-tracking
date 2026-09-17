@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <textarea id="provenance-description" v-model="description"
                 placeholder="Description" maxlength="5000" rows="3"></textarea>
-            <div v-if="isGroup">
+            <div v-if="recordIsGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
@@ -54,12 +54,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h4 class="p-1 mt-3" v-if="isGroup">
-                <input type="checkbox" class="form-check-input" id="annotate-all" v-model="annotateAll"/> 
+            <h4 class="p-1 mt-3" v-if="recordIsGroup">
+                <input type="checkbox" class="form-check-input" id="send-to-all-children" v-model="sendToAllChildren"/> 
                     Send to all Children
             </h4>
 
-            <h4 class="p-1 mt-0" v-if="isGroup">
+            <h4 class="p-1 mt-0" v-if="recordIsGroup && !hasRecalledRecord">
                 <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
                     Recall all children
             </h4>
@@ -75,7 +75,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         type="email"
                         class="form-control"
                         v-model="emailInput"
-                        placeholder="Email"
+                        required
+                        multiple
+                        placeholder="Email addresses (comma separated)"
                         @keyup.enter=""
                     />
                 </div>
@@ -150,7 +152,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         </div>
     </div>
-    <div class="popup" v-if="annotatePopUp">
+    <div class="popup" v-if="sendToAllChildrenPopUp">
         <div class="popup-inner">
             <h2 class="text-iris">Send to all Children</h2>
             <p>You've selected “Send to all Children” for this record entry. If you proceed, this message will be posted to all child records.</p>
@@ -169,13 +171,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
+ import { parseNotificationEmails } from '~/utils/notificationEmails';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
+ import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
 
  export default {
     data() {
@@ -188,15 +192,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             groupKey: '',
             childKeyText: '',
             newChildKeys: [] as string[],
-            annotateAll: false,
+            sendToAllChildren: false,
             recallAll: false,
-            annotatePopUp: false,
+            sendToAllChildrenPopUp: false,
             recallPopUp: false,
             notify: false,
             notifyTags: false,
             emailInput: '',
             config: useRuntimeConfig(),
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
         }
     },
     props: {
@@ -206,17 +210,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             required: true,
         },
         deviceRecord: {
-            // type: Any, // TODO: add type
+            type: Object,
             default: null,
             required: true,
         },
+        hasRecalledRecord: {
+            type: Boolean,
+            default: false,
+            required: false,
+        }
     },
     computed: {
         uniqueChildrenKeys() {
             const uniqueValues = [...new Set(this.newChildKeys)];
             return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
         },
-        isGroup(): boolean {
+        recordIsGroup() {
             // children_key is "" if it is created as a record or [] if it is created as a group
             // The Boolean constructor returns false for "" and true for []
             return Boolean(this.deviceRecord?.children_key);
@@ -239,25 +248,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         // Checks whether record is a child, disables 'Add to Group' field if is a child
         isChild() {
-            return this.deviceRecord?.hasParent
+            return hiddenHasParent.value === true
         }
     },
     methods: {
+        async emailSubscribers(deviceKey: string, record: any) {
+            try {
+                // Notify all users subscribed to the record that it has been updated
+                let response = await notifySubscribers(deviceKey, record);
+
+                // Display success if emails were successfully sent
+                if (response.status == 200) {
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully emailed subscribers'
+                    });
+                }
+            } catch (error) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error sending email: ${error instanceof Error ? error.message : error}`
+                });
+            }
+        },
         closePopUpA() {
-            this.annotatePopUp = false
+            this.sendToAllChildrenPopUp = false
         },
         closePopUpR() {
             this.recallPopUp = false
         },
         async trackingForm() {
 
-            if (Object.is(this.annotateAll, null) || Object.is(this.recallAll, null)) {
+            if (Object.is(this.sendToAllChildren, null) || Object.is(this.recallAll, null)) {
                 // Check for null (in case this is a child node)
                 this.submitRecord()
             } else if (this.recallAll) {
                 this.recallPopUp = true
-            } else if (this.annotateAll) {
-                this.annotatePopUp = true
+            } else if (this.sendToAllChildren) {
+                this.sendToAllChildrenPopUp = true
             } else {
                 this.submitRecord()
             }
@@ -267,6 +295,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         handleUpdateEmailTags(tags: string[]) {
             this.emailTags = tags;
+        },
+        // Calls the email list normalization utility and sets the frontend error state when validation fails.
+        validateNotificationEmails(): string[] | null {
+            const emails = parseNotificationEmails(this.emailInput);
+            if (!emails) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'Please enter valid email addresses separated by commas.'
+                });
+                return null;
+            }
+
+            return emails;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -304,35 +345,48 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.tags = [];
             this.groupKey = '';
             this.newChildKeys = [];
-            this.annotateAll = false;
+            this.sendToAllChildren = false;
             this.recallAll = false;
-            this.annotatePopUp = false;
+            this.sendToAllChildrenPopUp = false;
             this.recallPopUp = false;
         },
-        async redirectIfOffline() {
-            // If the user is offline navigate to the offline history page instead
-            if (!(await onlineTestFetch()) && offlineModeFeatureFlag.flag) {
-                await this.$router.push({ path: `/history/offline`, query: { key: this.recordKey }});
-            }
-        },
         async submitRecord() {
+            // Parse and validate notification addresses before starting the record update (catches input error early).
+            let notificationEmails: string[] = [];
+            if (this.notify) {
+                const parsedEmails = this.validateNotificationEmails();
+                if (!parsedEmails) {
+                    return;
+                }
+                notificationEmails = parsedEmails;
+                this.emailInput = parsedEmails.join(', ');
+            }
+
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
+
+            // Define the new record to post
+            const record = {
+                blobType: 'deviceRecord',
+                description: this.description,
+                tags: this.tags,
+                children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+            };
 
             // Get a refreshed copy of the records
             let records;
             try {
                 records = await getProvenance(this.recordKey);
             } catch (e) {
-                this.redirectIfOffline()
-                EventBus.emit('isCreating');
-            }
-
-            if (!records || records.length === 0) {
+                let errorMessage = 'No provenance record found';
+                let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
+                
                 this.$snackbar.add({
-                    type: 'error',
-                    text: 'No provenance record found'
+                    type: snackbarType,
+                    text: errorMessage
                 })
+
+                EventBus.emit('isCreating');
                 return;
             }
 
@@ -341,11 +395,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (validateKey(this.groupKey)) {
                     try {
                         console.log("Adding to group...", this.groupKey);
-                        const groupRecords = await getProvenance(this.groupKey);
-                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
+                        await addToGroup(this.recordKey, this.groupKey, records, this.pictures || []);
                     } catch (error) {
                         console.error('Error adding to group:', error);
-                        this.redirectIfOffline()
                         this.$snackbar.add({
                             type: 'error',
                             text: `Error adding to group: ${error}`
@@ -385,7 +437,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
             } catch (error: any) {
                 console.error('Error adding children:', error);
-                this.redirectIfOffline()
                 const badKeys = error.message.split(",");
                 
                 if (error.message.split(" ").length > badKeys.length) {
@@ -409,8 +460,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             if (this.recallAll) {
                 this.tags.push("recall");
-            } else if (this.annotateAll) {
-                this.tags.push("annotate");
+            } else if (this.sendToAllChildren) {
+                this.tags.push("sent_to_all_children");
             }
 
             // Append the record to the records.
@@ -422,17 +473,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
                 };
 
-                await postProvenance(this.recordKey, record, this.pictures || []);
-
-                if (this.recallAll) {
-                    recallChildren(this.recordKey, this.tags, this.description);
-                } else if (this.annotateAll) {
-                    notifyChildren(this.recordKey, this.tags, this.description);
+                // Prevent more than one record from being recalled
+                if (this.tags.includes("recall") && this.hasRecalledRecord) {
+                    throw new Error("Record already recalled");
                 }
 
-                if (this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); 
-                    await postNotificationEmail(this.recordKey,email);
+                await postProvenance(this.recordKey, record, this.pictures || []);
+                this.emailSubscribers(this.recordKey, record);
+
+                if (this.recallAll || this.tags.includes("recall")) {
+                    await recallChildren(this.recordKey, this.tags, this.description);
+                } else if (this.sendToAllChildren) {
+                    await notifyChildren(this.recordKey, this.tags, this.description);
+                }
+
+                // Request a separate verification email for each address after the record update succeeds.
+                if (notificationEmails.length > 0) {
+                    await Promise.all(
+                        notificationEmails.map(email =>
+                            postNotificationEmail(email, this.recordKey)
+                        )
+                    );
                 }
 
                 // Refresh CreateRecord component
@@ -442,8 +503,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 EventBus.emit('feedRefresh');
 
             } catch (error) {
-                this.redirectIfOffline()
-
                 // Remove the leading "Error:" text
                 let errorMessage;
                 if (error instanceof Error) {
@@ -454,7 +513,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 console.log(error)
                 console.log(errorMessage)
-                if(errorMessage.includes('high volume of requests')) {
+
+                if (typeof errorMessage == "string" && errorMessage.includes('high volume of requests')) {
                     this.$snackbar.add({
                         type: 'error',
                         text: `Error sending email: ${errorMessage}`
@@ -462,11 +522,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 } else {
                     this.$snackbar.add({
                         type: 'error',
-                        text: `Error creating record: ${error}`
+                        text: `Error creating record: ${errorMessage}`
                     });
                 }
 
                 // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('isCreating');
                 EventBus.emit('feedRefresh');
             }
         }

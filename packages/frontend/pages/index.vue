@@ -44,53 +44,67 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
 
-
-        <div class="row second-row" >
-          <h3>Global Distributed Tracking</h3>
-          <p style="font-weight: 400; padding-bottom: 15px">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
-          <div style="display: flex; flex-direction: row; gap: 40px">
-            <img style="width: 184px; height: 184px" class="ieee-image" src="/IEEE.png">
-            <div class="ieee-button-container" style="display: flex; flex-direction: column;">
-                <h3 style="">GDT Papers Published in the Institute of Electrical and Electronics Engineers</h3>
-                <p style="font-size: 20px; font-weight: 400; margin-top: -5px">Our paper "Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication" was recently published in the October 2025 publication of IEEE.</p>
-                <button class="ieee-button" style="width: fit-content; height: 65px; white-space: nowrap; padding: 10px 20px; border: solid; border-width: 2px; border-radius: 10px;" @click="getPDF()">Read the paper now</button>
+        <div class="row second-row" id="gdt-section">
+            <div style="display:flex; flex-direction:column; gap: 17px;">
+                <h3>Global Distributed Tracking</h3>    
+                <p style="font-weight: 400;">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
             </div>
-          </div>
-               <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
+
+            <div>
+                <iframe src="https://player.vimeo.com/video/1083699280?h=941a4ccf67&amp;title=0&amp;byline=0&amp;portrait=0&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479"
                     style="width: 100%; display: block; aspect-ratio: 7 / 4;"
                     frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" title="Global Distributed Tracking">
-               </iframe>
-               <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+                </iframe>
+                <p id="video-caption" style="font-size: 14px;">Video production by <a href="https://www.prodigium-pictures.com/" style="font-size: 14px;">Prodigium Pictures</a></p>
+            </div>  
         </div>
 
-        <div class="row odd-stripe"  >
-            <div class="row rowtest">
+        <div class="second-row latest">
+            <h5 id="latest-big-header">Latest News</h5>
+            <div class="latest-news">
+
+                 <div id="latest-news-item">
+                    <img src="/assets/images/dmdm_cropped.png"/>
+                    <div id="dmdm-div">
+                        <span id="latest-news-header">Decentralized Medical Device Manufacturing (DMDM)</span>
+                        <p id="latest-news-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.</p>
+                        <button id="latest-news-button" @click="$router.push('/dmdm')">View our pilot program</button>
+                    </div>
+                </div>
+
+                <div id="latest-news-item">
+                    <img src="/assets/images/ieee_cropped.jpg" style="border-radius: 10px"/>
+                    <div style="gap: 4px">
+                        <span id="latest-news-header">GDT Paper Published in the Institute of Electrical and Electronics Engineers</span>
+                        <p id="latest-news-text">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.</p>
+                        <button id="latest-news-button" @click="getPDF()">Read the paper now</button>
+                    </div>                    
+                </div>
+
+                <div id="latest-news-item">
+                    <img src="/assets/images/impact_heatmap.jpg" style="border-radius: 10px"/>
+                    <div style="gap: 4px">
+                        <span id="latest-news-header">Global Impact</span>
+                        <p id="latest-news-text">Our services are used around the world. From indie tourniquet manufacturers to wartorn hospitals to Doctors Without Borders, GDT stabilizes supply chains that save lives.</p>
+                        <button id="latest-news-button" @click="$router.push('/heatmap')">View our impact</button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row odd-stripe about-us" >
+            <div class="row rowtest" id="about-us-desc">
                 <div class="col wrap-word" id="second-row-cols" v-for="item in second_row">
                     <h3 id="second-row-cols-h3">{{item.title}}</h3>
                     <p style="font-weight: 400;">{{ item.descr }}</p>
                 </div>
             </div>
-            <div class="col" style="text-align: center; margin-top: 50px;">
-                <NavButton to="/about" text="About Us" id="about-button" margin="0" padding="18px 22px"/>
+            <div class="col" style="text-align: center; margin-top: 50px; gap: 10px">
+                <NavButton to="/about" text="About Us" id="about-button" margin="0" padding="18px 22px" style="margin: 10px 0;"/>
             </div>
 
-        </div>
-
-        <div class="row second-row" >
-          <div class="dmdmcontainer">
-            <img src="/dmdmCropped.png" alt="Logo" class="dmdmimage" />
-            <div id="flexright">
-              <h3>Distributed Medical Device Manufacturing (DMDM)</h3>
-              <p class="text" style="font-weight: 400;">Inspired by the need for life-saving tourniquets in Sudan and Gaza,
-  the FDA-registered Distributed Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.
-  Explore how the DMDM and GOSQAS partnership expands open-source technology access
-  for medical device compliance and distribution.
-              </p>
-            </div>
-          </div>
-          <div class="col" style="text-align: center; margin-top: 50px;">
-          <NavButton to="/dmdm" text="View our pilot program" id="dmdm-button" margin="0" padding="18px 22px"/>
-          </div>
         </div>
 
         <Learn_more id="learn-more"></Learn_more>
@@ -98,8 +112,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
 
 </template>
-
-
 
 <script lang="ts">
 import Learn_more from '~/layouts/learn_more.vue';
@@ -109,8 +121,8 @@ let showTrack = false;
 
 const second_row = [
     { title: "Simplicity & Accessibility", descr: "We believe that open-source projects should be simple to use and understand."},
-    { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."},
-    { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."}
+    { title: "Open Source", descr:"Our projects are created for the public good and are available free of charge."},
+    { title: "Data Ownership", descr: "We do not have access to any user data, ensuring complete privacy and independent ownership."}
 ];
 
 export default {
@@ -129,51 +141,55 @@ methods: {
 }
 </script>
 
-
 <style scoped>
 
-.dmdmcontainer {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;       /* Allows wrapping onto a new line */
-align-items: stretch;
-justify-content: space-around;
+#latest-news-banner {
+    max-width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 52px;
+    padding: 30px 40px;
+    border-radius: 15px;
+    align-items: center;
+    margin-left: 0.75rem;
+    flex-direction: nowrap;
 }
 
-.dmdmimage {
-  max-width: 12em;
-  max-height: 12em;
-  width: auto;
-  height: auto;
-  border-radius: 10px;
-
-  margin-bottom: 15px;
-  margin-right: 15px;
-
-  border: 2px solid #4E3681;
+#news-text-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
 }
 
-.ieee-image {
-    width: 100px;
-    height: auto;
+#news-text-container h4 {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 36px;
+    margin: 0;
 }
 
-#flexright {
-max-width: 70%;
+#news-text-container p {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 30px;
+    margin: 0;
 }
 
-.text-block {
-  flex: 1;              /* Let the text block take remaining space */
+#latest-news-button {
+    padding: 16px 20px;
+    border-radius: 10px;
+    border-width: 2px;
+    border-style: solid;
+    cursor: pointer;
+    font-size: 20px;
+    gap: 10px;
 }
 
-#wrap-word {
-    overflow-wrap: break-word;
-}
-
-#rowtest {
-    width: 100%;
-    max-width: 20vw;
-    height: auto;
+#gdt-section {
+    display: flex;
+    flex-direction: column;
+    gap: 50px;
 }
 
 #first-row {
@@ -211,12 +227,24 @@ max-width: 70%;
     #first-row-col {
         width: 100% !important;
     }
-    .ieee-image {
-        display: none;
+
+    #news-text-container h4 {
+    font-size: 22px;
+    line-height: 33px;
     }
-    .ieee-button {
-        display: block; 
-        margin: 0 auto;
+
+    #news-text-container p {
+        font-size: 18px;
+        line-height: 27px;
+    }
+
+    #flexright {
+        max-width: 100%;
+    }
+
+    #latest-news-button {
+        display:block;
+        padding: 14px 18px;
     }
 }
 
@@ -240,6 +268,33 @@ max-width: 70%;
     .button{
         font-size: 18px;
     }
+    .latest-news {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 20px;
+    }
+    .latest-news img {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    #latest-big-header {
+        font-size: 24px;
+        font-weight: 500;
+    }
+    #latest-news-header {
+        font-size: 20px;
+    }
+    #latest-news-text {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 400;
+        letter-spacing: 0%;
+    }
+    #about-us-desc {
+        display: flex;
+        flex-direction: column;
+    }
     #first-row {
         background-size: 60% !important;
     }
@@ -250,9 +305,6 @@ max-width: 70%;
     #createRecordButton {
         order: 1;
         margin-top: 0px !important;
-    }
-    .ieee-button {
-        text-align: center;
     }
 }
 
@@ -285,9 +337,43 @@ max-width: 70%;
     .button{
         font-size: 20px;
         padding: 1px;
-
     }
-
+    #latest-big-header {
+        font-size: 32px; 
+        position: sticky; 
+        margin-bottom: 40px
+    }
+    #latest-news-item {
+        display: flex; 
+        flex-direction: column; 
+        width: 356px; 
+        height: 524px;
+    }
+    .latest-news {
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+        gap: 60px;
+    }
+    .latest-news img {
+        width: 356px; 
+        height: 172px;
+        margin-bottom: 20px;
+    }
+    #latest-news-text {
+        font-size: 18px; 
+        line-height: 27px; 
+        font-weight: 400; 
+        font-family: Poppins; 
+        letter-spacing: 0%
+    }
+    #latest-news-header {
+        font-size: 20px; 
+        font-weight: 500; 
+        font-style: medium; 
+        line-height:30px; 
+        letter-spacing: 0%; 
+        font-family: Poppins
+    }
 }
 
 @media (max-width: 1083px) {
@@ -314,9 +400,12 @@ max-width: 70%;
     .second-row{
             background-color: #4E3681;
     }
-    .odd-stripe{
+    .about-us {
+        background-color: #322253;
     }
-
+    .latest {
+        background-color: #1E2019
+    }
     h3 {
         color: #FFFFFF;
     }
@@ -328,13 +417,19 @@ max-width: 70%;
         background-color: transparent;
         border: 2px solid #FFFFFF;
     }
-    :deep(#dmdm-button) {
-        color: #FFFFFF;
-        background-color: #4E3681;
-        border: 2px solid #FFFFFF;
+    #latest-news-button {
+        color: #E6F6FF;
+        background-color: #1E2019 ;
+        border: 2px solid #E6F6FF;
     }
-    .dmdmimage {
-        border: 2px solid #FFFFFF;
+    #latest-big-header {
+        color: #CCECFD;
+    }
+    #latest-news-text {
+        color: #FFFFFF;
+    }
+    #latest-news-header {
+        color: #CCECFD;
     }
     #second-row-cols-h3 {
         color: #CCECFD;
@@ -343,14 +438,19 @@ max-width: 70%;
         background-color: white;
         color: black;
     }
-    :deep(#dmdm-button:hover) {
+    #latest-news-button:hover {
         background-color: white;
-        color: #4E3681;
+        color: #1E2019;
     }
-    .ieee-button {
-        background-color: #4E3681; 
-        border-color: white; 
-        color: white
+    #latest-news-banner {
+        background-color: #1E2019;
+    }
+    #news-text-container h4 {
+        color: #CCECFD;
+    }
+
+    #news-text-container p {
+        color: #FFFFFF;
     }
 }
 /* Light mode version of second row */
@@ -361,7 +461,15 @@ max-width: 70%;
     .second-row {
             background-color: #E6F6FF;
         }
-
+    .odd-stripe {
+        background-color: #FFFFFF;
+    }
+    .about-us {
+        background-color: #E6F6FF;
+    }
+    .second-row.latest {
+        background-color: #FFFFFF
+    }
     h3 {
         color: #4E3681;
     }
@@ -373,22 +481,39 @@ max-width: 70%;
         background-color: #CCECFD;
         border: 2px solid #CCECFD;
     }
-    :deep(#dmdm-button) {
+    #latest-big-header {
+        color: #4E3681;
+    }
+    #latest-news-button {
         color: #322253;
-        background-color: #E6F6FF;
+        background-color: #FFFFFF;
         border: 2px solid #4E3681;
+    }
+    #latest-news-text {
+        color: #1E2019;
+    }
+    #latest-news-header {
+        color: #4E3681;
     }
     :deep(#about-button:hover) {
         background-color: #E6F6FF;
         border: 2px solid #E6F6FF;
     }
-    :deep(#dmdm-button:hover) {
+
+    #latest-news-button:hover {
         background-color: #4E3681;
         color: white;
     }
-    .ieee-button {
-        background-color: #E6F6FF;
-        color: #322253;
+    #latest-news-banner {
+        background-color: #4E3681;
+    }
+
+    #news-text-container h4 {
+        color: #CCECFD;
+    }
+
+    #news-text-container p {
+        color: #FFFFFF;
     }
 }
 
