@@ -14,7 +14,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <script setup lang="ts">
-const visualizationsFeatureFlag = useRuntimeConfig().public.environment !== 'production'
+import HeatmapVisualization from '~/pages/heatmap.vue'
+import UserAgentVisualization from '~/pages/dev/user-agents.vue'
+
+const environment = useRuntimeConfig().public.environment
+const visualizationsFeatureFlag = environment === 'development' || environment === 'staging'
 </script>
 
 <template>
@@ -31,7 +35,10 @@ const visualizationsFeatureFlag = useRuntimeConfig().public.environment !== 'pro
         <section class="visualization-section">
             <h2>Usage of the Backend</h2>
             <div class="row">
-                <p>Visualizations in this category will be added as they are produced.</p>
+                <HeatmapVisualization />
+            </div>
+            <div class="container py-4 user-agent-instance">
+                <UserAgentVisualization />
             </div>
         </section>
 
@@ -59,6 +66,11 @@ const visualizationsFeatureFlag = useRuntimeConfig().public.environment !== 'pro
 </template>
 
 <style scoped>
+.user-agent-instance :deep(.stat-page) {
+    margin-inline: 0;
+    padding-inline: 0;
+}
+
 /* For screens smaller than 768px */
 @media (max-width: 768px) {
     #visualizations-container {
