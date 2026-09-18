@@ -191,6 +191,14 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     const buffer = await crypto.subtle.exportKey("raw", uniqueString);
     const uniqueEmailString = base58encode(new Uint8Array(buffer));
     emailIDSet.add(uniqueEmailString)
+    
+    const tagArray = tags.reduce((accumulator, tag) => {
+            accumulator[tag] = email;
+            return accumulator;
+        }, {});
+    const tagsToEmailsSet = new Set(
+        
+    )
 
     try {
         // Update our stored emails to include the new email/id
