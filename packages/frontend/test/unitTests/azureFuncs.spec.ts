@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, postProvenance, getProvenance, getProvenanceOffline } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -162,6 +162,35 @@ describe("Stash and Remove Offline Requests", () => {
     expect(requestFromStash.length).toEqual(0);
     expect(requestFromStash).toEqual([]);
     expect(fulfilledRequest).toBeUndefined();
+  });
+});
+
+describe("Get/Remove First Queued Request", async() => {
+  it("Get First Queued Request", async() => {
+    resetStashValues();
+
+    // Attempt to get a request when none are in the queue and confirm there's no error
+    let firstQueueItem = getFirstQueueItem();
+    expect(firstQueueItem).toBeUndefined();
+
+    // Attempt to get the only request in the queue
+    let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
+    let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
+
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    firstQueueItem = getFirstQueueItem();
+
+    expect(firstQueueItem["key"]).toEqual(queuedKey);
+    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+
+    // Attempt to get the first request of multiple and confirm we got the correct one
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    firstQueueItem = getFirstQueueItem();
+
+    expect(firstQueueItem["key"]).toEqual(queuedKey);
+    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["key"]).not.toEqual(queuedKey2);
+    expect(firstQueueItem["data"]).not.toEqual(queuedData2.get('provenanceRecord'));
   });
 });
 

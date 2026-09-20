@@ -24,7 +24,7 @@ export default {
                 const childrenKeys = await getChildrenKeys(this.recordKey);
 
                 const publicRecord = provenance?.[0]?.record;
-                const publicKey = publicRecord?.children_key?.[0] || publicRecord?.publicKey || '';
+                const publicKey = publicRecord?.publicKey || '';
 
                 const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
                 const parentName = publicRecord.deviceName?.replace(/"/g, '""') || '';
