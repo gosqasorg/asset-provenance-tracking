@@ -1,8 +1,12 @@
 import { EmailClient, KnownEmailSendStatus } from "@azure/communication-email";
 import { InvocationContext } from "@azure/functions";
 
-const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
-const emailClient = new EmailClient(connectionString);
+
+function getClient() {
+  const connectionString = process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'];
+  const emailClient = new EmailClient(connectionString);
+  return emailClient;
+}
 
 // Send an email using the Azure Communication Services Email SDK
 export async function sendEmail(
@@ -35,6 +39,7 @@ export async function sendEmail(
       },
     };
 
+    const emailClient = getClient()
     context.log("Sending email...", message);
     const poller = await emailClient.beginSend(message);
 

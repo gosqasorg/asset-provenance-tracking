@@ -206,6 +206,8 @@ describe ("Send to All Children Tests", () => {
 
     }, 60000);
 
+});
+
     it("Should use default 'Sent from Group' description when entry has no description", async() => {
         // Create the group/children
         const payload = {
@@ -260,9 +262,7 @@ describe ("Send to All Children Tests", () => {
             expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
         }
 
-    }, 60000);
-
-});
+}, 60000);
 
 
 describe("Group Creation Tests", () => {
@@ -566,7 +566,8 @@ describe("Group Creation Tests", () => {
 
                 // retrieves and stores parent records and tests that parent deviceName matches test cases
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
-                let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+                let prov = await fetch(`${baseUrl}/provenance/${parentKey}`)
+                prov = await prov.json();
                 let parentRecord = prov[0].record
                 // console.log(parentRecord)
                 expect(parentRecord.deviceName).toBe(currCase.deviceName)
@@ -579,7 +580,8 @@ describe("Group Creation Tests", () => {
                 // retrieves and stores custom child titles by group
                 let tempGroup = []
                 for (let j = 0; j < currCase.number_of_children; j ++) {
-                    let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
+                    let childProv = await fetch(`${baseUrl}/provenance/${childKeys[j]}`)
+                    childProv = await childProv.json();
                     let childTitle = childProv[0].record.deviceName
                     tempGroup.push(childTitle)
 
@@ -650,6 +652,8 @@ describe("Update v2 Tests", () => {
             method: "POST",
             body: groupFormData
         })
+        console.log(groupResponse)
+        console.log(JSON.stringify(groupResponse))
         expect(groupResponse.ok).toBe(true);
         const url = (await groupResponse.json()).groupUrl;
         console.log("Update tests group url:", url)
@@ -691,7 +695,7 @@ describe("Update v2 Tests", () => {
             if (currCase.description) {
                 expect(currRecord.description).toBe(currCase.description)
             }
-            if (i != 5 && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
+            if (i != (testCases.length - 1) && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
                 expect(currRecord.tags).toStrictEqual(currCase.tags)
             }
             if (currCase.attachments) {
@@ -701,7 +705,7 @@ describe("Update v2 Tests", () => {
 
         for (let i = 0; i < parentRecord.number_of_children; i ++) {
             let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
-            expect(childProv[0].record.description).toBe(testCases[5].description);
+            expect(childProv[0].record.description).toBe(testCases[(testCases.length - 1)].description);
             expect(childProv[0].record.tags).toStrictEqual(["test", "demo", "sent_to_all_children"]);
         }
 	}, 60000);
