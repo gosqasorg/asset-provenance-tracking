@@ -176,21 +176,23 @@ describe("Get/Remove First Queued Request", async() => {
     // Attempt to get the only request in the queue
     let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
     let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
+    let provenanceRecord = JSON.parse(queuedData.get('provenanceRecord') as string);
+    let provenanceRecord2 = JSON.parse(queuedData2.get('provenanceRecord') as string);
 
-    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", provenanceRecord);
     firstQueueItem = getFirstQueueItem();
 
     expect(firstQueueItem["key"]).toEqual(queuedKey);
-    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["data"]).toEqual(provenanceRecord);
 
     // Attempt to get the first request of multiple and confirm we got the correct one
-    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", provenanceRecord2);
     firstQueueItem = getFirstQueueItem();
 
     expect(firstQueueItem["key"]).toEqual(queuedKey);
-    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["data"]).toEqual(provenanceRecord);
     expect(firstQueueItem["key"]).not.toEqual(queuedKey2);
-    expect(firstQueueItem["data"]).not.toEqual(queuedData2.get('provenanceRecord'));
+    expect(firstQueueItem["data"]).not.toEqual(provenanceRecord2);
   });
 });
 
