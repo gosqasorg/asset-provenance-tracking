@@ -275,7 +275,7 @@ export async function fetchUrlWithErrorHandling(
 }
 
 export function stashOfflineRequest(currentKey: string, stashName: string, request: object) {
-    // Function to stash an offline request (works for queued, failed, fulfilled, and provenance stashes)
+    // Function to stash an offline request (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
         let stash = localStorage.getItem(stashName) || "[]";

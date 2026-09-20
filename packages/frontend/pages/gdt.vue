@@ -100,6 +100,9 @@ export default {
             }
             this.isLoading = false;
         })
+
+        // preload the offline history page (so we can navigate to this page if the user goes offline)
+        await import('./history/offline.vue');
     },
     beforeUnmount() {
         EventBus.off('isLoading', () => {

@@ -230,7 +230,7 @@ methods: {
             if (!stashedRecord.deviceName) {
                 // If the request doesn't have a name then it is part of an existing record/group
                 this.$router.push({
-                    path: `/history/${key}`
+                    path: `/history/offline`
                 });
             } else {
                 // Otherwise it is either a new record or group
