@@ -1256,7 +1256,14 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags);
+        await subscribeToNotifications(
+            containerClient, 
+            calculateDeviceID, 
+            entity.recordKey as string, 
+            entity.email as string, 
+            tags, 
+            context
+        );
         // return response
 
         return {
@@ -1405,39 +1412,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         context.error(error.message);
         return {
             jsonBody: {message: "Internal Server Error"},
-            status: 500,
-        }
-    }
-}
-
-async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    /* How this pseudo-smoketest works:
-       1. Put a string into blobstore
-       2. Get it back out
-       3. Hand both responses back
-     */
-
-    try {
-        const key = await makeEncodedDeviceKey()
-
-        // Add it
-        const putResponse = await subscribeToNotifications(containerClient, calculateDeviceID, key, "email@email.foo", []);
-
-        // Access it
-        const getResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, key)
-
-
-        return {
-            jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
-            status: 200,
-        }
-
-    } catch(error) {
-
-        console.log(error)
-        
-        return {
-            jsonBody: {message: error.message},
             status: 500,
         }
     }
@@ -2028,12 +2002,6 @@ app.post('postResendCode', {
     authLevel: 'anonymous',
     route: 'resendCode',
     handler: postResendCode,
-})
-
-app.get("emailSignupTestEndpoint", {
-    authLevel: 'anonymous',
-    route: 'emailSignupTestEndpoint',
-    handler: emailSignupTestEndpoint
 })
 
 app.post("postNotificationEmail", {
