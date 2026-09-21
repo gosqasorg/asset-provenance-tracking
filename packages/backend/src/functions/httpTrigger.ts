@@ -1403,7 +1403,14 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
 
         await containerClient.createIfNotExists();
-        const response = await unsubscribeFromNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags); 
+        const response = await unsubscribeFromNotifications(
+            containerClient, 
+            calculateDeviceID, 
+            recordKey, 
+            emailID, 
+            tags,
+            context
+        ); 
 
         context.error("Unsubscribed from the record");
         return response;
