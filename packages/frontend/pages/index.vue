@@ -65,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                  <div id="latest-news-item">
                     <img src="/assets/images/dmdm_cropped.png"/>
-                    <div id="dmdm-div">
+                    <div>
                         <span id="latest-news-header">Decentralized Medical Device Manufacturing (DMDM)</span>
                         <p id="latest-news-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.</p>
                         <button id="latest-news-button" @click="$router.push('/dmdm')">View our pilot program</button>
@@ -271,7 +271,6 @@ methods: {
     .latest-news {
         display: flex;
         flex-direction: column;
-        width: 100%;
         gap: 20px;
     }
     .latest-news img {
@@ -316,8 +315,8 @@ methods: {
     }
 }
 
-/* For screens greater than 768px */
-@media (min-width: 768px) {
+/* For screens greater than 769px */
+@media (min-width: 769px) {
     #first-row-col{
         padding: 60px 78px;
     }
@@ -344,19 +343,18 @@ methods: {
         margin-bottom: 40px
     }
     #latest-news-item {
-        display: flex; 
-        flex-direction: column; 
-        width: 356px; 
-        height: 524px;
+        flex: 1; 
+        max-width: 100%;
     }
     .latest-news {
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
-        gap: 60px;
+        display: flex; 
+        flex-direction: row; 
+        gap: 5px;
     }
     .latest-news img {
-        width: 356px; 
-        height: 172px;
+        height: 33.33%;
+    /*    width: 100%; */
+        max-width: 100%;
         margin-bottom: 20px;
     }
     #latest-news-text {
