@@ -23,62 +23,13 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     const description = record ? record.description : "";
 
 
-    // ---- vvv is this section not equivalent to getExistingEmails? vvv --- //
-    /* These are called before each call to getExisting
-        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-        const exists = await blobClient.exists();
-
-        retrieve doesn't do this but takes a superset of these args
-
-        // setupblobclient does this
-            // 0: Setup id
-            const deviceID = await calculateDeviceID(deviceKey);
-
-            // 1: Setup blob name & client
-            const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
-            const blobClient = containerClient.getBlockBlobClient(blobName);
-
-            // 2: Return blob content (so we can read existing content, merge email list, write back)
-            return [blobName, blobClient] as const;
-
-        // retrieve does this
-            // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
-            const deviceID = await calculateDeviceID(key);
-            const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
-
-            try {
-                const blobClient = containerClient.getBlobClient(blobName);
-                const downloadResponse = await blobClient.download();
-                const downloaded = await streamToString(downloadResponse.readableStreamBody);
-                context.log('Downloaded blob content:', downloaded.toString());
-  
-        // both do
-
-            const deviceID = await calculateDeviceID(deviceKey);
-
-            const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
-
-                const blobClient = containerClient.getBlobClient(blobName);
-
-        // so retrieve can call setup, and setup can call exists
-        // let's leave exists out of setup. 
-    */
-
-
+    //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
     // Notify users who subscribed to this record.
     // 1. RetrieveNotifEmails hands back blob contents as string
-    context.error("not an error. just about to call retrieveNotifEmails")
     const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
-    context.error("---")
-    context.error(retrieveNotifEmailResponse)
-    context.error("---")
     // 2. Parse the object and hand back a pair of lists of emails and email IDs
     const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
-    context.error("---")
-    context.error(emailSet)
-    context.error(emailIDArray)
-    context.error("---")
-    // ---- ^^^ is this section not equivalent to getExistingEmails? ^^^ --- //
+    //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
     if (emailSet.size === 0) {
         context.log("No subscribers found for this record.");
@@ -132,17 +83,19 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
     return [blobName, blobClient] as const;
 }
 
+
 async function getExistingEmails(exists: boolean, blobClient: BlockBlobClient) {
     if(!exists) { return [[], []] as const }
-
-    // Get all the emails and ids currently stored in the blob
-    let existingEmails: string[] = [];
-    let existingEmailIDs: string[] = [];
 
     const buffer = await blobClient.downloadToBuffer();
     const text = buffer.toString("utf8");
 
     if(!text) { return [[], []] as const }
+
+
+    // Get all the emails and ids currently stored in the blob
+    let existingEmails: string[] = [];
+    let existingEmailIDs: string[] = [];
 
     const parsed = JSON.parse(text) as any;
     const emailsFromBlob = parsed?.email;
@@ -207,7 +160,13 @@ async function uploadBlob(containerClient: ContainerClient, blobName: string, em
     }
 }
 
-export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
+
+export async function subscribeToNotifications(
+    containerClient: ContainerClient, 
+    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
+    deviceKey: string, email: string, 
+    tags: string[] = []
+) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
@@ -231,24 +190,21 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
 
-    // Add the specified email to the set
+    // 1/2: Add the specified email to the set
     const sizeBeforeAdding = emailSet.size;
     emailSet.add(normalized);
 
     // If email is already stored return success
     if (exists && emailSet.size === sizeBeforeAdding) {
         return {
-        jsonBody: { message: "Success", name: blobName },
-        status: 200,
+            jsonBody: { message: "Success", name: blobName },
+            status: 200,
         };
     }
 
-    // Generate a unique string id to represent the new email
+    // 2/2: Generate a unique string id to represent the new email
     const uniqueString = await crypto.subtle.generateKey(
-        {
-            name: "AES-CBC",
-            length: 256
-        },
+        { name: "AES-CBC", length: 256 },
         true,
         ['encrypt', 'decrypt']
     );
@@ -324,14 +280,11 @@ export async function retrieveNotifEmails(
 ) {
     context.log('Entering retrieveNotifEmails')
 
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    const exists = await blobClient.exists();
-
     try {
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
         const downloadResponse = await blobClient.download();
-        const downloaded = await streamToString(downloadResponse.readableStreamBody);
-        context.log('Downloaded blob content:', downloaded.toString());
-
+        const downloaded = await streamToString(downloadResponse.readableStreamBody); // Possibly does not return a string?
+        context.log('Downloaded blob content:', downloaded.toString());  // Alternatively: surely already a string?
 
         context.log('Returning without error from retrieveNotifEmails')
         return {
@@ -339,10 +292,10 @@ export async function retrieveNotifEmails(
             status: 200
         }
     } catch(error) {
-        context.error('Returning without error from retrieveNotifEmails')
+        context.error('Returning with error from retrieveNotifEmails')
         context.error(error)
         return {
-            jsonBody: { message: error.message },
+            jsonBody: { message: "Internal Server Error" },
             status: 500,
         }
     }
