@@ -65,30 +65,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                  <div id="latest-news-item">
                     <img src="/assets/images/dmdm_cropped.png"/>
-                    <div>
-                        <span id="latest-news-header">Decentralized Medical Device Manufacturing (DMDM)</span>
-                        <p id="latest-news-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.</p>
-                        <button id="latest-news-button" @click="$router.push('/dmdm')">View our pilot program</button>
-                    </div>
+                    <span id="latest-news-header">Decentralized Medical Device Manufacturing (DMDM)</span>
+                    <p id="latest-news-text">Inspired by the need for life-saving tourniquets in Sudan and Gaza, the FDA-registered Decentralized Medical Device Manufacturing (DMDM) team in Arizona piloted Global Distributed Tracking as an essential tool in their open-source manufacturing process.</p>
+                    <button id="latest-news-button" @click="$router.push('/dmdm')">View our pilot program</button>
                 </div>
 
                 <div id="latest-news-item">
-                    <img src="/assets/images/ieee_cropped.jpg" style="border-radius: 10px"/>
-                    <div style="gap: 4px">
-                        <span id="latest-news-header">GDT Paper Published in the Institute of Electrical and Electronics Engineers</span>
-                        <p id="latest-news-text">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.</p>
-                        <button id="latest-news-button" @click="getPDF()">Read the paper now</button>
-                    </div>                    
+                    <img src="/assets/images/ieee_cropped.jpg" style="border-radius: 10px;"/>
+                    <span style="min-width: 0;" id="latest-news-header">GDT Paper Published in the Institute of Electrical and Electronics Engineers</span>
+                    <p style="min-width: 0;" id="latest-news-text">Our paper “Global Distributed Tracking of Supplies via Free-Libre Open Source Cryptography Obviating Authentication” was recently published in the October 2025 publication of IEEE.</p>
+                    <button style="min-width: 0;" id="latest-news-button" @click="getPDF()">Read the paper now</button>              
                 </div>
 
                 <div id="latest-news-item">
                     <img src="/assets/images/impact_heatmap.jpg" style="border-radius: 10px"/>
-                    <div style="gap: 4px">
-                        <span id="latest-news-header">Global Impact</span>
-                        <p id="latest-news-text">Our services are used around the world. From indie tourniquet manufacturers to wartorn hospitals to Doctors Without Borders, GDT stabilizes supply chains that save lives.</p>
-                        <button id="latest-news-button" @click="$router.push('/heatmap')">View our impact</button>
-                    </div>
-
+                    <span id="latest-news-header">Global Impact</span>
+                    <p id="latest-news-text">Our services are used around the world. From indie tourniquet manufacturers to wartorn hospitals to Doctors Without Borders, GDT stabilizes supply chains that save lives.</p>
+                    <button id="latest-news-button" @click="$router.push('/heatmap')">View our impact</button>
                 </div>
 
             </div>
@@ -183,7 +176,7 @@ methods: {
     border-style: solid;
     cursor: pointer;
     font-size: 20px;
-    gap: 10px;
+
 }
 
 #gdt-section {
@@ -254,7 +247,7 @@ methods: {
         padding: 41px 33px 80px 33px;
     }
     .second-row{
-        padding: 40px 30px;
+        padding: 20px 30px;
     }
     #second-row-cols{
         gap: 20px;
@@ -321,11 +314,11 @@ methods: {
         padding: 60px 78px;
     }
     .odd-stripe {
-        padding: 60px 78px;
+        padding: 60px 30px;
     }
 
     .second-row {
-        padding: 70px 100px;
+        padding: 90px 30px;
     }
     #second-row-cols{
         gap: 40px;
@@ -340,22 +333,22 @@ methods: {
     #latest-big-header {
         font-size: 32px; 
         position: sticky; 
-        margin-bottom: 40px
+        margin-bottom: 20px;
+        margin-top: -20px;
     }
     #latest-news-item {
-        flex: 1; 
-        max-width: 100%;
+        max-width: 33%;
+        max-height: 100%;
     }
     .latest-news {
         display: flex; 
         flex-direction: row; 
-        gap: 5px;
+        gap: 20px;
     }
     .latest-news img {
         height: 33.33%;
-    /*    width: 100%; */
-        max-width: 100%;
-        margin-bottom: 20px;
+        width: 100%;
+        margin-bottom: 5px;
     }
     #latest-news-text {
         font-size: 18px; 
