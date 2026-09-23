@@ -17,8 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import HeatmapVisualization from '~/pages/heatmap.vue'
 import UserAgentVisualization from '~/pages/dev/user-agents.vue'
 
-const environment = useRuntimeConfig().public.environment
-const visualizationsFeatureFlag = environment === 'development' || environment === 'staging'
+const environment = ((useRuntimeConfig().public.baseUrl).includes("prod")) ? 'prod' : 'dev'
+const visualizationsFeatureFlag = environment === 'dev'
 </script>
 
 <template>
