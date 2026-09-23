@@ -197,12 +197,55 @@ export async function subscribeToNotifications(
         return { jsonBody: { message: "Email not provided or email malformed" }, status: 400 };
     }
 
+    // Block_1
     // Setup the blobClient
     let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
 
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+    // let tagSet = ^^^^^^^^^
 
+    // key1: {
+    //     no_tag: [{email: "theEmail@foo.bar", id: <the_id>}, 
+    //              {email: "anotherEmail@foo.bar", id: <the_id>}
+    //              ...
+    //             ],
+    //     tag1:   [{email: "theEmail@foo.bar", id: <the_id>}, 
+    //              {email: "anotherEmail@foo.bar", id: <the_id>}
+    //              ...
+    //             ],
+    //     tag2:   [{email: "theEmail@foob.bar", id: <the_id>}, 
+    //              {email: "anotherEmail@foo.bar", id: <the_id>}
+    //              ...
+    //             ],
+    //      .        .      .      .
+    //      .        .      .      .
+    //     tagn:     .      .      .
+    // },
+
+    // 0/2: Extract emails and email IDs from individual tag sets
+    // Need a top level loop
+    // or just fxnalize lol
+
+    // const tagsToEmailsSet = new Map<string, Array>();
+    // JS Object instead
+    if (!tags) {
+        // no_tags
+    }
+
+    for (const tag in tags) {
+        let tagArray = []
+        // TODO: Array type {:, :}
+
+        // Block_1
+
+        // Block_2
+
+
+        // tagsToEmailsSet.add(tagArray)
+    }
+
+    // Block_2
     // 1/2: Add the specified email to the set
     const sizeBeforeAdding = emailSet.size;
     context.log(1)
@@ -228,13 +271,12 @@ export async function subscribeToNotifications(
     emailIDSet.add(uniqueEmailString)
     
     // Recommendation: go for a solution that is simple and works first
-    const tagArray = tags.reduce((accumulator, tag) => {
-            accumulator[tag] = email;
-            return accumulator;
-        }, {});
-    const tagsToEmailsSet = new Set(
-        
-    )
+    // const tagArray = tags.reduce((accumulator, tag) => {
+    //         accumulator[tag] = email;
+    //         return accumulator;
+    //     }, {});
+
+    // const tagArray = []
 
     try {
         // Update our stored emails to include the new email/id
