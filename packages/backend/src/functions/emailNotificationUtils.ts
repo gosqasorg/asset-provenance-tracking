@@ -85,12 +85,14 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
 
 
 async function getExistingEmails(exists: boolean, blobClient: BlockBlobClient) {
-    if(!exists) { return [[], []] as const }
+    let emailSet = new Set<string>();
+    let emailIDSet = new Set<string>();
+    if(!exists) { return [emailSet, emailIDSet] as const }
 
     const buffer = await blobClient.downloadToBuffer();
     const text = buffer.toString("utf8");
 
-    if(!text) { return [[], []] as const }
+    if(!text) { return [emailSet, emailIDSet] as const }
 
 
     // Get all the emails and ids currently stored in the blob
@@ -112,13 +114,13 @@ async function getExistingEmails(exists: boolean, blobClient: BlockBlobClient) {
         });
     }
 
-    const emailSet = new Set(
+    emailSet = new Set(
         existingEmails
         .map(s => s.trim().toLowerCase())
         .filter(Boolean)
     );
 
-    const emailIDSet = new Set(
+    emailIDSet = new Set(
         existingEmailIDs
         .map(s => s.trim())
         .filter(Boolean)
