@@ -56,21 +56,13 @@ export async function notifySubscribers(containerClient: ContainerClient, device
     }
 }
 
-export async function setupBlobClient(containerClient: ContainerClient, deviceKey: string) {
+export async function getExistingEmails(groupKey: string, containerClient: ContainerClient) {
     // 0: Setup id
-    const deviceID = await calculateDeviceID(deviceKey);
+    const deviceID = await calculateDeviceID(groupKey);
 
     // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
     const blobClient = containerClient.getBlockBlobClient(blobName);
-
-    // 2: Return blob content (so we can read existing content, merge email list, write back)
-    return [blobName, blobClient] as const;
-}
-
-export async function getExistingEmails(groupKey: string, containerClient: ContainerClient) {
-    // Setup the blob
-    let [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
 
     const exists = await blobClient.exists();
     if (!exists) {
