@@ -18,9 +18,6 @@ import { validateKey } from "~/utils/keyFuncs";
 // Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
 // If we're not on prod turn offline features on
 export var offlineModeFeatureFlag = false;
-if (!(useRuntimeConfig().public.baseUrl).includes("gdtprodbackend")) {
-    offlineModeFeatureFlag = true;
-}
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
@@ -97,6 +94,11 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
+        // If we're offline stash the record to create later
+        if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+            stashOfflineRequest(deviceKey, "gdt-stash-queued", record);
+            throw new Error('Status 202: User is offline but the record has been stashed');
+        }
         throw error;
     }
 }
@@ -259,6 +261,58 @@ export async function fetchUrlWithErrorHandling(
     }
 
     throw new Error(errorMessage);
+}
+
+export async function offlineQueueConsumerWorker() {
+    // Wait for other instances of the worker to close
+    await new Promise((r) => setTimeout(r, 15000));
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    let deviceKey;
+    let record;
+    let workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
+
+    if (workerIsActive == 'true') {
+        return;
+    } else {
+        localStorage.setItem('gdt-offline-worker-active', 'true');
+        workerIsActive = 'true';
+    }
+
+    while (workerIsActive == 'true') {
+        // If a new instance of the worker was opened close this one
+        workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
+
+        try {
+            let queuedRequest = getFirstQueueItem();
+            if (!queuedRequest) {
+                await new Promise((r) => setTimeout(r, 5000));
+                continue;
+            }
+
+            // Attempt to post the queued request
+            deviceKey = queuedRequest["key"];
+            record = queuedRequest["data"];
+            const fullUrl = baseUrl + "/provenance/" + deviceKey;
+            const formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(record));
+            await fetchUrl(fullUrl, formData)
+
+            // Attempt to get the new request to confirm it posted successfully
+            await fetchUrl(fullUrl)
+
+            removeFirstQueueItem();
+            stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
+
+        } catch (error) {
+            if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+                await new Promise((r) => setTimeout(r, 5000));
+            } else {
+                removeFirstQueueItem();
+                stashOfflineRequest(deviceKey, "gdt-stash-failed", record);
+            }
+        }
+    }
 }
 
 export function stashOfflineRequest(currentKey: string, stashName: string, request?: any) {
