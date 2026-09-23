@@ -1,19 +1,20 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
+import { calculateDeviceID } from "./httpTrigger.js";
 
 const NOTIFICATION_TYPE = 'notificationSignups';
 const FROM_ADDRESS = process.env['SENDER_EMAIL'];
 const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
-export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
+export async function notifySubscribers(containerClient: ContainerClient, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entered notifySubscribers')
     const record = JSON.parse(formData.get('provenanceRecord'));
     const description = record ? record.description : "";
 
     // Notify users who subscribed to this record.
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey);
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, deviceKey);
     const extractedEmails = extractEmailsFromResponse(retrieveNotifEmailResponse);
     const emailSet = extractedEmails[0] || new Set<string>();
     const emailIDArray = extractedEmails[1] || [];
@@ -55,7 +56,7 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     }
 }
 
-export async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
+export async function setupBlobClient(containerClient: ContainerClient, deviceKey: string) {
     // 0: Setup id
     const deviceID = await calculateDeviceID(deviceKey);
 
@@ -67,30 +68,36 @@ export async function setupBlobClient(containerClient: ContainerClient, calculat
     return [blobName, blobClient] as const;
 }
 
-export async function getExisitingEmails(exists: boolean, blobClient: BlockBlobClient) {
+export async function getExistingEmails(groupKey: string, containerClient: ContainerClient) {
+    // Setup the blob
+    let [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
+
+    const exists = await blobClient.exists();
+    if (!exists) {
+        throw new Error("Key to subscribe to does not exist");
+    }
+
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
 
-    if (exists) {
-        const buffer = await blobClient.downloadToBuffer();
-        const text = buffer.toString("utf8");
+    const buffer = await blobClient.downloadToBuffer();
+    const text = buffer.toString("utf8");
 
-        if (text) {
-            const parsed = JSON.parse(text) as any;
-            const emailsFromBlob = parsed?.email;
-            if (Array.isArray(emailsFromBlob)) {
-                existingEmails = emailsFromBlob.filter(email => {
-                    return typeof email === "string";
-                });
-            }
+    if (text) {
+        const parsed = JSON.parse(text) as any;
+        const emailsFromBlob = parsed?.email;
+        if (Array.isArray(emailsFromBlob)) {
+            existingEmails = emailsFromBlob.filter(email => {
+                return typeof email === "string";
+            });
+        }
 
-            const emailIDsFromBlob = parsed?.email_id;
-            if (Array.isArray(emailIDsFromBlob)) {
-                existingEmailIDs = emailIDsFromBlob.filter(id => {
-                    return typeof id === "string";
-                });
-            }
+        const emailIDsFromBlob = parsed?.email_id;
+        if (Array.isArray(emailIDsFromBlob)) {
+            existingEmailIDs = emailIDsFromBlob.filter(id => {
+                return typeof id === "string";
+            });
         }
     }
 
@@ -106,7 +113,7 @@ export async function getExisitingEmails(exists: boolean, blobClient: BlockBlobC
         .filter(Boolean)
     );
 
-    return [emailSet, emailIDSet] as const;
+    return [blobName, emailSet, emailIDSet] as const;
 }
 
 async function uploadBlob(containerClient: ContainerClient, blobName: string, emailSet: Set<string>, emailIDSet: Set<string>, tags: string[]) {
@@ -142,7 +149,7 @@ async function uploadBlob(containerClient: ContainerClient, blobName: string, em
     }
 }
 
-export async function subscribeToNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, email: string, tags: string[] = []) {
+export async function subscribeToNotifications(containerClient: ContainerClient, deviceKey: string, email: string, tags: string[] = []) {
     /*
        Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
        We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
@@ -157,8 +164,8 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     let keysToCheck = [deviceKey];
 
     // Confirm the email exists
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
+    const normalizedEmail = (email ?? "").trim().toLowerCase();
+    if (!normalizedEmail) {
         return { jsonBody: { message: "Email not provided" }, status: 404 };
     }
 
@@ -170,22 +177,18 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
         keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
-        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, key);
-        const exists = await blobClient.exists();
-        let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+        let [blobName, emailSet, emailIDSet] = await getExistingEmails(key, containerClient);
 
-        // Add the specified email to the set
-        const sizeBeforeAdding = emailSet.size;
-        emailSet.add(normalized);
-
-        // If email is already stored move on to the next key to check
-        if (exists && emailSet.size === sizeBeforeAdding) {
+        // Add the specified email to the set, if the email was already stored then move on to the next key to check
+        if (emailSet.has(normalizedEmail)) {
             keysToCheck.shift();
             continue;
         }
 
+        emailSet.add(normalizedEmail);
+
         // Generate a unique string id to represent the new email
-        const uniqueString = await crypto.subtle.generateKey(
+        const emailID = await crypto.subtle.generateKey(
             {
             name: "AES-CBC",
             length: 256
@@ -194,9 +197,9 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
             ['encrypt', 'decrypt']
         );
 
-        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-        const uniqueEmailString = base58encode(new Uint8Array(buffer));
-        emailIDSet.add(uniqueEmailString)
+        const buffer = await crypto.subtle.exportKey("raw", emailID);
+        const emailIDString = base58encode(new Uint8Array(buffer));
+        emailIDSet.add(emailIDString);
 
         try {
             // Update our stored emails to include the new email/id
@@ -204,7 +207,7 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
         } catch(error) {
             return {
                 jsonBody: {message: 'Failed to subscribe to email notifications'},
-                status: 500,
+                status: 500
             }
         }
 
@@ -217,13 +220,10 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     }
 }
 
-export async function unsubscribeFromNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailID: string, tags: string[] = []) {
+export async function unsubscribeFromNotifications(containerClient: ContainerClient, deviceKey: string, emailID: string, tags: string[] = []) {
     // Get the email that corresponds to the given email id
     let keysToCheck = [deviceKey];
-
-    const [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    const exists = await blobClient.exists();
-    const [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+    const [blobName, emailSet, emailIDSet] = await getExistingEmails(deviceKey, containerClient);
 
     // Confirm the emailID/email exists
     const emailIndex = Array.from(emailIDSet).indexOf(emailID);
@@ -232,7 +232,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     }
     const existingEmails = Array.from(emailSet);
     const email = existingEmails[emailIndex];
-    const normalized = (email ?? "").trim().toLowerCase();
+    const normalizedEmail = (email ?? "").trim().toLowerCase();
 
     // Loop through record/children keys and unsubscribe from all of them
     while (keysToCheck.length != 0) {
@@ -242,9 +242,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
         keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
-        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, key);
-        const exists = await blobClient.exists();
-        let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+        let [blobName, emailSet, emailIDSet] = await getExistingEmails(deviceKey, containerClient);
 
         // Check if the email is subscribed to the child record
         const emailIndex = Array.from(emailSet).indexOf(email);
@@ -258,7 +256,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
         const emailID = existingEmailIDs[emailIndex];
 
         // Remove the specified email and id from the set
-        emailSet.delete(normalized);
+        emailSet.delete(normalizedEmail);
         emailIDSet.delete(emailID);
 
         try {
@@ -267,7 +265,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
         } catch(error) {
             return {
                 jsonBody: {message: 'Failed to unsubscribe from email notifications'},
-                status: 500,
+                status: 500
             }
         }
 
@@ -281,7 +279,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     }
 }
 
-export async function retrieveNotifEmails(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, key: string) {
+export async function retrieveNotifEmails(containerClient: ContainerClient, key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
     const deviceID = await calculateDeviceID(key);
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
