@@ -12,7 +12,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, setupBlobClient, getExisitingEmails } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 import './getStats.js';
 import { sendEmail } from './sendEmail.js'
@@ -1040,6 +1040,9 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 
         // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
+    // TODO Last: Test for Vincent:
+        // 1. delete allowInsecureConnection when setting up tableClient (does everything explode?)
+        // 2. deploy to dev and try to sign up for email, does it still work? (careful of sending current changes, or just undo)
     const credential = new AzureNamedKeyCredential(accountName, accountKey);
     const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
 
@@ -1744,22 +1747,30 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 }
 
 async function endpointLivenessChecker(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    let local = 'http://localhost:7071/api' // TODO: temporary (use backend_url - provenance OR add api_url to production)
-    const frontendUrl = process.env['frontend_url']
+    const apiUrl = process.env["api_url"];
+    const frontendUrl = process.env['frontend_url'];
     let responses = [];
+    let environment = "";
+    let key = "";
+    let attachmentID = "";
 
-    let environment = "Development"
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/'))) {
-        environment = "Production"
+        environment = "Production";
+        key = "WeKm1MtJDQd9VYsaCkrGhN";
+        attachmentID = "d6594c4cc6cbf4c585e798ae1b9d05f14e1bd32197cc93e6b576681d92fcf7f0";
+    } else if ((frontendUrl.includes('red') || frontendUrl.includes('dev'))) {
+        environment = "Development";
+        key = "LHqbxvinufVyxnd2ErwnpM";
+        attachmentID = "25e54cce79774f7973ec7d3e609d5d3e0c9ca58936b6b00c7f9c16cbca06d6f5";
+    } else {
+        // If we're running locally skip the endpoint check (since email endpoints will always fail locally)
+        return;
     }
 
     // TODO: could use a function like fetch w/ retry instead of individually calling all! Problem: it throws an error Solution: try/catch in for loop (or make a new func w/ one try + put below in new file?)
-        // New file?
+        // New file? PROBABLY WE WANT TO MAKE HTTPTRIGGER CLEANER!!!
     try {
-        const localKey = "YFRiJ7NeZTJqCNv1EigTb5"; // todo replace with dev/live key, same for below
-        const localAttachmentKey = "EjoyFmVPHdCN8mJSr6k8Xa";
-        const localAttachmentID = "d460d9c8bc7b776c5d518d43a0360bf845ca2cf847e9410bffcc7a509dad573b";
-        const testEmail = "livelinessTest@gmail.com";
+        const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
         const group = {
             deviceName: "Endpoint Test Group",
             description: "Testing our endpoints",
@@ -1784,133 +1795,163 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
         // addEntry Endpoint Test
         let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(recordEntry));
-        let response = await fetch(`${local}/addEntry/${localKey}`, { method: "POST", body: formData });
+        let response = await fetch(`${apiUrl}/addEntry/${key}`, { method: "POST", body: formData });
         responses.push({"endpoint":"addEntry", "status": response.status});
 
         // boop Endpoint Test
-        response = await fetch(`${local}/stats/boop`);
+        response = await fetch(`${apiUrl}/stats/boop`);
         responses.push({"endpoint":"boop", "status": response.status});
 
         // createGroup Endpoint Test
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(group));
-        response = await fetch(`${local}/createGroup`, { method: "POST", body: formData });
+        response = await fetch(`${apiUrl}/createGroup`, { method: "POST", body: formData });
         responses.push({"endpoint":"createGroup", "status": response.status});
 
         // createRecord Endpoint Test
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(record));
-        response = await fetch(`${local}/createRecord`, { method: "POST", body: formData });
+        response = await fetch(`${apiUrl}/createRecord`, { method: "POST", body: formData });
+        let keyToEmail = ((await response.json()).recordUrl).split('/'); // use this key to test emails later
+        keyToEmail = keyToEmail[keyToEmail.length - 1];
         responses.push({"endpoint":"createRecord", "status": response.status});
 
         // getAttachment Endpoint Test
-        response = await fetch(`${local}/attachment/${localAttachmentKey}/${localAttachmentID}`);
+        response = await fetch(`${apiUrl}/attachment/${key}/${attachmentID}`);
         responses.push({"endpoint":"getAttachment", "status": response.status});
 
         // getAttachmentName Endpoint Test
-        response = await fetch(`${local}/attachment/${localAttachmentKey}/${localAttachmentID}/name`);
+        response = await fetch(`${apiUrl}/attachment/${key}/${attachmentID}/name`);
         responses.push({"endpoint":"getAttachmentName", "status": response.status});
         
         // getBrowserStats Endpoint Test
-        response = await fetch(`${local}/browsers`);
+        response = await fetch(`${apiUrl}/stats/browsers`);
         responses.push({"endpoint":"getBrowserStats", "status": response.status});
 
         // getNewDeviceKey Endpoint Test
-        response = await fetch(`${local}/getNewDeviceKey`);
-        const newKey = await response.text();
+        response = await fetch(`${apiUrl}/getNewDeviceKey`);
         responses.push({"endpoint":"getNewDeviceKey", "status": response.status});
 
         // getProvenance Endpoint Test
-        response = await fetch(`${local}/provenance/${localKey}`);
+        response = await fetch(`${apiUrl}/provenance/${key}`);
         responses.push({"endpoint":"getProvenance", "status": response.status});
 
         // getProvenanceAlt Endpoint Test
-        response = await fetch(`${local}/getProvenance/${localKey}`);
+        response = await fetch(`${apiUrl}/getProvenance/${key}`);
         responses.push({"endpoint":"getProvenanceAlt", "status": response.status});
 
         // getStatistics Endpoint Test
-        response = await fetch(`${local}/statistics`);
+        response = await fetch(`${apiUrl}/statistics`);
         responses.push({"endpoint":"getStatistics", "status": response.status});
 
         // getVersion Endpoint Test
-        response = await fetch(`${local}/version`);
+        response = await fetch(`${apiUrl}/version`);
         responses.push({"endpoint":"getVersion", "status": response.status});
+
 
         /*===== Email Endpoints =====*/
         // emailSignupTestEndpoint Endpoint Test
-        response = await fetch(`${local}/emailSignupTestEndpoint`);
+        response = await fetch(`${apiUrl}/emailSignupTestEndpoint`);
         responses.push({"endpoint":"emailSignupTestEndpoint", "status": response.status});
 
-        // postEmail Endpoint Test
+        // postEmail Endpoint Test (allows 204, which means already subscribed)
         formData = new FormData();
         formData.append("email", testEmail);
-        response = await fetch(`${local}/feedbackVolunteer`, { method: 'POST', body: formData });
-        responses.push({"endpoint":"postEmail", "status": response.status});
-
-        // *TODO PROBLEM: I cannot get the code (it is only sent to the email), token in theory works on dev
-            // Could create getters to code and emailID (not endpoints, and only access here)
-        // postNotificationEmail Endpoint Test
-        response = await fetch(`${local}/notificationSubscription`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "email": testEmail, "recordKey": localKey }) })
-        responses.push({"endpoint":"postNotificationEmail", "status": response.status});
-
-        // let token = response[0].token;
-        let token = "mmfB9SvBKs6RF1ZzyKZjfZRRFM3y1cCs";
-
-        // TODO PROBLEM: Can't get code from above so I can't verify the code
-        // postVerifyCode Endpoint Test
-        // response = await fetch(`${local}/verifyCode`, { 
-        //     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, code })
-        // });
-        // responses.push({"endpoint":"postVerifyCode", "status": response.status});
-
-        // postResendCode Endpoint Test
-        response = await fetch(`${local}/resendcode`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }),
-        });
-        responses.push({"endpoint":"postResendCode", "status": response.status});
-
-        // getPendingVerification Endpoint Test
-        response = await fetch(`${local}/pendingverification?token=${token}`, { method: 'GET' });
-        responses.push({"endpoint":"getPendingVerification", "status": response.status});
+        response = await fetch(`${apiUrl}/feedbackVolunteer`, { method: 'POST', body: formData });
+        if (response.status == 204) { responses.push({"endpoint":"postEmail", "status": 200}) }
+        else { responses.push({"endpoint":"postEmail", "status": response.status}) };
 
         // notifySubscribers Endpoint Test (allows 204, which means nothing to notify)
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(record));
-        response = await fetch(`${local}/notifySubscribers/${localKey}`, { method: 'POST', body: formData });
+        response = await fetch(`${apiUrl}/notifySubscribers/${keyToEmail}`, { method: 'POST', body: formData });
         if (response.status == 204) { responses.push({"endpoint":"notifySubscribers", "status": 200}) }
         else { responses.push({"endpoint":"notifySubscribers", "status": response.status}) };
+        
+        // postNotificationEmail Endpoint Test
+        response = await fetch(`${apiUrl}/notificationSubscription`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "email": testEmail, "recordKey": keyToEmail }) })
+        responses.push({"endpoint":"postNotificationEmail", "status": response.status});
+        const data = await response.json();
+        const token = data.token as string;
+        let code = "";
 
-        // TODO: no way to get emailID (only linked in unsub emails)
+        // postResendCode Endpoint Test
+        response = await fetch(`${apiUrl}/resendCode`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }),
+        });
+        responses.push({"endpoint":"postResendCode", "status": response.status});
+
+        // Get the code using the token
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1` 
+            : `https://${accountName}.table.core.windows.net`;
+
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
+
+        const entities = tableClient.listEntities({
+            queryOptions: { filter: `PartitionKey eq '${token}'` }
+        });
+        for await (const e of entities) {
+            code = e.rowKey
+            break;
+        }
+
+        // getPendingVerification Endpoint Test
+        response = await fetch(`${apiUrl}/pendingVerification?token=${token}`, { method: 'GET' });
+        responses.push({"endpoint":"getPendingVerification", "status": response.status});
+
+        // postVerifyCode Endpoint Test
+        response = await fetch(`${apiUrl}/verifyCode`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, code })
+        });
+        responses.push({"endpoint":"postVerifyCode", "status": response.status});
+        
+        // Get the emailID to unsubscribe with
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, keyToEmail);
+        const exists = await blobClient.exists();
+        let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+        const emailIndex = Array.from(emailSet).indexOf(testEmail);
+        let emailID = "";
+        if (emailIndex >= 0) {
+            const existingEmailIDs = Array.from(emailIDSet);
+            emailID = existingEmailIDs[emailIndex];
+        }
+
         // deleteNotificationEmail Endpoint Test
-        // response = await fetch(`${baseUrl}/notificationUnsubscribe`,
-        //     { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ id: emailID, recordKey: localKey })
-        // });
+        response = await fetch(`${apiUrl}/notificationUnsubscribe`,
+            { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: emailID, recordKey: keyToEmail })
+        });
+        if (response.status == 204) { responses.push({"endpoint":"deleteNotificationEmail", "status": 200}) }
+        else { responses.push({"endpoint":"deleteNotificationEmail", "status": response.status}) };
         /*===============*/
+
 
         // postProvenance Endpoint Test
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(recordEntry));
-        response = await fetch(`${local}/provenance/${localKey}`, { method: "POST", body: formData });
+        response = await fetch(`${apiUrl}/provenance/${key}`, { method: "POST", body: formData });
         responses.push({"endpoint":"postProvenance", "status": response.status});
 
         // recall Endpoint Test
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(recordEntry));
-        response = await fetch(`${local}/recall/${newKey}`, { method: "POST", body: formData });
+        response = await fetch(`${apiUrl}/recall/${keyToEmail}`, { method: "POST", body: formData });
         responses.push({"endpoint":"recall", "status": response.status});
 
         // sendToAllChildren Endpoint Test
-        response = await fetch(`${local}/provenance/sendToChildren/${localKey}`, { method: "POST", body: formData });
+        response = await fetch(`${apiUrl}/provenance/sendToChildren/${key}`, { method: "POST", body: formData });
         responses.push({"endpoint":"sendToAllChildren", "status": response.status});
 
         // upgradeProvenance Endpoint Test
-        response = await fetch(`${local}/upgrade/${localKey}`);
+        response = await fetch(`${apiUrl}/upgrade/${key}`);
         responses.push({"endpoint":"upgradeProvenance", "status": response.status});
 
         // updateRecord Endpoint Test
-        response = await fetch(`${local}/upgrade/${localKey}`);
+        response = await fetch(`${apiUrl}/upgrade/${key}`);
         responses.push({"endpoint":"updateRecord", "status": response.status});
 
     } catch (error) {
@@ -1928,6 +1969,7 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
     return { status: 200 };
 }
 
+// TODO: could use Hieu's function for this, I can ALSO have it compile all failures into ONE EMAIL! (esp. since I'll also get these and limited email numbers!!)
 export async function endpointLivenessCheckEmailer (server: string, endpoint: string, context?: InvocationContext) {
     // const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'] // todo final: uncomment and replace below when done (*test print FIRST, then test emailing myself!)
     const emails = [""]
