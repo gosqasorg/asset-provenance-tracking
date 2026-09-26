@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
 
-# TODO:
-# DONE -- FIRST get the script to update a record that we are NOT subscribe to
-# -- THEN get the script to update a record that I am subscribed to (subscribe and update once, then run the loop only once to see if email sends)
-# -- FINALLY can loop it (monitor first 51 to make sure 1 min is long enough, then let the rest run on it's own)
+# NOTE: Set device key to a manually defined record (make sure you are already subscribed to the record as well)
+baseUrl="http://localhost:7071/api"
+key="RptEVbgeq6DJgGdKXxgNdD"
 
-
-
-# Set device key to the manually defined record (make sure you are already subscribed to the record as well)
-# key="RptEVbgeq6DJgGdKXxgNdD"
-key="HZa9Q9vp1o8nU3WcKgpNwi" # *TODO: dev test record so we can keep our regular record clean (remove when done)
-
-# Loop updating the record 51 times (1 minute sleep in between)
+# Loop updating the record 51 times (1 minute of sleep in between)
 emailsSent=0 # num of emails already sent
-iterations=1 # num of emails to send this time (51 * 9 = 459 emails to send total, DO THE FIRST 51 SEPARATELY)
+iterations=51 # num of emails to send this time
 
 for i in $(seq 1 $iterations); do
   # Define a record to post
@@ -24,12 +17,27 @@ for i in $(seq 1 $iterations); do
     --arg children_key "" \
     '$ARGS.named')
 
-  echo "Record stored: $record"
+  echo -e "\nsending email number $emailsSent..."
 
-  # NOTE: We probably should not put the raw dev backend url in the script!! Find another way!!!
-  curl -X POST http://localhost:7071/api/provenance/$key \
+  # Post a new record entry
+  curl -X POST $baseUrl/provenance/$key \
     -F "provenanceRecord=$record"
 
-  echo "done!"
+  # Try to email subscribers about the new entry, and exit the loop on failure
+  {
+    response=$(curl -s -o /dev/null -w "%{http_code}" -X POST $baseUrl/notifySubscribers/$key \
+      -F "provenanceRecord=$record")
+    
+    if [[ "$response" != "200" ]]; then
+      echo -e "\nbad request! status code $response"
+      break
+    fi
+  } || {
+    echo -e "\nerror caught!"
+    break
+  }
+
   sleep 60
 done
+
+echo -e "\nemail send script complete!"
