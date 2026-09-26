@@ -255,7 +255,7 @@ methods: {
             let key = sessionStorage.getItem("gdt-redirect-key") || '';
 
             if (JSON.stringify(this.stashedRecord) !== '{}' && this.recordKey == key) {
-                stashOfflineRequest(this.recordKey, "gdt-stash-fulfilled");
+                stashOfflineRequest(this.recordKey, "gdt-stash-fulfilled", record);
                 removeOfflineRequest(this.recordKey, "gdt-stash-failed");
             }
 

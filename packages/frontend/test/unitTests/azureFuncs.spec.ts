@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -25,9 +25,9 @@ async function createRequest (
 
 function resetStashValues(): void {
   // reset the values in localStorage to avoid overlap between tests
-  localStorage.setItem('gdt-stash-queued', '');
-  localStorage.setItem('gdt-stash-failed', '');
-  localStorage.setItem('gdt-stash-fulfilled', '');
+  localStorage.removeItem('gdt-stash-queued');
+  localStorage.removeItem('gdt-stash-failed');
+  localStorage.removeItem('gdt-stash-fulfilled');
 }
 
 // Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
@@ -55,24 +55,25 @@ describe("Stash and Remove Offline Requests", () => {
       'Queued Record',
       'Test for queue stash'
     );
+    let provenanceRecord = JSON.parse(queuedData.get('provenanceRecord') as string);
 
     // Stash the request and confirm it was successful
-    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", provenanceRecord);
 
     let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
     let queuedRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(1);
     expect(queuedRequest["key"]).toEqual(queuedKey);
-    expect(queuedRequest["data"]).toStrictEqual(queuedData.get('provenanceRecord'));
+    expect(queuedRequest["data"]).toStrictEqual(provenanceRecord);
 
     // Try to add the same record twice and confirm it wasn't added
-    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", provenanceRecord);
 
     requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
     queuedRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(1);
     expect(queuedRequest["key"]).toEqual(queuedKey);
-    expect(queuedRequest["data"]).toStrictEqual(queuedData.get('provenanceRecord'));
+    expect(queuedRequest["data"]).toStrictEqual(provenanceRecord);
 
     // Remove the request and confirm it was successful
     removeOfflineRequest(queuedKey, "gdt-stash-queued");
@@ -93,10 +94,12 @@ describe("Stash and Remove Offline Requests", () => {
       'Failed Record 2',
       'Second test for failed stash'
     );
+    let provenanceRecord = JSON.parse(failedData.get('provenanceRecord') as string);
+    let provenanceRecord2 = JSON.parse(failedData2.get('provenanceRecord') as string);
 
     // Stash 2 failed requests and confirm both were successfully stored
-    stashOfflineRequest(failedKey, "gdt-stash-failed", failedData.get('provenanceRecord'));
-    stashOfflineRequest(failedKey2, "gdt-stash-failed", failedData2.get('provenanceRecord'));
+    stashOfflineRequest(failedKey, "gdt-stash-failed", provenanceRecord);
+    stashOfflineRequest(failedKey2, "gdt-stash-failed", provenanceRecord2);
 
     let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
     let failedRequest = requestFromStash[0];
@@ -104,8 +107,8 @@ describe("Stash and Remove Offline Requests", () => {
     expect(requestFromStash.length).toEqual(2);
     expect(failedRequest["key"]).toEqual(failedKey);
     expect(failedRequest2["key"]).toEqual(failedKey2);
-    expect(failedRequest["data"]).toStrictEqual(failedData.get('provenanceRecord'));
-    expect(failedRequest2["data"]).toStrictEqual(failedData2.get('provenanceRecord'));
+    expect(failedRequest["data"]).toStrictEqual(provenanceRecord);
+    expect(failedRequest2["data"]).toStrictEqual(provenanceRecord2);
 
     // Remove both failed requests and confirm they were successfully removed
     removeOfflineRequest(failedKey, "gdt-stash-failed");
@@ -115,7 +118,7 @@ describe("Stash and Remove Offline Requests", () => {
     // First request was removed, so the new first request should be failedKey2/failedData2
     expect(requestFromStash.length).toEqual(1);
     expect(failedRequest["key"]).toEqual(failedKey2);
-    expect(failedRequest["data"]).toStrictEqual(failedData2.get('provenanceRecord'));
+    expect(failedRequest["data"]).toStrictEqual(provenanceRecord2);
 
     removeOfflineRequest(failedKey2, "gdt-stash-failed");
 
@@ -131,33 +134,34 @@ describe("Stash and Remove Offline Requests", () => {
       'Fulfilled Record',
       'Test for fulfilled stash'
     );
+    let provenanceRecord = JSON.parse(fulfilledData.get('provenanceRecord') as string);
 
     // Stash the request and confirm it was successful
-    stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
+    stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled", provenanceRecord);
 
-    let requestFromStash = localStorage.getItem('gdt-stash-fulfilled') || '';
-    let fulfilledKeys = requestFromStash.split(",");
-    let returnedKey = fulfilledKeys[0];
-    expect(fulfilledKeys.length).toEqual(1);
-    expect(returnedKey).toEqual(fulfilledKey);
+    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '{}');
+    let fulfilledRequest = requestFromStash[0];
+    expect(requestFromStash.length).toEqual(1);
+    expect(fulfilledRequest["key"]).toEqual(fulfilledKey);
+    expect(fulfilledRequest["data"]).toStrictEqual(provenanceRecord);
 
     // Try to add the same record twice and confirm it wasn't added
-    stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
+    stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled", provenanceRecord);
 
-    requestFromStash = localStorage.getItem('gdt-stash-fulfilled') || '';
-    fulfilledKeys = requestFromStash.split(",");
-    returnedKey = fulfilledKeys[0];
-    expect(fulfilledKeys.length).toEqual(1);
-    expect(returnedKey).toEqual(fulfilledKey);
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '{}');
+    fulfilledRequest = requestFromStash[0];
+    expect(requestFromStash.length).toEqual(1);
+    expect(fulfilledRequest["key"]).toEqual(fulfilledKey);
+    expect(fulfilledRequest["data"]).toStrictEqual(provenanceRecord);
 
     // Remove the request and confirm it was successful
     removeOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
 
-    requestFromStash = localStorage.getItem('gdt-stash-fulfilled') || '';
-    fulfilledKeys = requestFromStash.split(",");
-    returnedKey = fulfilledKeys[0];
-    expect(requestFromStash).toEqual('');
-    expect(returnedKey).toEqual('');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '{}');
+    fulfilledRequest = requestFromStash[0];
+    expect(requestFromStash.length).toEqual(0);
+    expect(requestFromStash).toEqual([]);
+    expect(fulfilledRequest).toBeUndefined();
   });
 });
 
@@ -172,49 +176,131 @@ describe("Get/Remove First Queued Request", async() => {
     // Attempt to get the only request in the queue
     let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
     let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
+    let provenanceRecord = JSON.parse(queuedData.get('provenanceRecord') as string);
+    let provenanceRecord2 = JSON.parse(queuedData2.get('provenanceRecord') as string);
 
-    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", provenanceRecord);
     firstQueueItem = getFirstQueueItem();
 
     expect(firstQueueItem["key"]).toEqual(queuedKey);
-    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["data"]).toEqual(provenanceRecord);
 
     // Attempt to get the first request of multiple and confirm we got the correct one
-    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", provenanceRecord2);
     firstQueueItem = getFirstQueueItem();
 
     expect(firstQueueItem["key"]).toEqual(queuedKey);
-    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["data"]).toEqual(provenanceRecord);
     expect(firstQueueItem["key"]).not.toEqual(queuedKey2);
-    expect(firstQueueItem["data"]).not.toEqual(queuedData2.get('provenanceRecord'));
+    expect(firstQueueItem["data"]).not.toEqual(provenanceRecord2);
+  });
+});
+
+describe("postProvenance, getProvenance, and getProvenanceOffline", () => {
+  it("Test postProvenance Offline Stashing", async () => {
+    // Create a provenance to stash
+    resetStashValues();
+    let [key, data] = await createRequest(
+      'postProvenance Offline Stashing Test',
+      'Test to confirm postProv stashes records while offline'
+    );
+    let provenanceRecord = JSON.parse(data.get('provenanceRecord') as string);
+
+    // Mock fetch to be offline and attempt to post the record
+    mockFetch.mockResolvedValue(undefined);
+    try {
+      await postProvenance(key, provenanceRecord, []);
+      expect.fail("Expected postProvenance to fail offline to test offline mode features");
+    } catch (error) {
+      expect(error).toEqual(new Error('Status 202: User is offline but the record has been stashed'));
+    }
+
+    // Confirm that the record was stashed and can be retreived by our other functions
+    let provenance = (await getProvenance(key))[0] || {record: ""};
+    let requestsFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    let stashedProvenance = requestsFromStash[0];
+    expect(requestsFromStash.length).toEqual(1);
+    expect(stashedProvenance["key"]).toEqual(key);
+    expect(provenance["record"]).toStrictEqual(provenanceRecord);
+    expect(stashedProvenance["data"]).toStrictEqual(provenanceRecord);
   });
 
-  it("Remove First Queued Request", async() => {
+  it("Test getProvenance Offline Mode", async () => {
+    // Create a provenance to stash
     resetStashValues();
+    let [key, data] = await createRequest(
+      'getProvenance Offline Mode Test',
+      'Test for the getProvenance\'s offline mode'
+    );
+    let provenanceRecord = JSON.parse(data.get('provenanceRecord') as string);
 
-    // Attempt to remove a request when none are in the queue and confirm there's no error
-    removeFirstQueueItem();
-    let firstQueueItem = getFirstQueueItem();
-    expect(firstQueueItem).toBeUndefined();
+    // Mock fetch, "post" the record, then mock offline
+    mockFetch.mockResolvedValue({ok: true, status: 200,json: () => Promise.resolve(provenanceRecord)});
+    await postProvenance(key, provenanceRecord, []);
+    mockFetch.mockResolvedValue(undefined);
 
-    // Attempt to remove the only request in the queue
-    let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
-    let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
+    // Call getProvenance without stashing and confirm it throws an error as usual
+    try {
+      let provenance = await getProvenance(key);
+      expect.fail("Expected getProvenance to fail offline to test offline mode features", provenance);
+    } catch (error) {
+      expect(error).toEqual(new Error('Could not connect to the server, check your internet connection and try again'));
+    }
+    
+    // Stash the record and confirm getProvenance now returns it, even while offline
+    stashOfflineRequest(key, "gdt-stash-queued", provenanceRecord);
 
-    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
-    removeFirstQueueItem();
-    firstQueueItem = getFirstQueueItem();
-    expect(firstQueueItem).toBeUndefined();
+    let provenance = (await getProvenance(key))[0] || {record: ""};
+    let requestsFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    let stashedProvenance = requestsFromStash[0];
+    expect(requestsFromStash.length).toEqual(1);
+    expect(stashedProvenance["key"]).toEqual(key);
+    expect(provenance["record"]).toStrictEqual(provenanceRecord);
+    expect(stashedProvenance["data"]).toStrictEqual(provenanceRecord);
+  });
 
-    // Attempt to remove the first request of multiple and confirm we removed the correct one
-    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
-    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
-    removeFirstQueueItem();
-    firstQueueItem = getFirstQueueItem();
+  it("Test getProvenanceOffline", async () => {
+    // Create a provenance to stash
+    resetStashValues();
+    let [key, data] = await createRequest(
+      'getProvenanceOffline Test',
+      'Test for the getProvenanceOffline function'
+    );
+    let provenanceRecord = JSON.parse(data.get('provenanceRecord') as string);
 
-    expect(firstQueueItem["key"]).not.toEqual(queuedKey);
-    expect(firstQueueItem["data"]).not.toEqual(queuedData.get('provenanceRecord'));
-    expect(firstQueueItem["key"]).toEqual(queuedKey2);
-    expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
+    // Stash the provenance and confirm getProvenanceOffline can retreive it
+    stashOfflineRequest(key, "gdt-stash-queued", provenanceRecord);
+    let stashedProvenance = getProvenanceOffline(key);
+    let stashedRecord = stashedProvenance[0] || {record: ""};
+    expect(stashedProvenance.length).toBe(1);
+    expect(stashedRecord["record"]).toStrictEqual(provenanceRecord);
+
+    // Add a second record to the provenance (wait a few seconds so the timestamp isn't identical)
+    await new Promise((r) => setTimeout(r, 1000));
+    const provenanceRecord2 = {
+      blobType: 'deviceInitializer',
+      deviceName: 'getProvenanceOffline Test 2',
+      description: 'Test for multiple records in the getProvenanceOffline function',
+      tags: [],
+      children_key: '',
+      hasParent: false,
+      isPublicKey: false
+    };
+
+    // Stash the new provenance and confirm getProvenanceOffline can retreive both of them
+    stashOfflineRequest(key, "gdt-stash-queued", provenanceRecord2);
+    stashedProvenance = getProvenanceOffline(key);
+    stashedRecord = stashedProvenance[1] || {record: ""};
+    let stashedRecord2 = stashedProvenance[0] || {record: ""};
+    expect(stashedProvenance.length).toBe(2);
+    expect(stashedRecord["record"]).toStrictEqual(provenanceRecord);
+    expect(stashedRecord2["record"]).toStrictEqual(provenanceRecord2);
+
+    // Attempt to get a provenance that was not stashed and confirm it returns nothing
+    stashedProvenance = getProvenanceOffline("123456789101112asdfghi");
+    expect(stashedProvenance).toEqual([]);
+
+    stashedProvenance = getProvenanceOffline("invalidKey");
+    expect(stashedProvenance).toEqual([]);
   });
 });

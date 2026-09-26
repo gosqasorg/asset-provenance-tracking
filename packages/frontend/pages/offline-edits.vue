@@ -109,8 +109,7 @@ async mounted() {
     try {
         this.getKeysFromStash("gdt-stash-failed");
         this.getKeysFromStash("gdt-stash-queued");
-        this.getFulfilledKeys();
-        this.clearOneEdit();
+        this.getKeysFromStash("gdt-stash-fulfilled");
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({
@@ -129,17 +128,10 @@ methods: {
                 continue
             } else if (stashName.includes("queued")) {
                 this.queuedKeys.push(request["key"]);
-            } else {
+            } else if (stashName.includes("failed")) {
                 this.failedKeys.push(request["key"]);
-            }
-        }
-    },
-    getFulfilledKeys() {
-        // Get all keys that were fullfilled from the stash
-        let fulfilled = localStorage.getItem('gdt-stash-fulfilled') || "[]";
-        for (const key of fulfilled.split(",")) {
-            if (key !== "[]") {
-                this.fulfilledKeys.push(key) 
+            } else {
+                this.fulfilledKeys.push(request["key"]);
             }
         }
     },
@@ -162,14 +154,14 @@ methods: {
         sessionStorage.removeItem("gdt-redirect-key");
     },
     clearOneEdit() {
-        // Removes key from fulfilled array then resets and copies this array to gdt stash fullfilled
+        // Removes key from fulfilled array then removes it from fulfilled stash
         const index = this.fulfilledKeys.indexOf(this.dismissOneKey);
         if (index > -1) {
+            removeOfflineRequest(this.dismissOneKey, "gdt-stash-fulfilled");
             this.fulfilledKeys.splice(index, 1);
             this.dismissOneKey = '';
             this.dismissSingleEditPopUp = false;
         }
-        localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
     async retrySyncing(key: string, index: number) {
         try {
@@ -193,7 +185,7 @@ methods: {
             await postProvenance(key, stashedRecord, []);
 
             // If the request creates successfully move the key to the fulfilled stash
-            stashOfflineRequest(key, "gdt-stash-fulfilled");
+            stashOfflineRequest(key, "gdt-stash-fulfilled", stashedRequest);
             removeOfflineRequest(key, "gdt-stash-failed");
 
             // Reload the page
@@ -238,7 +230,7 @@ methods: {
             if (!stashedRecord.deviceName) {
                 // If the request doesn't have a name then it is part of an existing record/group
                 this.$router.push({
-                    path: '/history/offline'
+                    path: `/history/offline`
                 });
             } else {
                 // Otherwise it is either a new record or group
