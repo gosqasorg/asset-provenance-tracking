@@ -1353,7 +1353,9 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 
     if (response !== undefined && !response.ok) {
         context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText, { 
+            cause: { status: response.status } 
+        });
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
@@ -1746,7 +1748,17 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
-async function endpointLivenessChecker(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+// MASTER LIST
+    // Move to a new file.? (if you do this merge in main and move the other liveliness checker too, BUT TRY HERE FIRST??)
+
+// todo: delete the beep
+async function beep(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // await endpointLivenessChecker("", context);
+    context.error("function done..?")
+    return { status: 200 };
+}
+
+async function endpointLivenessChecker(myTimer: any, context: InvocationContext) {
     const apiUrl = process.env["api_url"];
     const frontendUrl = process.env['frontend_url'];
     let responses = [];
@@ -1767,8 +1779,7 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
         return;
     }
 
-    // TODO: could use a function like fetch w/ retry instead of individually calling all! Problem: it throws an error Solution: try/catch in for loop (or make a new func w/ one try + put below in new file?)
-        // New file? PROBABLY WE WANT TO MAKE HTTPTRIGGER CLEANER!!!
+    // TODO: New file? PROBABLY WE WANT TO MAKE HTTPTRIGGER CLEANER!!!
     try {
         const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
         const group = {
@@ -1792,82 +1803,70 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
             tags: []
         };
 
-        // addEntry Endpoint Test
-        let formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(recordEntry));
-        let response = await fetch(`${apiUrl}/addEntry/${key}`, { method: "POST", body: formData });
-        responses.push({"endpoint":"addEntry", "status": response.status});
+        let groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify(group));
+        let recordFormData = new FormData();
+        recordFormData.append("provenanceRecord", JSON.stringify(record));
+        let entryFormData = new FormData();
+        entryFormData.append("provenanceRecord", JSON.stringify(recordEntry));
 
-        // boop Endpoint Test
-        response = await fetch(`${apiUrl}/stats/boop`);
-        responses.push({"endpoint":"boop", "status": response.status});
-
-        // createGroup Endpoint Test
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(group));
-        response = await fetch(`${apiUrl}/createGroup`, { method: "POST", body: formData });
-        responses.push({"endpoint":"createGroup", "status": response.status});
-
-        // createRecord Endpoint Test
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(record));
-        response = await fetch(`${apiUrl}/createRecord`, { method: "POST", body: formData });
-        let keyToEmail = ((await response.json()).recordUrl).split('/'); // use this key to test emails later
+        /*===== Non-Email Endpoints =====*/
+        // createRecord Endpoint Test (need to save the key for email testing so we're calling this endpoint separately)
+        let response = await fetch(`${apiUrl}/createRecord`, { method: "POST", body: recordFormData });
+        let keyToEmail = ((await response.json()).recordUrl).split('/');
         keyToEmail = keyToEmail[keyToEmail.length - 1];
         responses.push({"endpoint":"createRecord", "status": response.status});
 
-        // getAttachment Endpoint Test
-        response = await fetch(`${apiUrl}/attachment/${key}/${attachmentID}`);
-        responses.push({"endpoint":"getAttachment", "status": response.status});
-
-        // getAttachmentName Endpoint Test
-        response = await fetch(`${apiUrl}/attachment/${key}/${attachmentID}/name`);
-        responses.push({"endpoint":"getAttachmentName", "status": response.status});
+        let endpointInfo = [
+            {"name":"addEntry", "url":`/addEntry/${key}`, "formData": entryFormData},
+            {"name":"boop", "url":`/stats/boop`},
+            {"name":"createGroup", "url":`/createGroup`, "formData": groupFormData},
+            {"name":"getAttachment", "url":`/attachment/${key}/${attachmentID}`},
+            {"name":"getAttachmentName", "url":`/attachment/${key}/${attachmentID}/name`},
+            {"name":"getBrowserStats", "url":`/stats/browsers`},
+            {"name":"getNewDeviceKey", "url":`/getNewDeviceKey`},
+            {"name":"getProvenance", "url":`/provenance/${key}`},
+            {"name":"getProvenanceAlt", "url":`/getProvenance/${key}`},
+            {"name":"getStatistics", "url":`/statistics`},
+            {"name":"getVersion", "url":`/version`},
+            {"name":"postProvenance", "url":`/provenance/${key}`, "formData": entryFormData},
+            {"name":"sendToAllChildren", "url":`/provenance/sendToChildren/${key}`, "formData": entryFormData},
+            {"name":"upgradeProvenance", "url":`/upgrade/${key}`},
+            {"name":"recall", "url":`/recall/${keyToEmail}`, "formData": entryFormData}
+        ];
         
-        // getBrowserStats Endpoint Test
-        response = await fetch(`${apiUrl}/stats/browsers`);
-        responses.push({"endpoint":"getBrowserStats", "status": response.status});
-
-        // getNewDeviceKey Endpoint Test
-        response = await fetch(`${apiUrl}/getNewDeviceKey`);
-        responses.push({"endpoint":"getNewDeviceKey", "status": response.status});
-
-        // getProvenance Endpoint Test
-        response = await fetch(`${apiUrl}/provenance/${key}`);
-        responses.push({"endpoint":"getProvenance", "status": response.status});
-
-        // getProvenanceAlt Endpoint Test
-        response = await fetch(`${apiUrl}/getProvenance/${key}`);
-        responses.push({"endpoint":"getProvenanceAlt", "status": response.status});
-
-        // getStatistics Endpoint Test
-        response = await fetch(`${apiUrl}/statistics`);
-        responses.push({"endpoint":"getStatistics", "status": response.status});
-
-        // getVersion Endpoint Test
-        response = await fetch(`${apiUrl}/version`);
-        responses.push({"endpoint":"getVersion", "status": response.status});
-
+        for (const endpoint of endpointInfo) {
+            try {
+                let response = await fetchWithRetry(context, `${apiUrl}${endpoint["url"]}`, endpoint["formData"])
+                responses.push({"endpoint": endpoint["name"], "status": response.status});
+            } catch (error) {
+                responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
+            }
+        }
 
         /*===== Email Endpoints =====*/
-        // emailSignupTestEndpoint Endpoint Test
-        response = await fetch(`${apiUrl}/emailSignupTestEndpoint`);
-        responses.push({"endpoint":"emailSignupTestEndpoint", "status": response.status});
+        // Various email endpoints
+        let emailFormData = new FormData();
+        emailFormData.append("email", testEmail);
 
-        // postEmail Endpoint Test (allows 204, which means already subscribed)
-        formData = new FormData();
-        formData.append("email", testEmail);
-        response = await fetch(`${apiUrl}/feedbackVolunteer`, { method: 'POST', body: formData });
-        if (response.status == 204) { responses.push({"endpoint":"postEmail", "status": 200}) }
-        else { responses.push({"endpoint":"postEmail", "status": response.status}) };
+        endpointInfo = [
+            {"name":"emailSignupTestEndpoint", "url":`/emailSignupTestEndpoint`},
+            {"name":"postEmail", "url":`/feedbackVolunteer`, "formData": emailFormData},
+            {"name":"notifySubscribers", "url":`/notifySubscribers/${keyToEmail}`, "formData": recordFormData}
+        ];
 
-        // notifySubscribers Endpoint Test (allows 204, which means nothing to notify)
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(record));
-        response = await fetch(`${apiUrl}/notifySubscribers/${keyToEmail}`, { method: 'POST', body: formData });
-        if (response.status == 204) { responses.push({"endpoint":"notifySubscribers", "status": 200}) }
-        else { responses.push({"endpoint":"notifySubscribers", "status": response.status}) };
-        
+        for (const endpoint of endpointInfo) {
+            try {
+                let response = await fetchWithRetry(context, `${apiUrl}${endpoint["url"]}`, endpoint["formData"])
+                // Allow status 204 (which means already subscribed/nothing to notify)
+                if (response.status == 204) { responses.push({"endpoint": endpoint["name"], "status": 200}) }
+                else { responses.push({"endpoint": endpoint["name"], "status": response.status}) };
+            } catch (error) {
+                responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
+            }
+        }
+
+        // Generate the token to subscribe our test email with
         // postNotificationEmail Endpoint Test
         response = await fetch(`${apiUrl}/notificationSubscription`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "email": testEmail, "recordKey": keyToEmail }) })
@@ -1882,7 +1881,7 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
         });
         responses.push({"endpoint":"postResendCode", "status": response.status});
 
-        // Get the code using the token
+        // Get the verification code using the token
         const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1` 
             : `https://${accountName}.table.core.windows.net`;
@@ -1898,6 +1897,7 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
             break;
         }
 
+        // Subscribe the test email to the record
         // getPendingVerification Endpoint Test
         response = await fetch(`${apiUrl}/pendingVerification?token=${token}`, { method: 'GET' });
         responses.push({"endpoint":"getPendingVerification", "status": response.status});
@@ -1920,68 +1920,43 @@ async function endpointLivenessChecker(request: HttpRequest, context: Invocation
             emailID = existingEmailIDs[emailIndex];
         }
 
+        // Unsubscribe from email notifications
         // deleteNotificationEmail Endpoint Test
-        response = await fetch(`${apiUrl}/notificationUnsubscribe`,
-            { method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: emailID, recordKey: keyToEmail })
+        response = await fetch(`${apiUrl}/notificationUnsubscribe`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: emailID, recordKey: keyToEmail })
         });
         if (response.status == 204) { responses.push({"endpoint":"deleteNotificationEmail", "status": 200}) }
         else { responses.push({"endpoint":"deleteNotificationEmail", "status": response.status}) };
-        /*===============*/
-
-
-        // postProvenance Endpoint Test
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(recordEntry));
-        response = await fetch(`${apiUrl}/provenance/${key}`, { method: "POST", body: formData });
-        responses.push({"endpoint":"postProvenance", "status": response.status});
-
-        // recall Endpoint Test
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(recordEntry));
-        response = await fetch(`${apiUrl}/recall/${keyToEmail}`, { method: "POST", body: formData });
-        responses.push({"endpoint":"recall", "status": response.status});
-
-        // sendToAllChildren Endpoint Test
-        response = await fetch(`${apiUrl}/provenance/sendToChildren/${key}`, { method: "POST", body: formData });
-        responses.push({"endpoint":"sendToAllChildren", "status": response.status});
-
-        // upgradeProvenance Endpoint Test
-        response = await fetch(`${apiUrl}/upgrade/${key}`);
-        responses.push({"endpoint":"upgradeProvenance", "status": response.status});
-
-        // updateRecord Endpoint Test
-        response = await fetch(`${apiUrl}/upgrade/${key}`);
-        responses.push({"endpoint":"updateRecord", "status": response.status});
 
     } catch (error) {
-        // TODO: should do something for the endpoints that are missed
+        // TODO: should do something for the endpoints that are missed (email)
         context.error("endpointLivelinessChecker Error:", error)
     }
 
     // Loop through all our responses and send an email if any of them aren't 200
+    let failedResponses = [];
     for (const storedResponse of responses) {
         if (storedResponse.status !== 200) {
-            await endpointLivenessCheckEmailer(environment, storedResponse.endpoint, context);
+            failedResponses.push(storedResponse.endpoint);
         }
     }
 
-    return { status: 200 };
+    if (failedResponses.length > 0) {
+        await endpointLivenessCheckEmailer(environment, failedResponses, context);
+    }
 }
 
-// TODO: could use Hieu's function for this, I can ALSO have it compile all failures into ONE EMAIL! (esp. since I'll also get these and limited email numbers!!)
-export async function endpointLivenessCheckEmailer (server: string, endpoint: string, context?: InvocationContext) {
-    // const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'] // todo final: uncomment and replace below when done (*test print FIRST, then test emailing myself!)
-    const emails = [""]
+export async function endpointLivenessCheckEmailer (server: string, endpoints: string[], context?: InvocationContext) {
+    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'];
 
     try {
         for (const email of emails) {
-            context.error(`Important: Endpoint ${endpoint} Down on ${server} Server`)
+            context.error(`Important: The Following Endpoints Are Down on ${server}: ${endpoints.join(', ')}`)
             // const emailResponse = await sendEmail(
             //     process.env['SENDER_EMAIL'],
             //     email,
-            //     `Important: Endpoint ${endpoint} Down on ${server} Server`,
-            //     `Endpoint ${endpoint} is down on ${server} server!`,
+            //     `Important: Some Endpoints Are Down on ${server}`,
+            //     `Endpoints ${endpoints.join(', ')} are down on ${server}`,
             //     'GOSQAS DEVS',
             //     context
             // )
@@ -2001,20 +1976,19 @@ app.timer('updateRecordCounts', {
     handler: setStatisticsTotals
 })
 
-// app.timer('endpointLivenessChecker', {
-//     schedule: `0 0 * * *`,
-//     handler: endpointLivenessChecker
-// })
-
-// http://localhost:7071/api/endpointLivenessChecker
-app.get('endpointLivenessChecker', { // todo delete, for testing only
-    authLevel: 'anonymous',
-    route: 'endpointLivenessChecker',
+app.timer('endpointLivenessChecker', {
+    schedule: `0 0 * * *`,
     handler: endpointLivenessChecker
 })
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+app.get("beep", {
+    authLevel: 'anonymous',
+    route: 'beep',
+    handler: beep
+})
 
 app.post("createRecord", {
     authLevel: 'anonymous',
