@@ -470,6 +470,19 @@ async function upgradeProvenance(request: HttpRequest, context: InvocationContex
     return { jsonBody: body ?? { "already-converted": true} };
 }
 
+// Headers can only hold plain ASCII text, so encoding filenames incase they have special characters
+// then decoding them on the frontend
+export function encodeAttachmentFilename(filename: string) : {fallback: string; encoded: string } {
+    const encoded = encodeURIComponent(filename); 
+
+    // some tools don't use filename* so a fallback is made where unwanted chars are replaces with an underscore
+    let fallback = filename.replace(/[^a-zA-Z0-9._-]+/g, '_') 
+    fallback = fallback.trim() || 'attachment'; // incase filename is empty
+    
+    return { fallback, encoded };
+}
+
+
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
@@ -479,8 +492,15 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
     if (contentType) { headers.append("Content-Type", contentType); }
     if (filename) {
-        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-        headers.append("Attachment-Name", filename);
+        
+        try {
+            const { fallback, encoded } = encodeAttachmentFilename(filename);
+            headers.append("Content-Disposition", `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`);
+            headers.append("Attachment-Name", encoded);
+           
+        } catch (error) {
+            context.error(`getAttachment failed to set filename headers for attachment: `, error);
+        }
     }
 
     return { body: data, headers };
