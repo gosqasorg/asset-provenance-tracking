@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
 #############
+# Halt
+#############
+
+./stop.sh
+
+
+#############
 # Ensure correct node version is in use
 #############
 
@@ -23,10 +30,7 @@ nvm alias default 22
 # Start GDT
 #############
 
-# 1. Ensure stopped
-./stop.sh
-
-# 2. Start frontend and backend
+# Start frontend and backend
 cd packages/backend
 ./start.sh &
 cd -
