@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <textarea id="provenance-description" v-model="description"
                 placeholder="Description" maxlength="5000" rows="3"></textarea>
-            <div v-if="isGroup">
+            <div v-if="recordIsGroup">
                 <input type="text" class="form-control" name="children-key" id="children-key" v-model="childKeyText"
                     placeholder="Add Children by Key (optional, comma separated list)" />
             </div>
@@ -54,12 +54,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h4 class="p-1 mt-3" v-if="isGroup">
+            <h4 class="p-1 mt-3" v-if="recordIsGroup">
                 <input type="checkbox" class="form-check-input" id="send-to-all-children" v-model="sendToAllChildren"/> 
                     Send to all Children
             </h4>
 
-            <h4 class="p-1 mt-0" v-if="isGroup">
+            <h4 class="p-1 mt-0" v-if="recordIsGroup && !hasRecalledRecord">
                 <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
                     Recall all children
             </h4>
@@ -75,7 +75,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         type="email"
                         class="form-control"
                         v-model="emailInput"
-                        placeholder="Email"
+                        required
+                        multiple
+                        placeholder="Email addresses (comma separated)"
                         @keyup.enter=""
                     />
                 </div>
@@ -169,11 +171,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, onlineTestFetch, offlineDetectAndStash, offlineModeFeatureFlag } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
  import { validateFileSize } from '~/utils/fileSizeValidation';
+ import { parseNotificationEmails } from '~/utils/notificationEmails';
  import Banner from '../Banner.vue';
  import { useRuntimeConfig } from '#app';
  import { hiddenHasParent } from '~/pages/history/[deviceKey].vue'
@@ -197,7 +200,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             notifyTags: false,
             emailInput: '',
             config: useRuntimeConfig(),
-            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local') 
+            onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
         }
     },
     props: {
@@ -207,17 +210,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             required: true,
         },
         deviceRecord: {
-            // type: Any, // TODO: add type
+            type: Object,
             default: null,
             required: true,
         },
+        hasRecalledRecord: {
+            type: Boolean,
+            default: false,
+            required: false,
+        }
     },
     computed: {
         uniqueChildrenKeys() {
             const uniqueValues = [...new Set(this.newChildKeys)];
             return uniqueValues.filter(childKey => childKey); // Filter out empty strings if any
         },
-        isGroup(): boolean {
+        recordIsGroup() {
             // children_key is "" if it is created as a record or [] if it is created as a group
             // The Boolean constructor returns false for "" and true for []
             return Boolean(this.deviceRecord?.children_key);
@@ -244,6 +252,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }
     },
     methods: {
+        async emailSubscribers(deviceKey: string, record: any) {
+            try {
+                // Notify all users subscribed to the record that it has been updated
+                let response = await notifySubscribers(deviceKey, record);
+
+                // Display success if emails were successfully sent
+                if (response.status == 200) {
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: 'Successfully emailed subscribers'
+                    });
+                }
+            } catch (error) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: `Error sending email: ${error instanceof Error ? error.message : error}`
+                });
+            }
+        },
         closePopUpA() {
             this.sendToAllChildrenPopUp = false
         },
@@ -268,6 +295,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         },
         handleUpdateEmailTags(tags: string[]) {
             this.emailTags = tags;
+        },
+        // Calls the email list normalization utility and sets the frontend error state when validation fails.
+        validateNotificationEmails(): string[] | null {
+            const emails = parseNotificationEmails(this.emailInput);
+            if (!emails) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'Please enter valid email addresses separated by commas.'
+                });
+                return null;
+            }
+
+            return emails;
         },
         async onFileChange(e: Event) {
             const target = e.target as HTMLInputElement;
@@ -311,6 +351,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             this.recallPopUp = false;
         },
         async submitRecord() {
+            // Parse and validate notification addresses before starting the record update (catches input error early).
+            let notificationEmails: string[] = [];
+            if (this.notify) {
+                const parsedEmails = this.validateNotificationEmails();
+                if (!parsedEmails) {
+                    return;
+                }
+                notificationEmails = parsedEmails;
+                this.emailInput = parsedEmails.join(', ');
+            }
+
             // Emit an event to notify the history/[deviceKey].vue page to display loading screen
             EventBus.emit('isCreating');
 
@@ -329,22 +380,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             } catch (e) {
                 let errorMessage = 'No provenance record found';
                 let snackbarType: "error" | "warning" | "info" | "success" | null | undefined = "error";
-
-                // If we're offline stash the record and display the stashed message
-                if (offlineModeFeatureFlag.flag) {
-                    const formData = new FormData();
-                    formData.append("provenanceRecord", JSON.stringify(record));
-                    const checkOffline = await offlineDetectAndStash(this.recordKey, formData);
-
-                    if (checkOffline === 202) {
-                        errorMessage = 'Status 202: User is offline but the record has been stashed';
-                        snackbarType = "success";
-                    } else if (checkOffline === 507) {
-                        errorMessage = 'Storage limit has been reached, record not stashed';
-                    }
-                }
                 
-                // Otherwise the record doesn't exist
                 this.$snackbar.add({
                     type: snackbarType,
                     text: errorMessage
@@ -359,8 +395,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (validateKey(this.groupKey)) {
                     try {
                         console.log("Adding to group...", this.groupKey);
-                        const groupRecords = await getProvenance(this.groupKey);
-                        await addToGroup(this.recordKey, this.groupKey, records, groupRecords);
+                        await addToGroup(this.recordKey, this.groupKey, records, this.pictures || []);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.$snackbar.add({
@@ -431,17 +466,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             // Append the record to the records.
             try {
-                await postProvenance(this.recordKey, record, this.pictures || []);
+                const record = {
+                    blobType: 'deviceRecord',
+                    description: this.description,
+                    tags: this.tags,
+                    children_key: this.newChildKeys.length > 0 ? this.newChildKeys : '',
+                };
 
-                if (this.recallAll) {
-                    recallChildren(this.recordKey, this.tags, this.description);
-                } else if (this.sendToAllChildren) {
-                    notifyChildren(this.recordKey, this.tags, this.description);
+                // Prevent more than one record from being recalled
+                if (this.tags.includes("recall") && this.hasRecalledRecord) {
+                    throw new Error("Record already recalled");
                 }
 
-                if (this.notify && this.emailInput) {
-                    const email = this.emailInput.trim(); 
-                    await postNotificationEmail(this.recordKey,email);
+                await postProvenance(this.recordKey, record, this.pictures || []);
+                this.emailSubscribers(this.recordKey, record);
+
+                if (this.recallAll || this.tags.includes("recall")) {
+                    await recallChildren(this.recordKey, this.tags, this.description);
+                } else if (this.sendToAllChildren) {
+                    await notifyChildren(this.recordKey, this.tags, this.description);
+                }
+
+                // Request a separate verification email for each address after the record update succeeds.
+                if (notificationEmails.length > 0) {
+                    await Promise.all(
+                        notificationEmails.map(email =>
+                            postNotificationEmail(email, this.recordKey)
+                        )
+                    );
                 }
 
                 // Refresh CreateRecord component
@@ -461,7 +513,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 console.log(error)
                 console.log(errorMessage)
-                if(errorMessage.includes('high volume of requests')) {
+
+                if (typeof errorMessage == "string" && errorMessage.includes('high volume of requests')) {
                     this.$snackbar.add({
                         type: 'error',
                         text: `Error sending email: ${errorMessage}`
@@ -469,11 +522,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 } else {
                     this.$snackbar.add({
                         type: 'error',
-                        text: `Error creating record: ${error}`
+                        text: `Error creating record: ${errorMessage}`
                     });
                 }
 
                 // Emit an event to notify history/[deviceKey].vue to refresh
+                EventBus.emit('isCreating');
                 EventBus.emit('feedRefresh');
             }
         }

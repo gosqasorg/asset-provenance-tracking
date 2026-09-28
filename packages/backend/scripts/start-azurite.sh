@@ -4,4 +4,4 @@ if [ ! -d 'azurite_path.ignore' ]; then
     mkdir azurite_path.ignore
 fi
 
-azurite --skipApiVersionCheck --location azurite_path.ignore &
+azurite --silent --skipApiVersionCheck --location azurite_path.ignore &

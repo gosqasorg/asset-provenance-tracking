@@ -8,13 +8,14 @@ import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 import './getStats.js';
+import { sendEmail } from './sendEmail.js'
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -290,7 +291,6 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
-        if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
@@ -483,6 +483,33 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             return {
                 status: 500,
                 jsonBody: { message: "Internal Server Error" },
+    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    if (body.oversizedAttachments) {
+        context.error('postProv: returning 400')
+        return {
+            status: 400,
+            jsonBody: {
+                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                oversizedAttachments: body.oversizedAttachments,
+                attachments: body.attachments
+            }
+        }
+    }
+  
+    return { jsonBody: body ?? { converted: true}};
+}
+
+async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    await containerClient.createIfNotExists();
+    const formData = await request.formData();
+
+    try {
+        return await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+    } catch(error) {
+        return {
+            status: error.statusCode || 500,
+            jsonBody: {
+                error: 'Failed to send email'
             }
         }
     }
@@ -571,7 +598,6 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 };
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // TODO: need to create below env variables for this code to work, in testing it runs
     const directory_id = process.env['AZURE_TENANT_ID'];
     const app_registration_id = process.env['AZURE_CLIENT_ID'];
     const secret_value = process.env['AZURE_CLIENT_SECRET'];
@@ -765,16 +791,37 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
     }
 }
 
-export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+export function validateRecordJSON(json: any) {
+    // Records/Groups require children_key, hasParent, deviceName, and description
     const Valid = z.object({
         blobType: z.string().optional(),
         children_key: z.union([z.string(), z.array(z.string())]),
         children_name: z.array(z.string()).optional(),
         description: z.string(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
+        deviceName: z.string(),
+        hasParent: z.boolean(),
         isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.error("Format of JSON provided was invalid.")
+        console.error(JSON.stringify(json))
+        console.error(e.cause)
+        console.error(e.message)
+        return false;
+    }
+}
+
+export function validateEntryJSON(json: any) {
+    // Record entries only have blobType, description, childrenkeys, and tags (none required)
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        description: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
         tags: z.array(z.string()).optional(),
     });
 
@@ -807,7 +854,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
             // Send record entry to all children
             while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
+                let key = keysToCheck[0] as string;
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
@@ -833,6 +880,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -862,7 +913,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
 
     const updateData = {
       blobType: 'deviceRecord',
-      description: description || "Adding record with tags",
+      description: description || "",
       tags: tags,
       children_key: '',
     };
@@ -898,6 +949,11 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
         const tags = record.tags
         
         const description = record.description || "";
+    await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
+
+    // Email users if they are subscribed to the group
+    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
 
         await addRecordWithTags(baseUrl, deviceKey, tags, description)
 
@@ -914,7 +970,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
             // Send recalled record to all children
             while (keysToCheck.length != 0) {
-                let key = keysToCheck[0];
+                let key = keysToCheck[0] as string;
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
@@ -928,6 +984,22 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                 let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
                 if (uniqueChildKeys.includes(deviceKey.toString())) {
                     uniqueChildKeys.splice(uniqueChildKeys.indexOf(deviceKey.toString()), 1);
+                    const keyFormData = new FormData();
+                    keyFormData.append("provenanceRecord", JSON.stringify({
+                        blobType: 'deviceRecord',
+                        description: records[0].record.description,
+                        children_key: '',
+                        tags: records[0].record.tags,
+                    }));
+                    
+                    let response = await fetch(`${baseUrl}${key}`, {
+                        method: "POST",
+                        body: keyFormData,
+                    })
+
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck = keysToCheck.concat(uniqueChildKeys);
@@ -1030,6 +1102,14 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         const recordKey = body.recordKey;
         // const tags = body.tags ?? [];
 
+        if (!email || !recordKey) {
+            context.error('postNotificationEmail: returning 400')
+            return {
+                jsonBody: {error: "Error: email and record key required"},
+                status: 400
+            }
+        }
+
         context.log("Received signup for " + email)
 
         // Pending Verifications Table (copied from postEmail - will refactor later)
@@ -1086,7 +1166,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
 
         } catch (error) {
-            context.log("Error sending email: " + error); 
+            context.error("Error sending email: " + error); 
             throw error  
         }
 
@@ -1122,7 +1202,15 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     const PendingVerificationTokenSchema = z.string().length(32).regex(/^[A-Za-z0-9_-]+$/);
     try {
         const token = request.query.get('token');
-        PendingVerificationTokenSchema.parse(token);
+        PendingVerificationTokenSchema.parse(token);   
+ 
+        if (!token) { 
+            context.error('getPendingVerification: returning 400')
+            return {
+                jsonBody: { error: "Token required" }, 
+                status: 400
+            }
+        }
 
     const tableUrl = accountName === "devstoreaccount1"
             ? `http://127.0.0.1:10002/devstoreaccount1` 
@@ -1223,6 +1311,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 
         // not found, expired - same generic msg
         if (!entity || Date.now() > entity.expiresAt) {
+            context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Invalid or expired code" },
                 status: 400
@@ -1343,7 +1432,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             }
 
         } catch (error) {
-            context.log("Error sending email: " + error);   
+            context.error("Error sending email: " + error);   
             throw error
         }
 
@@ -1388,7 +1477,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         await containerClient.createIfNotExists();
         const response = await unsubscribeFromNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags); 
 
-        context.log("Unsubscribed from the record");
+        context.error("Unsubscribed from the record");
         return response;
         
     } catch(error) {
@@ -1464,12 +1553,12 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
                 return response;
             }
         } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
+            context.error(`Fetch attempt failed: ${url}: ` + e);
         }
     }
 
     if (response !== undefined && !response.ok) {
-        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
         throw new Error(url + " failed: " + response.status + " " + response.statusText)
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
@@ -1495,6 +1584,7 @@ async function createChild(context: InvocationContext, description: string, cust
             blobType: "deviceInitializer",
             deviceName: custom_title,
             description: description || "",
+            children_key: "",
             tags: tags,
             hasParent: true,
             isPublicKey: isPublicKey
@@ -1510,7 +1600,7 @@ async function createChild(context: InvocationContext, description: string, cust
         return theRecordKey
 
     } catch(e) {
-        context.log('createChild Error: Failed to create child record')
+        context.error('createChild Error: Failed to create child record')
         return '';
     }
 }
@@ -1656,6 +1746,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
+            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1666,6 +1757,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
+            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1705,6 +1797,7 @@ async function createRecord(context, name, description, tags, attachments) {
         const timestamp = new Date().getTime();
         const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
         if (body.oversizedAttachments) {
+            context.error('createRecord: returning 400')
             return {
                 status: 400,
                 jsonBody: {
@@ -1769,6 +1862,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
+            context.error('createRecordHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1779,6 +1873,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
+            context.error('createRecordHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1877,12 +1972,60 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
+export async function livenessChecker(livenessTimer: Timer, context: InvocationContext) {
+
+    const staging = 'https://red-stone-00f5d251e.5.azurestaticapps.net/'
+    const production = 'https://blue-stone-05ede120f.5.azurestaticapps.net/'
+    const frontendUrl = process.env['frontend_url']
+
+    const stageResponse = await fetch(staging);
+    const prodResponse = await fetch(production);
+
+    // On dev and checking if production is down then send email stating prod is down
+    if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
+        await livenessCheckEmailer('Production')
+    }
+
+    // On prod and checking if dev is down then send email staing dev is down
+    if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
+        await livenessCheckEmailer('Staging')
+    }
+}
+
+export async function livenessCheckEmailer (server: string, context?: InvocationContext) {
+
+    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
+
+    try {
+        for (const email of emails.split(',')) {
+            const emailResponse = await sendEmail(
+                process.env['SENDER_EMAIL'],
+                email,
+                `Important: ${server} Server Down`,
+                `${server} server is down!`,
+                'GOSQAS DEVS',
+                context
+            )
+        if (emailResponse.status === "Failed") {
+            throw emailResponse
+            }
+        }
+    }
+    catch (error) {
+        context.error(error)
+    }
+}
+
 // Once per day update the total record, record entry, and attachment counts
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
     handler: setStatisticsTotals
 })
 
+app.timer('livenessChecker', {
+    schedule: '0 0 * * * *', 
+    handler: livenessChecker,
+})
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
 
@@ -1907,6 +2050,12 @@ app.post('deleteNotificationEmail', {
 app.get("getProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
+    handler: getProvenance,
+})
+
+app.get("getProvenanceAlt", {
+    authLevel: 'anonymous',
+    route: 'getProvenance/{deviceKey}',
     handler: getProvenance,
 })
 
@@ -2004,4 +2153,10 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
+})
+
+app.post("notifySubscribers", {
+    authLevel: 'anonymous',
+    route: 'notifySubscribers/{deviceKey}',
+    handler: notifySubscribersHandler
 })

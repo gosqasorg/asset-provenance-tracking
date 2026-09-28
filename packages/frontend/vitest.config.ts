@@ -13,6 +13,8 @@ export default defineVitestConfig({
 
     coverage: {
         provider: 'v8',
+        include: ['**/*.{vue,ts}'],
+        exclude: ['**/qrcode/src', '*pwa-icons-plugin.ts', '*.nuxt'],
         thresholds: {
             statements: 3.9,
             branches:   30.01,

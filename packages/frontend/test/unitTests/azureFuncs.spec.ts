@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { stashRequest, emptyStash, onlineTestFetch, periodicChecker } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -25,282 +25,196 @@ async function createRequest (
 
 function resetStashValues(): void {
   // reset the values in localStorage to avoid overlap between tests
-  localStorage.setItem('stash_counter', '0');
-  localStorage.setItem('gdt-stash-fulfilled', '');
+  localStorage.setItem('gdt-stash-queued', '');
   localStorage.setItem('gdt-stash-failed', '');
-  localStorage.setItem('gdt-awaiting-conectivity', 'false');
+  localStorage.setItem('gdt-stash-fulfilled', '');
 }
 
-describe('Tests to see if user is online and offline', () => {
-  it('Test to see if user is online', async () => {
-    let result = await onlineTestFetch();
-    expect(result).toBe(true);
-  });
+// Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
+const mockFetch = vi.fn();
+global.fetch = mockFetch
 
-  it('Test to see if user is offline', async () => {
-    let result = await onlineTestFetch('https://www.fakeurl.com');
-    expect(result).toBe(false);
-  }, 20000);
+describe("Offline Function Tests", () => {
+    it("Test to confirmRequestFulfilled for new record and record entry created offline", async () => {
+      const mockRecord = [{record: {description: 'mockRecord'}}];
+      mockFetch.mockResolvedValue({ok: true, status: 200,json: () => Promise.resolve(mockRecord)})
+
+      const record = {description : 'mockRecord'}
+      const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', record)
+      const resultNewRecord = await confirmRequestFulfilled('123456789101112asdfghi')
+
+      expect(resultEntryAddition).toBe(true)
+      expect(resultNewRecord).toBe(true)
+    })
 });
 
-describe('Tests to see if requests can be stashed', () => {
-  it('Test to see if returned data types are correct', async () => {
+describe("Stash and Remove Offline Requests", () => {
+  it("Stash and Remove from Queue Stash", async () => {
     resetStashValues();
-
-    let [recordKey, formData] = await createRequest(
-      'Stored Record',
-      'Test record stored in localStorage then created from emptyStash()'
+    let [queuedKey, queuedData] = await createRequest(
+      'Queued Record',
+      'Test for queue stash'
     );
 
-    stashRequest(recordKey, formData);
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
+    // Stash the request and confirm it was successful
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
 
-    // Confirm that the datatypes are the same as they started
-    const returnedKey = requestFromStash[0][1];
-    const returnedFormData = JSON.parse(requestFromStash[1][1]);
-    expect(typeof returnedKey).toEqual(typeof recordKey);
-    expect(returnedKey).toEqual(recordKey);
-    expect(JSON.stringify(returnedFormData)).toStrictEqual(formData.get('provenanceRecord'));
+    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    let queuedRequest = requestFromStash[0];
+    expect(requestFromStash.length).toEqual(1);
+    expect(queuedRequest["key"]).toEqual(queuedKey);
+    expect(queuedRequest["data"]).toStrictEqual(queuedData.get('provenanceRecord'));
 
-    // Convert returned request back to FormData (stored in localStorage as string)
-    const formData2 = new FormData();
-    formData2.append('provenanceRecord', JSON.stringify(returnedFormData));
-    expect(formData2).toStrictEqual(formData);
+    // Try to add the same record twice and confirm it wasn't added
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
 
-    // Validate that the formData has the correct format
-    const ValidFormData = z.object({
-      blobType: z.string(),
-      deviceName: z.string().optional(),
-      description: z.string(),
-      tags: z.array(z.string()),
-      children_key: z.union([z.string(), z.array(z.string())]),
-      hasParent: z.boolean().optional(),
-      isPublicKey: z.boolean().optional()
-    });
-    ValidFormData.parse(returnedFormData);
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    queuedRequest = requestFromStash[0];
+    expect(requestFromStash.length).toEqual(1);
+    expect(queuedRequest["key"]).toEqual(queuedKey);
+    expect(queuedRequest["data"]).toStrictEqual(queuedData.get('provenanceRecord'));
 
-    // Remove item from stash
-    localStorage.removeItem('gosqas-offline-stash-1');
+    // Remove the request and confirm it was successful
+    removeOfflineRequest(queuedKey, "gdt-stash-queued");
+
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    queuedRequest = requestFromStash[0];
+    expect(requestFromStash).toEqual([]);
+    expect(queuedRequest).toBeUndefined();
   });
 
-  it('Test to see if we can store multiple requests', async () => {
+  it("Stash and Remove 2 Requests from Failed Stash", async () => {
     resetStashValues();
+    let [failedKey, failedData] = await createRequest(
+      'Failed Record',
+      'Test for failed stash'
+    );
+    let [failedKey2, failedData2] = await createRequest(
+      'Failed Record 2',
+      'Second test for failed stash'
+    );
 
-    let [recordKey1, formData1] = await createRequest('name', 'description');
-    let [recordKey2, formData2] = await createRequest('name2', 'slightly longer description');
+    // Stash 2 failed requests and confirm both were successfully stored
+    stashOfflineRequest(failedKey, "gdt-stash-failed", failedData.get('provenanceRecord'));
+    stashOfflineRequest(failedKey2, "gdt-stash-failed", failedData2.get('provenanceRecord'));
 
-    stashRequest(recordKey1, formData1);
-    stashRequest(recordKey2, formData2);
+    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    let failedRequest = requestFromStash[0];
+    let failedRequest2 = requestFromStash[1];
+    expect(requestFromStash.length).toEqual(2);
+    expect(failedRequest["key"]).toEqual(failedKey);
+    expect(failedRequest2["key"]).toEqual(failedKey2);
+    expect(failedRequest["data"]).toStrictEqual(failedData.get('provenanceRecord'));
+    expect(failedRequest2["data"]).toStrictEqual(failedData2.get('provenanceRecord'));
 
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
-    const returnedKey = requestFromStash[0][1];
-    const returnedFormData = JSON.parse(requestFromStash[1][1]);
-    expect(returnedKey).toEqual(recordKey1);
-    expect(JSON.stringify(returnedFormData)).toStrictEqual(formData1.get('provenanceRecord'));
+    // Remove both failed requests and confirm they were successfully removed
+    removeOfflineRequest(failedKey, "gdt-stash-failed");
 
-    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas-offline-stash-2') || '{}');
-    const returnedKey2 = requestFromStash2[0][1];
-    const returnedFormData2 = JSON.parse(requestFromStash2[1][1]);
-    expect(returnedKey2).toEqual(recordKey2);
-    expect(JSON.stringify(returnedFormData2)).toStrictEqual(formData2.get('provenanceRecord'));
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    failedRequest = requestFromStash[0];
+    // First request was removed, so the new first request should be failedKey2/failedData2
+    expect(requestFromStash.length).toEqual(1);
+    expect(failedRequest["key"]).toEqual(failedKey2);
+    expect(failedRequest["data"]).toStrictEqual(failedData2.get('provenanceRecord'));
 
-    // Check that the correct record was stored at each request
-    expect(returnedFormData.deviceName).toEqual('name');
-    expect(returnedFormData2.deviceName).toEqual('name2');
-    expect(returnedFormData.description).toEqual('description');
-    expect(returnedFormData2.description).toEqual('slightly longer description');
+    removeOfflineRequest(failedKey2, "gdt-stash-failed");
 
-    // Remove items from stash
-    localStorage.removeItem('gosqas-offline-stash-1');
-    localStorage.removeItem('gosqas-offline-stash-2');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    failedRequest = requestFromStash[0];
+    expect(requestFromStash.length).toEqual(0);
+    expect(failedRequest).toBeUndefined();
+  });
+
+  it("Stash and Remove from Fulfilled Stash", async () => {
+    resetStashValues();
+    let [fulfilledKey, fulfilledData] = await createRequest(
+      'Fulfilled Record',
+      'Test for fulfilled stash'
+    );
+
+    // Stash the request and confirm it was successful
+    stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
+
+    let requestFromStash = localStorage.getItem('gdt-stash-fulfilled') || '';
+    let fulfilledKeys = requestFromStash.split(",");
+    let returnedKey = fulfilledKeys[0];
+    expect(fulfilledKeys.length).toEqual(1);
+    expect(returnedKey).toEqual(fulfilledKey);
+
+    // Try to add the same record twice and confirm it wasn't added
+    stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
+
+    requestFromStash = localStorage.getItem('gdt-stash-fulfilled') || '';
+    fulfilledKeys = requestFromStash.split(",");
+    returnedKey = fulfilledKeys[0];
+    expect(fulfilledKeys.length).toEqual(1);
+    expect(returnedKey).toEqual(fulfilledKey);
+
+    // Remove the request and confirm it was successful
+    removeOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
+
+    requestFromStash = localStorage.getItem('gdt-stash-fulfilled') || '';
+    fulfilledKeys = requestFromStash.split(",");
+    returnedKey = fulfilledKeys[0];
+    expect(requestFromStash).toEqual('');
+    expect(returnedKey).toEqual('');
   });
 });
 
-describe('Tests to see if we can remove from the stash', () => {
-  it('Create and remove a request', async () => {
+describe("Get/Remove First Queued Request", async() => {
+  it("Get First Queued Request", async() => {
     resetStashValues();
 
-    // Mock fetch calls from emptyStash (since formData doesn't work from this file)
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
-      status: 200,
-      json: () => Promise.resolve({ record: "mockRecord" }),
-    } as Response);
+    // Attempt to get a request when none are in the queue and confirm there's no error
+    let firstQueueItem = getFirstQueueItem();
+    expect(firstQueueItem).toBeUndefined();
 
-    let [recordKey, formData] = await createRequest('stored record', 'testing emptyStash');
-    stashRequest(recordKey, formData);
-    expect(localStorage.getItem('stash_counter')).toEqual('1');
+    // Attempt to get the only request in the queue
+    let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
+    let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
 
-    // Confirm records were stored
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
-    expect(requestFromStash).not.toEqual({});
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    firstQueueItem = getFirstQueueItem();
 
-    // Empty the stash and confirm it ran successfully
-    let statusCode = await emptyStash();
-    expect(statusCode).toEqual(200);
+    expect(firstQueueItem["key"]).toEqual(queuedKey);
+    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
 
-    // Make sure the record was removed from the stash and the new key was stored to display later
-    expect(localStorage.getItem('stash_counter')).toEqual('0');
-    expect(localStorage.getItem('gosqas-offline-stash-1')).toEqual(null);
+    // Attempt to get the first request of multiple and confirm we got the correct one
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    firstQueueItem = getFirstQueueItem();
 
-    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
-    expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(1);
-    expect(existingKeys[0]).toEqual(recordKey);
-
-    // Remove mock
-    fetchMock.mockRestore();
+    expect(firstQueueItem["key"]).toEqual(queuedKey);
+    expect(firstQueueItem["data"]).toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["key"]).not.toEqual(queuedKey2);
+    expect(firstQueueItem["data"]).not.toEqual(queuedData2.get('provenanceRecord'));
   });
 
-  it('Create and remove two requests', async () => {
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
-      status: 200,
-      json: () => Promise.resolve({ record: "mockRecord" }),
-    } as Response);
-
+  it("Remove First Queued Request", async() => {
     resetStashValues();
 
-    let [recordKey1, formData1] = await createRequest('first stored record', 'this is a test');
-    let [recordKey2, formData2] = await createRequest('second stored record', 'this is the same test');
+    // Attempt to remove a request when none are in the queue and confirm there's no error
+    removeFirstQueueItem();
+    let firstQueueItem = getFirstQueueItem();
+    expect(firstQueueItem).toBeUndefined();
 
-    stashRequest(recordKey1, formData1);
-    stashRequest(recordKey2, formData2);
-    expect(localStorage.getItem('stash_counter')).toEqual('2');
+    // Attempt to remove the only request in the queue
+    let [queuedKey, queuedData] = await createRequest('Queued Record', 'Test record for getFirstQueueItem');
+    let [queuedKey2, queuedData2] = await createRequest('Queued Record 2', 'Second test record for getFirstQueueItem');
 
-    // Confirm records were stored
-    let requestFromStash1 = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
-    let requestFromStash2 = JSON.parse(localStorage.getItem('gosqas-offline-stash-2') || '{}');
-    expect(requestFromStash1).not.toEqual({});
-    expect(requestFromStash2).not.toEqual({});
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    removeFirstQueueItem();
+    firstQueueItem = getFirstQueueItem();
+    expect(firstQueueItem).toBeUndefined();
 
-    // Empty the stash and confirm it ran successfully
-    let statusCode = await emptyStash();
-    expect(statusCode).toEqual(200);
+    // Attempt to remove the first request of multiple and confirm we removed the correct one
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    stashOfflineRequest(queuedKey2, "gdt-stash-queued", queuedData2.get('provenanceRecord'));
+    removeFirstQueueItem();
+    firstQueueItem = getFirstQueueItem();
 
-    // Confirm records were removed
-    expect(localStorage.getItem('stash_counter')).toEqual('0');
-    expect(localStorage.getItem('gosqas-offline-stash-1')).toEqual(null);
-    expect(localStorage.getItem('gosqas-offline-stash-2')).toEqual(null);
-
-    // Make sure all three keys (including the one from the previous test) are stored
-    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
-    expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(2);
-    expect(existingKeys[1]).toEqual(recordKey1);
-    expect(existingKeys[0]).toEqual(recordKey2);
-
-    fetchMock.mockRestore();
-  });
-
-  it('Try to emptyStash when nothing is stashed', async () => {
-    resetStashValues();
-
-    // Should just return when stash_counter = 0
-    expect(localStorage.getItem('stash_counter')).toEqual('0');
-    let statusCode = await emptyStash();
-    expect(statusCode).toEqual(200);
-
-    // Same thing should happen when stash_counter = null
-    localStorage.removeItem('stash_counter');
-    expect(localStorage.getItem('stash_counter')).toEqual(null);
-    statusCode = await emptyStash();
-    expect(statusCode).toEqual(200);
-  });
-
-  it("Make sure record is added to failed stash when post fails", async () => {
-    resetStashValues();
-    
-    let [recordKey, formData] = await createRequest('failed record', 'this should fail to post');
-    stashRequest(recordKey, formData);
-    expect(localStorage.getItem('stash_counter')).toEqual('1');
-
-    // Empty the stash without mocking (so it will fail to post since formData cannot be posted from this file)
-    console.log('Attempting a failed fetch to check error handling...');
-    let statusCode = await emptyStash();
-    expect(statusCode === 200 || statusCode === 202);
-
-    // Make sure the record is still no longer in the stash
-    const request = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
-    expect(request).toEqual({});
-    expect(localStorage.getItem('stash_counter')).toEqual('0');
-
-    // Confirm the failed key was added to list of failed requests
-    let failedRequests = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
-    expect(failedRequests).not.toEqual(['{}']);
-    expect(failedRequests.length).toBe(1);
-    expect(failedRequests[0][0][1]).toEqual(recordKey);
-
-    // Confirm failed key was not added to list of successful requests
-    failedRequests = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
-    expect(failedRequests).toEqual(['{}']);
-  }, 200000);
-});
-
-describe("Tests to see if periodicChecker works", async () => {
-  it ("Create a record from periodicChecker", async () => {
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
-      status: 200,
-      json: () => Promise.resolve({ record: "mockRecord" }),
-    } as Response);
-
-    resetStashValues();
-
-    let [recordKey, formData] = await createRequest('stored record', 'testing periodicChecker');
-    stashRequest(recordKey, formData);
-    expect(localStorage.getItem('stash_counter')).toEqual('1');
-
-    // Confirm records were stored
-    let requestFromStash = JSON.parse(localStorage.getItem('gosqas-offline-stash-1') || '{}');
-    expect(requestFromStash).not.toEqual({});
-
-    await periodicChecker();
-
-    // Make sure the record was removed from the stash and the new key was stored to display later
-    expect(localStorage.getItem('stash_counter')).toEqual('0');
-    expect(localStorage.getItem('gosqas-offline-stash-1')).toEqual(null);
-    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("false");
-
-    let existingKeys = (localStorage.getItem('gdt-stash-fulfilled') || '{}').split(',');
-    expect(existingKeys).not.toEqual(['{}']);
-    expect(existingKeys.length).toBe(1);
-    expect(existingKeys[0]).toEqual(recordKey);
-
-    fetchMock.mockRestore();
-  });
-
-  it ("Make sure periodicChecker can run in the background", async () => {
-    // Mock offline since otherwise periodicChecker will instantly return
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
-      status: 500,
-    } as Response);
-
-    resetStashValues();
-    
-    periodicChecker();
-    await new Promise((r) => setTimeout(r, 5000));
-
-    // Confirm that the checker is still running, even after a few seconds
-    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
-
-    fetchMock.mockRestore();
-  });
-
-  it ("Make sure only one instance of periodicChecker can run at a time", async () => {
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue({
-      status: 500,
-    } as Response);
-    const consoleMock = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-
-    resetStashValues();
-    
-    periodicChecker();
-    periodicChecker();
-    await new Promise((r) => setTimeout(r, 1000));
-
-    // Confirm the "already running" message was sent and that the first call is still running
-    expect(consoleMock).toHaveBeenCalledWith('Instance of periodicChecker is already running, returning');
-    expect(localStorage.getItem('gdt-awaiting-conectivity')).toEqual("true");
-
-    consoleMock.mockRestore();
-    fetchMock.mockRestore();
+    expect(firstQueueItem["key"]).not.toEqual(queuedKey);
+    expect(firstQueueItem["data"]).not.toEqual(queuedData.get('provenanceRecord'));
+    expect(firstQueueItem["key"]).toEqual(queuedKey2);
+    expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
   });
 });
