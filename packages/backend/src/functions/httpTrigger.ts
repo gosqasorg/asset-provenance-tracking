@@ -492,7 +492,7 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
         try {
             const { fallback, encoded } = encodeAttachmentFilename(filename);
             headers.append("Content-Disposition", `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`);
-            headers.append("Attachment-Name", filename);
+            headers.append("Attachment-Name", encoded);
            
         } catch (error) {
             context.error(`getAttachment failed to set filename headers for attachment: `, error);

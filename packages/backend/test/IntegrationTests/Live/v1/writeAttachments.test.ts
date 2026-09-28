@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 import { writeFile } from 'fs/promises';
+import { encodeAttachmentFilename } from '../../../../src/functions/httpTrigger';
 
 
 
@@ -296,3 +297,38 @@ describe("Creating records with attachments", () => {
         }
     }, 600000);
 });
+
+describe('encodeAttachmentFilename', () => {
+  // plain ASCII
+  it ('leaves plain filenames unchanged', () => {
+    const filename = 'plain-filename.jpg'
+    const {fallback, encoded} = encodeAttachmentFilename(filename);
+    expect(fallback).toBe(filename);
+    expect(decodeURIComponent(encoded)).toBe(filename)
+  });
+
+  //  macOS screenshot filenames
+  it ('handles macOS special space character', () => {
+    const filename = 'Screen Shot 2026-09-07 at 2\u202F30\u202F00\u202FPM.png'
+    const {fallback, encoded} = encodeAttachmentFilename(filename);
+
+    expect(() => new Headers().append('Attachment-Name', encoded)).not.toThrow();
+    console.log(fallback)
+    expect(fallback).toBe('Screen_Shot_2026-09-07_at_2_30_00_PM.png');
+    expect(decodeURIComponent(encoded)).toBe(filename);
+    
+  });
+ 
+  // emoji file name
+  it ('handles filenames thats are emojis', () => {
+    const filename = '🎲.png'
+    const {fallback, encoded} = encodeAttachmentFilename(filename);
+
+    expect(() => new Headers().append('Attachment-Name', encoded)).not.toThrow();
+    console.log(fallback)
+    expect(fallback).toBe('_.png');
+    expect(decodeURIComponent(encoded)).toBe(filename);
+    
+  });
+
+})
