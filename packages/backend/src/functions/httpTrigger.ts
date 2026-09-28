@@ -14,7 +14,6 @@ import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
-import '../utils/refreshStats.js';
 import { sendEmail } from './sendEmail.js'
 import { usageStatsCache } from '../utils/statsCache.js';
 

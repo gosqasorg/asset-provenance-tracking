@@ -1,5 +1,7 @@
+import { app, InvocationContext } from '@azure/functions';
 import { ContainerClient } from "@azure/storage-blob";
 import { ClientSecretCredential } from "@azure/identity";
+import { containerClient } from '../functions/httpTrigger.js';
 
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
@@ -32,7 +34,7 @@ export async function runQuery(query: string, context): Promise<[string, number]
         const data = await result.json();
         return data.tables[0].rows
     } catch(error) {
-        context.log(`Leaving runQuery: error occurred: ${error}`)
+        context.error(`Leaving runQuery: error occurred: ${error}`)
     }
 }
 
@@ -66,7 +68,7 @@ class StatsCache {
         return this.failureStats;
     }
 
-    // Updater Functions that get called by the time trigger in refreshStats.ts to update the cache storage variables
+    // Updater Functions that get called by the timer trigger below to update the cache storage variables
     async updateTotals(containerClient: ContainerClient) : Promise<void> {
         const containerExists = await containerClient.exists();
         let totalRecords = 0;
@@ -219,6 +221,24 @@ class StatsCache {
         this.failureStats = rows
     }
 
+    async usageRefresh(context: InvocationContext): Promise<void> {
+        context.log('Refreshing usage stats cache');
+
+        this.updateTotals(containerClient)
+        this.updateStats()
+        this.updateBrowser(context)
+        this.updateFailureStats(context)
+
+        context.log('Usage stats cache refreshed');
+    }
+
 }
 
 export const usageStatsCache = new StatsCache();
+
+// Timer trigger to refresh usage stats every hour, and on startup.
+app.timer('refreshUsageStats', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
+});
