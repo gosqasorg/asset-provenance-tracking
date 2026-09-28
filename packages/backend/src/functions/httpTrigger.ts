@@ -1040,9 +1040,6 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 
         // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
-    // TODO Last: Test for Vincent:
-        // 1. delete allowInsecureConnection when setting up tableClient (does everything explode?)
-        // 2. deploy to dev and try to sign up for email, does it still work? (careful of sending current changes, or just undo)
     const credential = new AzureNamedKeyCredential(accountName, accountKey);
     const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
 
@@ -1754,16 +1751,6 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
-// MASTER LIST
-    // Move to a new file.? (if you do this merge in main and move the other liveliness checker too, BUT TRY HERE FIRST??)
-
-// todo: delete the beep
-async function beep(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    await endpointLivenessChecker("", context);
-    context.error("function done..?")
-    return { status: 200 };
-}
-
 async function testEndpoints(endpointInfo: any[], responses: any[], context: InvocationContext) {
     const apiUrl = process.env["api_url"];
     for (const endpoint of endpointInfo) {
@@ -1984,20 +1971,19 @@ export async function endpointLivenessCheckEmailer (server: string, endpoints: s
     }
 
     try {
-        // for (const email of emails) {
-            // context.error(`Important: The Following Endpoints Are Down on ${server}: ${endpoints.join(', ')}`)
-            // const emailResponse = await sendEmail(
-            //     process.env['SENDER_EMAIL'],
-            //     email,
-            //     `Important: Some Endpoints Are Down on ${server}`,
-            //     message,
-            //     'GOSQAS DEVS',
-            //     context
-            // )
-            // if (emailResponse.status === "Failed") {
-            //     throw emailResponse
-            // }
-        // }
+        for (const email of emails.split(',')) {
+            const emailResponse = await sendEmail(
+                process.env['SENDER_EMAIL'],
+                email,
+                `Important: Some Endpoints Are Down on ${server}`,
+                message,
+                'GOSQAS DEVS',
+                context
+            )
+            if (emailResponse.status === "Failed") {
+                throw emailResponse
+            }
+        }
     }
     catch (error) {
         context.error(`endpointLivelinessChecker Detected an Endpoint Failure on ${server} but was Unable to Email:`, error);
@@ -2018,12 +2004,6 @@ app.timer('endpointLivenessChecker', {
 
 
 /* ----- API Endpoints Section 2/2: Route Definitions ----- */
-
-app.get("beep", {
-    authLevel: 'anonymous',
-    route: 'beep',
-    handler: beep
-})
 
 app.post("createRecord", {
     authLevel: 'anonymous',
