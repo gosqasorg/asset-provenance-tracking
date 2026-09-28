@@ -39,6 +39,7 @@ def get_token():
             "scope": "https://api.loganalytics.io/.default"
         }
     )
+    print(response)
     
     token = response.json()["access_token"]
 
