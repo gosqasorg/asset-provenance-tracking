@@ -1325,17 +1325,23 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
+async function fetchWithRetry(context: InvocationContext, url: string, requestBody?: any, header?: HeadersInit) {
     let response = undefined;
     const MAX_RETRIES = 3;
 
     for (let i = 1; i <= MAX_RETRIES; i++) {
-        response = undefined //resets each retry attempt
+        response = undefined // resets each retry attempt
         try {
-            if (typeof formData !== 'undefined') {
+            if (typeof requestBody !== 'undefined' && header == undefined) {
                 response = await fetch(`${url}`, {
                     method: "POST",
-                    body: formData,
+                    body: requestBody,
+                });
+            } else if (typeof requestBody !== 'undefined' && header !== undefined) {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    headers: header,
+                    body: requestBody,
                 });
             } else {
                 response = await fetch(`${url}`, {
@@ -1753,18 +1759,35 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 
 // todo: delete the beep
 async function beep(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // await endpointLivenessChecker("", context);
+    await endpointLivenessChecker("", context);
     context.error("function done..?")
     return { status: 200 };
+}
+
+async function testEndpoints(endpointInfo: any[], responses: any[], context: InvocationContext) {
+    const apiUrl = process.env["api_url"];
+    for (const endpoint of endpointInfo) {
+        try {
+            let response = await fetchWithRetry(context, `${apiUrl}${endpoint["url"]}`, endpoint["requestBody"], endpoint["header"])
+            // Allow status 204 (which means already subscribed/nothing to notify)
+            if (response.status == 204) { responses.push({"endpoint": endpoint["name"], "status": 200}) }
+            else { responses.push({"endpoint": endpoint["name"], "status": response.status}) };
+        } catch (error) {
+            responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
+        }
+    }
 }
 
 async function endpointLivenessChecker(myTimer: any, context: InvocationContext) {
     const apiUrl = process.env["api_url"];
     const frontendUrl = process.env['frontend_url'];
+    const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
     let responses = [];
     let environment = "";
     let key = "";
     let attachmentID = "";
+    let endpointFailure = false;
+    let response: Response;
 
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/'))) {
         environment = "Production";
@@ -1779,9 +1802,7 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
         return;
     }
 
-    // TODO: New file? PROBABLY WE WANT TO MAKE HTTPTRIGGER CLEANER!!!
     try {
-        const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
         const group = {
             deviceName: "Endpoint Test Group",
             description: "Testing our endpoints",
@@ -1812,15 +1833,27 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
 
         /*===== Non-Email Endpoints =====*/
         // createRecord Endpoint Test (need to save the key for email testing so we're calling this endpoint separately)
-        let response = await fetch(`${apiUrl}/createRecord`, { method: "POST", body: recordFormData });
-        let keyToEmail = ((await response.json()).recordUrl).split('/');
-        keyToEmail = keyToEmail[keyToEmail.length - 1];
-        responses.push({"endpoint":"createRecord", "status": response.status});
+        let keyToEmail = "";
+        try {
+            response = await fetchWithRetry(context, `${apiUrl}/createRecord`, recordFormData);
+            keyToEmail = ((await response.json()).recordUrl).split('/');
+            keyToEmail = keyToEmail[keyToEmail.length - 1];
 
-        let endpointInfo = [
-            {"name":"addEntry", "url":`/addEntry/${key}`, "formData": entryFormData},
+            responses.push({"endpoint":"createRecord", "status": response.status});
+        } catch (error) {
+            responses.push({"endpoint":"createRecord", "status": error.cause.status || 500});
+            throw new Error("createRecord Error:", error);
+        }
+
+        let endpointInfo: ({
+            name: string;
+            url: string;
+            header?: HeadersInit;
+            requestBody?: FormData | string;
+        })[] = [
+            {"name":"addEntry", "url":`/addEntry/${key}`, "requestBody": entryFormData},
             {"name":"boop", "url":`/stats/boop`},
-            {"name":"createGroup", "url":`/createGroup`, "formData": groupFormData},
+            {"name":"createGroup", "url":`/createGroup`, "requestBody": groupFormData},
             {"name":"getAttachment", "url":`/attachment/${key}/${attachmentID}`},
             {"name":"getAttachmentName", "url":`/attachment/${key}/${attachmentID}/name`},
             {"name":"getBrowserStats", "url":`/stats/browsers`},
@@ -1829,20 +1862,12 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
             {"name":"getProvenanceAlt", "url":`/getProvenance/${key}`},
             {"name":"getStatistics", "url":`/statistics`},
             {"name":"getVersion", "url":`/version`},
-            {"name":"postProvenance", "url":`/provenance/${key}`, "formData": entryFormData},
-            {"name":"sendToAllChildren", "url":`/provenance/sendToChildren/${key}`, "formData": entryFormData},
+            {"name":"postProvenance", "url":`/provenance/${key}`, "requestBody": entryFormData},
+            {"name":"sendToAllChildren", "url":`/provenance/sendToChildren/${key}`, "requestBody": entryFormData},
             {"name":"upgradeProvenance", "url":`/upgrade/${key}`},
-            {"name":"recall", "url":`/recall/${keyToEmail}`, "formData": entryFormData}
+            {"name":"recall", "url":`/recall/${keyToEmail}`, "requestBody": entryFormData}
         ];
-        
-        for (const endpoint of endpointInfo) {
-            try {
-                let response = await fetchWithRetry(context, `${apiUrl}${endpoint["url"]}`, endpoint["formData"])
-                responses.push({"endpoint": endpoint["name"], "status": response.status});
-            } catch (error) {
-                responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
-            }
-        }
+        await testEndpoints(endpointInfo, responses, context);
 
         /*===== Email Endpoints =====*/
         // Various email endpoints
@@ -1851,35 +1876,34 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
 
         endpointInfo = [
             {"name":"emailSignupTestEndpoint", "url":`/emailSignupTestEndpoint`},
-            {"name":"postEmail", "url":`/feedbackVolunteer`, "formData": emailFormData},
-            {"name":"notifySubscribers", "url":`/notifySubscribers/${keyToEmail}`, "formData": recordFormData}
+            {"name":"postEmail", "url":`/feedbackVolunteer`, "requestBody": emailFormData},
+            {"name":"notifySubscribers", "url":`/notifySubscribers/${keyToEmail}`, "requestBody": recordFormData},
         ];
+        await testEndpoints(endpointInfo, responses, context);
 
-        for (const endpoint of endpointInfo) {
-            try {
-                let response = await fetchWithRetry(context, `${apiUrl}${endpoint["url"]}`, endpoint["formData"])
-                // Allow status 204 (which means already subscribed/nothing to notify)
-                if (response.status == 204) { responses.push({"endpoint": endpoint["name"], "status": 200}) }
-                else { responses.push({"endpoint": endpoint["name"], "status": response.status}) };
-            } catch (error) {
-                responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
-            }
+        // Generate the token to subscribe our test email with (regular fetch to avoid multiple email failures)
+        try {
+            response = await fetch(`${apiUrl}/notificationSubscription`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "email": testEmail, "recordKey": keyToEmail })
+            });
+
+            // The next email endpoints depend on this one, so if this failed do not attempt the others
+            if (response.status !== 200) {
+                throw new Error("postNotificationEmail failed to create a token", { cause: { status: response.status } });
+            };
+            
+            responses.push({"endpoint":"postNotificationEmail", "status": response.status});
+        } catch (error) {
+            responses.push({"endpoint":"postNotificationEmail", "status": error.cause.status || 500});
+            throw new Error("postNotificationEmail Error:", error);
         }
 
-        // Generate the token to subscribe our test email with
-        // postNotificationEmail Endpoint Test
-        response = await fetch(`${apiUrl}/notificationSubscription`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "email": testEmail, "recordKey": keyToEmail }) })
-        responses.push({"endpoint":"postNotificationEmail", "status": response.status});
         const data = await response.json();
         const token = data.token as string;
         let code = "";
 
-        // postResendCode Endpoint Test
-        response = await fetch(`${apiUrl}/resendCode`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }),
-        });
-        responses.push({"endpoint":"postResendCode", "status": response.status});
+        endpointInfo = [{"name":"postResendCode", "url":`/resendCode`, "header":{'Content-Type': 'application/json'}, "requestBody": JSON.stringify({ token })}];
+        await testEndpoints(endpointInfo, responses, context);
 
         // Get the verification code using the token
         const tableUrl = accountName === "devstoreaccount1"
@@ -1888,7 +1912,6 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
 
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
-
         const entities = tableClient.listEntities({
             queryOptions: { filter: `PartitionKey eq '${token}'` }
         });
@@ -1897,16 +1920,24 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
             break;
         }
 
-        // Subscribe the test email to the record
-        // getPendingVerification Endpoint Test
-        response = await fetch(`${apiUrl}/pendingVerification?token=${token}`, { method: 'GET' });
-        responses.push({"endpoint":"getPendingVerification", "status": response.status});
+        // Validate the token and subscribe the test email to the record
+        endpointInfo = [{"name":"getPendingVerification", "url":`/pendingVerification?token=${token}`}];
+        await testEndpoints(endpointInfo, responses, context);
 
-        // postVerifyCode Endpoint Test
-        response = await fetch(`${apiUrl}/verifyCode`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, code })
-        });
-        responses.push({"endpoint":"postVerifyCode", "status": response.status});
+        try {
+            response = await fetch(`${apiUrl}/verifyCode`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, code })
+            });
+
+            if (response.status !== 200) {
+                throw new Error("postVerifyCode failed to validate a token/code", { cause: { status: response.status } });
+            };
+
+            responses.push({"endpoint":"postVerifyCode", "status": response.status});
+        } catch (error) {
+            responses.push({"endpoint":"postVerifyCode", "status": error.cause.status || 500});
+            throw new Error("postVerifyCode Error:", error);
+        }
         
         // Get the emailID to unsubscribe with
         let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, keyToEmail);
@@ -1921,16 +1952,12 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
         }
 
         // Unsubscribe from email notifications
-        // deleteNotificationEmail Endpoint Test
-        response = await fetch(`${apiUrl}/notificationUnsubscribe`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: emailID, recordKey: keyToEmail })
-        });
-        if (response.status == 204) { responses.push({"endpoint":"deleteNotificationEmail", "status": 200}) }
-        else { responses.push({"endpoint":"deleteNotificationEmail", "status": response.status}) };
+        endpointInfo = [{"name":"deleteNotificationEmail", "url":`/notificationUnsubscribe`, "header":{'Content-Type': 'application/json'}, "requestBody": JSON.stringify({ id: emailID, recordKey: keyToEmail })}];
+        await testEndpoints(endpointInfo, responses, context);
 
     } catch (error) {
-        // TODO: should do something for the endpoints that are missed (email)
         context.error("endpointLivelinessChecker Error:", error)
+        endpointFailure = true;
     }
 
     // Loop through all our responses and send an email if any of them aren't 200
@@ -1942,31 +1969,39 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
     }
 
     if (failedResponses.length > 0) {
-        await endpointLivenessCheckEmailer(environment, failedResponses, context);
+        await endpointLivenessCheckEmailer(environment, failedResponses, endpointFailure, context);
     }
 }
 
-export async function endpointLivenessCheckEmailer (server: string, endpoints: string[], context?: InvocationContext) {
+export async function endpointLivenessCheckEmailer (server: string, endpoints: string[], endpointFailure?: boolean, context?: InvocationContext) {
     const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'];
+    
+    // Some endpoints depend on one another, so if any endpoints with dependancies fail note in the email that other endpoints might not have run
+    const endpointsWithDependancies = ["createRecord", "postNotificationEmail", "postVerifyCode"];
+    let message = `Endpoints ${endpoints.join(', ')} are down on ${server}.`;
+    if (endpoints.some(failedEndpoint => endpointsWithDependancies.includes(failedEndpoint)) || endpointFailure) {
+        message = `Endpoints ${endpoints.join(', ')} are down on ${server}. Some endpoint tests were also unable to run due to earlier endpoint failures.`;
+    }
 
     try {
-        for (const email of emails) {
-            context.error(`Important: The Following Endpoints Are Down on ${server}: ${endpoints.join(', ')}`)
+        // for (const email of emails) {
+            // context.error(`Important: The Following Endpoints Are Down on ${server}: ${endpoints.join(', ')}`)
             // const emailResponse = await sendEmail(
             //     process.env['SENDER_EMAIL'],
             //     email,
             //     `Important: Some Endpoints Are Down on ${server}`,
-            //     `Endpoints ${endpoints.join(', ')} are down on ${server}`,
+            //     message,
             //     'GOSQAS DEVS',
             //     context
             // )
             // if (emailResponse.status === "Failed") {
             //     throw emailResponse
             // }
-        }
+        // }
     }
     catch (error) {
-        context.error(error)
+        context.error(`endpointLivelinessChecker Detected an Endpoint Failure on ${server} but was Unable to Email:`, error);
+        context.error("Failing Endpoints:", endpoints.join(', '));
     }
 }
 
