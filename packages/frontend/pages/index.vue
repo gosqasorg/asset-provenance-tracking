@@ -95,7 +95,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
             </div>
             <div class="col" style="text-align: center; margin-top: 50px; gap: 10px">
-                <NavButton to="/about" text="About Us" id="about-button" margin="0" padding="18px 22px" style="margin: 10px 0;"/>
+                <NavButton to="/about" @click="testPWAPresense()" text="About Us" id="about-button" margin="0" padding="18px 22px" style="margin: 10px 0;"/>
             </div>
 
         </div>
@@ -129,6 +129,10 @@ export default {
 methods: {
     getPDF() {
         window.open('/Global_Distributed_Tracking.pdf', '_blank')
+    },
+
+    testPWAPresense() {
+        console.log("IN PWA?", window.matchMedia('display-mode: standalone)').matches || window.navigator.standalone === true)
     }
 }
 }
