@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# NOTE: Set device key to a manually defined record (make sure you are already subscribed to the record as well)
-baseUrl="http://localhost:7071/api"
-key="RptEVbgeq6DJgGdKXxgNdD"
+# NOTE: The device key should be a manually defined record on dev that you are already subscribed to
+baseUrl="https://gosqasbe.azurewebsites.net/api"
+key=$1
 
 # Loop updating the record 51 times (1 minute of sleep in between)
 emailsSent=0 # num of emails already sent
@@ -30,7 +30,7 @@ for i in $(seq 1 $iterations); do
     
     if [[ "$response" != "200" ]]; then
       echo -e "\nbad request! status code $response"
-      break
+      false
     fi
   } || {
     echo -e "\nerror caught!"
