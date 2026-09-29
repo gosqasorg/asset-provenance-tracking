@@ -114,7 +114,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
 				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Record: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
@@ -186,7 +186,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 			User Manual
 			</a>
 
-			<div v-if="hasPublicKey"> Public Key:
+			<div v-if="hasPublicKey"> Public Record:
 				<div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
 			</div>
 			<div v-if="(childKeys?.length > 0) || hasPublicKey">

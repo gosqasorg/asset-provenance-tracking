@@ -29,7 +29,7 @@ export default {
                 }
 
                 // Create CSV header
-                let csvContent = 'Timestamp,Device Key,Device Name,Device Url,Description,Tags,Public Key,Attachment File\n';
+                let csvContent = 'Timestamp,Device Key,Device Name,Device Url,Description,Tags,Public Record,Attachment File\n';
 
                 for (const provenanceItem of provenanceData) {
                     // Format timestamp in UTC with both local and UTC time
@@ -50,7 +50,7 @@ export default {
                     console.log("replaced tags = ",tags);
                     const formattedTags = `[${tags}]`;
 
-                    //Get public key
+                    //Get public record
                     const publicKey = provenanceItem.record?.publicKey?.replace(/"/g, '""') || '';
 
                     // Get attachment filename

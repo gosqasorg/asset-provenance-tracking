@@ -46,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Key
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Record
             </h4>
 
             <!-- Subscribe to tag notifications -->
@@ -351,7 +351,7 @@ export default {
 
             if (this.createPublicKey) {
                 // Should be higher up?
-                this.publicKey = await makeEncodedDeviceKey();  // reporting key = public key
+                this.publicKey = await makeEncodedDeviceKey();  // reporting key = public record
                 let tag_set = (this.tags).concat(['publickey']);
 
                 try {
@@ -370,7 +370,7 @@ export default {
                     
                     this.$snackbar.add({
                         type: 'success',
-                        text: 'Successfully created public key'
+                        text: 'Successfully created public record'
                     })
                 } catch (error) {
                     let errorMessage: string = error instanceof Error
@@ -382,7 +382,7 @@ export default {
                     if (errorMessage.includes("202")) {
                         snackbarType = "success";
                     } else {
-                        errorMessage = `Error creating public key: ${errorMessage}`;
+                        errorMessage = `Error creating public record: ${errorMessage}`;
                     }
 
                     this.$snackbar.add({

@@ -36,7 +36,7 @@ export default {
 
                 let isPublicKey = ''; //Flag to check if row is the record key row or not
 
-                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Public Key', 'Child Name', 'Child Key', 'Child Key URL', 'isPublicKey']];
+                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Public Record', 'Child Name', 'Child Key', 'Child Key URL', 'isPublicKey']];
 
                 for (const childKey of filteredChildrenKeys) {
                 

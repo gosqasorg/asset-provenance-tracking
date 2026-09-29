@@ -43,7 +43,7 @@ const hasParent = recordHasParent(provenance);
 
                             <div class="h5" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-                            <div class="h5" v-else-if="deviceRecord.isPublicKey">Public Key: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord.isPublicKey">Public Record: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
@@ -85,7 +85,7 @@ const hasParent = recordHasParent(provenance);
                     <!--QR Code modal-->
                     <ModalsQRCode :url="qrCodeUrl" />
 
-                    <div v-if="hasPublicKey"> Public Key:
+                    <div v-if="hasPublicKey"> Public Record:
                         <div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
                     </div>
 
@@ -137,7 +137,7 @@ let deviceRecord: any;
 
 // Here we are are going to want to read the device,
 //    but not all the provenance. We will use this to load
-//    the two components above, the public key component and
+//    the two components above, the public record component and
 //    the child list component.
 //    At present, get Provenance is our only function;
 //    we do not have a function for returning only the first
