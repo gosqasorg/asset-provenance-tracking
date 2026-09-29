@@ -346,9 +346,10 @@ methods: {
         gap: 20px;
     }
     .latest-news img {
-        height: 33.33%;
+        height: auto;
         width: 100%;
         margin-bottom: 5px;
+        display: block;
     }
     #latest-news-text {
         font-size: 18px; 
