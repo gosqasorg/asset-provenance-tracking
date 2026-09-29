@@ -1804,7 +1804,7 @@ async function testEndpoints(endpointInfo: any[], responses: any[], context: Inv
     }
 }
 
-async function endpointLivenessChecker(myTimer: any, context: InvocationContext) {
+async function endpointLivenessChecker(livenessTimer: any, context: InvocationContext) {
     const apiUrl = process.env["api_url"];
     const frontendUrl = process.env['frontend_url'];
     const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
@@ -1812,7 +1812,6 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
     let environment = "";
     let key = "";
     let attachmentID = "";
-    let endpointFailure = false;
     let response: Response;
 
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/'))) {
@@ -1983,7 +1982,6 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
 
     } catch (error) {
         context.error("endpointLivelinessChecker Error:", error)
-        endpointFailure = true;
     }
 
     // Loop through all our responses and send an email if any of them aren't 200
@@ -1995,38 +1993,8 @@ async function endpointLivenessChecker(myTimer: any, context: InvocationContext)
     }
 
     if (failedResponses.length > 0) {
-        await endpointLivenessCheckEmailer(environment, failedResponses, endpointFailure, context);
-    }
-}
-
-export async function endpointLivenessCheckEmailer (server: string, endpoints: string[], endpointFailure?: boolean, context?: InvocationContext) {
-    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'];
-    
-    // Some endpoints depend on one another, so if any endpoints with dependancies fail note in the email that other endpoints might not have run
-    const endpointsWithDependancies = ["createRecord", "postNotificationEmail", "postVerifyCode"];
-    let message = `Endpoints ${endpoints.join(', ')} are down on ${server}.`;
-    if (endpoints.some(failedEndpoint => endpointsWithDependancies.includes(failedEndpoint)) || endpointFailure) {
-        message = `Endpoints ${endpoints.join(', ')} are down on ${server}. Some endpoint tests were also unable to run due to earlier endpoint failures.`;
-    }
-
-    try {
-        for (const email of emails.split(',')) {
-            const emailResponse = await sendEmail(
-                process.env['SENDER_EMAIL'],
-                email,
-                `Important: Some Endpoints Are Down on ${server}`,
-                message,
-                'GOSQAS DEVS',
-                context
-            )
-            if (emailResponse.status === "Failed") {
-                throw emailResponse
-            }
-        }
-    }
-    catch (error) {
-        context.error(`endpointLivelinessChecker Detected an Endpoint Failure on ${server} but was Unable to Email:`, error);
-        context.error("Failing Endpoints:", endpoints.join(', '));
+        const message = `Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures.`;
+        await livenessCheckEmailer(`Important: Some Endpoints Are Down on ${environment}`, message, context);
     }
 }
 
@@ -2041,36 +2009,36 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
 
     // On dev and checking if production is down then send email stating prod is down
     if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
-        await livenessCheckEmailer('Production')
+        await livenessCheckEmailer('Important: Production Server Down', 'Production server is down!', context)
     }
 
     // On prod and checking if dev is down then send email staing dev is down
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
-        await livenessCheckEmailer('Staging')
+        await livenessCheckEmailer('Important: Staging Server Down', 'Staging server is down!', context)
     }
 }
 
-export async function livenessCheckEmailer (server: string, context?: InvocationContext) {
-
-    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
+export async function livenessCheckEmailer(subject: string, message: string, context: InvocationContext) {
+    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'];
 
     try {
         for (const email of emails.split(',')) {
             const emailResponse = await sendEmail(
                 process.env['SENDER_EMAIL'],
                 email,
-                `Important: ${server} Server Down`,
-                `${server} server is down!`,
+                subject,
+                message,
                 'GOSQAS DEVS',
                 context
             )
-        if (emailResponse.status === "Failed") {
-            throw emailResponse
+            if (emailResponse.status === "Failed") {
+                throw emailResponse
             }
         }
     }
     catch (error) {
-        context.error(error)
+        context.error(`livenessCheckEmailer Error: ${error}`);
+        context.error(message);
     }
 }
 
