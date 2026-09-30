@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline, updateOfflineFeatureFlag } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -31,8 +31,10 @@ function resetStashValues(): void {
 }
 
 // Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
+// And disable the feature flag
 const mockFetch = vi.fn();
 global.fetch = mockFetch
+updateOfflineFeatureFlag(true);
 
 describe("Offline Function Tests", () => {
     it("Test to confirmRequestFulfilled for new record and record entry created offline", async () => {

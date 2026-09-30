@@ -185,7 +185,7 @@ methods: {
             await postProvenance(key, stashedRecord, []);
 
             // If the request creates successfully move the key to the fulfilled stash
-            stashOfflineRequest(key, "gdt-stash-fulfilled", stashedRequest);
+            stashOfflineRequest(key, "gdt-stash-fulfilled", stashedRecord);
             removeOfflineRequest(key, "gdt-stash-failed");
 
             // Reload the page

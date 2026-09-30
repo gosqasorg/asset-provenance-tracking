@@ -16,8 +16,11 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
-// If we're not on prod turn offline features on
 export var offlineModeFeatureFlag = false;
+export function updateOfflineFeatureFlag(featuresEnabled: boolean) {
+    // Set the offline feature flag from other files
+    offlineModeFeatureFlag = featuresEnabled;
+}
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;
@@ -309,7 +312,7 @@ export async function offlineQueueConsumerWorker() {
             // Attempt to get the new request to confirm it posted successfully
             await fetchUrl(fullUrl)
 
-            stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
+            stashOfflineRequest(deviceKey, "gdt-stash-fulfilled", record);
             removeFirstQueueItem();
 
         } catch (error) {
@@ -323,7 +326,7 @@ export async function offlineQueueConsumerWorker() {
     }
 }
 
-export function stashOfflineRequest(currentKey: string, stashName: string, request: object) {
+export function stashOfflineRequest(currentKey: string, stashName: string, record: object) {
     // Function to stash an offline request (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
@@ -337,7 +340,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         // Get the existing stashed requests, skip the loop if there are none
         if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
             for (let storedRequest of existingRequests) {
-                if ((request && JSON.stringify(storedRequest["data"]) == JSON.stringify(request))) {
+                if ((record && JSON.stringify(storedRequest["data"]) == JSON.stringify(record))) {
                     // If new request == existing request, exit without updating the stash
                     return;
                 }
@@ -347,7 +350,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         }
 
         // Add the new request and set the new stash value
-        requests.push({"key": currentKey, "data": request, "timestamp": timestamp});
+        requests.push({"key": currentKey, "data": record, "timestamp": timestamp});
         localStorage.setItem(stashName, JSON.stringify(requests));
 
     } catch (error) {
