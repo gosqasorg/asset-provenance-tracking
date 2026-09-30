@@ -301,15 +301,15 @@ export async function offlineQueueConsumerWorker() {
             // Attempt to get the new request to confirm it posted successfully
             await fetchUrl(fullUrl)
 
-            removeFirstQueueItem();
             stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
+            removeFirstQueueItem();
 
         } catch (error) {
             if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
                 await new Promise((r) => setTimeout(r, 5000));
             } else {
-                removeFirstQueueItem();
                 stashOfflineRequest(deviceKey, "gdt-stash-failed", record);
+                removeFirstQueueItem();
             }
         }
     }
