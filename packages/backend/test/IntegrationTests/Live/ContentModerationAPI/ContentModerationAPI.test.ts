@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import * as htUtils from '../../src/functions/httpTriggerUtils';
+import * as htUtils from '/src/functions/azureContentModerationAPIUtils';
 
 
 // Utility function
@@ -26,7 +26,7 @@ describe('Tests for Azure Content Moderation API', () => {
     // Implicitly tests that image resizing succeeds
 
     let fileObject = await setup()
-    let response = await htUtils.imageIsNotPermitted(fileObject)
+    let response = await htUtils.imageIsNotPermitted(fileObject, console)
     expect(response).toBe(false)
 
   })

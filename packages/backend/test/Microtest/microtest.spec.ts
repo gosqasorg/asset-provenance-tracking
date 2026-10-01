@@ -42,7 +42,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // These came right along into the test file
 import { readFile } from 'node:fs/promises';
-import * as htUtils from '../../src/functions/httpTriggerUtils';
+import * as htUtils from '../../src/functions/azureContentModerationAPIUtils';
 
 
 /* ================= Utility Functions Supporting The Test ======== */
@@ -57,7 +57,7 @@ async function readTheFile(inputFileName: String) {
 
 /* ================== Function Under Development ================= */
 
-// Relocated to httpTriggerUtils.ts
+// Relocated to azureContentModerationUtils.ts
 export async function convertFileForSharp(inputFileObject: File) {
   if (! (inputFileObject instanceof File) ){ throw new Error('Not got: File') }
 

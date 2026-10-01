@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import * as htUtils from '../../src/functions/httpTriggerUtils';
+import * as htUtils from '/src/functions/azureContentModerationAPIUtils';
 
 // Utility function
 async function readTheFile(inputFileName: String) {
@@ -10,7 +10,7 @@ async function readTheFile(inputFileName: String) {
   return theFileObject
 }
 
-describe('Tests for httpTriggerUtils', () => {
+describe('Tests for azureContentModerationAPIUtils', () => {
   it('Determine whether file is image', async () => {
     let fileObject, classification;
 
