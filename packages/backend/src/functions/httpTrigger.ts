@@ -12,7 +12,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@a
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import { VERSION_INFO } from '../version.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, setupBlobClient, getExisitingEmails } from './emailNotificationUtils.js';
 import { ClientSecretCredential } from "@azure/identity";
 import './getStats.js';
 import { sendEmail } from './sendEmail.js'
@@ -921,7 +921,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
         let table = 'UserFeedbackEmails'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         const formData = await request.formData();
@@ -977,7 +977,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         // generate code
@@ -1069,7 +1069,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
         // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
     const credential = new AzureNamedKeyCredential(accountName, accountKey);
-    const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
+    const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential);
 
     // query by partitionKey (token)
     const entities = tableClient.listEntities({
@@ -1141,7 +1141,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
         await tableClient.createTable();  // Create if not exist, no error if it does
 
 
@@ -1207,7 +1207,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
 
         // find the old entity by partitionKey (token)
         const entities = tableClient.listEntities({
@@ -1354,17 +1354,23 @@ async function emailSignupTestEndpoint(request: HttpRequest, context: Invocation
     }
 }
 
-async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
+async function fetchWithRetry(context: InvocationContext, url: string, requestBody?: any, header?: HeadersInit) {
     let response = undefined;
     const MAX_RETRIES = 3;
 
     for (let i = 1; i <= MAX_RETRIES; i++) {
-        response = undefined //resets each retry attempt
+        response = undefined // resets each retry attempt
         try {
-            if (typeof formData !== 'undefined') {
+            if (typeof requestBody !== 'undefined' && header == undefined) {
                 response = await fetch(`${url}`, {
                     method: "POST",
-                    body: formData,
+                    body: requestBody,
+                });
+            } else if (typeof requestBody !== 'undefined' && header !== undefined) {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    headers: header,
+                    body: requestBody,
                 });
             } else {
                 response = await fetch(`${url}`, {
@@ -1382,7 +1388,9 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 
     if (response !== undefined && !response.ok) {
         context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText, { 
+            cause: { status: response.status } 
+        });
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
@@ -1782,6 +1790,214 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
+async function testEndpoints(endpointInfo: any[], responses: any[], context: InvocationContext) {
+    const apiUrl = process.env["api_url"];
+    for (const endpoint of endpointInfo) {
+        try {
+            let response = await fetchWithRetry(context, `${apiUrl}${endpoint["url"]}`, endpoint["requestBody"], endpoint["header"])
+            // Allow status 204 (which means already subscribed/nothing to notify)
+            if (response.status == 204) { responses.push({"endpoint": endpoint["name"], "status": 200}) }
+            else { responses.push({"endpoint": endpoint["name"], "status": response.status}) };
+        } catch (error) {
+            responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
+        }
+    }
+}
+
+async function endpointLivenessChecker(livenessTimer: any, context: InvocationContext) {
+    const apiUrl = process.env["api_url"];
+    const frontendUrl = process.env['frontend_url'];
+    const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
+    let responses = [];
+    let environment = "";
+    let key = "";
+    let attachmentID = "";
+    let response: Response;
+
+    if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/'))) {
+        environment = "Production";
+        key = "WeKm1MtJDQd9VYsaCkrGhN";
+        attachmentID = "d6594c4cc6cbf4c585e798ae1b9d05f14e1bd32197cc93e6b576681d92fcf7f0";
+    } else if ((frontendUrl.includes('red') || frontendUrl.includes('dev'))) {
+        environment = "Development";
+        key = "LHqbxvinufVyxnd2ErwnpM";
+        attachmentID = "25e54cce79774f7973ec7d3e609d5d3e0c9ca58936b6b00c7f9c16cbca06d6f5";
+    } else {
+        // If we're running locally skip the endpoint check (since email endpoints will always fail locally)
+        return;
+    }
+
+    try {
+        const group = {
+            deviceName: "Endpoint Test Group",
+            description: "Testing our endpoints",
+            tags: [],
+            number_of_children: 1,
+            hasPublicKey: true,
+        };
+        const record = {
+            blobType: 'deviceInitializer',
+            deviceName: "Endpoint Test Record",
+            description: "Testing our endpoints",
+            tags: [],
+            children_key: '',
+            hasParent: false,
+            isPublicKey: false,
+        }
+        const recordEntry = {
+            description: "Endpoint Test Entry",
+            tags: []
+        };
+
+        let groupFormData = new FormData();
+        groupFormData.append("provenanceRecord", JSON.stringify(group));
+        let recordFormData = new FormData();
+        recordFormData.append("provenanceRecord", JSON.stringify(record));
+        let entryFormData = new FormData();
+        entryFormData.append("provenanceRecord", JSON.stringify(recordEntry));
+
+        /*===== Non-Email Endpoints =====*/
+        // createRecord Endpoint Test (need to save the key for email testing so we're calling this endpoint separately)
+        let keyToEmail = "";
+        try {
+            response = await fetchWithRetry(context, `${apiUrl}/createRecord`, recordFormData);
+            keyToEmail = ((await response.json()).recordUrl).split('/');
+            keyToEmail = keyToEmail[keyToEmail.length - 1];
+
+            responses.push({"endpoint":"createRecord", "status": response.status});
+        } catch (error) {
+            responses.push({"endpoint":"createRecord", "status": error.cause.status || 500});
+            throw new Error("createRecord Error:", error);
+        }
+
+        let endpointInfo: ({
+            name: string;
+            url: string;
+            header?: HeadersInit;
+            requestBody?: FormData | string;
+        })[] = [
+            {"name":"addEntry", "url":`/addEntry/${key}`, "requestBody": entryFormData},
+            {"name":"boop", "url":`/stats/boop`},
+            {"name":"createGroup", "url":`/createGroup`, "requestBody": groupFormData},
+            {"name":"getAttachment", "url":`/attachment/${key}/${attachmentID}`},
+            {"name":"getAttachmentName", "url":`/attachment/${key}/${attachmentID}/name`},
+            {"name":"getBrowserStats", "url":`/stats/browsers`},
+            {"name":"getNewDeviceKey", "url":`/getNewDeviceKey`},
+            {"name":"getProvenance", "url":`/provenance/${key}`},
+            {"name":"getProvenanceAlt", "url":`/getProvenance/${key}`},
+            {"name":"getStatistics", "url":`/statistics`},
+            {"name":"getVersion", "url":`/version`},
+            {"name":"postProvenance", "url":`/provenance/${key}`, "requestBody": entryFormData},
+            {"name":"sendToAllChildren", "url":`/provenance/sendToChildren/${key}`, "requestBody": entryFormData},
+            {"name":"upgradeProvenance", "url":`/upgrade/${key}`},
+            {"name":"recall", "url":`/recall/${keyToEmail}`, "requestBody": entryFormData}
+        ];
+        await testEndpoints(endpointInfo, responses, context);
+
+        /*===== Email Endpoints =====*/
+        // Various email endpoints
+        let emailFormData = new FormData();
+        emailFormData.append("email", testEmail);
+
+        endpointInfo = [
+            {"name":"emailSignupTestEndpoint", "url":`/emailSignupTestEndpoint`},
+            {"name":"postEmail", "url":`/feedbackVolunteer`, "requestBody": emailFormData},
+            {"name":"notifySubscribers", "url":`/notifySubscribers/${keyToEmail}`, "requestBody": recordFormData},
+        ];
+        await testEndpoints(endpointInfo, responses, context);
+
+        // Generate the token to subscribe our test email with (regular fetch to avoid multiple email failures)
+        try {
+            response = await fetch(`${apiUrl}/notificationSubscription`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "email": testEmail, "recordKey": keyToEmail })
+            });
+
+            // The next email endpoints depend on this one, so if this failed do not attempt the others
+            if (response.status !== 200) {
+                throw new Error("postNotificationEmail failed to create a token", { cause: { status: response.status } });
+            };
+            
+            responses.push({"endpoint":"postNotificationEmail", "status": response.status});
+        } catch (error) {
+            responses.push({"endpoint":"postNotificationEmail", "status": error.cause.status || 500});
+            throw new Error("postNotificationEmail Error:", error);
+        }
+
+        const data = await response.json();
+        const token = data.token as string;
+        let code = "";
+
+        endpointInfo = [{"name":"postResendCode", "url":`/resendCode`, "header":{'Content-Type': 'application/json'}, "requestBody": JSON.stringify({ token })}];
+        await testEndpoints(endpointInfo, responses, context);
+
+        // Get the verification code using the token
+        const tableUrl = accountName === "devstoreaccount1"
+            ? `http://127.0.0.1:10002/devstoreaccount1` 
+            : `https://${accountName}.table.core.windows.net`;
+
+        const credential = new AzureNamedKeyCredential(accountName, accountKey);
+        const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential);
+        const entities = tableClient.listEntities({
+            queryOptions: { filter: `PartitionKey eq '${token}'` }
+        });
+        for await (const e of entities) {
+            code = e.rowKey
+            break;
+        }
+
+        // Validate the token and subscribe the test email to the record
+        endpointInfo = [{"name":"getPendingVerification", "url":`/pendingVerification?token=${token}`}];
+        await testEndpoints(endpointInfo, responses, context);
+
+        try {
+            response = await fetch(`${apiUrl}/verifyCode`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, code })
+            });
+
+            if (response.status !== 200) {
+                throw new Error("postVerifyCode failed to validate a token/code", { cause: { status: response.status } });
+            };
+
+            responses.push({"endpoint":"postVerifyCode", "status": response.status});
+        } catch (error) {
+            responses.push({"endpoint":"postVerifyCode", "status": error.cause.status || 500});
+            throw new Error("postVerifyCode Error:", error);
+        }
+        
+        // Get the emailID to unsubscribe with
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, keyToEmail);
+        const exists = await blobClient.exists();
+        let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
+
+        const emailIndex = Array.from(emailSet).indexOf(testEmail);
+        let emailID = "";
+        if (emailIndex >= 0) {
+            const existingEmailIDs = Array.from(emailIDSet);
+            emailID = existingEmailIDs[emailIndex];
+        }
+
+        // Unsubscribe from email notifications
+        endpointInfo = [{"name":"deleteNotificationEmail", "url":`/notificationUnsubscribe`, "header":{'Content-Type': 'application/json'}, "requestBody": JSON.stringify({ id: emailID, recordKey: keyToEmail })}];
+        await testEndpoints(endpointInfo, responses, context);
+
+    } catch (error) {
+        context.error("endpointLivelinessChecker Error:", error)
+    }
+
+    // Loop through all our responses and send an email if any of them aren't 200
+    let failedResponses = [];
+    for (const storedResponse of responses) {
+        if (storedResponse.status !== 200) {
+            failedResponses.push(storedResponse.endpoint);
+        }
+    }
+
+    if (failedResponses.length > 0) {
+        const message = `Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures.`;
+        await livenessCheckEmailer(`Important: Some Endpoints Are Down on ${environment}`, message, context);
+    }
+}
+
 export async function livenessChecker(livenessTimer: Timer, context: InvocationContext) {
 
     const staging = 'https://red-stone-00f5d251e.5.azurestaticapps.net/'
@@ -1793,36 +2009,36 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
 
     // On dev and checking if production is down then send email stating prod is down
     if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
-        await livenessCheckEmailer('Production')
+        await livenessCheckEmailer('Important: Production Server Down', 'Production server is down!', context)
     }
 
     // On prod and checking if dev is down then send email staing dev is down
     if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
-        await livenessCheckEmailer('Staging')
+        await livenessCheckEmailer('Important: Staging Server Down', 'Staging server is down!', context)
     }
 }
 
-export async function livenessCheckEmailer (server: string, context?: InvocationContext) {
-
-    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
+export async function livenessCheckEmailer(subject: string, message: string, context: InvocationContext) {
+    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS'];
 
     try {
         for (const email of emails.split(',')) {
             const emailResponse = await sendEmail(
                 process.env['SENDER_EMAIL'],
                 email,
-                `Important: ${server} Server Down`,
-                `${server} server is down!`,
+                subject,
+                message,
                 'GOSQAS DEVS',
                 context
             )
-        if (emailResponse.status === "Failed") {
-            throw emailResponse
+            if (emailResponse.status === "Failed") {
+                throw emailResponse
             }
         }
     }
     catch (error) {
-        context.error(error)
+        context.error(`livenessCheckEmailer Error: ${error}`);
+        context.error(message);
     }
 }
 
@@ -1830,6 +2046,11 @@ export async function livenessCheckEmailer (server: string, context?: Invocation
 app.timer('updateRecordCounts', {
     schedule: `0 0 * * *`,
     handler: setStatisticsTotals
+})
+
+app.timer('endpointLivenessChecker', {
+    schedule: `0 0 * * *`,
+    handler: endpointLivenessChecker
 })
 
 app.timer('livenessChecker', {
