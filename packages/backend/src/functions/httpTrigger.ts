@@ -921,7 +921,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
         let table = 'UserFeedbackEmails'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         const formData = await request.formData();
@@ -977,7 +977,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
         await tableClient.createTable();  // Create if not exist, no error if it does
 
         // generate code
@@ -1069,7 +1069,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
         // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
     const credential = new AzureNamedKeyCredential(accountName, accountKey);
-    const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
+    const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential);
 
     // query by partitionKey (token)
     const entities = tableClient.listEntities({
@@ -1141,7 +1141,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
         await tableClient.createTable();  // Create if not exist, no error if it does
 
 
@@ -1207,7 +1207,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+        const tableClient = new TableClient(tableUrl, table, credential)
 
         // find the old entity by partitionKey (token)
         const entities = tableClient.listEntities({
@@ -1936,7 +1936,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
             : `https://${accountName}.table.core.windows.net`;
 
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential, { allowInsecureConnection: true });
+        const tableClient = new TableClient(tableUrl, 'PendingEmailVerifications', credential);
         const entities = tableClient.listEntities({
             queryOptions: { filter: `PartitionKey eq '${token}'` }
         });
