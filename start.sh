@@ -4,6 +4,13 @@
 git update-index --skip-worktree packages/backend/local.settings.json
 
 #############
+# Halt
+#############
+
+./stop.sh
+
+
+#############
 # Ensure correct node version is in use
 #############
 
@@ -26,10 +33,7 @@ nvm alias default 22
 # Start GDT
 #############
 
-# 1. Ensure stopped
-./stop.sh
-
-# 2. Start frontend and backend
+# Start frontend and backend
 cd packages/backend
 npm run build
 ./start.sh &

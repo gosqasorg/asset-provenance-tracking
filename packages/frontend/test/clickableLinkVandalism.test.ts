@@ -21,7 +21,7 @@ async function createRecord(description: string): Promise<string> {
         blobType: 'deviceInitializer',
         deviceName: "Vandilism Test Record",
         description: description,
-        tags: {},
+        tags: [],
         children_key: '',
         hasParent: false,
         isPublicKey: false,

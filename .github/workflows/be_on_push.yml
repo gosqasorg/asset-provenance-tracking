@@ -16,6 +16,7 @@ env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'packages/backend'    # set this to the path to your function app project, defaults to the repository root
   NODE_VERSION: '22.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  backend_url: 'https://gosqasbe.azurewebsites.net/api/provenance/'
 
 jobs:
   detect-changes:

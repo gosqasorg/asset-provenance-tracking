@@ -101,6 +101,23 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     }
 }
 
+export async function notifySubscribers(deviceKey: string, record: any) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const formData = new FormData();
+    formData.append("provenanceRecord", JSON.stringify(record));
+
+    const response = await fetch(`${baseUrl}/notifySubscribers/${deviceKey}`, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.status != 200 && response.status != 204) {
+        throw new Error('notifySubscribers: Failed to notify all subscribers')
+    }
+
+    return response;
+}
+
 export async function postEmail(email: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const formData = new FormData();
@@ -208,25 +225,61 @@ async function fetchUrl(url: string, formData?: FormData) {
     }
 }
 
-export function stashOfflineRequest(currentKey: string, stashName: string, request?: string) {
-    // Function to stash an offline request (works for fulfilled and failed stashes)
+/**
+ * @param options Optional. If omitted, fetch makes a GET request. Callers can set the method, headers, and body.
+ * @param statusMessages Optional. Map of HTTP status codes to custom error messages.
+ */
+export async function fetchUrlWithErrorHandling(
+    url: string,
+    options?: RequestInit,
+    statusMessages?: Readonly<Record<number, string>>
+): Promise<Response> {
+    let response: Response;
+
+    try {
+        // Supports any HTTP method accepted by fetch. Without options, fetch defaults to GET.
+        response = await fetch(url, options);
+    } catch {
+        throw new Error("Could not connect to the server, check your internet connection and try again");
+    }
+
+    if (response.ok) {
+        return response;
+    }
+
+    let errorMessage = `Request failed with status ${response.status}`;
+    if (response.statusText) {
+        errorMessage = `${response.status} ${response.statusText}`;
+    }
+
+    // Example of statusMessages: { 429: "We are experiencing a high volume of requests." }
+    const statusErrorMessage = statusMessages?.[response.status];
+    if (statusErrorMessage !== undefined) {
+        errorMessage = statusErrorMessage;
+    }
+
+    throw new Error(errorMessage);
+}
+
+export function stashOfflineRequest(currentKey: string, stashName: string, request?: any) {
+    // Function to stash an offline request (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
-        let stash = localStorage.getItem(stashName) || "{}";
+        let stash = localStorage.getItem(stashName) || "[]";
         let existingRequests;
 
         // Get the previous requests from the stash
-        if (stashName.includes("failed")) {
-            existingRequests = JSON.parse(stash);
-        } else {
+        if (stashName.includes("fulfilled")) {
             existingRequests = stash.split(",");
+        } else {
+            existingRequests = JSON.parse(stash);
         }
 
         // Get the existing stashed requests, skip the loop if there are none
-        if (JSON.stringify(existingRequests) !== "{}" && JSON.stringify(existingRequests) !== '["{}"]') {
+        if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
             for (const storedRequest of existingRequests) {
                 // If new request == existing request, exit without updating the stash
-                if ((request && storedRequest[0][1] == request[0][1]) || storedRequest == currentKey) {
+                if ((request && storedRequest["data"] == request) || storedRequest == currentKey) {
                     return;
                 }
 
@@ -235,12 +288,12 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         }
 
         // Add the new request and set the new stash value
-        if (stashName.includes("failed")) {
-            requests.push(request);
-            localStorage.setItem(stashName, JSON.stringify(requests));
-        } else {
+        if (stashName.includes("fulfilled")) {
             requests.push(currentKey);
             localStorage.setItem(stashName, requests.toString());
+        } else {
+            requests.push({"key": currentKey, "data": request});
+            localStorage.setItem(stashName, JSON.stringify(requests));
         }
 
     } catch (error) {
@@ -250,29 +303,36 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
 }
 
 export function removeOfflineRequest(currentKey: string, stashName: string) {
-    // Function to remove an offline request from the stash (works for fulfilled and failed stashes)
+    // Function to remove an offline request from the stash (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
-        let stash = localStorage.getItem(stashName) || "{}";
+        let stash = localStorage.getItem(stashName) || "[]";
         let existingRequests;
 
         // Get the previous requests from the stash
-        if (stashName.includes("failed")) {
-            existingRequests = JSON.parse(stash);
-        } else {
+        if (stashName.includes("fulfilled")) {
             existingRequests = stash.split(",");
+        } else {
+            existingRequests = JSON.parse(stash);
         }
 
         // If there are no previous requests exit the function (nothing to remove)
-        if (JSON.stringify(existingRequests) == "{}" || JSON.stringify(existingRequests) == '["{}"]') {
+        if (JSON.stringify(existingRequests) == "[]" || JSON.stringify(existingRequests) == '["[]"]') {
             return;
         }
 
-        if (stashName.includes("failed")) {
-            // Remove request from failed stash
+        if (stashName.includes("fulfilled")) {
+            // Remove key from the fulfilled stash
+            const index = existingRequests.indexOf(currentKey);
+            if (index >= 0) {
+                existingRequests.splice(index, 1);
+            }
+            localStorage.setItem(stashName, existingRequests.toString())
+            
+        } else {
+            // Remove request from the queue/failed stash
             for (let i = 0; i < existingRequests.length; i++) {
-                let fullUrl = existingRequests[i][0][1];
-                let requestKey = fullUrl.split("/")[fullUrl.split("/").length - 1];
+                let requestKey = existingRequests[i]["key"];
 
                 // Add back all requests except the one we're removing 
                 if (requestKey != currentKey) {
@@ -280,13 +340,6 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
                 }
             }
             localStorage.setItem(stashName, JSON.stringify(requests))
-        } else {
-            // Remove key from fulfilled stash
-            const index = existingRequests.indexOf(currentKey);
-            if (typeof existingRequests != "string" && index > -1) {
-                existingRequests.splice(index, 1);
-            }
-            localStorage.setItem(stashName, existingRequests.toString())
         }
 
     } catch (error) {
@@ -295,21 +348,74 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
     }
 }
 
+export function getFirstQueueItem() {
+    // Get the first request from the stash and return it
+    try {
+        let stash = localStorage.getItem("gdt-stash-queued") || "[]";
+        let existingRequests = JSON.parse(stash);
+        return existingRequests[0];
+
+    } catch (error) {
+        console.log("Failed to Return First Queue Item: " + error);
+        throw error;
+    }
+}
+
+export function removeFirstQueueItem() {
+    // Get the first request from the stash and remove it
+    try {
+        let stash = localStorage.getItem("gdt-stash-queued") || "[]";
+        let existingRequests = JSON.parse(stash);
+        
+        const index = existingRequests.indexOf(existingRequests[0]);
+        if (index > -1) {
+            existingRequests.splice(index, 1);
+        }
+
+        localStorage.setItem("gdt-stash-queued", JSON.stringify(existingRequests))
+
+    } catch (error) {
+        console.log("Failed to Remove First Queue Item: " + error);
+        throw error;
+    }
+}
+
+export async function confirmRequestFulfilled(recordKey: string, record?: any): Promise<boolean> {
+    try {
+        let response = await getProvenance(recordKey)
+
+        // For history entry addition in existing record
+        if (response[0] && response[0].record.description === record?.description) {
+            return true
+        } 
+        // For checking newly created record
+        else if (response && record === undefined) {
+            return true
+        }
+
+    } catch(error) {
+        throw error
+    }
+
+    return false
+}
+
 export async function postNotificationEmail(email:string, recordKey: string) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/notificationsubscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, recordKey }),
-    });
+    const response = await fetchUrlWithErrorHandling(
+        `${baseUrl}/notificationSubscription`,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, recordKey }),
+        },
+        {
+            429: "We are experiencing a high volume of requests. Please try again later.",
+            500: "We could not send the verification email. Please try again later.",
+        }
+    );
 
     console.log('postNotificationEmail status:', response.status);
-
-    if(response.status == 429) {
-        throw new Error("We are experiencing a high volume of requests. Please try again later.")
-    } else if (response.status != 200) {
-        throw new Error('postNotificationEmail: Failed to send verification code')
-    }
 
     const data = await response.json();
     return data.token as string;
