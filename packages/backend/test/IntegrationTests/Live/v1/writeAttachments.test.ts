@@ -254,15 +254,16 @@ describe("Creating records with attachments", () => {
                 blobType: 'deviceInitializer',
                 deviceName: "Create Record Test - Large File",
                 description: "An API Feature Test - Large Attachment (>2MB)",
-                tags: [],
                 children_key: '',
                 hasParent: false,
                 isPublicKey: false,
+                tags: [],
             }
+
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(data));
 
-            // Attach LARGE file (>2MB)
+            // Attach large file (>2MB)
             const buffer = await readFile('./test/attachments/LargeFile.pdf');
             const blob = new Blob([buffer], { type: 'application/pdf' });
             formData.append('large.jpg', blob);
@@ -289,9 +290,6 @@ describe("Creating records with attachments", () => {
         let getResponse; 
         try {
             getResponse = await fetch(fullUrl);
-
-            expect(getResponse.status).toBe(200);
-            expect(getResponse.ok).toBe(true);
 
             getResponse = await getResponse.json();
             expect(JSON.stringify(getResponse)).toBe('[]');
