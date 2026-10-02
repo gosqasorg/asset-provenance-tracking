@@ -60,6 +60,17 @@ paths:
                   items:
                     type: string
                     format: binary      
+            encoding:
+              provenanceRecord:
+                contentType: application/json
+            example:
+              provenanceRecord:
+                deviceName: "Group Title"
+                description: "Group Description"
+                number_of_children: 5
+                children_name: ["Child1", "Child2", "Child3", "Child4", "Child5"]
+                tags: ["tag1", "tag2"]
+                hasPublicKey: true
       responses:
         '200':
           description: Successful creation
