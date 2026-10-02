@@ -67,6 +67,8 @@ jobs:
 
     - uses: ./.github/actions/setup-backend
 
+    # Section written with the assistance of Claude - Vincent
+    # Discussion in PR comment
     - name: Prune dev dependencies
       working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
       run: |
