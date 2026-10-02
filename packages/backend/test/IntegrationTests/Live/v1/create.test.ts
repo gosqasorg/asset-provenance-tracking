@@ -70,6 +70,9 @@ describe("Group Creation Tests", () => {
 			})
 		]);
 		
+		console.log(baseurl)
+		expect(childResponse.status).toBe(200);
+		expect(groupResponse.status).toBe(200);
 		expect(childResponse.ok).toBe(true);
 		expect(groupResponse.ok).toBe(true);
 	}, 60000);
