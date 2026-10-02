@@ -591,7 +591,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
-        await convertLegacyProvenance(containerClient, deviceKey);
+        await upgradeProvenance(containerClient, deviceKey);
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
@@ -1808,13 +1808,13 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        context.error('Failed to create record: ', error.message)
+        context.error('createRecordHandler: Failed to create record: ', error.message)
         let message;
 
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
-            context.error('createRecordHandler: returning 400')
+            context.error('createRecordHandler: returning 400 on zodError')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1825,7 +1825,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
-            context.error('createRecordHandler: returning 400')
+            context.error('createRecordHandler: returning 400 on syntaxError')
             return {
                 status: 400,
                 jsonBody: { data: message },
