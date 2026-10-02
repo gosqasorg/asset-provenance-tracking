@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: Auto-generated OpenAPI specification
 servers:
-#  - url: http://localhost:7071/api
-#    description: Local development server
+  - url: http://localhost:7071/api
+    description: Local development server
   - url: https://gosqasbe.azurewebsites.net/api
     description: Staging server
-#  - url: https://gdtprodbackend.azurewebsites.net/api
-#   description: Production server
+  - url: https://gdtprodbackend.azurewebsites.net/api
+    description: Production server
 paths:
 
   /createGroup:
@@ -64,13 +64,14 @@ paths:
               provenanceRecord:
                 contentType: application/json
             example:
-              provenanceRecord:
-                deviceName: "Group Title"
-                description: "Group Description"
-                number_of_children: 5
-                children_name: ["Child1", "Child2", "Child3", "Child4", "Child5"]
-                tags: ["tag1", "tag2"]
-                hasPublicKey: true
+              provenanceRecord >-
+              {"deviceName": "Group Title",
+                "description": "Group Description",
+                "number_of_children": 5,
+                "children_name": ["Child1", "Child2", "Child3", "Child4", "Child5"],
+                "tags": ["tag1", "tag2"],
+                "hasPublicKey": true}
+                
       responses:
         '200':
           description: Successful creation
