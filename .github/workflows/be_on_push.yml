@@ -89,8 +89,10 @@ jobs:
 
     - name: Run Backend Integration Tests
       env: 
+        api_url: ${{ secrets.API_URL }}
         KEY1: ${{ secrets.KEY1 }}
         ENDPOINT: ${{ secrets.ENDPOINT }}
+
       working-directory: packages/backend
       run: npm run api_integration_tests
 
