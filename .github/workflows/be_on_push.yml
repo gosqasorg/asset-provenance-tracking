@@ -17,7 +17,7 @@ env:
   NODE_VERSION: '22.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   backend_url: 'https://gosqasbe.azurewebsites.net/api/provenance/'
-  api_url: 'https://gosqasbe.azurewebsites.net/api'
+  api_url: 'https://gosqasbe.azurewebsites.net/api/'
 
 jobs:
   detect-changes:
@@ -67,22 +67,12 @@ jobs:
 
     - uses: ./.github/actions/setup-backend
 
-    - name: Remove node_modules
-      shell: bash
-      run: rm -rf ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/node_modules
-      
-    - name: Install Azure Functions Core Tools
-      run: npm install -g azure-functions-core-tools@4
-
-    - name: Azure Login
-      uses: azure/login@v2
+    - name: Azure Functions Action
+      uses: Azure/functions-action@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Publish
-      working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-      run: func azure functionapp publish ${{ env.AZURE_FUNCTIONAPP_NAME }}
-
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
   # These will grow into post-(deployment to redstone) integration tests pre-(merge to main)
   backend-postdeployment-integration-tests:
@@ -96,6 +86,7 @@ jobs:
 
     - name: Run Backend Integration Tests
       env: 
+        api_url: ${{ secrets.API_URL }}
         KEY1: ${{ secrets.KEY1 }}
         ENDPOINT: ${{ secrets.ENDPOINT }}
 
