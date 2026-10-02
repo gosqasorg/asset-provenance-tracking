@@ -5,15 +5,16 @@
   "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions-core --external:net --external:http --external:https --external:tls --external:util --external:os --external:fs --external:path --external:crypto --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
+    "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions-core --external:net --external:http --external:https --external:tls --external:util --external:os --external:fs --external:path --external:crypto --external:sharp --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "watch": "tsc -w",
     "clean": "rimraf dist",
     "prestart": "npm run clean && npm run build",
     "dev": "func start",
-    "start": "func start",
+    "start": "func start --verbose",
     "update-version": "node --loader ts-node/esm scripts/updateVersion.ts",
     "test": "vitest",
-    "microtest": "npx vitest run test/UnitTests/microtest",
+    "test-noninteractive": "vitest run",
+    "microtest": "vitest run test/Microtest",
     "unittest": "npx vitest run test/UnitTests",
     "api_integration_tests": "npx vitest run test/IntegrationTests",
     "coverage": "vitest run --coverage"
@@ -29,6 +30,7 @@
     "bs58": "^5.0.0",
     "dotenv": "^16.4.5",
     "json5": "^2.2.3",
+    "sharp": "^0.35.3",
     "zod": "^4.1.12"
   },
   "devDependencies": {

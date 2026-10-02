@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
 echo 'Installing node modules in...'
-echo -n 'Backend... '
+echo 'Backend... '
+echo
 cd pa*/ba* && [ "$(npm i)" ] && echo 'Done' || echo 'Failed'
-echo -n 'Frontend... '
+
+echo 'Installing node modules in...'
+echo 'Frontend... '
+echo
 cd ../f* && [ "$(npm i)" ] && echo 'Done' || echo 'Failed'
 
 # Leave user back where they started

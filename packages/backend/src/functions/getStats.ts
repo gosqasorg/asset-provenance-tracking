@@ -60,30 +60,6 @@ async function runQuery(query: string, context): Promise<[string, number][]> {
     }
 }
 
-async function boop(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entering boop')
-    let query = `
-AppExceptions
-| where TimeGenerated > ago(365d)
-| where ExceptionType contains "RpcException"
-| summarize FailureCount = count() by bin(TimeGenerated, 1d)
-    `
-    const rows = await runQuery(query, context)
-
-    let response = { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } }
-    context.log(rows)
-    context.log(response)
-    context.log('Returning from boop')
-    return response   
-}
-
-
-
-app.get("boop", {
-    authLevel: 'anonymous',
-    route: 'stats/boop',
-    handler: boop
-})
 
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
