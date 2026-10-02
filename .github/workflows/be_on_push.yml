@@ -17,6 +17,7 @@ env:
   NODE_VERSION: '22.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   backend_url: 'https://gosqasbe.azurewebsites.net/api/provenance/'
+  api_url: 'https://gosqasbe.azurewebsites.net/api'
 
 jobs:
   detect-changes:
@@ -89,7 +90,6 @@ jobs:
 
     - name: Run Backend Integration Tests
       env: 
-        api_url: ${{ secrets.API_URL }}
         KEY1: ${{ secrets.KEY1 }}
         ENDPOINT: ${{ secrets.ENDPOINT }}
 
