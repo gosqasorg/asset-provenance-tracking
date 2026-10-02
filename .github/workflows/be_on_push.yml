@@ -70,13 +70,19 @@ jobs:
     - name: Remove node_modules
       shell: bash
       run: rm -rf ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/node_modules
+      
+    - name: Install Azure Functions Core Tools
+      run: npm install -g azure-functions-core-tools@4
 
-    - name: Azure Functions Action
-      uses: Azure/functions-action@v1
+    - name: Azure Login
+      uses: azure/login@v2
       with:
-        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-        package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Publish
+      working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      run: func azure functionapp publish ${{ env.AZURE_FUNCTIONAPP_NAME }}
+
 
   # These will grow into post-(deployment to redstone) integration tests pre-(merge to main)
   backend-postdeployment-integration-tests:
