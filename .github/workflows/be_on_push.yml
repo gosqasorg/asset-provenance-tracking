@@ -17,6 +17,7 @@ env:
   NODE_VERSION: '22.x'                                  # set this to the node version to use (e.g. '8.x', '10.x', '12.x')
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   backend_url: 'https://gosqasbe.azurewebsites.net/api/provenance/'
+  api_url: 'https://gosqasbe.azurewebsites.net/api/'
 
 jobs:
   detect-changes:
@@ -49,7 +50,11 @@ jobs:
     # is mocked in the tests.
     # Example: WARNING: Failed to detect the Azure Functions runtime. Switching "@azure/functions"
     # Example: package to test mode - not all features are supported.
+
     - name: Run Backend Unit Tests
+      env: 
+        KEY1: ${{ secrets.KEY1 }}
+        ENDPOINT: ${{ secrets.ENDPOINT }}
       working-directory: packages/backend
       run: npm run unittest
 
@@ -62,9 +67,13 @@ jobs:
 
     - uses: ./.github/actions/setup-backend
 
-    - name: Remove node_modules
-      shell: bash
-      run: rm -rf ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/node_modules
+    # Section written with the assistance of Claude - Vincent
+    # Discussion in PR comment
+    - name: Prune dev dependencies
+      working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+      run: |
+        npm prune --omit=dev
+        du -sh node_modules
 
     - name: Azure Functions Action
       uses: Azure/functions-action@v1
@@ -84,6 +93,11 @@ jobs:
     - uses: ./.github/actions/setup-backend
 
     - name: Run Backend Integration Tests
+      env: 
+        api_url: ${{ secrets.API_URL }}
+        KEY1: ${{ secrets.KEY1 }}
+        ENDPOINT: ${{ secrets.ENDPOINT }}
+
       working-directory: packages/backend
       run: npm run api_integration_tests
 

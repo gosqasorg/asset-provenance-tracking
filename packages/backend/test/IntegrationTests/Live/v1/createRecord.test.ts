@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from 'fs/promises';
 
+const baseUrl = process.env['api_url']; //'https://gosqasbe.azurewebsites.net/api/';
+
 describe("Backend Record Creation Tests", () => {
     it("Create and Retrieve A Basic Record", async () => {
-        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
+        
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
@@ -16,7 +18,7 @@ describe("Backend Record Creation Tests", () => {
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
+        const recordResponse = await fetch(`${baseUrl}/createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -24,7 +26,7 @@ describe("Backend Record Creation Tests", () => {
         console.log("Created Basic Record (url): ", recordUrl)
 
 		try {
-			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
+			let getResponse = await fetch(`${baseUrl}/provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 
@@ -43,7 +45,6 @@ describe("Backend Record Creation Tests", () => {
     });
 
     it("Create and Retrieve A Record with Tags", async () => {
-        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
@@ -56,7 +57,7 @@ describe("Backend Record Creation Tests", () => {
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(record));
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
+        const recordResponse = await fetch(`${baseUrl}/createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200)
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -64,7 +65,7 @@ describe("Backend Record Creation Tests", () => {
         console.log("Created Record With Tags (url): ", recordUrl)
 
 		try {
-			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
+			let getResponse = await fetch(`${baseUrl}/provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 
@@ -82,7 +83,6 @@ describe("Backend Record Creation Tests", () => {
     });
 
     it("Create and Retrieve A Record with Tags and Attachments", async () => {
-        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
         const record = {
             blobType: 'deviceInitializer',
             deviceName: "Create Record Test",
@@ -98,7 +98,7 @@ describe("Backend Record Creation Tests", () => {
         formData.append("provenanceRecord", JSON.stringify(record));
         formData.append("kirby.jpg", new Blob([new Uint8Array(buffer)], { type: 'image/jpeg' }), "kirby.jpg");
 
-        const recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData });
+        const recordResponse = await fetch(`${baseUrl}/createRecord`, { method: "POST", body: formData });
         expect(recordResponse.status).toBe(200);
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -106,7 +106,7 @@ describe("Backend Record Creation Tests", () => {
         console.log("Created Record With Tags and Attachment (url): ", recordUrl)
 
 		try {
-			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
+			let getResponse = await fetch(`${baseUrl}/provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 
@@ -120,7 +120,7 @@ describe("Backend Record Creation Tests", () => {
 
             // Download attachment and confirm it matches original file
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `${baseUrl}attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = `${baseUrl}/attachment/${deviceKey}/${attachmentHash}`;
             console.log('createRecord downloading file from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -137,7 +137,6 @@ describe("Backend Record Creation Tests", () => {
     });
 
     it("Create A Record with Incorrect Format", async () => {
-        const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
         // create a record that's missing a required field and confirm it fails (description)
         const record = {
             blobType: 'deviceInitializer',
@@ -150,7 +149,7 @@ describe("Backend Record Creation Tests", () => {
 
         const formData1 = new FormData();
         formData1.append("provenanceRecord", JSON.stringify(record));
-        let recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData1 });
+        let recordResponse = await fetch(`${baseUrl}/createRecord`, { method: "POST", body: formData1 });
         expect(recordResponse.status).toBe(400);
 
         // create a record that's missing an optional field and confirm it succeeds (blobType)
@@ -165,7 +164,7 @@ describe("Backend Record Creation Tests", () => {
 
         const formData2 = new FormData();
         formData2.append("provenanceRecord", JSON.stringify(record2));
-        recordResponse = await fetch(`${baseUrl}createRecord`, { method: "POST", body: formData2 });
+        recordResponse = await fetch(`${baseUrl}/createRecord`, { method: "POST", body: formData2 });
         expect(recordResponse.status).toBe(200);
 
         let recordUrl = (await recordResponse.json()).recordUrl;
@@ -173,7 +172,7 @@ describe("Backend Record Creation Tests", () => {
         console.log("Created Record With Missing Optional Field (url): ", recordUrl)
 
 		try {
-			let getResponse = await fetch(`${baseUrl}provenance/${deviceKey}`);
+			let getResponse = await fetch(`${baseUrl}/provenance/${deviceKey}`);
 			getResponse = (await getResponse.json())[0];
 			let responseString = JSON.parse(JSON.stringify(getResponse));
 

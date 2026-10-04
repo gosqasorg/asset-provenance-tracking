@@ -5,9 +5,11 @@ import { encodeAttachmentFilename } from '../../../../src/functions/httpTrigger'
 
 
 
+const baseUrl = process.env['backend_url']
+const apiUrl = process.env['api_url']
 
 describe("Creating records with attachments", () => {
-	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+	//const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
 	// Create a record with an attachement 
 	it("Create record with one attachment ", async () => {
@@ -41,7 +43,8 @@ describe("Creating records with attachments", () => {
 			body: formData,
 		});
 
-			expect(postResponse.ok).toBe(true);
+        expect(postResponse.status).toBe(200)
+		expect(postResponse.ok).toBe(true);
 
 		} catch (error) {
 			console.error("(Create POST Test) Error creating a record: " + error); 
@@ -65,7 +68,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare original attached file and downlaod
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = apiUrl + `/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -116,10 +119,11 @@ describe("Creating records with attachments", () => {
             formData.append('image2.jpg', blob2);
 
             const postResponse = await fetch(fullUrl, {
-            method: "POST",
-            body: formData,
+                method: "POST",
+                body: formData,
             });
 
+            expect(postResponse.status).toBe(200);
             expect(postResponse.ok).toBe(true);
 
         } catch (error) {
@@ -141,7 +145,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare FIRST attachment
             const attachmentHash1 = responseString.attachments[0];
-            const downloadUrl1 = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash1}`;
+            const downloadUrl1 = apiUrl + `/attachment/${deviceKey}/${attachmentHash1}`;
             console.log('Downloading first attachment from:', downloadUrl1);
             const downloadResponse1 = await fetch(downloadUrl1);
             expect(downloadResponse1.ok).toBe(true);
@@ -152,7 +156,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare SECOND attachment
             const attachmentHash2 = responseString.attachments[1];
-            const downloadUrl2 = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash2}`;
+            const downloadUrl2 = apiUrl + `/attachment/${deviceKey}/${attachmentHash2}`;
             console.log('Downloading second attachment from:', downloadUrl2);
             const downloadResponse2 = await fetch(downloadUrl2);
             expect(downloadResponse2.ok).toBe(true);
@@ -200,6 +204,7 @@ describe("Creating records with attachments", () => {
             body: formData,
             });
 
+            expect(postResponse.status).toBe(200);
             expect(postResponse.ok).toBe(true);
 
         } catch (error) {
@@ -221,7 +226,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare PDF attachment
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = `https://gosqasbe.azurewebsites.net/api/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = apiUrl + `/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading PDF from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -249,18 +254,19 @@ describe("Creating records with attachments", () => {
         // POST record key with LARGE attachment 
         try {
             const data = {
-            blobType: 'deviceInitializer',
-            deviceName: "Create Record Test - Large File",
-            description: "An API Feature Test - Large Attachment (>2MB)",
-            tags: [],
-            children_key: '',
-            hasParent: false,
-            isPublicKey: false,
+                blobType: 'deviceInitializer',
+                deviceName: "Create Record Test - Large File",
+                description: "An API Feature Test - Large Attachment (>2MB)",
+                children_key: '',
+                hasParent: false,
+                isPublicKey: false,
+                tags: [],
             }
+
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(data));
 
-            // Attach LARGE file (>2MB)
+            // Attach large file (>2MB)
             const buffer = await readFile('./test/attachments/LargeFile.pdf');
             const blob = new Blob([buffer], { type: 'application/pdf' });
             formData.append('large.jpg', blob);
@@ -271,8 +277,8 @@ describe("Creating records with attachments", () => {
             expect(fileSizeInMB).toBeGreaterThan(2); 
 
             const postResponse = await fetch(fullUrl, {
-            method: "POST",
-            body: formData,
+                method: "POST",
+                body: formData,
             });
 
             expect(postResponse.ok).toBe(false);
@@ -287,6 +293,7 @@ describe("Creating records with attachments", () => {
         let getResponse; 
         try {
             getResponse = await fetch(fullUrl);
+
             getResponse = await getResponse.json();
             expect(JSON.stringify(getResponse)).toBe('[]');
 

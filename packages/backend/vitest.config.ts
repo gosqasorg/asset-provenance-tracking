@@ -8,7 +8,6 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     exclude: [
         ...configDefaults.exclude, 
-        '**/Microtest/**',
     ],
   },
 })
