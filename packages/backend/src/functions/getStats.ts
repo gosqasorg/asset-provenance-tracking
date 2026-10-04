@@ -1,5 +1,18 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 
+interface ServerResponseTime {
+    points: Array<{
+        x: number;
+        y: number;
+    }>;
+    updatedAt: string | null;
+}
+
+const serverResponseTimeStore: ServerResponseTime = {
+    points: [],
+    updatedAt: null,
+};
+
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
