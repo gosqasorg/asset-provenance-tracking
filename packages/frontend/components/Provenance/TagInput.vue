@@ -132,7 +132,7 @@ export default {
     } catch (error) {
         this.isLoading = false;
         this.recordKeyFound = false;
-        this.hasPublicKey = false;
+        this.hasPublicRecord = false;
         console.log(error)
     }
   },

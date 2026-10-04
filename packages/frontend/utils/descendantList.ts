@@ -187,8 +187,8 @@ export async function notifyChildren(recordKey: string, tags: string[], descript
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recieve records from the group)
-                if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
+                // Make sure key is NOT a public record (public records do not have the ability to recieve records from the group)
+                if (!keyProvenance[keyProvenance.length - 1].record.isPublicRecord) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
                     if (uniqueChildKeys.includes(recordKey)) {
@@ -228,8 +228,8 @@ export async function recallChildren(recordKey: string, tags: string[], descript
                 let key = keysToCheck[0];
                 let keyProvenance = await getProvenance(key);
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recall)
-                if (!keyProvenance[keyProvenance.length - 1].record.isPublicKey) {
+                // Make sure key is NOT a public record (public records do not have the ability to recall)
+                if (!keyProvenance[keyProvenance.length - 1].record.isPublicRecord) {
                     let uniqueChildKeys = deduplicateKeys(getChildKeys(keyProvenance));
 
                     if (uniqueChildKeys.includes(recordKey)) {

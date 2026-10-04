@@ -51,7 +51,7 @@ export default {
                     const formattedTags = `[${tags}]`;
 
                     //Get public record
-                    const publicKey = provenanceItem.record?.publicKey?.replace(/"/g, '""') || '';
+                    const publicRecord = provenanceItem.record?.publicRecord?.replace(/"/g, '""') || '';
 
                     // Get attachment filename
                     const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -73,7 +73,7 @@ export default {
                     const deviceKey = this.recordKey;
 
                     // Concatenate relevant data for csv file
-                    csvContent += `"${timestamp}","${deviceKey}","${deviceName}","${deviceUrl}","${description}",${formattedTags},"${publicKey}","${stringifyAttachmentName}"\n`;
+                    csvContent += `"${timestamp}","${deviceKey}","${deviceName}","${deviceUrl}","${description}",${formattedTags},"${publicRecord}","${stringifyAttachmentName}"\n`;
                 }
 
                 // Create and trigger download

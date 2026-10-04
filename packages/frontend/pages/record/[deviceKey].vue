@@ -43,7 +43,7 @@ const hasParent = recordHasParent(provenance);
 
                             <div class="h5" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-                            <div class="h5" v-else-if="deviceRecord.isPublicKey">Public Record: {{ _recordKey }}</div>
+                            <div class="h5" v-else-if="deviceRecord.isPublicRecord">Public Record: {{ _recordKey }}</div>
                             <div class="h5" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
                             <div class="h5" v-else>Record Key: {{ _recordKey }}</div>
 
@@ -85,11 +85,11 @@ const hasParent = recordHasParent(provenance);
                     <!--QR Code modal-->
                     <ModalsQRCode :url="qrCodeUrl" />
 
-                    <div v-if="hasPublicKey"> Public Record:
-                        <div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
+                    <div v-if="hasPublicRecord"> Public Record:
+                        <div> <a :href="`/history/${deviceRecord?.publicRecord}`">{{ deviceRecord?.publicRecord }}</a></div>
                     </div>
 
-                    <div v-if="(childKeys?.length > 0) || hasPublicKey">
+                    <div v-if="(childKeys?.length > 0) || hasPublicRecord">
                         <div class="mb-3"> 
                             <h4>Child Keys</h4>
                             <div>
@@ -153,7 +153,7 @@ export default {
         return {
             isLoading: true,
             recordKeyFound: true,
-            hasPublicKey: false,
+            hasPublicRecord: false,
             childKeys: [] as string[],
             loadingKey: 0,
             _recordKey: "",
@@ -193,11 +193,11 @@ export default {
             const response = await getProvenance(this._recordKey);
             deviceRecord = response[response.length - 1].record;
             console.log("device record: ", deviceRecord);
-            this.hasPublicKey = (deviceRecord.publicKey ? true : false);
-            // We will remove the publicKey, because although it is a child,
+            this.hasPublicRecord = (deviceRecord.publicRecord ? true : false);
+            // We will remove the publicRecord, because although it is a child,
             // we have already rendered it.
-            if (this.hasPublicKey) {
-                const index = deviceRecord.children_key.indexOf(deviceRecord.publicKey, 0);
+            if (this.hasPublicRecord) {
+                const index = deviceRecord.children_key.indexOf(deviceRecord.publicRecord, 0);
                 if (index > -1) {
                     deviceRecord.children_key.splice(index, 1);
                 }

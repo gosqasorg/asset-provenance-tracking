@@ -45,7 +45,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: "",
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const groupFormData = new FormData();
@@ -56,7 +56,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: [childKey],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const [childResponse, groupResponse] = await Promise.all([
@@ -97,7 +97,7 @@ describe("Group Creation Tests", () => {
 				tags: [],
 				children_key: "",
 				hasParent: false,
-				isPublicKey: false
+				isPublicRecord: false
 			}));
 			
 			return fetch(`${baseUrl}/provenance/${key}`, {
@@ -120,7 +120,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: childKeys,
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
@@ -150,8 +150,8 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 
-    // Test public key functionality
-    it("should create a group record with a public key", async () => {
+    // Test public record functionality
+    it("should create a group record with a public record", async () => {
         // Generate all device keys 
 		const numChildKeys = 2;
 		const keyPromises = [
@@ -162,42 +162,42 @@ describe("Group Creation Tests", () => {
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
 
         const groupKey = keys[0];
-		const publicKey = keys[1];
+		const publicRecord = keys[1];
 		const childKey = keys[2];
-		let childKeys = [childKey, publicKey];
+		let childKeys = [childKey, publicRecord];
 
-		// Create a group with a child and a public key
+		// Create a group with a child and a public record
 		const groupFormData = new FormData();
 		groupFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
 			deviceName: "group_public_test",
-			description: "Group with a public key and a regular child",
+			description: "Group with a public record and a regular child",
 			tags: [],
 			children_key: childKeys,
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
         const childFormData = new FormData();
 		childFormData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
 			deviceName: `child_1_public_test`,
-			description: `Child 1 to compare to public key`,
+			description: `Child 1 to compare to public record`,
 			tags: ["public-test", "child", `child-1`],
 			children_key: "",
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 
 		const publicData = new FormData();
 		publicData.append("provenanceRecord", JSON.stringify({
 			blobType: "deviceInitializer",
-			deviceName: `public_key_public_test`,
-			description: `A public key to test public key functionality`,
-			tags: ["public-test", "publicKey"],
+			deviceName: `public_record_public_test`,
+			description: `A public record to test public record functionality`,
+			tags: ["public-test", "publicRecord"],
 			children_key: "",
 			hasParent: false,
-			isPublicKey: true
+			isPublicRecord: true
 		}));
 		
 		const creationPromises = [
@@ -209,7 +209,7 @@ describe("Group Creation Tests", () => {
 				method: "POST",
 				body: childFormData,
 			}),
-			fetch(`${baseUrl}/provenance/${publicKey}`, {
+			fetch(`${baseUrl}/provenance/${publicRecord}`, {
 				method: "POST",
 				body: publicData,
 			}),
@@ -230,7 +230,7 @@ describe("Group Creation Tests", () => {
 		);
 		const [retrievedGroup, retrievedChild, retrievedPublic] = verificationData;
 		
-		// Verify that the records were created, and that the public key is a public key
+		// Verify that the records were created, and that the public record is a public record
 		expect(retrievedGroup).toBeDefined();
 		expect(retrievedGroup.length).toBeGreaterThan(0);
 		expect(retrievedGroup[0].record.deviceName).toBe("group_public_test");
@@ -243,11 +243,11 @@ describe("Group Creation Tests", () => {
 
 		expect(retrievedPublic).toBeDefined();
 		expect(retrievedPublic.length).toBeGreaterThan(0);
-		expect(retrievedPublic[0].record.deviceName).toBe(`public_key_public_test`);
-		expect(retrievedPublic[0].record.tags).toContain("publicKey");
-		expect(retrievedPublic[0].record.isPublicKey).toBe(true);
+		expect(retrievedPublic[0].record.deviceName).toBe(`public_record_public_test`);
+		expect(retrievedPublic[0].record.tags).toContain("publicRecord");
+		expect(retrievedPublic[0].record.isPublicRecord).toBe(true);
 
-		// Recall a new record (should be sent to parent and child, not public key)
+		// Recall a new record (should be sent to parent and child, not public record)
 		const recallRecord = {
 			blobType: 'deviceRecord',
 			description: "Updated only the child with recall",
@@ -264,7 +264,7 @@ describe("Group Creation Tests", () => {
 		});
 		expect(recallResponse.ok).toBe(true);
 
-		// Send new record to children (should be sent to parent and child, not public key)
+		// Send new record to children (should be sent to parent and child, not public record)
 		const recordToSend = {
 			blobType: 'deviceRecord',
 			description: "Send record entry to all children",
@@ -287,7 +287,7 @@ describe("Group Creation Tests", () => {
 		expect(sendToChildrenUpdateResponse.ok).toBe(true);
 		expect(sendToChildrenResponse.ok).toBe(true);
 
-		// Make sure the child got the recalled/received record from the group and that the public key did not get them
+		// Make sure the child got the recalled/received record from the group and that the public record did not get them
 		const updatePromises = [
 			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
 		];
@@ -295,17 +295,17 @@ describe("Group Creation Tests", () => {
 		const updateData = await Promise.all(
 			updateResponses.map(res => res.json())
 		);
-		const [childRecord, publicRecord] = updateData;
+		const [childRecord, publicRecordData] = updateData;
 
 		expect(childRecord[1].record.description).toBe("Recalled");
 		expect(childRecord[1].record.tags).toStrictEqual(['recall', 'public-test']);
 		expect(childRecord[0].record.description).toBe("Send record entry to all children");
 		expect(childRecord[0].record.tags).toStrictEqual(['sent_to_all_children', 'public-test', 'test-2']);
 
-		expect(publicRecord.length).toBe(1);
-		expect(publicRecord[0].record.description).toBe(`A public key to test public key functionality`);
-		expect(publicRecord[0].record.deviceName).toBe(`public_key_public_test`);
-		expect(publicRecord[0].record.tags).toStrictEqual(['public-test', 'publicKey']);
+		expect(publicRecordData.length).toBe(1);
+		expect(publicRecordData[0].record.description).toBe(`A public record to test public record functionality`);
+		expect(publicRecordData[0].record.deviceName).toBe(`public_record_public_test`);
+		expect(publicRecordData[0].record.tags).toStrictEqual(['public-test', 'publicRecord']);
     });
 
 
@@ -332,7 +332,7 @@ describe("Group Creation Tests", () => {
 				tags: ["feature-complete", "child", `child-${i + 1}`],
 				children_key: "",
 				hasParent: false,
-				isPublicKey: false
+				isPublicRecord: false
 			}));
 			
 			return fetch(`${baseUrl}/provenance/${key}`, {
@@ -355,7 +355,7 @@ describe("Group Creation Tests", () => {
 			tags: ["feature-complete", "group", "comprehensive", "all-features"],
 			children_key: childKeys,
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
@@ -420,7 +420,7 @@ describe("Group Creation Tests", () => {
 			tags: ["tag-feature", "child"],
 			children_key: "",
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 			
 		const childResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
@@ -439,7 +439,7 @@ describe("Group Creation Tests", () => {
 			tags: ["tag-feature", "Group: 1 child"],
 			children_key: [childKey],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
@@ -496,7 +496,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: childKeys,
 			hasParent: false,
-			inPublicKey: false
+			inPublicRecord: false
 		}));
 
 		let childFormData;
@@ -512,7 +512,7 @@ describe("Group Creation Tests", () => {
 				tags: [],
 				children_key: "",
 				hasParent: true,
-				isPublicKey: false
+				isPublicRecord: false
 			}));
 			return fetch(`${baseUrl}/provenance/${key}`, {
 				method: "POST",
@@ -596,7 +596,7 @@ describe("Group Creation Tests", () => {
 				tags: [],
 				children_key: "",
 				hasParent: false,
-				isPublicKey: false
+				isPublicRecord: false
 			}));
 			
 			return fetch(`${baseUrl}/provenance/${key}`, {
@@ -620,7 +620,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: childKeys,
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
@@ -670,7 +670,7 @@ describe("Group Creation Tests", () => {
         	tags: [],
         	children_key: "",
         	hasParent: false,
-        	isPublicKey: false
+        	isPublicRecord: false
     	}));
     	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
     	expect(childPost.ok).toBe(true)
@@ -684,7 +684,7 @@ describe("Group Creation Tests", () => {
         	tags: [],
         	children_key: [childKey],
         	hasParent: false,
-        	isPublicKey: false
+        	isPublicRecord: false
     	}));
 
         try {
@@ -715,7 +715,7 @@ describe("Group Creation Tests", () => {
 			expect(responseString.record.description).toBe('group with a single attachment')
 			expect(responseString.record.children_key[0]).toBe(childKey)
 			expect(responseString.record.hasParent).toBe(false)
-			expect(responseString.record.isPublicKey).toBe(false)
+			expect(responseString.record.isPublicRecord).toBe(false)
             expect(responseString.attachments.length).toBe(1)
 
     		const groupEntry = getResponse[0]
@@ -776,7 +776,7 @@ describe("Group Creation Tests", () => {
         	tags: [],
         	children_key: "",
         	hasParent: false,
-        	isPublicKey: false
+        	isPublicRecord: false
     	}));
     	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
     	expect(childPost.ok).toBe(true)
@@ -790,7 +790,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: [childKey],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		try {
@@ -855,7 +855,7 @@ describe("Group Creation Tests", () => {
         	tags: [],
         	children_key: "",
         	hasParent: false,
-        	isPublicKey: false
+        	isPublicRecord: false
     	}));
     	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
     	expect(childPost.ok).toBe(true)
@@ -869,7 +869,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: [childKey],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		try {
@@ -933,7 +933,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: "",
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
 		expect(childPost.ok).toBe(true)
@@ -946,7 +946,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: [childKey],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 
 		try {
@@ -1005,7 +1005,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: [],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		
 		const groupResponse = await fetch(`${baseUrl}/provenance/${invalidGroupKey}`, {
@@ -1033,7 +1033,7 @@ describe("Group Creation Tests", () => {
 			tags: [],
 			children_key: [],
 			hasParent: false,
-			isPublicKey: false
+			isPublicRecord: false
 		}));
 		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
 			method: "POST",
@@ -1075,7 +1075,7 @@ describe("Record Creation Tests", () => {
 				tags: [],
 				children_key: '',
 				hasParent: false,
-				isPublicKey: false,
+				isPublicRecord: false,
 			}
 			const formData = new FormData();
     		formData.append("provenanceRecord", JSON.stringify(data));
@@ -1107,7 +1107,7 @@ describe("Record Creation Tests", () => {
 			expect(responseString.record.description).toBe('An API smoketest for creating the most basic record');
 			expect(responseString.record.children_key).toBe("");
 			expect(responseString.record.hasParent).toBe(false);
-			expect(responseString.record.isPublicKey).toBe(false);
+			expect(responseString.record.isPublicRecord).toBe(false);
 
 		} catch(error) {
 			console.error('(Create GET Test) Failed to fetch url: ' + fullUrl + '\nError: ' + error) 
@@ -1139,7 +1139,7 @@ describe("Record Creation Tests", () => {
 				tags: ['smoketest', 'api'],
 				children_key: '',
 				hasParent: false,
-				isPublicKey: false,
+				isPublicRecord: false,
 			}
 			const formData = new FormData();
 			formData.append("provenanceRecord", JSON.stringify(data));

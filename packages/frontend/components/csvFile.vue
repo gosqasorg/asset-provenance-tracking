@@ -23,20 +23,20 @@ export default {
                 const provenance = await getProvenance(this.recordKey);
                 const childrenKeys = await getChildrenKeys(this.recordKey);
 
-                const publicRecord = provenance?.[0]?.record;
-                const publicKey = publicRecord?.publicKey || '';
+                const publicRecordData = provenance?.[0]?.record;
+                const publicRecord = publicRecordData?.publicRecord || '';
 
                 const parentUrl = (window.location.origin + this.$route.fullPath).replace(/,+$/, '');
-                const parentName = publicRecord.deviceName?.replace(/"/g, '""') || '';
+                const parentName = publicRecordData.deviceName?.replace(/"/g, '""') || '';
 
                 // Skip the parent
                 const filteredChildrenKeys = childrenKeys.filter(key =>
                     key !== this.recordKey
                 );
 
-                let isPublicKey = ''; //Flag to check if row is the record key row or not
+                let isPublicRecord = ''; //Flag to check if row is the record key row or not
 
-                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Public Record', 'Child Name', 'Child Key', 'Child Key URL', 'isPublicKey']];
+                const csvRows = [['Parent Record Key', 'Parent URL', 'Parent Device Name', 'Public Record', 'Child Name', 'Child Key', 'Child Key URL', 'isPublicRecord']];
 
                 for (const childKey of filteredChildrenKeys) {
                 
@@ -46,22 +46,22 @@ export default {
                     const childName = record.deviceName || '';
                     const childUrl = `${window.location.origin}/history/${childKey}`;
 
-                    if (childKey == publicKey){
-                        isPublicKey = 'T';
+                    if (childKey == publicRecord){
+                        isPublicRecord = 'T';
                     }
                     else{
-                        isPublicKey = 'F';
+                        isPublicRecord = 'F';
                     }
 
                     csvRows.push([
                         `"${this.recordKey}"`,
                         `"${parentUrl}"`,
                         `"${parentName}"`,
-                        `"${publicKey}"`,
+                        `"${publicRecord}"`,
                         `"${childName.replace(/"/g, '""')}"`,
                         `"${childKey}"`,
                         `"${childUrl}"`,
-                        `"${isPublicKey}"`
+                        `"${isPublicRecord}"`
                     ]);
                 }
 

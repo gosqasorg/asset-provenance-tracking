@@ -15,7 +15,7 @@ async function createRequest (
     tags: [],
     children_key: '',
     hasParent: false,
-    isPublicKey: false
+    isPublicRecord: false
   };
 
   const formData = new FormData();

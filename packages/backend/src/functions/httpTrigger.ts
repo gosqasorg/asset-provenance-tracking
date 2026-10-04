@@ -697,7 +697,7 @@ export function validateRecordJSON(json: any) {
         description: z.string(),
         deviceName: z.string(),
         hasParent: z.boolean(),
-        isPublicKey: z.boolean().optional(),
+        isPublicRecord: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
     });
 
@@ -754,8 +754,8 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recieve records from the group)
-                if (!keyProvenance[0].record.isPublicKey) {
+                // Make sure key is NOT a public record (public records do not have the ability to recieve records from the group)
+                if (!keyProvenance[0].record.isPublicRecord) {
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
 
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
@@ -870,8 +870,8 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                 const keyProvenance = await getKey.json();
 
 
-                // Make sure key is NOT a public key (public keys do not have the ability to recall)
-                if (!keyProvenance[0].record.isPublicKey) {
+                // Make sure key is NOT a public record (public records do not have the ability to recall)
+                if (!keyProvenance[0].record.isPublicRecord) {
 
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
                     if (uniqueChildKeys.includes(deviceKey.toString())) {
@@ -1388,7 +1388,7 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
     }
 }
 
-async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicKey: boolean = false ) {
+async function createChild(context: InvocationContext, description: string, custom_title: string, tags: string[] = [], isPublicRecord: boolean = false ) {
     /* 
     Note to self: Curious that since children are created before the group parent (implied by groups taking the 
     list of child keys), hasParent is set before the parent exists. What if parent creation fails? Retries don't
@@ -1410,7 +1410,7 @@ async function createChild(context: InvocationContext, description: string, cust
             children_key: "",
             tags: tags,
             hasParent: true,
-            isPublicKey: isPublicKey
+            isPublicRecord: isPublicRecord
         }));
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Response
@@ -1428,7 +1428,7 @@ async function createChild(context: InvocationContext, description: string, cust
     }
 }
 
-async function createChildren(context, description: string, number_of_children: number,  custom_child_titles: string[], hasPublicKey: boolean, tags: string[] = []) {
+async function createChildren(context, description: string, number_of_children: number,  custom_child_titles: string[], hasPublicRecord: boolean, tags: string[] = []) {
     const childrenKeys = []  // Named to correspond with metadatum name expected by frontend
     let thisChild;
     
@@ -1439,10 +1439,10 @@ async function createChildren(context, description: string, number_of_children: 
         childrenKeys.push(thisChild)
     }
 
-    if (hasPublicKey){
-        const publicTags = [...tags, "publickey"]
-        thisChild = await createChild(context,description,"Public Key", publicTags, true)
-        if(thisChild){ // checks to see that public key was made.
+    if (hasPublicRecord){
+        const publicTags = [...tags, "publicrecord"]
+        thisChild = await createChild(context,description,"Public Record", publicTags, true)
+        if(thisChild){ // checks to see that public record was made.
             childrenKeys.push(thisChild)
         }
     }
@@ -1450,7 +1450,7 @@ async function createChildren(context, description: string, number_of_children: 
     return childrenKeys; 
 }
 
-async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = []) {
+async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicRecord: boolean, tags: string[], attachments: NamedBlob[] = []) {
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1471,8 +1471,8 @@ async function createGroup(context, name, description, n_children: number = 0, c
         }
     };
     // Create children first
-    let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
-    let totalChildren = n_children + (hasPublicKey ? 1 : 0)
+    let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicRecord, tags)
+    let totalChildren = n_children + (hasPublicRecord ? 1 : 0)
     if (childKeys.length !== totalChildren) {
         throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
     }
@@ -1480,9 +1480,9 @@ async function createGroup(context, name, description, n_children: number = 0, c
     const groupKey = await makeEncodedDeviceKey()
     const groupFormData = new FormData();
 
-    let public_key = '';
-    if(hasPublicKey){
-        public_key = childKeys.at(-1);
+    let public_record = '';
+    if(hasPublicRecord){
+        public_record = childKeys.at(-1);
     }
 
     groupFormData.append("provenanceRecord", JSON.stringify({
@@ -1492,10 +1492,10 @@ async function createGroup(context, name, description, n_children: number = 0, c
         number_of_children: n_children,
         children_key: childKeys,   
         children_name: custom_child_titles,
-        ...(public_key ? { publicKey: public_key } : {}), // only gets added if public key is present
+        ...(public_record ? { publicRecord: public_record } : {}), // only gets added if public record is present
         tags: tags,         
         hasParent: false,
-        isPublicKey: false
+        isPublicRecord: false
     })); context.log(groupFormData)
 
     for (const attachment of attachments) {
@@ -1521,12 +1521,12 @@ const GroupCreationOrderSchema = z.object({
     deviceName: z.string(),
     description: z.string(),
     tags: z.array(z.string()).optional(),
-    publicKey: z.string().optional(),
+    publicRecord: z.string().optional(),
     number_of_children: z.number().optional(),
-    hasPublicKey: z.boolean().optional(),
+    hasPublicRecord: z.boolean().optional(),
     custom_record_titles: z.array(z.string()).optional(),
     children_name: z.array(z.string()).optional(),
-    create_public_key: z.boolean().optional()
+    create_public_record: z.boolean().optional()
 });
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -1551,10 +1551,10 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let title = theRequest['deviceName']
         let description = theRequest['description']
         let n_children = theRequest['number_of_children']
-        let hasPublicKey = theRequest['hasPublicKey']
+        let hasPublicRecord = theRequest['hasPublicRecord']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
+        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicRecord, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
         return {
@@ -1612,7 +1612,7 @@ async function createRecord(context, name, description, tags, attachments) {
             tags: tags,
             children_key: '',
             hasParent: false,
-            isPublicKey: false,
+            isPublicRecord: false,
         };
 
         // use uploadProvenance to post the record and any attachments
@@ -1646,7 +1646,7 @@ const RecordCreationOrderSchema = z.object({
     children_key: z.union([z.string(), z.array(z.string())]),
     children_name: z.array(z.string()).optional(),
     hasParent: z.boolean().optional(),
-    isPublicKey: z.boolean().optional(),
+    isPublicRecord: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
 });
 

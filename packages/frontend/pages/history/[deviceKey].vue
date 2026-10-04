@@ -114,7 +114,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 
 				<div class="rec" v-if="deviceRecord?.children_key && hasParent">Group & Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="deviceRecord?.children_key">Group Record Key: {{ _recordKey }}</div>
-				<div class="rec" v-else-if="deviceRecord.isPublicKey">Public Record: {{ _recordKey }}</div>
+				<div class="rec" v-else-if="deviceRecord.isPublicRecord">Public Record: {{ _recordKey }}</div>
 				<div class="rec" v-else-if="hasParent">Child Record Key: {{ _recordKey }}</div>
 				<div class="rec" v-else>Record Key: {{ _recordKey }}</div>
 
@@ -186,10 +186,10 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 			User Manual
 			</a>
 
-			<div v-if="hasPublicKey"> Public Record:
-				<div> <a :href="`/history/${deviceRecord?.publicKey}`">{{ deviceRecord?.publicKey }}</a></div>
+			<div v-if="hasPublicRecord"> Public Record:
+				<div> <a :href="`/history/${deviceRecord?.publicRecord}`">{{ deviceRecord?.publicRecord }}</a></div>
 			</div>
-			<div v-if="(childKeys?.length > 0) || hasPublicKey">
+			<div v-if="(childKeys?.length > 0) || hasPublicRecord">
 				<div> Child Keys:
 				<div>
 					<KeyList v-bind:keys="childKeys" />
@@ -252,7 +252,7 @@ data() {
         isCreating: false,
         isLoading: true,
         recordKeyFound: false,
-        hasPublicKey: false,
+        hasPublicRecord: false,
         childKeys: [] as string[],
         _recordKey: "",
         valid: false,
@@ -328,7 +328,7 @@ async mounted() {
 		this.hasRecalledRecord = false;
         this.isCreating = false;
         this.recordKeyFound = false;
-        this.hasPublicKey = false;
+        this.hasPublicRecord = false;
         setTimeout(() => {
           this.isLoading = false;
         }, 1000); // logs after 1 second
@@ -397,7 +397,7 @@ methods: {
 		});
 		this.isLoading = false;
 		this.recordKeyFound = false;
-		this.hasPublicKey = false;
+		this.hasPublicRecord = false;
 		this.childKeys = [];
 		this.valid = false;
 		return;
@@ -428,12 +428,12 @@ methods: {
 	}
 
 	// This functionality could be pushed into a component...
-	this.hasPublicKey = (deviceRecord.publicKey ? true : false);
+	this.hasPublicRecord = (deviceRecord.publicRecord ? true : false);
 
-	// We will remove the publicKey, because although it is a child,
+	// We will remove the publicRecord, because although it is a child,
 	// we have already rendered it.
-	if (this.hasPublicKey) {
-		const index = deviceRecord.children_key.indexOf(deviceRecord.publicKey, 0);
+	if (this.hasPublicRecord) {
+		const index = deviceRecord.children_key.indexOf(deviceRecord.publicRecord, 0);
 		if (index > -1) {
 			deviceRecord.children_key.splice(index, 1);
 		}
@@ -446,7 +446,7 @@ methods: {
 	}
 
 	// Add child key navigation if there are child keys
-	if ((this.childKeys?.length > 0) || this.hasPublicKey) {
+	if ((this.childKeys?.length > 0) || this.hasPublicRecord) {
 		headers = [
 		{ id: "device-details", name: "Record details" },
 		{ id: "priority-notices", name: "Priority notices" },

@@ -71,14 +71,14 @@ describe ("Send to All Children Tests", () => {
 
     }, 60000);
 
-    it("Should send entry to children but not to the public key", async() => {
+    it("Should send entry to children but not to the public record", async() => {
         // Create the group/children
         const payload = {
-            deviceName: "Send To Children But Not Public Key",
-            description: "Testing that records sent from the group are not sent to the public key",
+            deviceName: "Send To Children But Not Public Record",
+            description: "Testing that records sent from the group are not sent to the public record",
             tags: [],
             number_of_children: 2,
-            hasPublicKey: true,
+            hasPublicRecord: true,
         };
 
         let formData = new FormData();
@@ -92,20 +92,20 @@ describe ("Send to All Children Tests", () => {
 
         const data = await response.json();
         expect(data.groupUrl).toContain("/record/");
-        console.log("(Send to Children Not Public Key Test) Group Url:", data);
+        console.log("(Send to Children Not Public Record Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
         const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
         const groupProvenance = await groupResponse.json();
         const groupRecord = groupProvenance[0].record;
 
-        const publicKey: string = groupRecord.publicKey;
+        const publicRecord: string = groupRecord.publicRecord;
         let childKeys: string[] = groupRecord.children_key;
-        childKeys.splice(childKeys.indexOf(publicKey), 1);
+        childKeys.splice(childKeys.indexOf(publicRecord), 1);
 
         // Add an entry to the group and send it to all children
         const newPayload = {
-            description: "Sending record entry to all children and confirming it's not sent to the public key...",
+            description: "Sending record entry to all children and confirming it's not sent to the public record...",
             tags: ["Harry", "Ron", "Hermione"],
             send_to_all_children: true
         };
@@ -129,13 +129,13 @@ describe ("Send to All Children Tests", () => {
             expect(childRecord.tags).toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
         }
 
-        // Look at the public key and confirm it did not receive the record entry
-        const publicProvenance = await fetch(`${baseUrl}/provenance/${publicKey}`);
+        // Look at the public record and confirm it did not receive the record entry
+        const publicProvenance = await fetch(`${baseUrl}/provenance/${publicRecord}`);
         const publicData = await publicProvenance.json();
-        const publicRecord = publicData[0].record;
+        const publicRecordData = publicData[0].record;
 
-        expect(publicRecord.description).not.toBe(newPayload.description);
-        expect(publicRecord.tags).not.toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
+        expect(publicRecordData.description).not.toBe(newPayload.description);
+        expect(publicRecordData.tags).not.toEqual(["Harry", "Ron", "Hermione", "sent_to_all_children"]);
 
     }, 60000);
 
@@ -266,14 +266,14 @@ describe ("Send to All Children Tests", () => {
 
 
 describe("Group Creation Tests", () => {
-    // Test public key functionality
-    it("should create a group record with a public key", async () => {
+    // Test public record functionality
+    it("should create a group record with a public record", async () => {
 		const groupPayload = {
-			deviceName: "group_record_with_public_key",
-			title: "group_record_with_public_key",
-			description: "group record with a public key integration test",
+			deviceName: "group_record_with_public_record",
+			title: "group_record_with_public_record",
+			description: "group record with a public record integration test",
 			number_of_children: 1,
-			hasPublicKey: true,
+			hasPublicRecord: true,
 			tags: [],
 		};
 
@@ -310,15 +310,15 @@ describe("Group Creation Tests", () => {
 		const childKeys: string[] = groupRecord.children_key;
 		expect(childKeys.length).toBe(groupPayload.number_of_children + 1);
 
-		// Verify public key
-		const publicKey = groupRecord.publicKey as string;
-		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
-		expect(publicKeyRes.ok).toBe(true);
-		const publicKeyAttributes = await publicKeyRes.json();
-		expect(publicKeyAttributes.length).toBeGreaterThan(0);
-		const publicKeyRecord = publicKeyAttributes[0].record;
-		expect(publicKeyRecord.isPublicKey).toBe(true);
-		expect(publicKeyRecord.tags).toContain("publickey");
+		// Verify public record
+		const publicRecord = groupRecord.publicRecord as string;
+		const publicRecordRes = await fetch(`${baseUrl}/provenance/${publicRecord}`)
+		expect(publicRecordRes.ok).toBe(true);
+		const publicRecordAttributes = await publicRecordRes.json();
+		expect(publicRecordAttributes.length).toBeGreaterThan(0);
+		const publicRecordData = publicRecordAttributes[0].record;
+		expect(publicRecordData.isPublicRecord).toBe(true);
+		expect(publicRecordData.tags).toContain("publicrecord");
     }, 60000);
 
 	it("should create a group record with tags", async () => {
@@ -327,7 +327,7 @@ describe("Group Creation Tests", () => {
 			title: "group_record_with_tags",
 			description: "group record with tags integration test",
 			number_of_children: 1,
-			hasPublicKey: false,
+			hasPublicRecord: false,
 			tags: ["integration_test", "record_tags"],
 		};
 

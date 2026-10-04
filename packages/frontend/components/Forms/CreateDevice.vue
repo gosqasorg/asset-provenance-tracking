@@ -141,7 +141,7 @@ export default {
             tags: [] as string[],
             emailTags: [] as string[],  // tags for specified tag signup
             children_key: '',
-            isPublicKey: false, // states whether this device is a reporting key
+            isPublicRecord: false, // states whether this device is a reporting key
             hasParent: false, // states whether a record is contained within a box/container
             pictures: [] as File[] | null,
             isSubmitting: false,  // bool to check that form is submitted
@@ -163,7 +163,7 @@ export default {
 
         // Only fill in stashed information if we redirected from the offline edits page
         if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.isPublicKey = this.stashedRecord.isPublicKey
+            this.isPublicRecord = this.stashedRecord.isPublicRecord
             this.hasParent = this.stashedRecord.hasParent
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
             this.name = this.stashedRecord.deviceName
@@ -252,7 +252,7 @@ export default {
                     tags: this.tags,
                     children_key: '',
                     hasParent: this.hasParent,
-                    isPublicKey: this.isPublicKey,
+                    isPublicRecord: this.isPublicRecord,
                 }, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {

@@ -46,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
 
             <h4 class="p-1 my-0">
-                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicKey" /> Create Public Record
+                <input type="checkbox" class="form-check-input" id="report-key" v-model="createPublicRecord" /> Create Public Record
             </h4>
 
             <!-- Subscribe to tag notifications -->
@@ -154,9 +154,9 @@ export default {
             childrenKey: [] as string[], // list of children keys
             childrenName: [] as string[], // list of children names
             childrenKeys: 0, // number of new children to create
-            publicKey: '',
+            publicRecord: '',
             emailTags: [] as string[],  // tags for specified tag signup
-            createPublicKey: false,
+            createPublicRecord: false,
             pictures: [] as File[] | null,
             notify: false,          //sign up for email notifs vals
             notifyTags: false,      // email tag notification checkbox
@@ -181,7 +181,7 @@ export default {
         if (isGroup === "true" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
             this.childrenKey = this.stashedRecord.children_key
             this.childrenName = this.stashedRecord.children_name
-            this.publicKey = this.stashedRecord.publicKey
+            this.publicRecord = this.stashedRecord.publicRecord
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
             this.name = this.stashedRecord.deviceName
             this.description = this.stashedRecord.description
@@ -321,7 +321,7 @@ export default {
                             tags: [],
                             children_key: '',
                             hasParent: true,
-                            isPublicKey: false
+                            isPublicRecord: false
                         }, [])
                         
                         this.$snackbar.add({
@@ -349,23 +349,23 @@ export default {
                 }
             };
 
-            if (this.createPublicKey) {
+            if (this.createPublicRecord) {
                 // Should be higher up?
-                this.publicKey = await makeEncodedDeviceKey();  // reporting key = public record
-                let tag_set = (this.tags).concat(['publickey']);
+                this.publicRecord = await makeEncodedDeviceKey();  // reporting key = public record
+                let tag_set = (this.tags).concat(['publicrecord']);
 
                 try {
-                    this.childrenKey.push(this.publicKey);
+                    this.childrenKey.push(this.publicRecord);
                     this.childrenName.push(this.name);
 
-                    await postProvenance(this.publicKey, {
+                    await postProvenance(this.publicRecord, {
                         blobType: 'deviceInitializer',
                         deviceName: this.name,
                         description: '',
                         tags: tag_set,
                         children_key: '',
                         hasParent: true,
-                        isPublicKey: true,
+                        isPublicRecord: true,
                     }, [])
                     
                     this.$snackbar.add({
@@ -405,11 +405,11 @@ export default {
                     deviceName: this.name,
                     description: this.description,
                     tags:this.tags,
-                    publicKey: this.publicKey, 
+                    publicRecord: this.publicRecord, 
                     children_key: this.childrenKey,
                     children_name: this.childrenName,
                     hasParent: false,
-                    isPublicKey: false
+                    isPublicRecord: false
                 }, this.pictures || [])
 
                 // If the group is being created from the offline edits page move it to the fulfilled stash
