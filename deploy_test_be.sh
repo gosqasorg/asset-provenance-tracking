@@ -16,8 +16,7 @@ export MY_STATIC_WEB_APP_NAME=gdt-test-frontend
 # Deploy function app
 ./npm-install-everything.sh  # Make double sure everything gets installed
 cd packages/backend
-npm install
 npm run build
-rm -rf node_modules
+#rm -rf node_modules
 func azure functionapp publish $FUNC_NAME
 
