@@ -73,6 +73,39 @@ async function runQuery(query: string, context): Promise<[string, number][]> {
     }
 }
 
+// Runs the query, transforms the data for the chart, and stores it in serverResponseTimeStore.
+async function prepareServerResponseTimeDataForChart(context: InvocationContext): Promise<void> {
+    context.log('Entering prepareServerResponseTimeDataForChart')
+
+    try {
+        const rows = await runQuery(`
+            AppRequests
+            | where TimeGenerated > ago(365d)
+            | summarize avgRequestDuration=avg(DurationMs) by bin(TimeGenerated, 10m)
+        `, context)
+
+        if (!rows) {
+            throw new Error('Server response time query returned no result')
+        }
+
+        // Transform data to points: { x, y }, checks x, y are finite numbers, and sorts by timeGenerated (in ascending order)
+        const points = rows
+            .map(([timeGenerated, avgRequestDuration]) => ({
+                x: Date.parse(timeGenerated),
+                y: Number(avgRequestDuration),
+            }))
+            .filter(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
+            .sort((a, b) => a.x - b.x)
+
+        serverResponseTimeStore.points = points
+        serverResponseTimeStore.updatedAt = new Date().toISOString()
+
+        context.log(`Updated server response time data with ${points.length} points`)
+    } catch (error) {
+        context.log(`Leaving prepareServerResponseTimeDataForChart, error occurred: ${error}`)
+    }
+}
+
 
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
