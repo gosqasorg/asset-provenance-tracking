@@ -16,8 +16,11 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
-// If we're not on prod turn offline features on
 export var offlineModeFeatureFlag = false;
+export function updateOfflineFeatureFlag(featuresEnabled: boolean) {
+    // Set the offline feature flag from other files
+    offlineModeFeatureFlag = featuresEnabled;
+}
 
 // Global variable used to control the display of offline banner on create pages
 export var displayOfflineBanner = false;

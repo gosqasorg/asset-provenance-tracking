@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, updateOfflineFeatureFlag, offlineQueueConsumerWorker } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -23,6 +23,27 @@ async function createRequest (
   return [key, formData];
 }
 
+async function createGroupRequest (
+  name: string,
+  description: string
+): Promise<[string, FormData]> {
+  const key = await makeEncodedDeviceKey();
+  const record = {
+    blobType: 'deviceInitializer',
+    deviceName: name,
+    description: description,
+    tags: [],
+    children_key: [],
+    children_name: [],
+    hasParent: false,
+    isPublicKey: false
+  };
+
+  const formData = new FormData();
+  formData.append('provenanceRecord', JSON.stringify(record));
+  return [key, formData];
+}
+
 function resetStashValues(): void {
   // reset the values in localStorage to avoid overlap between tests
   localStorage.setItem('gdt-stash-queued', '');
@@ -33,6 +54,7 @@ function resetStashValues(): void {
 // Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
 const mockFetch = vi.fn();
 global.fetch = mockFetch
+updateOfflineFeatureFlag(true); // todo: confirm the feature flag is set back to false
 
 describe("Offline Function Tests", () => {
     it("Test to confirmRequestFulfilled for new record and record entry created offline", async () => {
@@ -217,4 +239,98 @@ describe("Get/Remove First Queued Request", async() => {
     expect(firstQueueItem["key"]).toEqual(queuedKey2);
     expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
   });
+});
+
+describe("Create Records/Groups Offline", async () => {
+  // Manually call the worker and wait for it to start (since without page load it won't start on it's own)
+  offlineQueueConsumerWorker();
+  await new Promise((r) => setTimeout(r, 15000)); // todo: is there any way to make this better? (could MAYBE let the 7 second wait later count for part of this, since worker only needs to remove??)
+
+  it ("Create Multiple Records and Groups While Offline", async () => {
+    resetStashValues();
+    mockFetch.mockResolvedValue(undefined);
+
+    // Create two records
+    const offlineRequests = [];
+    let [recordKey, recordData] = await createRequest(
+      'Offline Records Test',
+      '1: Test to see if we can create multiple records while offline'
+    );
+    let [recordKey2, recordData2] = await createRequest(
+      'Offline Records Test 2',
+      '2: Test to see if we can create multiple records while offline'
+    );
+    let provenanceRecord = JSON.parse(recordData.get('provenanceRecord') as string);
+    let provenanceRecord2 = JSON.parse(recordData2.get('provenanceRecord') as string);
+    offlineRequests.push({"key": recordKey, "data": provenanceRecord});
+    offlineRequests.push({"key": recordKey2, "data": provenanceRecord2});
+
+    // Create two groups
+    let [groupKey, groupData] = await createGroupRequest(
+      'Offline Groups Test',
+      '1: Test to see if we can create multiple groups while offline'
+    );
+    let [groupKey2, groupData2] = await createGroupRequest(
+      'Offline Groups Test 2',
+      '2: Test to see if we can create multiple groups while offline'
+    );
+    let provenanceGroup = JSON.parse(groupData.get('provenanceRecord') as string);
+    let provenanceGroup2 = JSON.parse(groupData2.get('provenanceRecord') as string);
+    offlineRequests.push({"key": groupKey, "data": provenanceGroup});
+    offlineRequests.push({"key": groupKey2, "data": provenanceGroup2});
+
+    // Attempt to post the groups and records while offline
+    for (let request of offlineRequests) {
+      console.log("loop", request, request["key"]) // delete
+      try {
+        await postProvenance(request["key"], request["data"], []);
+        expect.fail("Expected postProvenance to fail offline to test offline mode features");
+      } catch (error) {
+        expect(error).toEqual(new Error('Status 202: User is offline but the record has been stashed'));
+      }
+    }
+
+    // Confirm the records and groups are now stored in the queue stash
+    let requestsFromQueue = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    expect(requestsFromQueue.length).toEqual(4);
+
+    let stashedRecordRequest = requestsFromQueue[0];
+    let stashedRecordRequest2 = requestsFromQueue[1];
+    expect(stashedRecordRequest["key"]).toEqual(recordKey);
+    expect(stashedRecordRequest["data"]).toStrictEqual(provenanceRecord);
+    expect(stashedRecordRequest2["key"]).toEqual(recordKey2);
+    expect(stashedRecordRequest2["data"]).toStrictEqual(provenanceRecord2);
+
+    let stashedGroupRequest = requestsFromQueue[2];
+    let stashedGroupRequest2 = requestsFromQueue[3];
+    expect(stashedGroupRequest["key"]).toEqual(groupKey);
+    expect(stashedGroupRequest["data"]).toStrictEqual(provenanceGroup);
+    expect(stashedGroupRequest2["key"]).toEqual(groupKey2);
+    expect(stashedGroupRequest2["data"]).toStrictEqual(provenanceGroup2);
+
+    // TODO: test timing with starting the worker to minimize time but guarantee passing (20 seconds total.?)
+    // Go back online and wait for the worker to create the records
+    mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(provenanceRecord)})
+    await new Promise((r) => setTimeout(r, 7000));
+
+    // Confirm the records/groups are no longer in the queue stash
+    requestsFromQueue = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    expect(requestsFromQueue.length).toEqual(0);
+
+    // Confirm the records/groups are in the fulfilled stash
+    let fulfilledKeys = (localStorage.getItem('gdt-stash-fulfilled') || '').split(',');
+    expect(fulfilledKeys.length).toEqual(4);
+
+    let fulfilledRecordKey = fulfilledKeys[0];
+    let fulfilledRecordKey2 = fulfilledKeys[1];
+    expect(fulfilledRecordKey).toEqual(recordKey);
+    expect(fulfilledRecordKey2).toEqual(recordKey2);
+
+    let fulfilledGroupKey = fulfilledKeys[2];
+    let fulfilledGroupKey2 = fulfilledKeys[3];
+    expect(fulfilledGroupKey).toEqual(groupKey);
+    expect(fulfilledGroupKey2).toEqual(groupKey2);
+  });
+
+  // TODO: test records/groups failing (gdt-stash-failed)??
 });
