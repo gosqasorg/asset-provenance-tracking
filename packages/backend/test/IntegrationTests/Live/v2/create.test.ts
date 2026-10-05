@@ -458,7 +458,7 @@ describe("Group Creation Tests", () => {
 
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(invalidPayload));
-        const invalidResponse = await fetch(`${baseUrl}/createGroup`, {
+        const invalidResponse = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
