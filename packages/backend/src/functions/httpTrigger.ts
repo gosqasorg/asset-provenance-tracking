@@ -367,10 +367,30 @@ async function countExistingAttachments(containerClient: ContainerClient, device
 /*=================  Endpoints  =====================*/
 
 /* ----- API Endpoints Section 1/2: Functions ----- */
+function upgradeRecordField(cloneRecord: any, legacyFields: string[], currentField: string) {
+    const presentFieldKeys = legacyFields.filter(k => cloneRecord.hasOwnProperty(k));
+    if (presentFieldKeys.length == 0) return false;
+
+    if (!cloneRecord.hasOwnProperty(currentField)) {
+        cloneRecord[currentField] = cloneRecord[presentFieldKeys[0]]
+    }
+
+    for (const k of presentFieldKeys) delete cloneRecord[k];
+    return true;
+}
+
+function upgradeProvenanceRecordFields(record: any): {upgradedRecord: any, converted: boolean} {
+    const recordClone = {...record}
+    const changeIsKey = upgradeRecordField(recordClone, ["isReportingKey", "isPublicKey"], "isPublicRecord")
+    const changeKey = upgradeRecordField(recordClone, ["reportingKey", "publicKey"], "publicRecord")
+
+    return {upgradedRecord: recordClone, converted: changeIsKey || changeKey}  // Placeholder for future implementation
+}
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
+    const pendingUpgrades = [];
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
@@ -388,8 +408,35 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const json = new TextDecoder().decode(data);
         const parsed_json = JSON.parse(json);
         const provRecord = parsed_json as ProvenanceRecord;
-        records.push({ ...provRecord, deviceID, timestamp });
+
+        // inner fix
+        console.log("Grabbing Record")
+        const { upgradedRecord, converted } = upgradeProvenanceRecordFields(provRecord.record);
+        records.push({ ...provRecord, record: converted ? upgradedRecord : provRecord.record, deviceID, timestamp });
+
+        if (converted) {
+            console.log("record converted")
+            pendingUpgrades.push({ blobName: blob.name, timestamp, attachments: provRecord.attachments, upgradedRecord})
+        }
     }
+
+    //inside blob fix
+    for (const pending of pendingUpgrades) {
+        try {
+            const upgradedProv = {record: pending.upgradedRecord, attachments: pending.attachments}
+            const data = new TextEncoder().encode(JSON.stringify(upgradedProv));
+
+            await upload(containerClient, deviceKey, data, "prov", "application/json", pending.timestamp, undefined);
+
+            // delete the old blob after successfully uploading the new one
+            await containerClient.getBlockBlobClient(pending.blobName).delete();
+            console.log("Successful record conversion")
+        } catch (error){
+            context.error(`Failed to upgrade fields in blob ${pending.blobName}: ${error}`);
+        }
+    }
+
+
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
 }
@@ -754,6 +801,7 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
+            // TODO: ANOTHER PLACE WHERE ISPUBLICRECORD IS CHECKED,
                 // Make sure key is NOT a public record (public records do not have the ability to recieve records from the group)
                 if (!keyProvenance[0].record.isPublicRecord) {
                     let uniqueChildKeys = deduplicateKeys(keyProvenance[0].record.children_key);
@@ -869,7 +917,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                 let getKey = await fetch(`${baseUrl}${key}`);
                 const keyProvenance = await getKey.json();
 
-
+                // TODO: THIS IS WHERE ISPUBLICRECORD IS CHECKED,
                 // Make sure key is NOT a public record (public records do not have the ability to recall)
                 if (!keyProvenance[0].record.isPublicRecord) {
 

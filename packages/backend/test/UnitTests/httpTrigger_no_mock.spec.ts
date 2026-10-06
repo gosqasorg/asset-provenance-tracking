@@ -59,3 +59,18 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   });
  
 });
+
+// Test for upgradeProv
+describe('upgradeProvenanceRecordFields', () => {
+  it('should upgrade a provenance record with isPublicKey and publicKey', () => { 
+    const input = { deviceName: 'lega'}
+  
+  });
+
+  it('should upgrade a provenance record with isPublicKey and publicKey', () => { 
+  });
+
+  it('should upgrade a provenance record with isPublicKey and publicKey', () => { 
+  });
+
+})

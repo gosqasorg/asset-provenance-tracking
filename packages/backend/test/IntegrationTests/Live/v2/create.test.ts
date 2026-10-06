@@ -98,8 +98,11 @@ describe ("Send to All Children Tests", () => {
         const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
         const groupProvenance = await groupResponse.json();
         const groupRecord = groupProvenance[0].record;
+        console.log("Group Record: ", groupRecord);
 
         const publicRecord: string = groupRecord.publicRecord;
+        console.log("Public Record: ", groupRecord.publicRecord);
+
         let childKeys: string[] = groupRecord.children_key;
         childKeys.splice(childKeys.indexOf(publicRecord), 1);
 
@@ -131,6 +134,8 @@ describe ("Send to All Children Tests", () => {
 
         // Look at the public record and confirm it did not receive the record entry
         const publicProvenance = await fetch(`${baseUrl}/provenance/${publicRecord}`);
+        console.log("Public Provenance: ", publicProvenance);
+
         const publicData = await publicProvenance.json();
         const publicRecordData = publicData[0].record;
 
