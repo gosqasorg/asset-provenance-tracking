@@ -340,8 +340,9 @@ export function stashOfflineRequest(currentKey: string, stashName: string, recor
         // Get the existing stashed requests, skip the loop if there are none
         if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
             for (let storedRequest of existingRequests) {
-                if ((record && JSON.stringify(storedRequest["data"]) == JSON.stringify(record))) {
-                    // If new request == existing request, exit without updating the stash
+                // If both the data and the key are the same as an existing record in the stash, exit without updating the stash
+                if (record && (JSON.stringify(storedRequest["data"]) == JSON.stringify(record) 
+                    && storedRequest["key"] == currentKey)) {
                     return;
                 }
 
