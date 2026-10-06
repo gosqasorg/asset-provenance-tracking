@@ -14,7 +14,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-Page will be where users can keep track of records they created
+Page will be where users can keep track of records they cr eated
 while offline.
 -->
 
@@ -28,7 +28,8 @@ while offline.
     </div>
 
     <button class="btn dismiss all" style="width: 19%; margin-right: 15px" @click="dismissAllEditsPopUp=true">Dismiss all edits</button>
-    <button class="btn dismiss published" style="width: 27%" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
+    <button class="btn dismiss published" style="width: 27%; margin-right: 15px" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
+    <button class="btn dismiss all" style="width: 27%" @click="downloadEntriesCSV">Download entries to CSV</button>
 
     <!----------------Dismiss All Edits Popup-------------------->
     <div class="popup" v-if="dismissAllEditsPopUp">
@@ -204,6 +205,33 @@ methods: {
                 type: 'error',
                 text: `Failed to create record: ${error}`
             });
+        }
+    },
+    async downloadEntriesCSV() {
+        try {
+            const csvRows = [['Failed Keys', 'Queued Keys', 'Fulfilled Keys']];
+
+            // Find max length in the three stash so be sure all items are covered in the longest array
+            const maxLength = Math.max(this.failedKeys.length, this.queuedKeys.length, this.fulfilledKeys.length)
+
+            // Extract entries from each stash if any and push to csv
+            for (let i = 0; i < maxLength; i++) {
+                csvRows.push([
+                    `${this.failedKeys[i] ?? ""}`,
+                    `${this.queuedKeys[i] ?? ""}`,
+                    `${this.fulfilledKeys[i] ?? ""}`
+                ]);
+            }
+ 
+            const csvContent = csvRows.map(r => r.join(',')).join('\n');
+            
+            const anchor = document.createElement('a');
+            anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            anchor.target = '_blank';
+            anchor.download = `offlineEntries.csv`;
+            anchor.click();
+        } catch (error) {
+            console.error('Error generating offline entries CSV:', error);
         }
     },
     editSubmission(key: string, index: number) {
