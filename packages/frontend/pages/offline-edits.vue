@@ -14,7 +14,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 <!--
-Page will be where users can keep track of records they cr eated
+Page will be where users can keep track of records they created
 while offline.
 -->
 
@@ -224,7 +224,7 @@ methods: {
             }
  
             const csvContent = csvRows.map(r => r.join(',')).join('\n');
-            
+
             const anchor = document.createElement('a');
             anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
             anchor.target = '_blank';
