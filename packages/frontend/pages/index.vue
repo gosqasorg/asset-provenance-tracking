@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row second-row" id="gdt-section">
             <div style="display:flex; flex-direction:column; gap: 17px;">
                 <h3>Global Distributed Tracking</h3>    
-                <p style="font-weight: 400;">Global Distributed Tracking (GDT) is a free service provided by The Global Open Source Quality Assurance System. GDT create trust through transparency by reducing fraud, theft, and counterfeiting with secure encryption and a simple user interface.</p>
+                <p style="font-weight: 400;">Global Distributed Tracking (GDT) is a free service provided by The Global Open Source Quality Assurance System. GDT creates trust through transparency by reducing fraud, theft, and counterfeiting with secure encryption and a simple user interface.</p>
             </div>
 
             <div>
