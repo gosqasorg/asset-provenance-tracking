@@ -139,7 +139,7 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
   };
   const deviceKey = '5LAtuNjm3iuAR3ohpjTMy7';
-  const attachmentID = 'testattachid';
+  const attachmentID = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
   it('getProvenance returns records', async () => {
     const req = makeHttpRequest({ params: { deviceKey } });
@@ -278,7 +278,7 @@ function makeValidEntity(overrides: Record<string, unknown> = {}) {
         partitionKey: 'PendingVerification',
         rowKey: 'test@example.com',
         code: '123456',
-        token: 'validtoken',
+        token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         expiresAt: Date.now() + 600_000, // 10 min in the future
         recordKey: 'fakerecordkey',
         tags: '[]',
@@ -322,7 +322,7 @@ describe('postNotificationEmail - validation', () => {
     // valid request
     it('returns 200 when all required fields are present', async () => {
         const email = 'user@example.com';
-        const recordKey = 'key123';
+        const recordKey = '5LAtuNjm3iuAR3ohpjTMy8';
         const tags = ['tag1'];
         const req = { json: async () => ({ email, recordKey, tags }) } as any;
 
@@ -398,7 +398,7 @@ describe('getPendingVerification', () => {
 
     // no token found
     it('returns 404 when token is not found', async () => {
-        const req = makeQueryRequest({ token: 'unknowntoken' });
+        const req = makeQueryRequest({ token: 'aaaaaaaaaaaaaaaaaabbbbbbbbbbbbbb' });
         const res = await httpTrigger.getPendingVerification(req, ctx);
         expect(res.status).toBe(404);
     });
@@ -447,7 +447,7 @@ describe('postResendCode', () => {
  
     // invalid token
     it('returns 404 when token is not found', async () => {
-        const req = { json: async () => ({ token: 'unknowntoken' }) } as any;
+        const req = { json: async () => ({ token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }) } as any;
         const res = await httpTrigger.postResendCode(req, ctx);
         expect(res.status).toBe(404);
     });
