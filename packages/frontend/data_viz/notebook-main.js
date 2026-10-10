@@ -1,4 +1,6 @@
 import define1 from "./notebook-chunk.js";
+import {geoRequests} from "./files/geoRequest.js";
+
 
 function _selectedCountry(){return(
 null
@@ -312,8 +314,8 @@ function _chart(d3,filteredCountryData,countries,filteredRegionData,filteredCity
 }
 
 
-async function _data(FileAttachment){return(
-(await FileAttachment("requests-by-country@5.json").json())
+async function _data(geoRequests){return(
+(geoRequests.data)
   .map(d => ({country: d.country, one_year: +d.one_year, six_months: +d.six_months, three_months: +d.three_months, one_month: +d.one_month, one_week: +d.one_week, one_day: +d.one_day}))
 )}
 
@@ -349,14 +351,14 @@ async function geocodeCity(city, state, country) {
 }
 )}
 
-function _requestsByCity(FileAttachment){return(
-FileAttachment("requests-by-city@1.json").json()
+function _requestsByCity(geoRequests){return(
+  geoRequests.requestsByCity
 )}
 
-async function _geocodedCities(FileAttachment,requestsByCity,geocodeCity)
+async function _geocodedCities(geoRequests,requestsByCity,geocodeCity)
 {
   // Start with already geocoded cities
-  const cached = await FileAttachment("cities-geocoded.json").json();
+  const cached = geoRequests.citiesGeocoded;
   const cachedMap = new Map(cached.map(d => [`${d.city}|${d["country/region"]}`, d]));
   
   const results = [];
@@ -383,8 +385,8 @@ function _admin1(FileAttachment){return(
 FileAttachment("ne_10m_admin_1_states_provinces.json").json()
 )}
 
-function _regionData(FileAttachment){return(
-FileAttachment("requests-by-region-within-country.json").json()
+function _regionData(geoRequests){return(
+  geoRequests.regionData
 )}
 
 function _admin1Features(topojson,admin1){return(
@@ -413,8 +415,8 @@ new Map(
 )
 )}
 
-function _recentRequests(FileAttachment){return(
-FileAttachment("recent-requests.json").json()
+function _recentRequests(geoRequests){return(
+  geoRequests.recentRequests
 )}
 
 function _selectedWindow(Inputs){return(
@@ -656,14 +658,14 @@ export default function define(runtime, observer) {
   function toString() { return this.url; }
   const fileAttachments = new Map([
     ["ne_50m_admin_0_map_units@2.json", {url: new URL("./files/ne_50m_admin_0_map_units@2.json", import.meta.url), mimeType: "application/json", toString}],
-    ["requests-by-country@5.json", {url: new URL("./files/requests-by-country@5.json", import.meta.url), mimeType: "application/json", toString}],
-    ["requests-by-city@1.json", {url: new URL("./files/requests-by-city@1.json", import.meta.url), mimeType: "application/json", toString}],
-    ["cities-geocoded.json", {url: new URL("./files/cities-geocoded.json", import.meta.url), mimeType: "application/json", toString}],
-    ["requests-by-region-within-country.json", {url: new URL("./files/requests-by-region-within-country.json", import.meta.url), mimeType: "application/json", toString}],
     ["ne_10m_admin_1_states_provinces.json", {url: new URL("./files/ne_10m_admin_1_states_provinces.json", import.meta.url), mimeType: "application/json", toString}],
-    ["recent-requests.json", {url: new URL("./files/recent-requests.json", import.meta.url), mimeType: "application/json", toString}]
   ]);
+
   main.builtin("FileAttachment", runtime.fileAttachments(name => fileAttachments.get(name)));
+
+  main.define("geoRequests", () => geoRequests);
+
+
   main.define("initial selectedCountry", _selectedCountry);
   main.variable(null).define("mutable selectedCountry", ["Mutable", "initial selectedCountry"], (M, _) => new M(_));
   main.variable(null).define("selectedCountry", ["mutable selectedCountry"], _ => _.generator);
@@ -674,7 +676,7 @@ export default function define(runtime, observer) {
   main.variable(null).define("mutable selectedCity", ["Mutable", "initial selectedCity"], (M, _) => new M(_));
   main.variable(null).define("selectedCity", ["mutable selectedCity"], _ => _.generator);
   main.variable(null).define("chart", ["d3","filteredCountryData","countries","filteredRegionData","filteredCityData","Legend","countrymesh","admin1Features","filteredRegionValuemap","geocodedCities","regionValuemap","mutable selectedCity","mutable selectedCountry","mutable selectedRegion","regionCountryLookup"], _chart);
-  main.variable(null).define("data", ["FileAttachment"], _data);
+  main.variable(null).define("data", ["geoRequests"], _data);
   main.variable(null).define(["md"], _6);
   main.variable(null).define("world", ["FileAttachment"], _world);
   main.variable(null).define("countries", ["topojson","world"], _countries);
@@ -683,14 +685,14 @@ export default function define(runtime, observer) {
   const child1 = runtime.module(define1);
   main.import("Legend", child1);
   main.variable(null).define("geocodeCity", _geocodeCity);
-  main.variable(null).define("requestsByCity", ["FileAttachment"], _requestsByCity);
-  main.variable(null).define("geocodedCities", ["FileAttachment","requestsByCity","geocodeCity"], _geocodedCities);
+  main.variable(null).define("requestsByCity", ["geoRequests"], _requestsByCity);
+  main.variable(null).define("geocodedCities", ["geoRequests","requestsByCity","geocodeCity"], _geocodedCities);
   main.variable(null).define("admin1", ["FileAttachment"], _admin1);
-  main.variable(null).define("regionData", ["FileAttachment"], _regionData);
+  main.variable(null).define("regionData", ["geoRequests"], _regionData);
   main.variable(null).define("admin1Features", ["topojson","admin1"], _admin1Features);
   main.variable(null).define("regionCountryLookup", _regionCountryLookup);
   main.variable(null).define("regionValuemap", ["regionData","regionCountryLookup"], _regionValuemap);
-  main.variable(null).define("recentRequests", ["FileAttachment"], _recentRequests);
+  main.variable(null).define("recentRequests", ["geoRequests"], _recentRequests);
   main.variable(null).define("viewof selectedWindow", ["Inputs"], _selectedWindow);
   main.variable(null).define("selectedWindow", ["Generators", "viewof selectedWindow"], (G, _) => G.input(_));
   main.variable(null).define("detailPanel", ["selectedCity","selectedRegion","selectedCountry","html","selectedWindow","recentRequests"], _detailPanel);
