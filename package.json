@@ -16,8 +16,9 @@
   ],
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
-    "vitest": "^4.1.9",
-    "chart.js": "^4.5.1"
+    "chart.js": "^4.5.1",
+    "mapbox-gl": "^3.32.0",
+    "vitest": "^4.1.9"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.6",

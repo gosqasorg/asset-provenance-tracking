@@ -7,7 +7,7 @@
         
         <!-- TODO: Map Section -->
         <div>
-            
+          <div id="map" style="width: 800px; height: 600px;"></div>
         </div>
 
         <!-- TODO: Stats Section -->
@@ -32,6 +32,78 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+
+let map: mapboxgl.Map | null
+
+onMounted(() => {
+    map = new mapboxgl.Map({
+    accessToken: process.env.MAPBOX_TOKEN,
+    container: 'map',
+    center: [0, 0],
+    zoom: 0.75,
+    style: 'mapbox://styles/mapbox/dark-v10',
+    dragRotate: false, 
+    pitchWithRotate: false, 
+    maxZoom: 7, 
+    minZoom: 0.75
+  })
+
+  map.on('load', () => {
+    map.addSource("country-boundaries", {type: "vector", url: "mapbox://mapbox.country-boundaries-v1"})
+
+    map.addLayer({
+      id: 'countries-fill',
+      type: 'fill',
+      source: 'country-boundaries',
+      "source-layer": "country_boundaries",
+      "filter": [
+        "==", ["get", "disputed"], "false"],
+      "paint": {
+        "fill-color": "rgba(66,100,251, 0.3)",
+        "fill-outline-color": "#0000ff"
+      }
+    })
+
+    map.addLayer({
+      id: 'countries-fill-d',
+      type: 'fill',
+      source: 'country-boundaries',
+      "source-layer": "country_boundaries",
+      "filter": [
+        "==", ["get", "disputed"], "true"],
+      "paint": {
+        "fill-color": "rgba(66,100,251, 0.3)",
+        "fill-outline-color": "#0000ff"
+      }
+    })
+  })
+
+  // TODO ADD LAYERS FOR COUNTRY outlines, heatmap, and dots for cities
+  //add data sorce with geoJSON
+
+
+  // // Heatmap filling
+  
+
+  // // Outlining
+  // map.addLayer({
+  //           id: 'outline',
+  //           type: 'line',
+  //           source: 'country-boundaries',
+  //           layout: {},
+  //           paint: {
+  //               'line-color': '#000',
+  //               'line-width': 2
+  //           }
+  // });
+
+})
+
+onBeforeUnmount(() => map?.remove())
+
 
 </script>
 
