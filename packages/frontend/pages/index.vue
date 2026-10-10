@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row odd-stripe" id="first-row">
             <div class="col-12 col-md-7" id="first-row-col">
                 <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
-                <div class="row"> <h4 class="dark-mode-heading">Explore Global Distributed Tracking (GDT), our open source software enabling closed-loop tracking for products, information, and logistics.</h4> </div>
+                <div class="row"> <h4 class="dark-mode-heading">Global Distributed Tracking enables closed-loop tracking for products, information, and logistics at no cost to the user.</h4> </div>
                 <div class="row" style="display:inline-flex">
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
                         <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div class="row second-row" id="gdt-section">
             <div style="display:flex; flex-direction:column; gap: 17px;">
                 <h3>Global Distributed Tracking</h3>    
-                <p style="font-weight: 400;">The Global Open Source Quality Assurance System proudly presents Global Distributed Tracking (GDT)&mdash;a free and open-source tracking platform. By reducing fraud, theft, counterfeiting, and lost shipments with secure encryption and a simple user interface, GDT helps create trust through transparency for your organization. </p>
+                <p style="font-weight: 400;">Global Distributed Tracking (GDT) is a free service provided by The Global Open Source Quality Assurance System. GDT create trust through transparency by reducing fraud, theft, and counterfeiting with secure encryption and a simple user interface.</p>
             </div>
 
             <div>
