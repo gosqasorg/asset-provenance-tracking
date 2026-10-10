@@ -192,6 +192,15 @@ export async function getStatistics() {
     };
 }
 
+export async function getServerResponse() {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/stats/serverResponse`, {
+        method: "GET",
+    });
+    
+    return await response.json();
+}
+
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
     const MAX_RETRIES = 3;
