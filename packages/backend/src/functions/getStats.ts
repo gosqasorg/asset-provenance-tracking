@@ -106,6 +106,23 @@ async function prepareServerResponseTimeDataForChart(context: InvocationContext)
     }
 }
 
+async function getServerResponseTime(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering getServerResponseTime')
+
+    // The store is filled by the timer trigger, so before its first run there's no data to return. In that case, we return 503 (try again later).
+    if (!serverResponseTimeStore.updatedAt) {
+        return {
+            status: 503,
+            jsonBody: { error: 'Server response time data is not available yet' },
+        }
+    }
+
+    return { 
+        status: 200, 
+        jsonBody: serverResponseTimeStore 
+    }
+}
+
 
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
@@ -147,8 +164,23 @@ async function getBrowserStats(request: HttpRequest, context: InvocationContext)
     }
 }
 
+// A time trigger that runs at the beginning of every hour. 
+app.timer("prepareServerResponseTimeDataForChartHourly", {
+    schedule: "0 0 * * * *",
+    handler: async (timer, context) => {
+        await prepareServerResponseTimeDataForChart(context)
+    }
+})
+
 app.get("getBrowserStats", {
     authLevel: 'anonymous',
     route: 'stats/browsers',
     handler: getBrowserStats
+})
+
+// An endpoint that provides the data to the caller (the frontend) on request.
+app.get("getServerResponseTime", {
+    authLevel: 'anonymous',
+    route: 'stats/server-response-time',
+    handler: getServerResponseTime
 })
