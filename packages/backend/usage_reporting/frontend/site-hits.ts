@@ -80,8 +80,7 @@ function hasValue(p: Record<string, unknown>): boolean {
 
 
 async function getMetric(
-    label: string,
-    metricNames: string[],
+    metricName: string,
     opts: {
         startTime: string;
         endTime: string;
@@ -90,7 +89,7 @@ async function getMetric(
     }
 ): Promise<MetricsResponse> {
     const params = new URLSearchParams({
-        metricnames: metricNames.join(","),
+        metricnames: [metricName],
         timespan: `${opts.startTime}/${opts.endTime}`,
         interval: opts.interval ?? "PT1H",
         aggregation: opts.aggregation ?? "Total",
@@ -111,11 +110,12 @@ async function getMetric(
 
 async function getMetricHistory(
     label: string,
-    metricNames: string[],
+    metricName: string[],
     opts: { interval?: string; aggregation?: string } = {}
 ): Promise<void> {
-    const chunkMs = 30 * 24 * 60 * 60 * 1000;
-    const retentionMs = 93 * 24 * 60 * 60 * 1000;
+    const day = 24 * 60 * 60 * 1000 // One day in milliseconds
+    const chunkMs = 30 * day; // 30 days
+    const retentionMs = 93 * day; 
     const now = Date.now();
     const earliest = now - retentionMs + 60 * 60 * 1000;
 
@@ -125,7 +125,7 @@ async function getMetricHistory(
     for (let i = 0; end > earliest; i++) {
         const start = Math.max(end - chunkMs, earliest);
 
-        const body = await getMetric(`${label} [chunk ${i}]`, metricNames, {
+        const body = await getMetric(metricName, {
             startTime: new Date(start).toISOString(),
             endTime: new Date(end).toISOString(),
             interval: opts.interval,
@@ -184,13 +184,15 @@ async function getMetricHistory(
 
 // --- Example calls -------------------------------------------------------
 
+/*
 const endTime = new Date().toISOString();
 const day = 24 * 60 * 60 * 1000
 const startTime = new Date(Date.now() - day * 365).toISOString();
+*/
 
 // Discover which metrics the SWA emits (handy the first time you run this)
 await listMetricDefinitions();
-
+/*
 // The one you actually wanted
 await getMetric("SiteHits (last 24h, hourly, Total)", ["SiteHits"], {
     startTime,
@@ -198,6 +200,6 @@ await getMetric("SiteHits (last 24h, hourly, Total)", ["SiteHits"], {
     interval: "PT1H",
     aggregation: "Total"
 });
+*/
 
-
-await getMetricHistory("SiteHits", ["SiteHits"], { interval: "PT1H", aggregation: "Total" });
+await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
