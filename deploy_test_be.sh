@@ -1,5 +1,5 @@
-#!/bin/bash
-# deploy_test_be.sh
+#!/usr/bin/env bash
+
 # set top level variables describing how/where function app is deployed
 export LOCATION=eastus2
 export RG_NAME=rg-gdt-test

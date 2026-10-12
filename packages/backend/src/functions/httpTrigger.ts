@@ -12,9 +12,9 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@a
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
 // Local
-import './getStats.js';
 import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
+import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
 
@@ -43,7 +43,7 @@ const baseUrl = accountName === "devstoreaccount1"
     : `https://${accountName}.blob.core.windows.net`;
 
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
-const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
+export const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
@@ -326,7 +326,6 @@ app.timer('livenessChecker', {
     schedule: '0 0 * * * *', 
     handler: livenessChecker,
 })
-
 
 
 /* ===============================================================
@@ -650,125 +649,26 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
 }
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const directory_id = process.env['AZURE_TENANT_ID'];
-    const app_registration_id = process.env['AZURE_CLIENT_ID'];
-    const secret_value = process.env['AZURE_CLIENT_SECRET'];
-    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
-    let client_id = app_registration_id
-    let client_secret = secret_value
-
-    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
-    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
-    let token = tokenResponse.token;
-
-    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
-    let valsAtTimes = [0, 0, 0]
-
-    // Get time-based record entry counts
-    for (let v in timesToCheck) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
-        });
-        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
-    }
-    let records1h = valsAtTimes[0]
-    let records24h = valsAtTimes[1]
-    let records7d = valsAtTimes[2]
-
-    // Get time-based unique record counts
-    for (let v in timesToCheck) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
-        });
-        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
-    }
-    let devices1h = valsAtTimes[0]
-    let devices24h = valsAtTimes[1]
-    let devices7d = valsAtTimes[2]
-
-    const d = new Date()
-    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
-    let minutes = d.getMinutes() / 60
-    let hours = d.getHours() + minutes
-    let counted = 0
-    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
-
-    // Get record entries per day (last 7 days) for the graph
-    for (let i = 0; i <= today; i++) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
-        });
-        let recent = (await logs.json()).tables[0].rows[0][0];
-        
-        // Add the records we found to the current day, subtracting records we already counted
-        recordsPerDayY[today - i] = recent - counted
-        counted = recent
-        hours += 24
-    }
-
-    // Get record entries per hour (last 7 days, time in UTC) for the graph
-    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-    for (let hour = 0; hour < 24; hour++) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            // Gets number of records created in the last 7 days at 'hour'
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
-        });
-        let hourly = (await logs.json()).tables[0].rows[0][0];
-        recordsPerHourY[hour] = hourly
-    }
-
-    // Get number of calls to postProvenance that failed in the last 3 months
-    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-        method: "POST",
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
-    });
-    let totalFailures = (await logs.json()).tables[0].rows[0][0];
-
-    // Get number of calls to postProvenance that succeeded in the last 3 months
-    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-        method: "POST",
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
-    });
-    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
-
-    // Get total statistics counts (updates once per day)
-    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
-
-    await containerClient.createIfNotExists();
-    const blobName = `statistics/totals`
-    const blobClient = containerClient.getBlockBlobClient(blobName);
-    const exists = await blobClient.exists();
-
-    if (exists) {
-        const buffer = await blobClient.downloadToBuffer();
-        const text = buffer.toString("utf8");
-
-        if (text) {
-            const parsed = JSON.parse(text) as any;
-            totalRecords = parsed?.totalRecords || 0
-            totalAttachments = parsed?.totalAttachments || 0
-            totalDevices = parsed?.totalDevices || 0
-        }
-    }
+    const queryStats = usageStatsCache.getQueryStats();
+    const totals = usageStatsCache.getTotals();
 
     return {
-        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
+        jsonBody: { ...queryStats, ...totals },
         headers: { "Content-Type": "application/json" }
     }; 
 };
- 
+
+async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering getBrowserStats')
+    try {
+        const rows = usageStatsCache.getBrowserStats();
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } };
+    } catch (error) {
+        context.log("getBrowserStats error:", error);
+        return { body: "Error fetching browser stats", status: 500 }
+    }
+}
+
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that returns the version of the server.
     return { 
@@ -1994,6 +1894,12 @@ app.get("getStatistics", {
     authLevel: 'anonymous',
     route: 'statistics',
     handler: getStatistics
+})
+
+app.get("getBrowserStats", {
+    authLevel: 'anonymous',
+    route: 'stats/browsers',
+    handler: getBrowserStats
 })
 
 app.post('postEmail', {
