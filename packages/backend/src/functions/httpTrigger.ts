@@ -495,10 +495,32 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
     return { body: filename };
 };
 
-export async function getRequestStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function getRequestStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Collecting requests statistics')
     try {
-        const rows = mapData.getCountryStats(); //TODO: Correct to request stats later
+        const rows = mapData.getRequestStats(); 
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
+export async function getCountryStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting country statistics')
+    try {
+        const rows = mapData.getCountryStats(); 
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
+export async function getStateStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting state statistics')
+    try {
+        const rows = mapData.getStateStats(); 
         return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
     } catch (error) {
         context.error("getRequestStats error: ", error)
@@ -1988,4 +2010,16 @@ app.get("getRequestStats", {
     authLevel: 'anonymous',
     route: 'stats/requests',
     handler: getRequestStats
+})
+
+app.get("getCountryStats", {
+    authLevel: 'anonymous',
+    route: 'stats/country',
+    handler: getCountryStats
+})
+
+app.get("getStateStats", {
+    authLevel: 'anonymous',
+    route: 'stats/state',
+    handler: getStateStats
 })

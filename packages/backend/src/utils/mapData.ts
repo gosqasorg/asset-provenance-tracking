@@ -4,8 +4,8 @@
 
 import { app, InvocationContext } from '@azure/functions';
 import { ClientSecretCredential } from "@azure/identity";
-import cities from "../../scripts/geocoding/cities.json";
-import countries from '../../scripts/geocoding/countries.json';
+import { countryToAlpha2 } from "country-to-iso";
+
 
 
 const directoryId = process.env["AZURE_TENANT_ID"];
@@ -14,11 +14,6 @@ const secretValue = process.env["AZURE_CLIENT_SECRET"];
 const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
 // Helper Function 
-function norm(s: string) {
-    return (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-}
-
-const nameToCountry = countries as Record<string, { iso: string; numeric: string }>;
 
 async function getToken(): Promise<string> {
     const credential = new ClientSecretCredential(directoryId, appRegistrationId, secretValue);
@@ -59,6 +54,7 @@ class MapData {
     // Variables
     private requestStats = null;
     private countryStats = {};
+    private stateStats = {};
 
 
     // Getter
@@ -68,6 +64,10 @@ class MapData {
 
     getCountryStats() {
         return this.countryStats;
+    }
+
+    getStateStats() {
+        return this.stateStats;
     }
 
     // Updater Function
@@ -90,29 +90,58 @@ class MapData {
     }
 
 
-    // Group requests by country
+    // Group requests by country 
+    // azure uses the country name, but the map uses the iso code - convert key to iso code
     sumByCountry(context: InvocationContext) {
         const stats = {};
         
         for (const [, country, , , requests, failed] of this.requestStats) {
             if (!country) continue;
             
-            const match = nameToCountry[norm(country)] ?? null;
+            const iso = countryToAlpha2(country);
             
             // if not there must add manually
-            if (!match) { 
+            if (!iso) { 
                 context.log(`No ISO code for "${country}"`); 
                 continue; 
             }
             
-            if (stats[match.iso] === null || stats[match.iso] === undefined) {
-                stats[match.iso] = { name: country, numeric: match.numeric, requests: 0, failed: 0 }
+            // dont override existing entry,only add if not there
+            if (stats[iso] === null || stats[iso] === undefined) {
+                stats[iso] = { name: country, requests: 0, failed: 0 }
             }
 
-            stats[match.iso].requests += requests;
-            stats[match.iso].failed += failed;
+            stats[iso].requests += requests;
+            stats[iso].failed += failed;
         }
         this.countryStats = stats;
+    }
+
+    // Group requests by state 
+    sumByState(context: InvocationContext) {
+        const stats = {};
+        
+        for (const [, country, state, , requests, failed] of this.requestStats) {
+            if (!country || !state) continue;
+            
+            const iso = countryToAlpha2(country);
+            
+            // incase not there
+            if (!iso) { 
+                context.log(`No ISO code for "${country}"`); 
+                continue; 
+            }
+            
+            // using iso|state as key because duplicates
+            const key = `${iso}|${state.toLowerCase()}`;
+            if (stats[key] === null || stats[key] === undefined) {
+                stats[key] = { name: state, requests: 0, failed: 0 }
+            }
+
+            stats[key].requests += requests;
+            stats[key].failed += failed;
+        }
+        this.stateStats = stats;
     }
 
     // Refresh Function
@@ -120,6 +149,7 @@ class MapData {
         context.log('Refreshing map data...');
         await this.updateRequests(context);
         this.sumByCountry(context);
+        this.sumByState(context);
 
         context.log('Map data refreshed :D');
     }
