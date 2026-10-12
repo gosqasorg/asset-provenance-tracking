@@ -59,6 +59,12 @@ interface MetricsResponse {
     [key: string]: unknown;
 }
 
+interface Point {
+    metricName: string;
+    timestamp: string;
+    value: number | undefined;
+}
+
 async function listMetricDefinitions(): Promise<void> {
     const url =
         `https://management.azure.com${staticWebAppResourceId}/providers/microsoft.insights/metricDefinitions` +
@@ -167,6 +173,7 @@ async function getMetricHistory(
     log(`\n===** ${label} **===`);
     log(JSON.stringify(combined, null, 2));
 
+    const points: Point[] = [];
     for (const metric of combined.value) {
         for (const series of metric.timeseries) {
             for (const point of series.data) {
@@ -177,9 +184,16 @@ async function getMetricHistory(
                     (point as Record<string, unknown>)["minimum"] ??
                     (point as Record<string, unknown>)["count"];
                 log(`${metric.name.value}\t${point.timeStamp}\t${value}`);
+                points.push({
+                    metric: metric.name.value,
+                    timestamp: point.timeStamp,
+                    value: value
+                })
             }
         }
     }
+
+    return points
 }
 
 // --- Example calls -------------------------------------------------------
@@ -202,4 +216,6 @@ await getMetric("SiteHits (last 24h, hourly, Total)", ["SiteHits"], {
 });
 */
 
-await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
+let data = await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
+log(JSON.stringify(data[0], null, 2))
+console.table(data)
