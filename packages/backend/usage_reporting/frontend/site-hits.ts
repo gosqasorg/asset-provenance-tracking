@@ -59,12 +59,6 @@ interface MetricsResponse {
     [key: string]: unknown;
 }
 
-interface Point {
-    metricName: string;
-    timestamp: string;
-    value: number | undefined;
-}
-
 async function listMetricDefinitions(): Promise<void> {
     const url =
         `https://management.azure.com${staticWebAppResourceId}/providers/microsoft.insights/metricDefinitions` +
