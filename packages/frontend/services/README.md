@@ -17,7 +17,7 @@ localStorage is a way for us to store data that persists between pages/instances
   - fulfilled stash layout: [key, key2, …]
 
 We have a few other variables that we store in localStorage as well:
-- **workerIsActive:** a boolean that tells us whether or not a worker is already running (this is to prevent multiple workers running on the same device)
+- **workerIsActive (gdt-offline-worker-active):** a boolean that tells us whether or not a worker is already running (this is to prevent multiple workers from running on the same device)
 
 ## sessionStorage
 

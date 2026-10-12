@@ -15,5 +15,5 @@ export MY_STATIC_WEB_APP_NAME=gdt-prod-frontend
 cd packages/backend
 npm install
 npm run build
-rm -rf node_modules
+npm prune --omit=dev
 func azure functionapp publish $FUNC_NAME
