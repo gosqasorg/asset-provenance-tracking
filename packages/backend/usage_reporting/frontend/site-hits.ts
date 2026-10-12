@@ -76,14 +76,39 @@ async function listMetricDefinitions(): Promise<void> {
     });
 
     const body = await result.json();
-    log(`\n===** Available metric definitions **===`);
-    log(JSON.stringify(body, null, 2));
+    const values = body.value
+    const metric_specs = []
+    for(const value of values) {
+        const {  
+            displayDescription,
+            supportedAggregationTypes,
+            metricAvailabilities,
+        } = value
+
+        const valuable_data = { 
+            name: displayDescription,
+            aggregation_types: supportedAggregationTypes,
+            supported_metrics: metricAvailabilities
+        }
+
+        metric_specs.push(valuable_data)
+    }
+
+    return metric_specs
+}
+
+async function listMetricNames(): Promise<void> {
+    let metric_specs = await listMetricDefinitions()
+    let metric_names = []
+    for(const spec of metric_specs) {
+        metric_names.push(spec.name)
+    }
+    return metric_names
 }
 
 function hasValue(p: Record<string, unknown>): boolean {
     return ["total", "average", "maximum", "minimum", "count"].some(k => p[k] !== undefined);
 }
-
 
 async function getMetric(
     metricName: string,
@@ -174,11 +199,20 @@ async function getMetricHistory(
 }
 
 
+// SiteHits complete history
 let data = await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
 console.table(data)
 console.log(data[0])
 
 
-
 // Discover which metrics the SWA emits (handy the first time you run this)
-await listMetricDefinitions();
+let metric_specs = await listMetricDefinitions();
+
+log(JSON.stringify(metric_specs, null, 2))
+console.table(metric_specs)
+console.dir(metric_specs, { depth: null })
+
+
+// Get just metric names
+let metric_names = await listMetricNames()
+console.table(metric_names)
