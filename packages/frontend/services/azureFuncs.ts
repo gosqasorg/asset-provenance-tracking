@@ -477,3 +477,20 @@ export async function getBrowserStats() {
         throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
     }
 }
+
+export async function getRequestStats() {
+    
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/requests", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
+    } catch (error) {
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}

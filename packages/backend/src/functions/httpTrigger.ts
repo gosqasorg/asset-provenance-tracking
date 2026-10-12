@@ -16,6 +16,7 @@ import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsub
 import { ClientSecretCredential } from "@azure/identity";
 import './getStats.js';
 import { sendEmail } from './sendEmail.js'
+import { mapData } from '../utils/mapData.js'
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -493,6 +494,18 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
     const { filename } = decryptedBlob;
     return { body: filename };
 };
+
+export async function getRequestStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting requests statistics')
+    try {
+        const rows = mapData.getRequestStats();
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const directory_id = process.env['AZURE_TENANT_ID'];
@@ -1969,4 +1982,10 @@ app.post("notifySubscribers", {
     authLevel: 'anonymous',
     route: 'notifySubscribers/{deviceKey}',
     handler: notifySubscribersHandler
+})
+
+app.get("getRequestStats", {
+    authLevel: 'anonymous',
+    route: 'stats/requests',
+    handler: getRequestStats
 })

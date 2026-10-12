@@ -21,6 +21,7 @@ Set the map to reference this data object. -->
              <!--  Adds a >[Location] when specific location is clicked -->
              <p>World</p> 
              <h2>Whole Network</h2>
+             <p>{{ rawData }}</p>
             <div>
                 <!-- Row for  # of requests, avg response, succeeded %-->
             </div>
@@ -37,84 +38,105 @@ Set the map to reference this data object. -->
     </div>
 </template>
 
-<script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+<script lang="ts">
+import { defineComponent, markRaw } from 'vue'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import { getRequestStats } from '~/services/azureFuncs'
 
-let map: mapboxgl.Map | null
+let map: mapboxgl.Map | null = null
 
-onMounted(() => {
-    map = new mapboxgl.Map({
-    accessToken: process.env.MAPBOX_TOKEN,
-    container: 'map',
-    center: [0, 0],
-    zoom: 0.75,
-    style: 'mapbox://styles/mapbox/dark-v10',
-    dragRotate: false, 
-    pitchWithRotate: false, 
-    maxZoom: 7, 
-    minZoom: 0.75
-  })
+export default {
 
-  map.on('load', () => {
-    map.addSource("country-boundaries", {type: "vector", url: "mapbox://mapbox.country-boundaries-v1"})
+  data() {
+    return {
+      rawData: null as any[] | null,   
+    }
+  },
 
-    map.addLayer({
-      id: 'countries-fill',
-      type: 'fill',
-      source: 'country-boundaries',
-      "source-layer": "country_boundaries",
-      "filter": [
-        "==", ["get", "disputed"], "false"],
-      "paint": {
-        "fill-color": "rgba(66,100,251, 0.3)",
-        "fill-outline-color": "#0000ff"
+  mounted() {
+    // markRaw stops Vue from wrapping the map in a reactive proxy,
+    // which breaks Mapbox internals
+    // const m = markRaw(new mapboxgl.Map({
+    //   accessToken: this.$config.public.mapboxToken as string,
+    //   container: 'map',
+    //   center: [0, 0],
+    //   zoom: 0.75,
+    //   style: 'mapbox://styles/mapbox/dark-v10',
+    //   dragRotate: false,
+    //   pitchWithRotate: false,
+    //   maxZoom: 7,
+    //   minZoom: 0.75,
+    // }))
+
+    // map = m
+
+    // m.on('load', () => {
+    //   m.addSource('country-boundaries', {
+    //     type: 'vector',
+    //     url: 'mapbox://mapbox.country-boundaries-v1',
+    //   })
+
+    //   m.addLayer({
+    //     id: 'countries-fill',
+    //     type: 'fill',
+    //     source: 'country-boundaries',
+    //     'source-layer': 'country_boundaries',
+    //     filter: ['==', ['get', 'disputed'], 'false'],
+    //     paint: {
+    //       'fill-color': 'rgba(66,100,251, 0.3)',
+    //       'fill-outline-color': '#0000ff',
+    //     },
+    //   })
+
+    //   m.addLayer({
+    //     id: 'countries-fill-d',
+    //     type: 'fill',
+    //     source: 'country-boundaries',
+    //     'source-layer': 'country_boundaries',
+    //     filter: ['==', ['get', 'disputed'], 'true'],
+    //     paint: {
+    //       'fill-color': 'rgba(66,100,251, 0.3)',
+    //       'fill-outline-color': '#0000ff',
+    //     },
+    //   })
+
+    //   // TODO: add layers for country outlines, heatmap, and city dots
+    //   // TODO: add data source with GeoJSON
+    // })
+
+    this.fetchData()
+  },
+
+  beforeUnmount() {
+    map?.remove()
+    map = null
+  },
+
+  methods: {
+    async fetchData() {
+      // TODO: add filtering and state management
+      try {
+        this.rawData = await getRequestStats()
+      } catch (err) {
+        this.$snackbar.add({
+            type: 'error',
+            text: 'Failed to fetch data error: ' + err
+        });
       }
-    })
+    },
 
-    map.addLayer({
-      id: 'countries-fill-d',
-      type: 'fill',
-      source: 'country-boundaries',
-      "source-layer": "country_boundaries",
-      "filter": [
-        "==", ["get", "disputed"], "true"],
-      "paint": {
-        "fill-color": "rgba(66,100,251, 0.3)",
-        "fill-outline-color": "#0000ff"
-      }
-    })
-  })
-
-  // TODO ADD LAYERS FOR COUNTRY outlines, heatmap, and dots for cities
-  //add data sorce with geoJSON
-
-
-  // // Heatmap filling
-  
-
-  // // Outlining
-  // map.addLayer({
-  //           id: 'outline',
-  //           type: 'line',
-  //           source: 'country-boundaries',
-  //           layout: {},
-  //           paint: {
-  //               'line-color': '#000',
-  //               'line-width': 2
-  //           }
-  // });
-
-})
-
-onBeforeUnmount(() => map?.remove())
-
+    // 
+  },
+};
 
 </script>
 
+
 <style scoped>
-
-
+  p {
+    color: #FFFFFF
+  }
 
 </style>
+
