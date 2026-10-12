@@ -170,38 +170,15 @@ async function getMetricHistory(
 
     const combined: MetricsResponse = { value: [...merged.values()] };
 
-    log(`\n===** ${label} **===`);
-    log(JSON.stringify(combined, null, 2));
-    log('\n^^^^^^^^^^^^^^^^^^^^^^^^^')
-
-    const points: Point[] = [];
-    for (const metric of combined.value) {
-        for (const series of metric.timeseries) {
-            for (const point of series.data) {
-                const value =
-                    point.total ??
-                    (point as Record<string, unknown>)["average"] ??
-                    (point as Record<string, unknown>)["maximum"] ??
-                    (point as Record<string, unknown>)["minimum"] ??
-                    (point as Record<string, unknown>)["count"];
-                log(`${metric.name.value}\t${point.timeStamp}\t${value}`);
-                points.push({
-                    metric: metric.name.value,
-                    timestamp: point.timeStamp,
-                    value: value
-                })
-            }
-        }
-    }
-
-    return points
+    return combined.value[0].timeseries[0].data
 }
+
+
+let data = await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
+console.table(data)
+console.log(data[0])
+
 
 
 // Discover which metrics the SWA emits (handy the first time you run this)
 await listMetricDefinitions();
-
-
-let data = await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
-log(JSON.stringify(data[0], null, 2))
-console.table(data)
