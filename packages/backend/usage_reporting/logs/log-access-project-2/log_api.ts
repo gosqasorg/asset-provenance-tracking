@@ -1,3 +1,4 @@
+#!/usr/bin/env npx tsx
 // This script queries for various logs and then outputs the results to log_api.txt
 // I run this using npx tsx log_api.ts, similarly for the other log scripts - which have more detailed queries
 
