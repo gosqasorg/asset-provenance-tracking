@@ -1,426 +1,302 @@
-
-===** Available metric definitions **===
-{
-  "value": [
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/SiteHits",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "SiteHits",
-        "localizedValue": "SiteHits"
+[
+  {
+    "name": "SiteHits",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
       },
-      "displayDescription": "SiteHits",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/SiteErrors",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "SiteErrors",
-        "localizedValue": "SiteErrors"
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
       },
-      "displayDescription": "SiteErrors",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/FunctionHits",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "FunctionHits",
-        "localizedValue": "FunctionHits"
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "SiteErrors",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
       },
-      "displayDescription": "FunctionHits",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/FunctionErrors",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "FunctionErrors",
-        "localizedValue": "FunctionErrors"
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
       },
-      "displayDescription": "FunctionErrors",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/DataApiHits",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "DataApiHits",
-        "localizedValue": "DataApiHits"
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "FunctionHits",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
       },
-      "displayDescription": "DataApiHits",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/DataApiErrors",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "DataApiErrors",
-        "localizedValue": "DataApiErrors"
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
       },
-      "displayDescription": "DataApiErrors",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/BytesSent",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "BytesSent",
-        "localizedValue": "Data Out"
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "FunctionErrors",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
       },
-      "displayDescription": "BytesSent",
-      "isDimensionRequired": false,
-      "unit": "Bytes",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/CdnPercentageOf4XX",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "CdnPercentageOf4XX",
-        "localizedValue": "CdnPercentageOf4XX"
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
       },
-      "displayDescription": "CdnPercentageOf4XX",
-      "isDimensionRequired": false,
-      "unit": "Percent",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/CdnPercentageOf5XX",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "CdnPercentageOf5XX",
-        "localizedValue": "CdnPercentageOf5XX"
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "DataApiHits",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
       },
-      "displayDescription": "CdnPercentageOf5XX",
-      "isDimensionRequired": false,
-      "unit": "Percent",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/CdnRequestCount",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "CdnRequestCount",
-        "localizedValue": "CdnRequestCount"
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
       },
-      "displayDescription": "CdnRequestCount",
-      "isDimensionRequired": false,
-      "unit": "Count",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/CdnResponseSize",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "CdnResponseSize",
-        "localizedValue": "CdnResponseSize"
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "DataApiErrors",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
       },
-      "displayDescription": "CdnResponseSize",
-      "isDimensionRequired": false,
-      "unit": "Bytes",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    },
-    {
-      "id": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend/providers/microsoft.insights/metricdefinitions/CdnTotalLatency",
-      "resourceId": "/subscriptions/7bee972d-2535-4ab7-9fbc-db639e7225d2/resourceGroups/rg-gdt-prod/providers/Microsoft.Web/staticSites/gdt-prod-frontend",
-      "namespace": "Microsoft.Web/staticSites",
-      "name": {
-        "value": "CdnTotalLatency",
-        "localizedValue": "CdnTotalLatency"
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
       },
-      "displayDescription": "CdnTotalLatency",
-      "isDimensionRequired": false,
-      "unit": "MilliSeconds",
-      "primaryAggregationType": "Total",
-      "supportedAggregationTypes": [
-        "None",
-        "Average",
-        "Minimum",
-        "Maximum",
-        "Total",
-        "Count"
-      ],
-      "metricAvailabilities": [
-        {
-          "timeGrain": "PT5M",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "PT1H",
-          "retention": "P93D"
-        },
-        {
-          "timeGrain": "P1D",
-          "retention": "P93D"
-        }
-      ]
-    }
-  ]
-}
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "BytesSent",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "CdnPercentageOf4XX",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "CdnPercentageOf5XX",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "CdnRequestCount",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "CdnResponseSize",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  },
+  {
+    "name": "CdnTotalLatency",
+    "aggregation_types": [
+      "None",
+      "Average",
+      "Minimum",
+      "Maximum",
+      "Total",
+      "Count"
+    ],
+    "supported_metrics": [
+      {
+        "timeGrain": "PT5M",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "PT1H",
+        "retention": "P93D"
+      },
+      {
+        "timeGrain": "P1D",
+        "retention": "P93D"
+      }
+    ]
+  }
+]
