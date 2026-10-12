@@ -112,7 +112,8 @@ let server_response = {
     oneDay: [],
     oneWeek: [],
     oneMonth: [],
-    oneQuarter: [],
+    threeMonths: [],
+    sixMonths: [],
     oneYear: []
 }
 
@@ -120,8 +121,8 @@ let server_response = {
     // FOR TESTING MAKE THIS AN ENDPOINT AND PRINT THE RETURNS!! (want to see how it is returned and how we can move it into the object)
 async function setServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        const timesToCheck = ['ago(1d)', 'ago(7d)', 'ago(30d)', 'ago(90d)', 'ago(365d)']
-        const indexes = ['oneDay', 'oneWeek', 'oneMonth', 'oneQuarter', 'oneYear'];
+        const timesToCheck = ['ago(1d)', 'ago(7d)', 'ago(30d)', 'ago(90d)', 'ago(180d)','ago(365d)']
+        const indexes = ['oneDay', 'oneWeek', 'oneMonth', 'threeMonths', 'sixMonths', 'oneYear'];
 
         for (let v in timesToCheck) {
             const rows = await runQuery(`
