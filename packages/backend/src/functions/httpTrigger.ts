@@ -498,7 +498,7 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 export async function getRequestStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Collecting requests statistics')
     try {
-        const rows = mapData.getRequestStats();
+        const rows = mapData.getCountryStats(); //TODO: Correct to request stats later
         return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
     } catch (error) {
         context.error("getRequestStats error: ", error)

@@ -41,7 +41,8 @@ export default defineNuxtConfig({
       environment: detectEnvironment(),
       buildDate: process.env.BUILD_DATE,
       buildVersion: process.env.BUILD_VERSION,
-      gitCommit: process.env.GIT_COMMIT
+      gitCommit: process.env.GIT_COMMIT,
+      mapboxToken: process.env.MAPBOX_TOKEN
     }
   },
   modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@vite-pwa/nuxt'],
