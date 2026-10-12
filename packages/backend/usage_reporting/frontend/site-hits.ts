@@ -172,6 +172,7 @@ async function getMetricHistory(
 
     log(`\n===** ${label} **===`);
     log(JSON.stringify(combined, null, 2));
+    log('\n^^^^^^^^^^^^^^^^^^^^^^^^^')
 
     const points: Point[] = [];
     for (const metric of combined.value) {
@@ -196,25 +197,10 @@ async function getMetricHistory(
     return points
 }
 
-// --- Example calls -------------------------------------------------------
-
-/*
-const endTime = new Date().toISOString();
-const day = 24 * 60 * 60 * 1000
-const startTime = new Date(Date.now() - day * 365).toISOString();
-*/
 
 // Discover which metrics the SWA emits (handy the first time you run this)
 await listMetricDefinitions();
-/*
-// The one you actually wanted
-await getMetric("SiteHits (last 24h, hourly, Total)", ["SiteHits"], {
-    startTime,
-    endTime,
-    interval: "PT1H",
-    aggregation: "Total"
-});
-*/
+
 
 let data = await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
 log(JSON.stringify(data[0], null, 2))
