@@ -108,7 +108,7 @@ app.get("getBrowserStats", {
 })
 
 
-let server_response = {
+let serverResponseTimes = {
     oneDay: [],
     oneWeek: [],
     oneMonth: [],
@@ -117,9 +117,7 @@ let server_response = {
     oneYear: []
 }
 
-// *TODO: this should be called on a timertrigger (and also on page load like how mish did in their issue) to update count every hour
-    // FOR TESTING MAKE THIS AN ENDPOINT AND PRINT THE RETURNS!! (want to see how it is returned and how we can move it into the object)
-async function setServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function setServerResponseStats(context: InvocationContext): Promise<void> {
     try {
         const timesToCheck = ['ago(1d)', 'ago(7d)', 'ago(30d)', 'ago(90d)', 'ago(180d)','ago(365d)']
         const indexes = ['oneDay', 'oneWeek', 'oneMonth', 'threeMonths', 'sixMonths', 'oneYear'];
@@ -139,33 +137,21 @@ async function setServerResponseStats(request: HttpRequest, context: InvocationC
                 filteredCounts[rowIndex] = { time: rows[rowIndex][0], count: rows[rowIndex][1]};
             }
 
-            server_response[indexes[v]] = filteredCounts;
+            serverResponseTimes[indexes[v]] = filteredCounts;
         }
-
-        let response = { body: JSON.stringify(server_response), status: 200, headers: { 'Content-Type': 'application/json' } }
-        // context.error(`Response ROWS:\n`, rows) // list of lists, todo not error for final
-        // context.error(`Response Object:\n`, server_response)
-        // context.error(response)
-        context.error(`Test Filtering Array:\n`, server_response)
-
-        // TODO: instead of returning we need to update counts object (timetrigger I don't think needs a return)
-        return response
     } catch (error) {
-        context.log("getServerResponseStats error:", error);
-        return { body: "Error fetching server response stats", status: 500 }
+        context.error("setServerResponseStats error:", error);
     }
 }
 
-app.get("tempSetServerResponse", { // todo delete and make timer trigger
-    authLevel: 'anonymous',
-    route: 'stats/test',
-    handler: setServerResponseStats
-})
+app.timer('setServerResponseStats', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: (_myTimer, context) => setServerResponseStats(context)
+});
 
-
-// TODO: this should be an endpoint that the frontend can call to get the object stored (NOT run the query!!)
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    return {  body: JSON.stringify(server_response), status: 200 };
+    return { body: JSON.stringify(serverResponseTimes), status: 200 };
 }
 
 app.get("getServerResponse", {

@@ -192,7 +192,7 @@ export async function getStatistics() {
     };
 }
 
-export async function getServerResponse() {
+export async function getServerResponseStats() {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetch(`${baseUrl}/stats/serverResponse`, {
         method: "GET",
