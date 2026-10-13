@@ -1,4 +1,4 @@
-<!-- visualizations.vue -- data visualization graphs
+<!-- server-response-times.vue -- graph of server response times
 Copyright (C) 2024 GOSQAS
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -13,7 +13,6 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
-    <!-- Server Response Time Graph -->
     <div>
         <div class="chart-container">
             <canvas id="serverResponse"></canvas>
@@ -155,7 +154,7 @@ export default {
                         text: 'Server Response Times',
                         font: {
                             weight: 'normal',
-                            size: 18
+                            size: 24
                         }
                     }
                 },
