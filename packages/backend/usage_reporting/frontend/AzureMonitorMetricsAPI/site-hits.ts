@@ -5,35 +5,11 @@
 import "dotenv/config";
 import { writeFileSync, appendFileSync } from "fs";
 
-const outputFile = "site_hits.txt";
-writeFileSync(outputFile, "");
-
-function log(line: string): void {
-    appendFileSync(outputFile, line + "\n");
-}
-
 // Note: different env vars than the similar, other ts scripts
 const directoryId = process.env["directory_id"];
 const appRegistrationId = process.env["app_registration_id"];
 const secretValue = process.env["secret_value"];
 const staticWebAppResourceId = process.env["static_web_app_resource_id"];
-
-// NOTE: different scope than the Log Analytics script — metrics live behind A
-const tokenResponse = await fetch(
-    `https://login.microsoftonline.com/${directoryId}/oauth2/v2.0/token`,
-    {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: appRegistrationId!,
-            client_secret: secretValue!,
-            grant_type: "client_credentials",
-            scope: "https://management.azure.com/.default"
-        })
-    }
-);
-
-const { access_token: token } = await tokenResponse.json();
 
 interface MetricValue {
     timeStamp: string;
@@ -56,6 +32,13 @@ interface MetricsResponse {
     value: Metric[];
     // cost, interval, namespace, resourceregion, timespan also present
     [key: string]: unknown;
+}
+
+const outputFile = "site_hits.txt";
+writeFileSync(outputFile, "");
+
+function log(line: string): void {
+    appendFileSync(outputFile, line + "\n");
 }
 
 async function listMetricDefinitions(): Promise<void> {
@@ -133,7 +116,6 @@ async function getMetric(
 }
 
 async function getMetricHistory(
-    label: string,
     metricName: string[],
     opts: { interval?: string; aggregation?: string } = {}
 ): Promise<void> {
@@ -191,12 +173,28 @@ async function getMetricHistory(
     return combined.value[0].timeseries[0].data
 }
 
+// NOTE: different scope than the Log Analytics script — metrics live behind A
+const tokenResponse = await fetch(
+    `https://login.microsoftonline.com/${directoryId}/oauth2/v2.0/token`,
+    {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: appRegistrationId!,
+            client_secret: secretValue!,
+            grant_type: "client_credentials",
+            scope: "https://management.azure.com/.default"
+        })
+    }
+);
+
+const { access_token: token } = await tokenResponse.json();
+
 
 // SiteHits complete history
-let data = await getMetricHistory("SiteHits", "SiteHits", { interval: "PT1H", aggregation: "Total" });
+let data = await getMetricHistory("SiteHits", { interval: "PT1H", aggregation: "Total" });
 console.table(data)
 console.log(data[0])
-
 
 // Discover which metrics the SWA emits (handy the first time you run this)
 let metric_specs = await listMetricDefinitions();
@@ -204,7 +202,6 @@ let metric_specs = await listMetricDefinitions();
 log(JSON.stringify(metric_specs, null, 2))
 console.table(metric_specs)
 console.dir(metric_specs, { depth: null })
-
 
 // Get just metric names
 let metric_names = await listMetricNames()
