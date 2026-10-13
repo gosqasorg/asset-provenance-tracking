@@ -203,7 +203,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 _cooldownInterval: undefined as ReturnType<typeof setInterval> | undefined,
 
                 // Feature flag. False on prod.
-                featureFlag: (!!(useRuntimeConfig().public.baseUrl).includes("prod")),
+                featureFlag: (!(useRuntimeConfig().public.baseUrl).includes("prod")),
             }
         },
 
