@@ -7,7 +7,7 @@ import { webcrypto as crypto } from 'node:crypto';
 // Azure
 import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils.js'
 import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
