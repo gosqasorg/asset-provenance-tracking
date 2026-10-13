@@ -1,15 +1,46 @@
 #!/usr/bin/env npx tsx
-// AI Disclosure from Vincent: Some of this code was generated and advised by Deepseek, Claude, and Gemini
+
+// AI Disclosure from Vincent: Some of this code, specifically
+// getMetric, getMetricHistory, listMetricDefinitions, and the interfaces
+// was generated and advised by Deepseek, Claude, and Gemini
+
 // Run with ./site-hits.ts or npx tsx site-hits.ts
+
 
 import "dotenv/config";
 import { writeFileSync, appendFileSync } from "fs";
+
+
+// -- Setup -- //
 
 // Note: different env vars than the similar, other ts scripts
 const directoryId = process.env["directory_id"];
 const appRegistrationId = process.env["app_registration_id"];
 const secretValue = process.env["secret_value"];
 const staticWebAppResourceId = process.env["static_web_app_resource_id"];
+
+const outputFile = "site_hits.txt";
+writeFileSync(outputFile, "");
+
+// NOTE: different scope than the Log Analytics script — these metrics live in the Azure Monitor Metrics API
+const tokenResponse = await fetch(
+    `https://login.microsoftonline.com/${directoryId}/oauth2/v2.0/token`,
+    {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: appRegistrationId!,
+            client_secret: secretValue!,
+            grant_type: "client_credentials",
+            scope: "https://management.azure.com/.default"
+        })
+    }
+);
+
+const { access_token: token } = await tokenResponse.json();
+
+
+// -- Interfaces -- //
 
 interface MetricValue {
     timeStamp: string;
@@ -34,11 +65,15 @@ interface MetricsResponse {
     [key: string]: unknown;
 }
 
-const outputFile = "site_hits.txt";
-writeFileSync(outputFile, "");
+
+// -- Utility Functions -- //
 
 function log(line: string): void {
     appendFileSync(outputFile, line + "\n");
+}
+
+function hasValue(p: Record<string, unknown>): boolean {
+    return ["total", "average", "maximum", "minimum", "count"].some(k => p[k] !== undefined);
 }
 
 async function listMetricDefinitions(): Promise<void> {
@@ -71,19 +106,6 @@ async function listMetricDefinitions(): Promise<void> {
     }
 
     return metric_specs
-}
-
-async function listMetricNames(): Promise<void> {
-    let metric_specs = await listMetricDefinitions()
-    let metric_names = []
-    for(const spec of metric_specs) {
-        metric_names.push(spec.name)
-    }
-    return metric_names
-}
-
-function hasValue(p: Record<string, unknown>): boolean {
-    return ["total", "average", "maximum", "minimum", "count"].some(k => p[k] !== undefined);
 }
 
 async function getMetric(
@@ -170,39 +192,63 @@ async function getMetricHistory(
 
     const combined: MetricsResponse = { value: [...merged.values()] };
 
-    return combined.value[0].timeseries[0].data
+    return combined.value.length == 0 ? undefined : combined.value[0].timeseries[0].data
 }
 
-// NOTE: different scope than the Log Analytics script — metrics live behind A
-const tokenResponse = await fetch(
-    `https://login.microsoftonline.com/${directoryId}/oauth2/v2.0/token`,
-    {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: appRegistrationId!,
-            client_secret: secretValue!,
-            grant_type: "client_credentials",
-            scope: "https://management.azure.com/.default"
-        })
+
+// -- Core Operations -- // 
+
+/*
+Returns an object of the following form, specifically packaged for ease of use in dataviz
+{
+    metric_name_1: { 
+        time_bin_1: [ { timesStamp: <timestamp>, count: <number> } ],
+        time_bin_2: [ { timesStamp: <timestamp>, count: <number> } ],
+        time_bin_3: ...
+        ...
+        time_bin_n: ...
+    },
+    metric_name_2: {
+        time_bin_1: ...
+        ...
+        time_bin_n: ...
+    },
+    ...,
+    metric_name_n: {
+        ...
     }
-);
+}
+*/
+export async function getAllMetricsAllBins() {
 
-const { access_token: token } = await tokenResponse.json();
+    // Get metric specs
+    let metric_specs = await listMetricDefinitions();
+
+    // Reformat for later ease of enumerating data into a convenient object
+    let reformatted_metric_specs = {}
+    for(let spec of metric_specs) {
+        reformatted_metric_specs[spec.name] = []
+        for(let timeGrain of spec.supported_metrics) {
+            reformatted_metric_specs[spec.name].push(timeGrain['timeGrain'])
+        }
+    }
+
+    // Create data object
+    let all_data = {}
+    for(let name in reformatted_metric_specs) {
+        console.log(`Getting ${name}`)
+        all_data[name] = {}
+        for(let timeBin of reformatted_metric_specs[name]) {
+            all_data[name][timeBin] = await getMetricHistory(name, { interval: timeBin, aggregation: "Count" });
+        }
+        console.log(`Got ${name}`)
+
+    }
+
+    return all_data
+}
 
 
-// SiteHits complete history
-let data = await getMetricHistory("SiteHits", { interval: "PT1H", aggregation: "Total" });
-console.table(data)
-console.log(data[0])
-
-// Discover which metrics the SWA emits (handy the first time you run this)
-let metric_specs = await listMetricDefinitions();
-
-log(JSON.stringify(metric_specs, null, 2))
-console.table(metric_specs)
-console.dir(metric_specs, { depth: null })
-
-// Get just metric names
-let metric_names = await listMetricNames()
-console.table(metric_names)
+let all_data = await getAllMetricsAllBins()
+console.dir(all_data, { depth: null })
+log(JSON.stringify(all_data, null, 2))
