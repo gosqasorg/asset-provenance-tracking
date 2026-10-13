@@ -13,7 +13,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <template>
-    <!-- TODO LATER: need to style for all screen sizes -->
+    <!-- *TODO: need to style for all screen sizes -->
     <!-- Server Response Time Graph -->
     <div style="width: 800px;">
         <canvas id="serverResponse"></canvas>
@@ -39,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
 </template>
 
-<script> // todo do we need typescript here..?
+<script> // todo do we need typescript here? (probably since most other pages use it)
 // TODO LATER: Should I make a component for Chart.js graphs (same as Plotly.vue, but with vue-chartjs)?
 import Chart from 'chart.js/auto';
 import { getServerResponse } from '~/services/azureFuncs';
@@ -86,19 +86,50 @@ export default {
             chart.config.data.labels = data.map(row => row.time)
             chart.config.data.datasets[0].data = data.map(row => row.count)
             chart.update();
+        },
+        setColorScheme(usingDarkMode) {
+            const chart = Chart.getChart("serverResponse");
+
+            // Checks if the user's current mode is dark mode
+            if (usingDarkMode.matches) {
+                // Dark mode
+                chart.options.plugins.title.color = "white";
+                chart.options.scales.x.title.color = "white";
+                chart.options.scales.y.title.color = "white";
+                chart.options.scales.x.grid.color = Chart.defaults.color;
+                chart.options.scales.y.grid.color = Chart.defaults.color;
+                chart.options.scales.x.ticks.color = "white";
+                chart.options.scales.y.ticks.color = "white";
+                chart.data.datasets[0].backgroundColor = "#CCECFD";
+                chart.options.plugins.legend.labels.color = "white";
+            } else {
+                // Light mode
+                chart.options.plugins.title.color = "black";
+                chart.options.scales.x.title.color = Chart.defaults.color;
+                chart.options.scales.y.title.color = Chart.defaults.color;
+                chart.options.scales.x.grid.color = undefined;
+                chart.options.scales.y.grid.color = undefined;
+                chart.options.scales.x.ticks.color = Chart.defaults.color;
+                chart.options.scales.y.ticks.color = Chart.defaults.color;
+                chart.data.datasets[0].backgroundColor = '#4e3681';
+                chart.options.plugins.legend.labels.color = Chart.defaults.color;
+            }
+
+            chart.update();
         }
     },
     async mounted() {
+        // TODO: final style check! can anything be cleaned up?
         // Define the data
         this.serverResponseCounts = await this.fetchData();
         const data = this.serverResponseCounts.oneYear;
 
-        // TODO: Add dark mode if feasible
+        // *TODO: combine this with below?? (not really a reason to have it separate)
         const yearlyData = {
             labels: data.map(row => row.time),
             datasets: [{
                 backgroundColor: '#4e3681',
-                label: 'Requests per response time', // todo make better? (change depending on response time?)
+                label: 'Requests per response time',
                 data: data.map(row => row.count)
             }]
         }
@@ -113,7 +144,6 @@ export default {
                     title: {
                         display: true,
                         text: 'Server Response Times',
-                        color: 'black',
                         font: {
                             weight: 'normal',
                             size: 18
@@ -145,7 +175,18 @@ export default {
             }
             }
         );
-    }
+
+        // Watch for updates to light or dark mode and change the visuals accordingly
+        const darkModeMediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+        this.setColorScheme(darkModeMediaQueryList);
+        darkModeMediaQueryList.addEventListener('change', this.setColorScheme);
+    },
+    // *TODO: before unmount is not allowed, do we need to remove listener? (switch between pages and confirm there's no error!)
+        // Generally getting the error (not my code) and other pages have it so maybe..?
+    beforeUnmount() {
+        const darkModeQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+        darkModeQueryList.removeEventListener('change', this.setColorScheme);
+    },
 }
     
 </script>
@@ -157,5 +198,11 @@ export default {
 
     #oneYear {
         margin-left: 57px;
+    }
+
+    @media(prefers-color-scheme: dark) {
+        .timeRangeButton {
+            color: white;
+        }
     }
 </style>
