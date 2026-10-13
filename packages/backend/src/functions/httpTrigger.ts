@@ -993,6 +993,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 }
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('httpTrigger: entering postNotificationEmail')
     try {
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
@@ -1016,7 +1017,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
 
-        // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
@@ -1046,7 +1046,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-            
+
             // Validation email body with link included here for later work, see issue 1121. 
             // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
@@ -1228,6 +1228,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 // Additional helper function to resend code using the token instead of the email
 // keeping the email out of the url is better for privacy
 export async function postResendCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering postResendCode')
     try {
         const body = await request.json() as any;   
         const token = body.token;
@@ -1245,7 +1246,6 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
              ? `http://127.0.0.1:10002/devstoreaccount1`
              : `https://${accountName}.table.core.windows.net`;
 
-        //const tableUrl =  `https://gdtteststorage.table.core.windows.net`
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
