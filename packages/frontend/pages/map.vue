@@ -6,9 +6,12 @@ Set the map to reference this data object. -->
 <!-- 
 TODO: FInd a better way to upload the geoJSON to frontend / mapbox
 TODO: Add  states (error, loading) for mapbox section
-TODO: Add temp tooltip to mapbox (country level and city level)
-TODO: Add click and zoom to map
+TODO: Add click and zoom to map (kinda built in)
 TODO: Outline logic for Additional Stats Section
+BUG: Fix issues with states key and country key. 
+Missing Beijing Shi. Map has Beijing Shi as just Beijing
+Has a lesser Antilles country labeled as "France" 
+Seems to be Guadelope and Martinique
 -->
 
 <template>
@@ -49,7 +52,7 @@ TODO: Outline logic for Additional Stats Section
 
 <script lang="ts">
 import { defineComponent, markRaw } from 'vue'
-import mapboxgl from 'mapbox-gl'
+import mapboxgl, { MapMouseEvent } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCountryStats, getStateStats } from '~/services/azureFuncs'
 
@@ -89,8 +92,8 @@ export default {
         sources: {},
         layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#1C1C19' } }],
       },
-      center: [0, 20],
-      zoom: 1,
+      center: [0, 0],
+      zoom: 0.75,
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
@@ -100,12 +103,21 @@ export default {
 
     map = m;
 
+    const popup = new mapboxgl.Popup({
+      className: 'map-popup',
+      closeButton: false,
+      closeOnClick: false,
+      offset: [0, -20],      
+    })
+
     m.on('load', async () => {
       const [stats, countriesGeo] = await Promise.all([dataPromise, countryPromise]);
 
       // TODO: repeat code, turn into function
       // get statistics
       const countries: CountryStat  = stats.countries as CountryStat;
+      const statesRequests: StateStat = stats.states as StateStat;
+      
       const codes = Object.keys(countries);
       if (codes.length === 0) return;
 
@@ -117,7 +129,6 @@ export default {
 
       // map country to to its log val
       const logValues = codes.flatMap(code => [code, logOf(code)]);
-
 
       m.addSource('country-boundaries', {
         type: 'geojson',
@@ -153,8 +164,8 @@ export default {
       // CITY-LEVEL'
       // get state keys
       const stateKeys = Object.keys(stats.states as StateStat);
-      console.log(stateKeys)
-      console.log(stats.states)
+      // console.log(stateKeys)
+      // console.log(stats.states)
       const statesGeo = await statePromise;
 
       // use geojson to draw states
@@ -176,41 +187,128 @@ export default {
       })
 
       // TODO: repeat code, turn into function
-      if (stateKeys.length > 0) {
-        // take log of requests so color scale is less skewed
-        const stateLog = (key: string) => Math.log10((stats.states as StateStat)[key]!.requests + 1);
-        const sLogs = stateKeys.map(stateLog);
-        const sminLog = Math.min(...sLogs);
-        const smaxLog = Math.max(...sLogs);
+      // take log of requests so color scale is less skewed
+      const stateLog = (key: string) => Math.log10((stats.states as StateStat)[key]!.requests + 1);
+      const sLogs = stateKeys.map(stateLog);
+      const sminLog = Math.min(...sLogs);
+      const smaxLog = Math.max(...sLogs);
 
-        // map city to its log val
-        const slogValues = stateKeys.flatMap(key => [key, stateLog(key)]);
-        const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'name']]]
+      // map city to its log val
+      const slogValues = stateKeys.flatMap(key => [key, stateLog(key)]);
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'name']]]
+    
+      // fill in state based on requests amount- if no requests color state blank to cover up country-fill
+        m.addLayer({
+        id: 'states-fill',
+        type: 'fill',
+        source: 'states',
+        minzoom: 2.5,
+        paint: {
+          'fill-color': [
+            'match', stateKey,
+            stateKeys,
+            ['interpolate', ['linear'],
+              ['match', stateKey, ...slogValues, sminLog],
+              sminLog, LOW,
+              smaxLog > sminLog ? smaxLog : sminLog + 1, HIGH],
+            '#262622',
+          ],
+          'fill-opacity': [
+            'interpolate', ['linear'], ['zoom'],
+            2.5, 0,  
+            3.5, 1
+          ],
+        },
+      }, 'states-outline');
       
-        // fill in state based on requests amount- if no requests color state blank to cover up country-fill
-         m.addLayer({
-          id: 'states-fill',
-          type: 'fill',
-          source: 'states',
-          minzoom: 2.5,
-          paint: {
-            'fill-color': [
-              'match', stateKey,
-              stateKeys,
-              ['interpolate', ['linear'],
-                ['match', stateKey, ...slogValues, sminLog],
-                sminLog, LOW,
-                smaxLog > sminLog ? smaxLog : sminLog + 1, HIGH],
-              '#262622',
-            ],
-            'fill-opacity': [
-              'interpolate', ['linear'], ['zoom'],
-              2.5, 0,  
-              3.5, 1
-            ],
-          },
-        }, 'states-outline');
-      }
+
+      // hover outline layers
+      // idea is to filter show for matching countries/states using iso code of hovered area
+      m.addLayer({ 
+        id: 'country-hover', 
+        type: 'line', 
+        source: 'country-boundaries', 
+        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
+        paint: { 
+          'line-color': '#ffffff', 
+          'line-width': 2, 
+          'line-opacity': 0.8 } 
+        })
+
+        m.addLayer({
+        id: 'state-hover',
+        type: 'line',
+        source: 'states',
+        filter: ['==', ['get', 'iso_3166_2'], ''],
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 1.5,
+        },
+      })
+
+      const STATE_VISIBLE_ZOOM = 3.5
+      m.on('mousemove', 'countries-fill', (e) => {
+          m.getCanvas().style.cursor = 'pointer';
+
+          // enable popup on hover over country, name and number of requests
+          // state level - theory, use the zoom level to determine if we can see states- 
+          // and if theres a state use that info instead of country
+
+          if (e.features && e.features.length > 0) {
+            const country = e.features?.[0]
+
+            // check if area has a state-fill
+            const state = m.getLayer('states-fill') 
+            ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]
+            : undefined;
+
+            // check if at statelevel zoom and if a state is available
+            const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
+
+            // console.log(` Country Features: ${JSON.stringify(country?.properties, null, 2)}`)
+            // console.log(` State Features: ${JSON.stringify(state?.properties, null, 2)}`)
+
+
+            // enable highlight on countries
+            // const isCountry = country.layer.id === 'countries-fill';
+            m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], showState ? '' : country.properties!.ISO_A2_EH]);
+            m.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], showState ? state!.properties!.iso_3166_2 : '']);
+            
+            const countryKey = country.properties.ISO_A2_EH;
+            const stateKey = showState 
+            ? `${state!.properties!.iso_a2}|${String(state!.properties!.name).toLowerCase()}`
+            : '';
+
+            const name = showState ? state!.properties!.name : country.properties.NAME
+            const stats = showState ? statesRequests[stateKey] : countries[countryKey]
+            const value = stats ? `${stats!.requests} requests`  : 'No requests yet'
+
+
+            // const { NAME, ISO_A2_EH } = hovered.properties;
+            // const value = countries.hasOwnProperty(ISO_A2_EH) 
+            // ? `${countries[ISO_A2_EH]!.requests} requests ` 
+            // : 'No requests yet'
+
+            popup
+                .setLngLat(e.lngLat)
+                .setHTML(`<div class="map-popup-name">${name}</div><div class="map-popup-val">${value}</div>`)
+                .addTo(m);
+          
+          }
+
+          
+      });
+
+      m.on('mouseleave', 'countries-fill', () => {
+          m.getCanvas().style.cursor = '';
+          m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], '']);
+          if (m.getLayer('state-hover')) m.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], '']);
+          popup.remove();
+      });
+
+      
+
+
     });
 
   },
@@ -226,7 +324,7 @@ export default {
       try {
         const countries = await getCountryStats()
         const states = await getStateStats()
-        console.log(states)
+        // console.log(states)
         this.rawData = states
 
         return {countries, states}
@@ -251,6 +349,7 @@ export default {
   p {
     color: #FFFFFF
   }
+
 
 </style>
 
