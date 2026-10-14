@@ -28,8 +28,8 @@ while offline.
     </div>
 
     <button class="btn dismiss all" style="width: 19%; margin-right: 15px" @click="dismissAllEditsPopUp=true">Dismiss all edits</button>
-    <button class="btn dismiss published" style="width: 27%; margin-right: 15px" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
-    <button class="btn dismiss all" style="width: 27%; white-space: nowrap" @click="downloadEntriesCSV">Download entries as CSV</button>
+    <button class="btn dismiss published" style="width: 28%; margin-right: 15px" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
+    <button class="btn dismiss all" style="width: 28%; white-space: nowrap" @click="downloadEntriesCSV">Download entries as CSV</button>
 
     <!----------------Dismiss All Edits Popup-------------------->
     <div class="popup" v-if="dismissAllEditsPopUp">
