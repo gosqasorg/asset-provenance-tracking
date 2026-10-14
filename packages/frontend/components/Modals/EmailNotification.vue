@@ -37,7 +37,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     />
                     <p v-if="emailError" class="text-danger" role="alert" id="email-error" aria-describedby="email-error">{{ emailError }}</p>
                 </div>
-                <div>
+
+
+                <div v-if="featureFlag">
                     <label for="tag">Notify me about</label>
                     <input
                         id="tag"
@@ -65,7 +67,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     </div>
                 </div>
 
-                <div>
+                <div v-if="featureFlag">
                     <label for="tag">Suggested tags</label>
                      <div class="selectable-tag-container">
                         <button 
@@ -169,6 +171,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     import { getDecipheredForbiddenTags } from '~/utils/forbiddenTags';
     import { getColorForTag, textColorForTag } from '~/utils/colorTag';
 
+    //const featureFlag = (!(useRuntimeConfig().public.baseUrl).includes("prod"))
 
     export default {
         data() {
@@ -198,6 +201,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 verifyCooldownRemaining: 0,
 
                 _cooldownInterval: undefined as ReturnType<typeof setInterval> | undefined,
+
+                // Feature flag. False on prod.
+                featureFlag: (!(useRuntimeConfig().public.baseUrl).includes("prod")),
             }
         },
 
