@@ -549,8 +549,13 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
 }
 
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
     if (request.params.deviceKey.length != 22) { return undefined; }
-    const deviceKey = decodeKey(request.params.deviceKey);
     const attachmentID = request.params.attachmentID;
     context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, attachmentID });
 
@@ -581,10 +586,12 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 // --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    if (request.params.deviceKey.length != 22) {
-        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
     }
-    const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
