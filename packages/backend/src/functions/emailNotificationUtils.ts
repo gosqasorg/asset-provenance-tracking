@@ -199,11 +199,12 @@ export async function subscribeToNotifications(
 
     // Block_1
     // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    const exists = await blobClient.exists();
-
-    let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-    // let tagSet = ^^^^^^^^^
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+        const exists = await blobClient.exists();
+    
+        let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+        // let tagSet = ^^^^^^^^^
+        // Block_1
 
     // key1: {
     //     no_tag: [{email: "theEmail@foo.bar", id: <the_id>}, 
@@ -229,6 +230,14 @@ export async function subscribeToNotifications(
 
     // const tagsToEmailsSet = new Map<string, Array>();
     // JS Object instead
+    interface tagList {
+        email: string;
+        id: string;
+    };
+
+    const tagsToEmailsSet = {
+        tags: Array<string>
+    };
     if (!tags) {
         // no_tags
     }
@@ -238,37 +247,39 @@ export async function subscribeToNotifications(
         // TODO: Array type {:, :}
 
         // Block_1
+        
 
+        // Block_2
+        // 1/2: Add the specified email to the set
+        const sizeBeforeAdding = emailSet.size;
+        context.log(1)
+        emailSet.add(normalized);
+        context.log(2)
+        // If email is already stored return success
+        if (exists && emailSet.size === sizeBeforeAdding) {
+            return {
+                jsonBody: { message: "Success", name: blobName },
+                status: 200,
+            };
+        }
+
+        // 2/2: Generate a unique string id to represent the new email
+        const uniqueString = await crypto.subtle.generateKey(
+            { name: "AES-CBC", length: 256 },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+        const uniqueEmailString = base58encode(new Uint8Array(buffer));
+        emailIDSet.add(uniqueEmailString)
         // Block_2
 
 
         // tagsToEmailsSet.add(tagArray)
     }
 
-    // Block_2
-    // 1/2: Add the specified email to the set
-    const sizeBeforeAdding = emailSet.size;
-    context.log(1)
-    emailSet.add(normalized);
-    context.log(2)
-    // If email is already stored return success
-    if (exists && emailSet.size === sizeBeforeAdding) {
-        return {
-            jsonBody: { message: "Success", name: blobName },
-            status: 200,
-        };
-    }
-
-    // 2/2: Generate a unique string id to represent the new email
-    const uniqueString = await crypto.subtle.generateKey(
-        { name: "AES-CBC", length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-    );
-
-    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-    const uniqueEmailString = base58encode(new Uint8Array(buffer));
-    emailIDSet.add(uniqueEmailString)
+    
     
     // Recommendation: go for a solution that is simple and works first
     // const tagArray = tags.reduce((accumulator, tag) => {
