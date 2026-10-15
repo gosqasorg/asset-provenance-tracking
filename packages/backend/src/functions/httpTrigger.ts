@@ -1212,7 +1212,9 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const body = await request.json() as any;
         const token = body.token;
         const code = body.code;
-        const tags = []
+
+        // TODO: Connect to real data before merge
+        const tags = ['foo', 'bar', 'baz'] // Dummy data while the frontend isn't sending tags back 
 
         if (!token || !code) {
             context.error('postVerifyCode: returning 400')
