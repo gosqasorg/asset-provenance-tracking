@@ -8,6 +8,40 @@ const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 /*
+
+Notes from Weds pair programming session 14 Oct 26
+* Frontend to send tags in the payload of the call to notificationSubscription endpoint
+* Endpoint handler to store tags in table, temporarily, until user has verified
+* On verification, postVerifyCode will:
+  1. Retrieve tags
+  2. Sign the user up
+  3. Delete the row in the table
+
+Vincent to create issue: 
+* Carve off what you can of the frontend sending tags and / or storing in the table
+
+Converting to the new format
+-----------------------------------
+
+Old and busted: A pair of lists of strings; cannot handle tags
+New hotness: key-value pair keyed by tags, values as arrays of email address - email id pairs
+
+Converting to the new format involves altering:
+* getExistingEmails, and its two calls (one in subscribe, one in unsubscribe)
+
+In subscribeToNotifications
+> We at the present moment have enough to take what's returned from getExistingEmails and produce a { no_tag: [list of pairs] }
+> If tags are passed in, we get the whole data object, for that one email, eg { no_tag: [list], newly_selected_tag: [other list] }
+> So writing that function is one key item. 
+> Another function we may want to write is:
+> Pass in the data object described above, an email, and a list of tags, and get back the data object with the email added to the lists under the given tags
+  - This is the data that I expect we'll want to store
+> Data object gets handed to upload blob. This at present builds a single object and stores it. 
+> Then we come full circle with getExistingEmails, that retrieves that data object, which we just need to hand back, further meaning that altering this fn will be easy. 
+
+*/
+
+/*
 Sub-tasks:
 * In NotifySubscribers, alter extractEmailsFromResponse to take the new format, and output the same pair of lists
 * [Vincent] in extractEmailsFromResponse, call a new function that converts the old format to the new format
@@ -84,7 +118,10 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
 }
 
 
-async function getExistingEmails(exists: boolean, blobClient: BlockBlobClient) {
+async function getExistingEmails(
+    exists: boolean, 
+    blobClient: BlockBlobClient
+) {
     let emailSet = new Set<string>();
     let emailIDSet = new Set<string>();
     if(!exists) { return [emailSet, emailIDSet] as const }
@@ -174,7 +211,8 @@ async function uploadBlob(
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
-    deviceKey: string, email: string, 
+    deviceKey: string, 
+    email: string, 
     tags: string[] = [],
     context
 ) {
@@ -191,20 +229,26 @@ export async function subscribeToNotifications(
 
     context.log('Entering subscribeToNotifications')
 
+    // const tagsToEmailsSet = new Map<string, Array>();
+    // JS Object instead
+    interface tagList {
+        email: string;
+        id: string;
+    };
+
     // Confirm the email exists
     const normalized = (email ?? "").trim().toLowerCase();
     if (!normalized) {
         return { jsonBody: { message: "Email not provided or email malformed" }, status: 400 };
     }
 
-    // Block_1
+    // Begin Block_1
     // Setup the blobClient
-        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-        const exists = await blobClient.exists();
-    
-        let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-        // let tagSet = ^^^^^^^^^
-        // Block_1
+    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    const exists = await blobClient.exists();
+
+    let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+    // End Block_1
 
     // key1: {
     //     no_tag: [{email: "theEmail@foo.bar", id: <the_id>}, 
@@ -228,13 +272,6 @@ export async function subscribeToNotifications(
     // Need a top level loop
     // or just fxnalize lol
 
-    // const tagsToEmailsSet = new Map<string, Array>();
-    // JS Object instead
-    interface tagList {
-        email: string;
-        id: string;
-    };
-
     const tagsToEmailsSet = {
         tags: Array<string>
     };
@@ -246,41 +283,39 @@ export async function subscribeToNotifications(
         let tagArray = []
         // TODO: Array type {:, :}
 
-        // Block_1
-        
-
-        // Block_2
-        // 1/2: Add the specified email to the set
-        const sizeBeforeAdding = emailSet.size;
-        context.log(1)
-        emailSet.add(normalized);
-        context.log(2)
-        // If email is already stored return success
-        if (exists && emailSet.size === sizeBeforeAdding) {
-            return {
-                jsonBody: { message: "Success", name: blobName },
-                status: 200,
-            };
-        }
-
-        // 2/2: Generate a unique string id to represent the new email
-        const uniqueString = await crypto.subtle.generateKey(
-            { name: "AES-CBC", length: 256 },
-            true,
-            ['encrypt', 'decrypt']
-        );
-
-        const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-        const uniqueEmailString = base58encode(new Uint8Array(buffer));
-        emailIDSet.add(uniqueEmailString)
-        // Block_2
 
 
         // tagsToEmailsSet.add(tagArray)
     }
 
-    
-    
+    // Block_2
+    // Block 2 can check for membership by indexing into the object
+    // 1/3: Add the specified email to the set
+    const sizeBeforeAdding = emailSet.size;
+    context.log(1)
+    emailSet.add(normalized);
+    context.log(2)
+    // If email is already stored return success
+    if (exists && emailSet.size === sizeBeforeAdding) {
+        return {
+            jsonBody: { message: "Success", name: blobName },
+            status: 200,
+        };
+    }
+
+    // 2/3: Generate a unique string id to represent the new email
+    const uniqueString = await crypto.subtle.generateKey(
+        { name: "AES-CBC", length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
+
+    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+    const uniqueEmailString = base58encode(new Uint8Array(buffer));
+
+    // 3/3: We'd replace this with the call to the "pass in the data object, the email, the id, and the tags, and get back the object with the new data stored properly
+    emailIDSet.add(uniqueEmailString)
+        
     // Recommendation: go for a solution that is simple and works first
     // const tagArray = tags.reduce((accumulator, tag) => {
     //         accumulator[tag] = email;
@@ -302,6 +337,19 @@ export async function subscribeToNotifications(
     }
 }
 
+/*
+All this does is:
+- Gets handed an ID
+- Grabs both lists
+- Looks up the index of the id in the id list
+- Uses that index to grab the email in the email list
+- Delete both from each list
+- Store back in blob store
+
+The next question for this is:
+* What modifications do we need to make to uploadBlob to convert it from taking a pair of lists to taking a json object
+
+*/
 export async function unsubscribeFromNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -333,8 +381,8 @@ export async function unsubscribeFromNotifications(
     // If the email wasn't stored originally return success
     if (exists && emailSet.size === sizeBeforeAdding) {
         return {
-        jsonBody: { message: "Success", name: blobName },
-        status: 200,
+            jsonBody: { message: "Success", name: blobName },
+            status: 200,
         };
     }
 
