@@ -6,12 +6,7 @@ Set the map to reference this data object. -->
 <!-- 
 TODO: FInd a better way to upload the geoJSON to frontend / mapbox
 TODO: Add  states (error, loading) for mapbox section
-TODO: Add click and zoom to map (kinda built in)
 TODO: Outline logic for Additional Stats Section
-BUG: Fix issues with states key and country key. 
-Missing Beijing Shi. Map has Beijing Shi as just Beijing
-Has a lesser Antilles country labeled as "France" 
-Seems to be Guadelope and Martinique
 -->
 
 <template>
@@ -22,9 +17,10 @@ Seems to be Guadelope and Martinique
         </div>
         
         <!-- TODO: Map Section -->
+        <button id="reset-btn" @click="resetView">Back to World View</button>
+
         <div>
           <div id="map" style="width: 800px; height: 600px;"></div>
-          <!-- <div ref="mapEl" class="world-map" /> -->
         </div>
 
         <!-- TODO: Stats Section -->
@@ -36,15 +32,24 @@ Seems to be Guadelope and Martinique
              <p>{{ rawData }}</p>
             <div>
                 <!-- Row for  # of requests, avg response, succeeded %-->
+                <p>Country: {{  }}</p>
+                <p>State: {{  }}</p>
+                <p>Requests: {{  }}</p>
+                <p>Succeeded Rate: {{  }}</p>
+
+                <p>Avg Response: {{  }}</p>
             </div>
             <div>
                 <!-- Row for % of total requests -->
+                <p>Portion of Traffic: {{  }}</p>
             </div>
             <div>
                 <!-- Line Graph for requests per day -->
             </div>
             <div>
                 <!-- Top Cities Section -->
+                <p>Cities in {{  }} </p>
+                <p>List of the cities: {{  }}</p>
             </div>
         </div>
     </div>
@@ -55,6 +60,8 @@ import { defineComponent, markRaw } from 'vue'
 import mapboxgl, { MapMouseEvent } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCountryStats, getStateStats } from '~/services/azureFuncs'
+import countryBounds from '../data_viz/files/country-bounds.json';
+
 
 let map: mapboxgl.Map | null = null
 
@@ -65,12 +72,15 @@ const WORLDVIEW = 'US';
 type CountryStat = Record<string, { name: string; requests: number; failed: number }>;
 type StateStat = Record<string, { name: string; requests: number; failed: number }>;
 
+type CountryBounds = Record<string, { name: string; bounds: number[][] }>;
+const BOUNDS = countryBounds as CountryBounds
+
+
 export default {
 
   data() {
     return {
-      rawData: null as any[] | null,   
-    }
+      rawData: null as any[] | null    }
   },
 
   mounted() {
@@ -195,7 +205,7 @@ export default {
 
       // map city to its log val
       const slogValues = stateKeys.flatMap(key => [key, stateLog(key)]);
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'name']]]
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'gn_name']]]
     
       // fill in state based on requests amount- if no requests color state blank to cover up country-fill
         m.addLayer({
@@ -235,6 +245,17 @@ export default {
           'line-opacity': 0.8 } 
         })
 
+      m.addLayer({ 
+      id: 'country-selected', 
+      type: 'line', 
+      source: 'country-boundaries', 
+      filter: ['==', ['get', 'ISO_A2_EH'], ''],  
+      paint: { 
+        'line-color': '#ffffff', 
+        'line-width': 2, 
+        'line-opacity': 0.8 } 
+      })
+
         m.addLayer({
         id: 'state-hover',
         type: 'line',
@@ -255,7 +276,7 @@ export default {
           // and if theres a state use that info instead of country
 
           if (e.features && e.features.length > 0) {
-            const country = e.features?.[0]
+            const country = e.features[0]
 
             // check if area has a state-fill
             const state = m.getLayer('states-fill') 
@@ -276,10 +297,10 @@ export default {
             
             const countryKey = country.properties.ISO_A2_EH;
             const stateKey = showState 
-            ? `${state!.properties!.iso_a2}|${String(state!.properties!.name).toLowerCase()}`
+            ? `${state!.properties!.iso_a2}|${String(state!.properties!.gn_name).toLowerCase()}`
             : '';
 
-            const name = showState ? state!.properties!.name : country.properties.NAME
+            const name = showState ? state!.properties!.gn_name : country.properties.NAME
             const stats = showState ? statesRequests[stateKey] : countries[countryKey]
             const value = stats ? `${stats!.requests} requests`  : 'No requests yet'
 
@@ -306,8 +327,36 @@ export default {
           popup.remove();
       });
 
-      
+      // Zoom Functionality 
+      m.on('click', 'countries-fill', (e) => {
+        m.getCanvas().style.cursor = 'pointer';
 
+        if (e.features && e.features.length > 0) {
+          const country = e.features[0]
+          const isoCode = country?.properties.ISO_A2_EH as string
+          console.log(isoCode)
+          const result = BOUNDS[isoCode]
+
+          if (result) {
+            m.fitBounds(result.bounds, {
+              padding: 50,      
+              duration: 2000   
+            });
+          } else {
+            console.log("Country code not found")
+          }
+
+          m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], country?.properties.ISO_A2_EH]);
+
+          
+        }
+      })
+
+      // reset view when user clicks outside a country
+      m.on('click', (e) => {
+        const hit = m.queryRenderedFeatures(e.point, { layers: ['countries-fill'] });
+        if (hit.length === 0) this.resetView();    
+      })
 
     });
 
@@ -337,6 +386,11 @@ export default {
         return {countries: null, states: null}
       }
     },
+    resetView() {
+      map.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+      map.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
+    }
+
 
     // 
   },
@@ -350,7 +404,29 @@ export default {
     color: #FFFFFF
   }
 
+  :deep(.map-popup .mapboxgl-popup-content) {
+    background: #14140f;
+    border: 1px solid #45453c;
+    border-radius: 6px;
+    padding: 8px 10px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
 
+    :deep(.map-popup .map-popup-name) { font-size: 12px; font-weight: 500; color: #9a9a93; }
+    :deep(.map-popup .map-popup-val)  { font-size: 12px; font-weight: 600; color: #f0f0ea; }
+
+    :deep(.map-popup.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip) { border-bottom-color: #14140f; }
+    :deep(.map-popup.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip) { border-bottom-color: #14140f; }
+    :deep(.map-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip) { border-bottom-color: #14140f; }
+
+    :deep(.map-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip) { border-left-color: #14140f; }
+    :deep(.map-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip) { border-right-color: #14140f; }
+
+    :deep(.map-popup.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip) { border-top-color: #14140f; }
+    :deep(.map-popup.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip) { border-top-color: #14140f; }
+    :deep(.map-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip) { border-top-color: #14140f; }
+    
 </style>
 
 
