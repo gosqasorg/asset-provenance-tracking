@@ -30,15 +30,23 @@ Converting to the new format involves altering:
 * getExistingEmails, and its two calls (one in subscribe, one in unsubscribe)
 
 In subscribeToNotifications
-> We at the present moment have enough to take what's returned from getExistingEmails and produce a { no_tag: [list of pairs] }
-> If tags are passed in, we get the whole data object, for that one email, eg { no_tag: [list], newly_selected_tag: [other list] }
-> So writing that function is one key item. 
-> Another function we may want to write is:
-> Pass in the data object described above, an email, and a list of tags, and get back the data object with the email added to the lists under the given tags
-  - This is the data that I expect we'll want to store
+* Done: First major function
+  - Name: convertEmailSetsToTagBundle
+    > Done: We at the present moment have enough to take what's returned from getExistingEmails and produce a { no_tag: [list of pairs] }
+    > Done: If tags are passed in, we get the whole data object, for that one email, eg { no_tag: [list], newly_selected_tag: [other list] }
+    > Done: So writing that function is one key item. 
+
+* Second major function:
+    > Another function we may want to write is:
+    > Pass in the data object described above, an email, and a list of tags, and get back the data object with the email added to the lists under the given tags
+      - This is the data that I expect we'll want to store
+
+Coming full circle: 
 > Data object gets handed to upload blob. This at present builds a single object and stores it. 
 > Then we come full circle with getExistingEmails, that retrieves that data object, which we just need to hand back, further meaning that altering this fn will be easy. 
 
+Note: convertEmailSetsToTagBundle is a stepping stone that allows us to get the right data format into the db at all. It will later be used for
+converting legacy signups (signups before tag-specificity)
 */
 
 /*
@@ -208,6 +216,29 @@ async function uploadBlob(
 }
 
 
+function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
+    /*
+        Does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
+    */
+
+    /* Code for writing a unit test later
+        let fizz = [1, 2, 3]
+        let buzz = ['a', 'b', 'c']
+        let baz = convertEmailSetsToTagBundle(fizz, buzz)
+        console.dir(baz)
+    */
+
+    let theTagBundle = { no_tag: [] }
+
+    for(let i = 0; i < theEmailSet.length; i++) {
+        let pair = { email: theEmailSet[i], id: theEmailIdSet[i] }
+        theTagBundle['no_tag'].push(pair)
+    }
+
+    return theTagBundle
+}
+
+
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -248,6 +279,8 @@ export async function subscribeToNotifications(
     const exists = await blobClient.exists();
 
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+    let tagBundleNoTagsOnly = convertEmailSetsToTagBundle(emailSet, emailIDSet)  // does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
+
     // End Block_1
 
     // key1: {
@@ -315,7 +348,7 @@ export async function subscribeToNotifications(
 
     // 3/3: We'd replace this with the call to the "pass in the data object, the email, the id, and the tags, and get back the object with the new data stored properly
     emailIDSet.add(uniqueEmailString)
-        
+
     // Recommendation: go for a solution that is simple and works first
     // const tagArray = tags.reduce((accumulator, tag) => {
     //         accumulator[tag] = email;
