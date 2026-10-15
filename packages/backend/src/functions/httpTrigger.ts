@@ -549,10 +549,15 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
 }
 
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
+    if (request.params.deviceKey.length != 22) { return undefined; }
     const attachmentID = request.params.attachmentID;
-    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, attachmentID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return undefined; }
@@ -581,7 +586,12 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 // --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
     const deviceID = await calculateDeviceID(deviceKey);
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
@@ -605,6 +615,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
 }
+
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
@@ -681,7 +692,13 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
+  
     const deviceKey = decodeKey(request.params.deviceKey);
     const deviceID = await calculateDeviceID(deviceKey);
     await containerClient.createIfNotExists();
@@ -799,6 +816,9 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
+        if (deviceKey.length != 22) {
+            return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+        }
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -864,6 +884,9 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+    if (deviceKey.length != 22) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     context.log(deviceKey)
     context.error(deviceKey)
 
@@ -872,14 +895,14 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     const records = await getRecords.json()
 
     for (let record of records) {
-		if (record.record.tags && (record.record.tags).includes("recall")) {
-			context.error(`Record has already been recalled`);
-            return {
-                status: 400,
-                body: "Record has already been recalled"
-            }
-		}
-	}
+      if (record.record.tags && (record.record.tags).includes("recall")) {
+        context.error(`Record has already been recalled`);
+              return {
+                  status: 400,
+                  body: "Record has already been recalled"
+              }
+      }
+	  }
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
@@ -1368,6 +1391,12 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
 // --- GETs --- //
 
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     const deviceKey = decodeKey(request.params.deviceKey);
     const body = await upgradeProvenance(containerClient, deviceKey);
     return { jsonBody: body ?? { "already-converted": true} };
@@ -1749,6 +1778,9 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     const backendUrl = process.env['backend_url'];
     const requestClone = request.clone();
     const deviceKey = requestClone.params.deviceKey;
+    if (deviceKey.length != 22) {
+        return { status: 400, body: "HTTP Error 400: Invalid Key Length." };
+    }
     let formData = await requestClone.formData();
     const attachmentValues = formData.values();
     const record = JSON.parse(formData.get("provenanceRecord") as string);
