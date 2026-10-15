@@ -239,6 +239,37 @@ function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
 }
 
 
+/* TODO: check before adding. This will add duplicates. Do not use a set type data structure, instead, check before adding */
+function addTagSpecificSignupDataToBundle(
+    the_bundle, theEmail, theEmailId, theTags) {
+
+    if(!theTags.length) {
+        the_bundle.no_tags.push({
+            email: theEmail,
+            id: theEmailId
+        })
+
+        return the_bundle
+    }
+
+    for(let i = 0; i < theTags.length; i++) {
+        if(!(theTags[i] in the_bundle)) {
+            the_bundle[theTags[i]] = [{
+                email: theEmail,
+                id: theEmailId
+            }]
+        } else {
+            the_bundle[theTags[i]].push({
+                email: theEmail,
+                id: theEmailId
+            })
+        }
+    }
+
+    return the_bundle
+    
+}
+
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -278,8 +309,15 @@ export async function subscribeToNotifications(
     let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
 
+
+    const uniqueEmailString = createNewEmailId()
+
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
     let tagBundleNoTagsOnly = convertEmailSetsToTagBundle(emailSet, emailIDSet)  // does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
+
+    let tagBundle = addTagSpecificSignupDataToBundle(
+        tagBundleNoTagsOnly, email, uniqueEmailString, tags
+    )
 
     // End Block_1
 
@@ -305,13 +343,16 @@ export async function subscribeToNotifications(
     // Need a top level loop
     // or just fxnalize lol
 
+    /*
     const tagsToEmailsSet = {
         tags: Array<string>
     };
     if (!tags) {
         // no_tags
     }
+    */
 
+    /*
     for (const tag in tags) {
         let tagArray = []
         // TODO: Array type {:, :}
@@ -320,7 +361,7 @@ export async function subscribeToNotifications(
 
         // tagsToEmailsSet.add(tagArray)
     }
-
+    */
     // Block_2
     // Block 2 can check for membership by indexing into the object
     // 1/3: Add the specified email to the set
@@ -336,15 +377,6 @@ export async function subscribeToNotifications(
         };
     }
 
-    // 2/3: Generate a unique string id to represent the new email
-    const uniqueString = await crypto.subtle.generateKey(
-        { name: "AES-CBC", length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-    );
-
-    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-    const uniqueEmailString = base58encode(new Uint8Array(buffer));
 
     // 3/3: We'd replace this with the call to the "pass in the data object, the email, the id, and the tags, and get back the object with the new data stored properly
     emailIDSet.add(uniqueEmailString)
@@ -368,6 +400,19 @@ export async function subscribeToNotifications(
             status: 500,
         }
     }
+}
+
+function createNewEmailId() {
+    const uniqueString = await crypto.subtle.generateKey(
+        { name: "AES-CBC", length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
+
+    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+    const uniqueEmailString = base58encode(new Uint8Array(buffer));
+
+    return uniqueEmailString
 }
 
 /*

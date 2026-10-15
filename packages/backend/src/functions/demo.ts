@@ -17,3 +17,50 @@ let baz = convertEmailSetsToTagBundle(fizz, buzz)
 console.dir(baz)
 
 
+function addTagSpecificSignupDataToBundle(
+    the_bundle, theEmail, theEmailId, theTags) {
+
+    if(!theTags.length) {
+        the_bundle.no_tags.push({
+            email: theEmail,
+            id: theEmailId
+        })
+
+        return the_bundle
+    }
+
+    for(let i = 0; i < theTags.length; i++) {
+        if(!(theTags[i] in the_bundle)) {
+            the_bundle[theTags[i]] = [{
+                email: theEmail,
+                id: theEmailId
+            }]
+        } else {
+            the_bundle[theTags[i]].push({
+                email: theEmail,
+                id: theEmailId
+            })
+        }
+    }
+
+    return the_bundle
+    
+}
+
+
+let bundle = addTagSpecificSignupDataToBundle(
+    baz,
+    'foo@bar.com',
+    '12345',
+    ['bamboo', 'observer', 'wizard']
+)
+
+
+bundle = addTagSpecificSignupDataToBundle(
+    baz,
+    'foo@bar.com',
+    '12345',
+    ['bamboo', 'observer', 'wizard']
+)
+
+console.dir(bundle)
