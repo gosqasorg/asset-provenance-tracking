@@ -28,7 +28,8 @@ while offline.
     </div>
 
     <button class="btn dismiss all" style="width: 19%; margin-right: 15px" @click="dismissAllEditsPopUp=true">Dismiss all edits</button>
-    <button class="btn dismiss published" style="width: 27%" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
+    <button class="btn dismiss published" style="width: 28%; margin-right: 15px" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
+    <button class="btn dismiss all" style="width: 28%; white-space: nowrap" @click="downloadEntriesCSV">Download entries as CSV</button>
 
     <!----------------Dismiss All Edits Popup-------------------->
     <div class="popup" v-if="dismissAllEditsPopUp">
@@ -59,7 +60,7 @@ while offline.
         </div>
     </div>
     <!----------------Queued Keys Banner-------------------->
-    <div v-for="(key, index) in offlineKeys">
+    <div v-for="(key, index) in queuedKeys">
         <div class="key-box">
             <p style="font-size: 17px;">{{ key }}</p>
             <div style="background-color: #91bdf5; border-radius: 20px; width: 105px; color: black; text-align: center; height:40px; display:flex; justify-content: center; align-items: center;">Queued</div>
@@ -99,7 +100,7 @@ data() {
         dismissAllEditsPopUp: false,
         dismissPublishedEditsPopUp: false,
         dismissSingleEditPopUp: false,
-        offlineKeys: [] as string[],
+        queuedKeys: [] as string[],
         fulfilledKeys: [] as string[],
         failedKeys: [] as string[],
 	}
@@ -107,8 +108,8 @@ data() {
 
 async mounted() {
     try {
-        this.getFailedKeys();
-        this.getOfflineKeys();
+        this.getKeysFromStash("gdt-stash-failed");
+        this.getKeysFromStash("gdt-stash-queued");
         this.getFulfilledKeys();
         this.clearOneEdit();
     } catch (error) {
@@ -121,51 +122,32 @@ async mounted() {
 },
 
 methods: {
-    getOfflineKeys() {
-        // Get all keys that were successfully stashed while offline
-        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
-        for (stash_counter; stash_counter > 0; stash_counter--) {
-            let stashedRequest = JSON.parse(localStorage.getItem('gosqas-offline-stash-' + stash_counter) || '{}')
-            let fullUrl = stashedRequest[0][1]
-            let record = fullUrl.split("/")[fullUrl.split("/").length - 1]
-            this.offlineKeys.push(record)   
+    getKeysFromStash(stashName: string) {
+        let stashedRequests = localStorage.getItem(stashName) || '[]';
+
+        for (const request of JSON.parse(stashedRequests)) {
+            if (JSON.stringify(request) == "{}") {
+                continue
+            } else if (stashName.includes("queued")) {
+                this.queuedKeys.push(request["key"]);
+            } else {
+                this.failedKeys.push(request["key"]);
+            }
         }
     },
     getFulfilledKeys() {
         // Get all keys that were fullfilled from the stash
-        let fulfilled = (localStorage.getItem('gdt-stash-fulfilled') || "{}")
+        let fulfilled = localStorage.getItem('gdt-stash-fulfilled') || "[]";
         for (const key of fulfilled.split(",")) {
-            if (key !== "{}") {
+            if (key !== "[]") {
                 this.fulfilledKeys.push(key) 
             }
         }
     },
-    getFailedKeys() {
-        // Get all keys in the stash that failed to create
-        let failed = localStorage.getItem("gdt-stash-failed") || '{}';
-        if (failed == '[{}]' || failed == '{}') {
-            return
-        }
-
-        for (const request of JSON.parse(failed)) {
-            if (JSON.stringify(request) !== "{}") {
-                let fullUrl = request[0][1];
-                this.failedKeys.push(fullUrl.split("/")[fullUrl.split("/").length - 1]);
-            }
-        }
-    },
     clearAllEdits() {
-        let stash_counter = parseInt(localStorage.getItem('stash_counter') || "0");
-        for (stash_counter; stash_counter > 0; stash_counter--) {
-            let request_name = 'gosqas-offline-stash-' + stash_counter;
-            let old_request_name = 'gosqas_offline_stash_' + stash_counter;
-            localStorage.removeItem(request_name);
-            localStorage.removeItem(old_request_name);
-        }
-        localStorage.setItem('stash_counter', '0');
-        localStorage.removeItem('gdt-stash-syncing');
-        localStorage.removeItem('gdt-stash-fulfilled');
+        localStorage.removeItem('gdt-stash-queued');
         localStorage.removeItem('gdt-stash-failed');
+        localStorage.removeItem('gdt-stash-fulfilled');
         window.location.reload();
     },
     clearPublishedEdits() {
@@ -188,7 +170,6 @@ methods: {
             this.dismissOneKey = '';
             this.dismissSingleEditPopUp = false;
         }
-        localStorage.setItem('gdt-stash-fulfilled', '')
         localStorage.setItem('gdt-stash-fulfilled', this.fulfilledKeys.toString())
     },
     async retrySyncing(key: string, index: number) {
@@ -207,7 +188,7 @@ methods: {
                 return;
             }
 
-            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+            let stashedRecord = JSON.parse(stashedRequest["data"] || '{}');
 
             // Try to post the record/group and display an error if it fails
             await postProvenance(key, stashedRecord, []);
@@ -226,6 +207,33 @@ methods: {
             });
         }
     },
+    async downloadEntriesCSV() {
+        try {
+            const csvRows = [['Failed Keys', 'Queued Keys', 'Fulfilled Keys']];
+
+            // Find max length in the three stash so be sure all items are covered in the longest array
+            const maxLength = Math.max(this.failedKeys.length, this.queuedKeys.length, this.fulfilledKeys.length)
+
+            // Extract entries from each stash if any and push to csv
+            for (let i = 0; i < maxLength; i++) {
+                csvRows.push([
+                    `${this.failedKeys[i] ?? ""}`,
+                    `${this.queuedKeys[i] ?? ""}`,
+                    `${this.fulfilledKeys[i] ?? ""}`
+                ]);
+            }
+ 
+            const csvContent = csvRows.map(r => r.join(',')).join('\n');
+
+            const anchor = document.createElement('a');
+            anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+            anchor.target = '_blank';
+            anchor.download = `offlineEntries.csv`;
+            anchor.click();
+        } catch (error) {
+            console.error('Error generating offline entries CSV:', error);
+        }
+    },
     editSubmission(key: string, index: number) {
         try {
             // Get the specified failed request
@@ -242,7 +250,7 @@ methods: {
                 return;
             }
 
-            let stashedRecord = JSON.parse(stashedRequest[1][1] || '{}');
+            let stashedRecord = JSON.parse(stashedRequest["data"] || '{}');
             let isGroup = false;
 
             if (stashedRecord.children_name) {

@@ -1,5 +1,5 @@
-#!/bin/bash
-# deploy_test_be.sh
+#!/usr/bin/env bash
+
 # set top level variables describing how/where function app is deployed
 export LOCATION=eastus2
 export RG_NAME=rg-gdt-test
@@ -16,8 +16,7 @@ export MY_STATIC_WEB_APP_NAME=gdt-test-frontend
 # Deploy function app
 ./npm-install-everything.sh  # Make double sure everything gets installed
 cd packages/backend
-npm install
 npm run build
-rm -rf node_modules
+#rm -rf node_modules
 func azure functionapp publish $FUNC_NAME
 

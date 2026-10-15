@@ -1,20 +1,22 @@
-
-type BufferSource = any;
-namespace NodeJS { export type BufferSource = any; }
-// delete the top two lines, temporary for testing
-
+// Ecosystem
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
+
+// Azure
+import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
+import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
+
+// Local
+import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
+import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails } from './emailNotificationUtils.js';
-import { ClientSecretCredential } from "@azure/identity";
-import './getStats.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -41,11 +43,13 @@ const baseUrl = accountName === "devstoreaccount1"
     : `https://${accountName}.blob.core.windows.net`;
 
 const cred = new StorageSharedKeyCredential(accountName, accountKey);
-const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
+export const containerClient = new ContainerClient(`${baseUrl}/gosqas`, cred);
 
 const MAX_ATTACHMENTS_LIMIT = 1000;
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
 
-/*==============  Utils Section  ============*/
+
+/*==============  Interfaces  ============*/
 
 interface ProvenanceRecord {
     record: any,
@@ -64,7 +68,8 @@ interface NamedBlob {
     blob: Blob,
 }
 
-const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
+
+/*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts)  ============*/
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -138,6 +143,196 @@ export async function decrypt(key: Uint8Array<ArrayBuffer>, salt: Uint8Array<Arr
     const result = await crypto.subtle.decrypt({ name: "AES-CBC", iv: salt }, $key, encryptedData);
     return new Uint8Array(result);
 }
+
+async function pathExists(containerClient: ContainerClient, path: string) {
+    const iterResult = await containerClient.listBlobsFlat({ prefix: path }).next();
+    if (iterResult.done) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+
+    let count = 0;
+
+    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+        const blobClient = containerClient.getBlockBlobClient(blob.name);
+        
+        try {
+            const { data } = await decryptBlob(blobClient, deviceKey);
+            const json = new TextDecoder().decode(data);
+            const prov = JSON.parse(json) as { attachments?: string[] };
+            
+            if (Array.isArray(prov.attachments)) {
+                count += prov.attachments.length;
+                if (count >= limit) {
+                    return count; 
+                }
+            }
+        } catch {
+            continue;
+        }
+    }
+    return count;
+}
+
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
+    const props = await client.getProperties();
+    const salt = props.metadata?.["gdtsalt"];
+    if (!salt) throw new Error(`Missing Salt ${client.name}`);
+    const timestamp = parseInt(props.metadata?.["gdttimestamp"]);
+    if (isNaN(timestamp) || !isFinite(timestamp)) throw new Error(`Invalid Timestamp ${client.name}`);
+
+    const buffer = await client.downloadToBuffer();
+    const saltBuffer = fromHex(salt);
+    const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
+    const hash = props.metadata?.["gdthash"];
+    if (hash) {
+        if (!areEqual(fromHex(hash), await sha256(data))) {
+            throw new Error(`Invalid Hash ${client.name}`);
+        }
+    }
+
+    const contentType = props.metadata?.["gdtcontenttype"];
+    const encryptedName = props.metadata?.["gdtname"] ?? "";
+    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
+    const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
+
+    return { data, contentType, timestamp, filename };
+
+    function areEqual(first: Uint8Array, second: Uint8Array) {
+        return first.length === second.length
+            && first.every((value, index) => value === second[index]);
+    }
+}
+
+export function deduplicateKeys(keys: string[]): string[] {
+    return Array.from(new Set(keys))
+}
+
+
+/* ===============================================================
+   ============= Section 1 of 2: Time Triggers ===================
+/* =============================================================== */
+
+/*==============  Time Triggers, and Their Functions and Utilities  ============*/
+
+/* ----- Functions invoked by time triggers ----- */
+
+export async function livenessChecker(livenessTimer: Timer, context: InvocationContext) {
+
+    const staging = 'https://red-stone-00f5d251e.5.azurestaticapps.net/'
+    const production = 'https://blue-stone-05ede120f.5.azurestaticapps.net/'
+    const frontendUrl = process.env['frontend_url']
+
+    const stageResponse = await fetch(staging);
+    const prodResponse = await fetch(production);
+
+    // On dev and checking if production is down then send email stating prod is down
+    if ((frontendUrl.includes('dev') || frontendUrl.includes('red')) && prodResponse.status != 200) {
+        await livenessCheckEmailer('Production')
+    }
+
+    // On prod and checking if dev is down then send email staing dev is down
+    if ((frontendUrl.includes('blue') || frontendUrl.includes('https://gosqas.org/')) && stageResponse.status !=200) {
+        await livenessCheckEmailer('Staging')
+    }
+}
+
+export async function livenessCheckEmailer(server: string, context?: InvocationContext) {
+
+    const emails = process.env['LIVENESS_CHECK_EMAIL_RECIPIENTS']
+
+    try {
+        for (const email of emails.split(',')) {
+            const emailResponse = await sendEmail(
+                process.env['SENDER_EMAIL'],
+                email,
+                `Important: ${server} Server Down`,
+                `${server} server is down!`,
+                'GOSQAS DEVS',
+                context
+            )
+        if (emailResponse.status === "Failed") {
+            throw emailResponse
+            }
+        }
+    }
+    catch (error) {
+        context.error(error)
+    }
+}
+
+async function setStatisticsTotals() {
+    await containerClient.createIfNotExists();
+    const containerExists = await containerClient.exists();
+    const blobName = `statistics/totals`
+
+    // Get new total records, record entries, and attachments from containerClient
+    let totalRecords = 0
+    let totalAttachments = 0
+    let totalDevices = 0
+    let uniqueRecords = new Set<string>();
+
+    if (containerExists) {
+        for await (const blob of containerClient.listBlobsFlat()) {
+            // Only count blobs that are records or legacy records, skip attachments
+            if (blob.name.includes('prov/')) {
+                totalRecords++
+                uniqueRecords.add(findDeviceIdFromName(blob.name))
+            } else if (!(blob.name.includes('statistics/'))) {
+                totalAttachments++
+            }
+        }
+    }
+
+    totalDevices = uniqueRecords.size
+
+    // Update the blob with our new values
+    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: {
+            blobContentType: "application/json; charset=utf-8",
+        },
+    };
+
+    try {
+        await containerClient.uploadBlockBlob(
+            blobName,
+            data,
+            data.length,
+            uploadOptions
+        )
+    } catch(error) {
+        const msg = error instanceof Error ? error.message : String(error);
+    }
+}
+
+
+/* ----- Time Triggers ----- */
+
+// Once per day update the total record, record entry, and attachment counts
+app.timer('updateRecordCounts', {
+    schedule: `0 0 * * *`,
+    handler: setStatisticsTotals
+})
+
+app.timer('livenessChecker', {
+    schedule: '0 0 * * * *', 
+    handler: livenessChecker,
+})
+
+
+/* ===============================================================
+   ============= Section 2 of 2: API =============================
+/* =============================================================== */
+
+/*==============  Core Utility Functions (to remain in this file)  ============*/
 
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
@@ -238,46 +433,85 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
-    const props = await client.getProperties();
-    const salt = props.metadata?.["gdtsalt"];
-    if (!salt) throw new Error(`Missing Salt ${client.name}`);
-    const timestamp = parseInt(props.metadata?.["gdttimestamp"]);
-    if (isNaN(timestamp) || !isFinite(timestamp)) throw new Error(`Invalid Timestamp ${client.name}`);
+async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
+    let theUrl = `${baseUrl}${deviceKey}`;
 
-    const buffer = await client.downloadToBuffer();
-    const saltBuffer = fromHex(salt);
-    const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
-    const hash = props.metadata?.["gdthash"];
-    if (hash) {
-        if (!areEqual(fromHex(hash), await sha256(data))) {
-            throw new Error(`Invalid Hash ${client.name}`);
+    const updateData = {
+      blobType: 'deviceRecord',
+      description: description || "Adding record with tags",
+      tags: tags,
+      children_key: '',
+    };
+    
+    const updateFormData = new FormData();
+    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
+    
+    return await fetch(theUrl, {
+      method: "POST",
+      body: updateFormData,
+    });
+}
+
+export async function validateJSON(json: any) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.log("Format of JSON provided was invalid.")
+        return false;
+    }
+}
+
+async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
+    let response = undefined;
+    const MAX_RETRIES = 3;
+
+    for (let i = 1; i <= MAX_RETRIES; i++) {
+        response = undefined //resets each retry attempt
+        try {
+            if (typeof formData !== 'undefined') {
+                response = await fetch(`${url}`, {
+                    method: "POST",
+                    body: formData,
+                });
+            } else {
+                response = await fetch(`${url}`, {
+                    method: "GET"
+                });
+            }
+
+            if (response !== undefined && response.ok) {
+                return response;
+            }
+        } catch (e) {
+            context.log(`Fetch attempt failed: ${url}: ` + e);
         }
     }
 
-    const contentType = props.metadata?.["gdtcontenttype"];
-    const encryptedName = props.metadata?.["gdtname"] ?? "";
-    const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
-    const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
-
-    return { data, contentType, timestamp, filename };
-
-    function areEqual(first: Uint8Array, second: Uint8Array) {
-        return first.length === second.length
-            && first.every((value, index) => value === second[index]);
-    }
-}
-
-async function pathExists(containerClient: ContainerClient, path: string) {
-    const iterResult = await containerClient.listBlobsFlat({ prefix: path }).next();
-    if (iterResult.done) {
-        return false;
+    if (response !== undefined && !response.ok) {
+        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText)
     } else {
-        return true;
+        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
 }
 
-async function convertLegacyProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
+
+/*=================  Core functions invoked by endpoint handlers (endpoint operators)  =====================*/
+
+async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
@@ -290,7 +524,6 @@ async function convertLegacyProvenance(containerClient: ContainerClient, key: Ui
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, key);
         const json = new TextDecoder().decode(data);
-        if (!validateJSON(json)) { return { status: 404 }; }
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
         delete record.attachments;
@@ -339,34 +572,13 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
     return JSON.stringify(body).length <= sizeLimit
 }
 
-async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
 
-    let count = 0;
 
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        
-        try {
-            const { data } = await decryptBlob(blobClient, deviceKey);
-            const json = new TextDecoder().decode(data);
-            const prov = JSON.parse(json) as { attachments?: string[] };
-            
-            if (Array.isArray(prov.attachments)) {
-                count += prov.attachments.length;
-                if (count >= limit) {
-                    return count; 
-                }
-            }
-        } catch {
-            continue;
-        }
-    }
-    return count;
-}
+/*=================  Endpoints + Endpoint handlers  =====================*/
 
-/*=================  Endpoints  =====================*/
+/* ----- Pseudo handlers (to be split into handler/operator) ----- */
 
-/* ----- API Endpoints Section 1/2: Functions ----- */
+// --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const deviceKey = decodeKey(request.params.deviceKey);
@@ -378,7 +590,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
-        await convertLegacyProvenance(containerClient, deviceKey);
+        await upgradeProvenance(containerClient, deviceKey);
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
@@ -386,84 +598,12 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
         const json = new TextDecoder().decode(data);
-        // if (!(await validateJSON(json))) { return { status: 400 }; }
-        // validateJSON is broken
         const parsed_json = JSON.parse(json);
         const provRecord = parsed_json as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
     return { jsonBody: records };
-}
-
-export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
- 
-    await containerClient.createIfNotExists();
-
-    const formData = await request.formData();
-
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }   
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        console.log("attach type: " + typeof(attach))
-        attachments.push({ blob: attach, name: attach.name });
-    }
-
-    if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
-
-        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
-            return { status: 304 };
-        }
-    }
-
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    if (body.oversizedAttachments) {
-        return {
-            status: 400,
-            jsonBody: {
-                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
-                oversizedAttachments: body.oversizedAttachments,
-                attachments: body.attachments
-            }
-        }
-    }
-  
-    return { jsonBody: body ?? { converted: true}};
-}
-
-async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    await containerClient.createIfNotExists();
-    const formData = await request.formData();
-
-    try {
-        return await notifySubscribers(containerClient, request.params.deviceKey, formData, context);
-    } catch(error) {
-        return {
-            status: error.statusCode || 500,
-            jsonBody: {
-                error: 'Failed to send email'
-            }
-        }
-    }
-}
-
-async function upgradeProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const body = await convertLegacyProvenance(containerClient, deviceKey);
-    return { jsonBody: body ?? { "already-converted": true} };
 }
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -490,182 +630,6 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
     return { body: filename };
 };
 
-export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const directory_id = process.env['AZURE_TENANT_ID'];
-    const app_registration_id = process.env['AZURE_CLIENT_ID'];
-    const secret_value = process.env['AZURE_CLIENT_SECRET'];
-    const workspace_id = process.env['AZURE_WORKSPACE_ID'];
-    let client_id = app_registration_id
-    let client_secret = secret_value
-
-    const credential = new ClientSecretCredential(directory_id, client_id, client_secret);
-    const tokenResponse = await credential.getToken("https://api.loganalytics.io/.default");
-    let token = tokenResponse.token;
-
-    const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
-    let valsAtTimes = [0, 0, 0]
-
-    // Get time-based record entry counts
-    for (let v in timesToCheck) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
-        });
-        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
-    }
-    let records1h = valsAtTimes[0]
-    let records24h = valsAtTimes[1]
-    let records7d = valsAtTimes[2]
-
-    // Get time-based unique record counts
-    for (let v in timesToCheck) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
-        });
-        valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
-    }
-    let devices1h = valsAtTimes[0]
-    let devices24h = valsAtTimes[1]
-    let devices7d = valsAtTimes[2]
-
-    const d = new Date()
-    let today = d.getDay()  // returns 0-6 (0 is Sunday, 6 is Saturday)
-    let minutes = d.getMinutes() / 60
-    let hours = d.getHours() + minutes
-    let counted = 0
-    let recordsPerDayY = [0, 0, 0, 0, 0, 0, 0]
-
-    // Get record entries per day (last 7 days) for the graph
-    for (let i = 0; i <= today; i++) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
-        });
-        let recent = (await logs.json()).tables[0].rows[0][0];
-        
-        // Add the records we found to the current day, subtracting records we already counted
-        recordsPerDayY[today - i] = recent - counted
-        counted = recent
-        hours += 24
-    }
-
-    // Get record entries per hour (last 7 days, time in UTC) for the graph
-    let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-    for (let hour = 0; hour < 24; hour++) {
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            // Gets number of records created in the last 7 days at 'hour'
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
-        });
-        let hourly = (await logs.json()).tables[0].rows[0][0];
-        recordsPerHourY[hour] = hourly
-    }
-
-    // Get number of calls to postProvenance that failed in the last 3 months
-    let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-        method: "POST",
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
-    });
-    let totalFailures = (await logs.json()).tables[0].rows[0][0];
-
-    // Get number of calls to postProvenance that succeeded in the last 3 months
-    logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspace_id}/query`, {
-        method: "POST",
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
-    });
-    let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
-
-    // Get total statistics counts (updates once per day)
-    let [totalRecords, totalAttachments, totalDevices] = [0, 0, 0]
-
-    await containerClient.createIfNotExists();
-    const blobName = `statistics/totals`
-    const blobClient = containerClient.getBlockBlobClient(blobName);
-    const exists = await blobClient.exists();
-
-    if (exists) {
-        const buffer = await blobClient.downloadToBuffer();
-        const text = buffer.toString("utf8");
-
-        if (text) {
-            const parsed = JSON.parse(text) as any;
-            totalRecords = parsed?.totalRecords || 0
-            totalAttachments = parsed?.totalAttachments || 0
-            totalDevices = parsed?.totalDevices || 0
-        }
-    }
-
-    return {
-        jsonBody: { totalRecords, records1h, records24h, records7d, totalDevices, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalAttachments, totalFailures, totalSuccesses },
-        headers: { "Content-Type": "application/json" }
-    }; 
-};
-
-async function setStatisticsTotals() {
-    await containerClient.createIfNotExists();
-    const containerExists = await containerClient.exists();
-    const blobName = `statistics/totals`
-
-    // Get new total records, record entries, and attachments from containerClient
-    let totalRecords = 0
-    let totalAttachments = 0
-    let totalDevices = 0
-    let uniqueRecords = new Set<string>();
-
-    if (containerExists) {
-        for await (const blob of containerClient.listBlobsFlat()) {
-            // Only count blobs that are records or legacy records, skip attachments
-            if (blob.name.includes('prov/')) {
-                totalRecords++
-                uniqueRecords.add(findDeviceIdFromName(blob.name))
-            } else if (!(blob.name.includes('statistics/'))) {
-                totalAttachments++
-            }
-        }
-    }
-
-    totalDevices = uniqueRecords.size
-
-    // Update the blob with our new values
-    const payloadObj = { totalRecords: totalRecords, totalDevices: totalDevices, totalAttachments: totalAttachments};
-    const data = JSON.stringify(payloadObj);
-
-    const uploadOptions = {
-        tier: "Cool",
-        blobHTTPHeaders: {
-            blobContentType: "application/json; charset=utf-8",
-        },
-    };
-
-    try {
-        await containerClient.uploadBlockBlob(
-            blobName,
-            data,
-            data.length,
-            uploadOptions
-        )
-    } catch(error) {
-        const msg = error instanceof Error ? error.message : String(error);
-    }
-}
- 
-export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    // This is a simple function that returns the version of the server.
-    return { 
-        jsonBody: VERSION_INFO,
-        headers: { "Content-Type": "application/json" }
-    };
-}
-
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         const key = await makeEncodedDeviceKey();
@@ -684,16 +648,137 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
     }
 }
 
-export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const queryStats = usageStatsCache.getQueryStats();
+    const totals = usageStatsCache.getTotals();
+
+    return {
+        jsonBody: { ...queryStats, ...totals },
+        headers: { "Content-Type": "application/json" }
+    }; 
+};
+
+async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering getBrowserStats')
+    try {
+        const rows = usageStatsCache.getBrowserStats();
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } };
+    } catch (error) {
+        context.log("getBrowserStats error:", error);
+        return { body: "Error fetching browser stats", status: 500 }
+    }
+}
+
+export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that returns the version of the server.
+    return { 
+        jsonBody: VERSION_INFO,
+        headers: { "Content-Type": "application/json" }
+    };
+}
+
+
+// --- POSTS --- //
+
+export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey);
+    await containerClient.createIfNotExists();
+    const formData = await request.formData();
+    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
+
+    // --- Guard Clauses --- //
+
+    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
+
+    const provenanceRecord = formData.get("provenanceRecord");
+    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
+
+    const record = JSON5.parse(provenanceRecord);
+    if (!validateJSON(record)) { return { status: 404 }; }
+
+    let condition = "deviceName" in record && (!validateRecordJSON(record) || !validateEntryJSON(record))
+    if (condition) {
+        { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
+    }
+
+    // -- Handle Attachments -- // 
+
+    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+    const timestamp = new Date().getTime();
+    const attachments = new Array<NamedBlob>();
+    for (const attach of formData.values()) {
+        if (typeof attach === 'string') continue;
+        context.log("Attachment Type: " + typeof(attach))
+
+        // Content Moderation        
+        // Silently skip if not permitted
+        context.log('Checking attachment')
+        if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
+            context.log(`Content Moderation flagged image named: ${attach.name}`)
+            continue
+        }
+        context.log('Image is permitted')
+        
+        attachments.push({ blob: attach, name: attach.name });
+    }
+
+    if (attachments.length > 0) {
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+
+        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+            return { status: 304 };
+        }
+    }
+
+    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    if (body.oversizedAttachments) {
+        context.error('postProv: returning 400')
+        return {
+            status: 400,
+            jsonBody: {
+                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                oversizedAttachments: body.oversizedAttachments,
+                attachments: body.attachments
+            }
+        }
+    }
+  
+    return { jsonBody: body ?? { converted: true}};
+}
+
+export function validateRecordJSON(json: any) {
+    // Records/Groups require children_key, hasParent, deviceName, and description
     const Valid = z.object({
         blobType: z.string().optional(),
         children_key: z.union([z.string(), z.array(z.string())]),
         children_name: z.array(z.string()).optional(),
         description: z.string(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
+        deviceName: z.string(),
+        hasParent: z.boolean(),
         isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        console.error("Format of JSON provided was invalid.")
+        console.error(JSON.stringify(json))
+        console.error(e.cause)
+        console.error(e.message)
+        return false;
+    }
+}
+
+export function validateEntryJSON(json: any) {
+    // Record entries only have blobType, description, childrenkeys, and tags (none required)
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        description: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
         tags: z.array(z.string()).optional(),
     });
 
@@ -706,12 +791,10 @@ export async function validateJSON(json: any) {
     }
 }
 
-export function deduplicateKeys(keys: string[]): string[] {
-    return Array.from(new Set(keys))
-}
-
-// Send to All Children: Send new record's tags and description to all children
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    /*
+    // Send to All Children: Send new record's tags and description to all children
+    */
     const baseUrl = process.env['backend_url'];
 
     try {
@@ -767,31 +850,18 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
         }
     }
 }
- 
-async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
-    let theUrl = `${baseUrl}${deviceKey}`;
 
-    const updateData = {
-      blobType: 'deviceRecord',
-      description: description || "Adding record with tags",
-      tags: tags,
-      children_key: '',
-    };
-    
-    const updateFormData = new FormData();
-    updateFormData.append("provenanceRecord", JSON.stringify(updateData));
-    
-    return await fetch(theUrl, {
-      method: "POST",
-      body: updateFormData,
-    });
-}
 
 // Recall: Pin and send new record entry to all children
 export async function recall(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    /*
+    // Recall: Pin and send new record entry to all children
+    */
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+    context.log(deviceKey)
+    context.error(deviceKey)
 
     // Prevent the record from being recalled more than once
     let getRecords = await fetch(`${baseUrl}${deviceKey}`)
@@ -817,7 +887,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     
     const description = record.description || "";
 
-    await addRecordWithTags(baseUrl, deviceKey, tags, description)
+    await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
 
     // Email users if they are subscribed to the group
     let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
@@ -915,6 +985,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 }
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('httpTrigger: entering postNotificationEmail')
     try {
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
@@ -924,6 +995,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         // const tags = body.tags ?? [];
 
         if (!email || !recordKey) {
+            context.error('postNotificationEmail: returning 400')
             return {
                 jsonBody: {error: "Error: email and record key required"},
                 status: 400
@@ -937,7 +1009,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             ? `http://127.0.0.1:10002/devstoreaccount1`
             : `https://${accountName}.table.core.windows.net`;
 
-        // const tableUrl =  `https://gdtteststorage.table.core.windows.net` 
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
@@ -967,7 +1038,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
         try {
             const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-            
+
             // Validation email body with link included here for later work, see issue 1121. 
             // `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
             const emailResult = await sendEmail(
@@ -986,7 +1057,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             }
 
         } catch (error) {
-            context.log("Error sending email: " + error); 
+            context.error("Error sending email: " + error); 
             throw error  
         }
 
@@ -1013,12 +1084,12 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
-
 export async function getPendingVerification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const token = request.query.get('token');   
  
         if (!token) { 
+            context.error('getPendingVerification: returning 400')
             return {
                 jsonBody: { error: "Token required" }, 
                 status: 400
@@ -1089,6 +1160,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const tags = []
 
         if (!token || !code) {
+            context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Token and code required" },
                 status: 400
@@ -1117,6 +1189,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 
         // not found, expired - same generic msg
         if (!entity || Date.now() > entity.expiresAt) {
+            context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Invalid or expired code" },
                 status: 400
@@ -1156,11 +1229,13 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 // Additional helper function to resend code using the token instead of the email
 // keeping the email out of the url is better for privacy
 export async function postResendCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering postResendCode')
     try {
         const body = await request.json() as any;   
         const token = body.token;
 
         if (!token) {
+            context.error('postResendCode: returning 400')
             return {
                 jsonBody: {error: "Token required"},
                 status: 400
@@ -1172,7 +1247,6 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
              ? `http://127.0.0.1:10002/devstoreaccount1`
              : `https://${accountName}.table.core.windows.net`;
 
-        //const tableUrl =  `https://gdtteststorage.table.core.windows.net`
 
         let table = 'PendingEmailVerifications'
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
@@ -1239,7 +1313,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             }
 
         } catch (error) {
-            context.log("Error sending email: " + error);   
+            context.error("Error sending email: " + error);   
             throw error
         }
 
@@ -1259,7 +1333,6 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
     }
 }
 
-
 export async function deleteNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const body = await request.json() as any;
@@ -1268,6 +1341,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         const tags: string[] = [];
 
         if (!emailID || !recordKey) {
+            context.error('deleteNotificationEmail: returning 400')
             return {
                 jsonBody: {error: "Error: email id and record key required"},
                 status: 400
@@ -1277,7 +1351,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         await containerClient.createIfNotExists();
         const response = await unsubscribeFromNotifications(containerClient, recordKey, emailID, tags); 
 
-        context.log("Unsubscribed from the record");
+        context.error("Unsubscribed from the record");
         return response;
         
     } catch(error) {
@@ -1298,78 +1372,33 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
     }
 }
 
-async function emailSignupTestEndpoint(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    /* How this pseudo-smoketest works:
-       1. Put a string into blobstore
-       2. Get it back out
-       3. Hand both responses back
-     */
 
-    try {
-        const key = await makeEncodedDeviceKey()
+/* ----- True Handlers ----- */
 
-        // Add it
-        const putResponse = await subscribeToNotifications(containerClient, key, "email@email.foo", []);
+// --- GETs --- //
 
-        // Access it
-        const getResponse = await retrieveNotifEmails(containerClient, key)
-
-
-        return {
-            jsonBody: {message: `${JSON.stringify(putResponse)},${JSON.stringify(getResponse)}`},
-            status: 200,
-        }
-
-    } catch(error) {
-
-        console.log(error)
-
-        // If the blobClient doesn't exist throw a custom error
-        if (error.includes("Key to subscribe to does not exist")) {
-            return {
-                jsonBody: {message: 'Error: Key to subscribe to does not exist'},
-                status: 400
-            }
-        }
-        
-        return {
-            jsonBody: {message: error.message},
-            status: 500,
-        }
-    }
+async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const deviceKey = decodeKey(request.params.deviceKey);
+    const body = await upgradeProvenance(containerClient, deviceKey);
+    return { jsonBody: body ?? { "already-converted": true} };
 }
 
-async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
-    let response = undefined;
-    const MAX_RETRIES = 3;
 
-    for (let i = 1; i <= MAX_RETRIES; i++) {
-        response = undefined //resets each retry attempt
-        try {
-            if (typeof formData !== 'undefined') {
-                response = await fetch(`${url}`, {
-                    method: "POST",
-                    body: formData,
-                });
-            } else {
-                response = await fetch(`${url}`, {
-                    method: "GET"
-                });
-            }
+// --- POSTs --- //
 
-            if (response !== undefined && response.ok) {
-                return response;
+async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    await containerClient.createIfNotExists();
+    const formData = await request.formData();
+
+    try {
+        return await notifySubscribers(containerClient, request.params.deviceKey, formData, context);
+    } catch(error) {
+        return {
+            status: error.statusCode || 500,
+            jsonBody: {
+                error: 'Failed to send email'
             }
-        } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
         }
-    }
-
-    if (response !== undefined && !response.ok) {
-        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
-    } else {
-        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
 }
 
@@ -1392,6 +1421,7 @@ async function createChild(context: InvocationContext, description: string, cust
             blobType: "deviceInitializer",
             deviceName: custom_title,
             description: description || "",
+            children_key: "",
             tags: tags,
             hasParent: true,
             isPublicKey: isPublicKey
@@ -1407,7 +1437,7 @@ async function createChild(context: InvocationContext, description: string, cust
         return theRecordKey
 
     } catch(e) {
-        context.log('createChild Error: Failed to create child record')
+        context.error('createChild Error: Failed to create child record')
         return '';
     }
 }
@@ -1514,6 +1544,19 @@ const GroupCreationOrderSchema = z.object({
 });
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    const GroupCreationOrderSchema = z.object({
+        deviceName: z.string(),
+        description: z.string(),
+        tags: z.array(z.string()).optional(),
+        publicKey: z.string().optional(),
+        number_of_children: z.number().optional(),
+        hasPublicKey: z.boolean().optional(),
+        custom_record_titles: z.array(z.string()).optional(),
+        children_name: z.array(z.string()).optional(),
+        create_public_key: z.boolean().optional()
+    });  
+      
     try{
         const attachments: NamedBlob[] = [];
         const formData = await request.formData();
@@ -1553,6 +1596,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
+            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1563,6 +1607,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
+            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1654,6 +1699,7 @@ async function createRecord(context, name, description, tags, attachments) {
         const timestamp = new Date().getTime();
         const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
         if (body.oversizedAttachments) {
+            context.error('createRecord: returning 400')
             return {
                 status: 400,
                 jsonBody: {
@@ -1684,6 +1730,17 @@ const RecordCreationOrderSchema = z.object({
 });
 
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const RecordCreationOrderSchema = z.object({
+        blobType: z.string().optional(),
+        deviceName: z.string(),
+        description: z.string(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
     try{
         const formData = await request.formData();
         const recordStr = formData.get("provenanceRecord");
@@ -1712,12 +1769,13 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        context.error('Failed to create record: ', error.message)
+        context.error('createRecordHandler: Failed to create record: ', error.message)
         let message;
 
         if (error instanceof z.ZodError) {
             message = 'Error: Check argument format.'
             context.error(message)
+            context.error('createRecordHandler: returning 400 on zodError')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1728,6 +1786,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         if (error instanceof SyntaxError) {
             message = 'Error: Check json structure.'
             context.error(message)
+            context.error('createRecordHandler: returning 400 on syntaxError')
             return {
                 status: 400,
                 jsonBody: { data: message },
@@ -1745,7 +1804,6 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
-// just a wrapper fxn for postProvenance
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
@@ -1760,6 +1818,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     const provenance = await getProvenance(request, context);
     const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
     if (!creationRecord) {
+        context.error('addEntryHandler: returning 400')
         return {
             status: 400,
             jsonBody: { error: "Provenance needs to exist before adding entries." }
@@ -1812,14 +1871,61 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     }
 }
 
-// Once per day update the total record, record entry, and attachment counts
-app.timer('updateRecordCounts', {
-    schedule: `0 0 * * *`,
-    handler: setStatisticsTotals
+
+/* ----- API Endpoints Section 2/2: Route Definitions ----- */
+
+// --- GETs --- //
+
+app.get("getAttachment", {
+    authLevel: 'anonymous',
+    route: 'attachment/{deviceKey}/{attachmentID}',
+    handler: getAttachment,
+})
+
+app.get("getAttachmentName", {
+    authLevel: 'anonymous',
+    route: 'attachment/{deviceKey}/{attachmentID}/name',
+    handler: getAttachmentName,
+})
+
+app.get('getNewDeviceKey', {
+    authLevel: 'anonymous',
+    route: 'getNewDeviceKey',
+    handler: getNewDeviceKey,
+})
+
+app.get("getProvenance", {
+    authLevel: 'anonymous',
+    route: 'provenance/{deviceKey}',
+    handler: getProvenance,
+})
+
+app.get("getProvenanceAlt", {
+    authLevel: 'anonymous',
+    route: 'getProvenance/{deviceKey}',
+    handler: getProvenance,
+})
+
+app.get('getPendingVerification', {
+    authLevel: 'anonymous',
+    route: 'pendingVerification',
+    handler: getPendingVerification,
+})
+
+app.get("upgradeProvenance", {
+    authLevel: 'anonymous',
+    route: 'upgrade/{deviceKey}',
+    handler: upgradeProvenanceHandler
+})
+
+app.get("getVersion", {
+    authLevel: 'anonymous',
+    route: 'version',
+    handler: getVersion
 })
 
 
-/* ----- API Endpoints Section 2/2: Route Definitions ----- */
+// --- POSTs --- //
 
 app.post("createRecord", {
     authLevel: 'anonymous',
@@ -1839,40 +1945,10 @@ app.post('deleteNotificationEmail', {
     handler: deleteNotificationEmail,
 })
 
-app.get("getProvenance", {
-    authLevel: 'anonymous',
-    route: 'provenance/{deviceKey}',
-    handler: getProvenance,
-})
-
-app.get("getProvenanceAlt", {
-    authLevel: 'anonymous',
-    route: 'getProvenance/{deviceKey}',
-    handler: getProvenance,
-})
-
 app.post("postProvenance", {
     authLevel: 'anonymous',
     route: 'provenance/{deviceKey}',
     handler: postProvenance
-})
-
-app.get("upgradeProvenance", {
-    authLevel: 'anonymous',
-    route: 'upgrade/{deviceKey}',
-    handler: upgradeProvenance
-})
-
-app.get("getAttachment", {
-    authLevel: 'anonymous',
-    route: 'attachment/{deviceKey}/{attachmentID}',
-    handler: getAttachment,
-})
-
-app.get("getAttachmentName", {
-    authLevel: 'anonymous',
-    route: 'attachment/{deviceKey}/{attachmentID}/name',
-    handler: getAttachmentName,
 })
 
 app.get("getStatistics", {
@@ -1881,22 +1957,16 @@ app.get("getStatistics", {
     handler: getStatistics
 })
 
+app.get("getBrowserStats", {
+    authLevel: 'anonymous',
+    route: 'stats/browsers',
+    handler: getBrowserStats
+})
+
 app.post('postEmail', {
     authLevel: 'anonymous',
     route: 'feedbackVolunteer',
     handler: postEmail,
-})
-
-app.get("getVersion", {
-    authLevel: 'anonymous',
-    route: 'version',
-    handler: getVersion
-})
-
-app.get('getNewDeviceKey', {
-    authLevel: 'anonymous',
-    route: 'getNewDeviceKey',
-    handler: getNewDeviceKey,
 })
 
 app.post('sendToAllChildren', {
@@ -1923,22 +1993,10 @@ app.post('postResendCode', {
     handler: postResendCode,
 })
 
-app.get("emailSignupTestEndpoint", {
-    authLevel: 'anonymous',
-    route: 'emailSignupTestEndpoint',
-    handler: emailSignupTestEndpoint
-})
-
 app.post("postNotificationEmail", {
     authLevel: 'anonymous',
     route: 'notificationSubscription',
     handler: postNotificationEmail
-})
-
-app.get('getPendingVerification', {
-    authLevel: 'anonymous',
-    route: 'pendingVerification',
-    handler: getPendingVerification,
 })
 
 app.post("postVerifyCode", {

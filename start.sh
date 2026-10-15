@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+# Something we need everyone to run
+git update-index --skip-worktree packages/backend/local.settings.json
+
+#############
+# Halt
+#############
+
+./stop.sh
+
+
 #############
 # Ensure correct node version is in use
 #############
@@ -9,6 +19,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
 # 2. Set node version
+nvm install 22
+nvm use 22
 nvm alias default 22
 
 
@@ -23,14 +35,13 @@ nvm alias default 22
 # Start GDT
 #############
 
-# 1. Ensure stopped
-./stop.sh
-
-# 2. Start frontend and backend
+# Start frontend and backend
 cd packages/backend
+npm run build
 ./start.sh &
 cd -
 cd packages/frontend
+npm run build
 ./start.sh &
 cd -
 

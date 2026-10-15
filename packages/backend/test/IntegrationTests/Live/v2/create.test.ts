@@ -3,7 +3,8 @@ import { readFile } from "fs/promises";
 
 
 // const baseUrl = "http://localhost:7071/api";
-const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+//const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+const api_url = process.env['api_url']
 
 describe ("Send to All Children Tests", () => {
     it("Should send entry to the child record", async() => {
@@ -18,7 +19,7 @@ describe ("Send to All Children Tests", () => {
         let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        let response = await fetch(`${baseUrl}/createGroup`, {
+        let response = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
@@ -29,7 +30,7 @@ describe ("Send to All Children Tests", () => {
         console.log("(Basic Send to Children Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`);
         let groupProvenance = await groupResponse.json();
         let groupRecord = groupProvenance[0].record;
 
@@ -45,14 +46,14 @@ describe ("Send to All Children Tests", () => {
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(newPayload));
 
-        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+        response = await fetch(`${api_url}/addEntry/${groupKey}`, {
             method: "POST",
             body: formData,
         });
         expect(response.status).toBe(200);
 
         // Look at the most recent record entry on the group and confirm the entry was added successfully
-        const groupData = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupData = await fetch(`${api_url}/provenance/${groupKey}`);
         groupProvenance = await groupData.json();
         groupRecord = groupProvenance[0].record;
         console.log("(Send to Children Test) Group Record:", groupRecord);
@@ -61,7 +62,7 @@ describe ("Send to All Children Tests", () => {
         expect(groupRecord.tags).toEqual(["Harry", "Ron", "sent_to_all_children"]);
 
         // Look at the most recent record entry on the child and confirm it has the tags from the parent
-        const childData = await fetch(`${baseUrl}/provenance/${childKeys[0]}`);
+        const childData = await fetch(`${api_url}/provenance/${childKeys[0]}`);
         const childProvenance = await childData.json();
         const childRecord = childProvenance[0].record;
         console.log("(Send to Children Test) Child Record:", childRecord);
@@ -84,7 +85,7 @@ describe ("Send to All Children Tests", () => {
         let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        let response = await fetch(`${baseUrl}/createGroup`, {
+        let response = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
@@ -95,7 +96,7 @@ describe ("Send to All Children Tests", () => {
         console.log("(Send to Children Not Public Key Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`);
         const groupProvenance = await groupResponse.json();
         const groupRecord = groupProvenance[0].record;
 
@@ -113,7 +114,7 @@ describe ("Send to All Children Tests", () => {
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(newPayload));
 
-        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+        response = await fetch(`${api_url}/addEntry/${groupKey}`, {
             method: "POST",
             body: formData,
         });
@@ -121,7 +122,7 @@ describe ("Send to All Children Tests", () => {
 
         // Look at the most recent record entry on the children and confirm they have the tags from the parent
         for (const child of childKeys) {
-            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childData = await fetch(`${api_url}/provenance/${child}`);
             const childProvenance = await childData.json();
             const childRecord = childProvenance[0].record;
 
@@ -130,7 +131,7 @@ describe ("Send to All Children Tests", () => {
         }
 
         // Look at the public key and confirm it did not receive the record entry
-        const publicProvenance = await fetch(`${baseUrl}/provenance/${publicKey}`);
+        const publicProvenance = await fetch(`${api_url}/provenance/${publicKey}`);
         const publicData = await publicProvenance.json();
         const publicRecord = publicData[0].record;
 
@@ -151,7 +152,7 @@ describe ("Send to All Children Tests", () => {
         let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        let response = await fetch(`${baseUrl}/createGroup`, {
+        let response = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
@@ -162,7 +163,7 @@ describe ("Send to All Children Tests", () => {
         console.log("(Don't Send to Children Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`);
         let groupProvenance = await groupResponse.json();
         let groupRecord = groupProvenance[0].record;
 
@@ -177,14 +178,14 @@ describe ("Send to All Children Tests", () => {
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(entryPayload));
 
-        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+        response = await fetch(`${api_url}/addEntry/${groupKey}`, {
             method: "POST",
             body: formData,
         });
         expect(response.status).toBe(200);
 
         // Look at the most recent record entry on the group and confirm it doesn't have the sent_to_all_children tag
-        const groupData = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupData = await fetch(`${api_url}/provenance/${groupKey}`);
         groupProvenance = await groupData.json();
         groupRecord = groupProvenance[0].record;
 
@@ -194,7 +195,7 @@ describe ("Send to All Children Tests", () => {
 
         // Look at the most recent record entry on the children and confirm they don't have the tags from the parent
         for (const child of childKeys) {
-            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childData = await fetch(`${api_url}/provenance/${child}`);
             const childProvenance = await childData.json();
             const childRecord = childProvenance[0].record;
 
@@ -205,6 +206,8 @@ describe ("Send to All Children Tests", () => {
         }
 
     }, 60000);
+
+});
 
     it("Should use default 'Sent from Group' description when entry has no description", async() => {
         // Create the group/children
@@ -218,7 +221,7 @@ describe ("Send to All Children Tests", () => {
         let formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        let response = await fetch(`${baseUrl}/createGroup`, {
+        let response = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
@@ -229,7 +232,7 @@ describe ("Send to All Children Tests", () => {
         console.log("(Send to Children Default Description Test) Group Url:", data);
 
         const groupKey = data.groupUrl.split('/').pop();
-        const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+        const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`);
         const groupProvenance = await groupResponse.json();
         const groupRecord = groupProvenance[0].record;
 
@@ -244,7 +247,7 @@ describe ("Send to All Children Tests", () => {
         formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(entryPayload));
 
-        response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+        response = await fetch(`${api_url}/addEntry/${groupKey}`, {
             method: "POST",
             body: formData,
         });
@@ -252,7 +255,7 @@ describe ("Send to All Children Tests", () => {
 
         // Look at the most recent record entry on the child and confirm they have the default description
         for (const child of childKeys) {
-            const childData = await fetch(`${baseUrl}/provenance/${child}`);
+            const childData = await fetch(`${api_url}/provenance/${child}`);
             const childProvenance = await childData.json();
             const childRecord = childProvenance[0].record;
 
@@ -260,9 +263,7 @@ describe ("Send to All Children Tests", () => {
             expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
         }
 
-    }, 60000);
-
-});
+}, 60000);
 
 
 describe("Group Creation Tests", () => {
@@ -279,7 +280,7 @@ describe("Group Creation Tests", () => {
 
 		const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(groupPayload));
-        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
+        const groupResponse = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
@@ -297,7 +298,7 @@ describe("Group Creation Tests", () => {
 		const groupKey = parts.pop();
 		
 		// Fetch group record key response
-		const groupProvenanceRes = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		const groupProvenanceRes = await fetch(`${api_url}/provenance/${groupKey}`);
 		expect(groupProvenanceRes.ok).toBe(true);
 		const groupAttributes = await groupProvenanceRes.json();
 		expect(groupAttributes.length).toBeGreaterThan(0);
@@ -312,7 +313,7 @@ describe("Group Creation Tests", () => {
 
 		// Verify public key
 		const publicKey = groupRecord.publicKey as string;
-		const publicKeyRes = await fetch(`${baseUrl}/provenance/${publicKey}`)
+		const publicKeyRes = await fetch(`${api_url}/provenance/${publicKey}`)
 		expect(publicKeyRes.ok).toBe(true);
 		const publicKeyAttributes = await publicKeyRes.json();
 		expect(publicKeyAttributes.length).toBeGreaterThan(0);
@@ -333,7 +334,7 @@ describe("Group Creation Tests", () => {
 
 		const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(groupPayload));
-        const groupResponse = await fetch(`${baseUrl}/createGroup`, {
+        const groupResponse = await fetch(`${api_url}/createGroup`, {
             method: "POST",
             body: formData,
         });
@@ -350,7 +351,7 @@ describe("Group Creation Tests", () => {
 		const groupKey = parts.pop();
 		
 		// Fetch group record key response
-		const groupProvenanceRes = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		const groupProvenanceRes = await fetch(`${api_url}/provenance/${groupKey}`);
 		expect(groupProvenanceRes.ok).toBe(true);
 		const groupAttributes = await groupProvenanceRes.json();
 		expect(groupAttributes.length).toBeGreaterThan(0);
@@ -387,7 +388,7 @@ describe("Group Creation Tests", () => {
     const pdfBlob = new Blob([Uint8Array.from(pdfBuffer)], { type: "application/pdf" });
     formData.append("attachment", pdfBlob, "PDFTest.pdf");
 
-    const response = await fetch(`${baseUrl}/createGroup`, {
+    const response = await fetch(`${api_url}/createGroup`, {
         method: "POST",
         body: formData,
     });
@@ -404,7 +405,7 @@ describe("Group Creation Tests", () => {
     expect(groupKey.length).toBeGreaterThan(0);
 
     // Verify group record has multiple attachments and multiple chlidren 
-    const groupProvResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+    const groupProvResponse = await fetch(`${api_url}/provenance/${groupKey}`);
     expect(groupProvResponse.ok).toBe(true);
 
     const groupProv = await groupProvResponse.json();
@@ -424,12 +425,12 @@ describe("Group Creation Tests", () => {
     expect(groupEntry.attachments.length).toBe(2);
 
     const attachmentHashes = groupEntry.attachments;
-    const imageDownloadResponse = await fetch(`${baseUrl}/attachment/${groupKey}/${attachmentHashes[0]}`);
+    const imageDownloadResponse = await fetch(`${api_url}/attachment/${groupKey}/${attachmentHashes[0]}`);
     expect(imageDownloadResponse.ok).toBe(true);
     const downloadedImageBuffer = Buffer.from(await imageDownloadResponse.arrayBuffer());
     expect(downloadedImageBuffer.equals(imageBuffer)).toBe(true);
 
-    const pdfDownloadResponse = await fetch(`${baseUrl}/attachment/${groupKey}/${attachmentHashes[1]}`);
+    const pdfDownloadResponse = await fetch(`${api_url}/attachment/${groupKey}/${attachmentHashes[1]}`);
     expect(pdfDownloadResponse.ok).toBe(true);
     const downloadedPdfBuffer = Buffer.from(await pdfDownloadResponse.arrayBuffer());
     expect(downloadedPdfBuffer.equals(pdfBuffer)).toBe(true);
@@ -437,7 +438,7 @@ describe("Group Creation Tests", () => {
     // Verify the number of children records
     const childKeys: string[] = groupEntry.record.children_key;
     for (const childKey of childKeys) {
-        const childProvResponse = await fetch(`${baseUrl}/provenance/${childKey}`);
+        const childProvResponse = await fetch(`${api_url}/provenance/${childKey}`);
         expect(childProvResponse.ok).toBe(true);
         const childProv = await childProvResponse.json();
         expect(childProv.length).toBeGreaterThan(0);
@@ -551,7 +552,7 @@ describe("Group Creation Tests", () => {
             // creates group records as found in above in testCases
             const caseFormData = new FormData();
             caseFormData.append("provenanceRecord", JSON.stringify(currCase));
-            response = await fetch(`${baseUrl}/createGroup`, {
+            response = await fetch(`${api_url}/createGroup`, {
                 method: "POST",
                 body: caseFormData
             });
@@ -566,7 +567,8 @@ describe("Group Creation Tests", () => {
 
                 // retrieves and stores parent records and tests that parent deviceName matches test cases
                 let parentKey = url.substring(url.lastIndexOf('/') + 1);
-                let prov = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+                let prov = await fetch(`${api_url}/provenance/${parentKey}`)
+                prov = await prov.json();
                 let parentRecord = prov[0].record
                 // console.log(parentRecord)
                 expect(parentRecord.deviceName).toBe(currCase.deviceName)
@@ -579,7 +581,8 @@ describe("Group Creation Tests", () => {
                 // retrieves and stores custom child titles by group
                 let tempGroup = []
                 for (let j = 0; j < currCase.number_of_children; j ++) {
-                    let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[j]}`)).json();
+                    let childProv = await fetch(`${api_url}/provenance/${childKeys[j]}`)
+                    childProv = await childProv.json();
                     let childTitle = childProv[0].record.deviceName
                     tempGroup.push(childTitle)
 
@@ -646,16 +649,20 @@ describe("Update v2 Tests", () => {
         let groupResponse;
         const groupFormData = new FormData();
         groupFormData.append("provenanceRecord", JSON.stringify(groupRecord));
-        groupResponse = await fetch(`${baseUrl}/createGroup`, {
+        let theUrl = `${api_url}/createGroup`
+        console.log(theUrl)
+        groupResponse = await fetch(theUrl, {
             method: "POST",
             body: groupFormData
         })
+        console.log(groupResponse)
+        console.log(JSON.stringify(groupResponse))
         expect(groupResponse.ok).toBe(true);
         const url = (await groupResponse.json()).groupUrl;
         console.log("Update tests group url:", url)
 
         const parentKey = url.substring(url.lastIndexOf('/') + 1);
-        const initialProv = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+        const initialProv = await (await fetch(`${api_url}/provenance/${parentKey}`)).json();
         const parentRecord = initialProv[0].record
         let childKeys = parentRecord.children_key
 
@@ -679,19 +686,19 @@ describe("Update v2 Tests", () => {
                 }
             };
 
-            response = await fetch(`${baseUrl}/addEntry/${parentKey}`, {
+            response = await fetch(`${api_url}/addEntry/${parentKey}`, {
                 method: "POST",
                 body: caseFormData
             });
             expect(response.ok).toBe(true);
 
-            let parentProvs = await (await fetch(`${baseUrl}/provenance/${parentKey}`)).json();
+            let parentProvs = await (await fetch(`${api_url}/provenance/${parentKey}`)).json();
             let currRecord = parentProvs[0].record
 
             if (currCase.description) {
                 expect(currRecord.description).toBe(currCase.description)
             }
-            if (i != 5 && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
+            if (i != (testCases.length - 1) && currCase.tags) {  // Don't check "send to children" case here (since it adds a new tag)
                 expect(currRecord.tags).toStrictEqual(currCase.tags)
             }
             if (currCase.attachments) {
@@ -700,8 +707,8 @@ describe("Update v2 Tests", () => {
         }
 
         for (let i = 0; i < parentRecord.number_of_children; i ++) {
-            let childProv = await (await fetch(`${baseUrl}/provenance/${childKeys[i]}`)).json();
-            expect(childProv[0].record.description).toBe(testCases[5].description);
+            let childProv = await (await fetch(`${api_url}/provenance/${childKeys[i]}`)).json();
+            expect(childProv[0].record.description).toBe(testCases[(testCases.length - 1)].description);
             expect(childProv[0].record.tags).toStrictEqual(["test", "demo", "sent_to_all_children"]);
         }
 	}, 60000);

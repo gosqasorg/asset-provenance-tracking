@@ -3,7 +3,8 @@ import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFunc
 import { readFile } from 'fs/promises';
 
 describe("Creating records with attachments", () => {
-	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+	//const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+	const baseUrl = process.env['api_url'] + '/provenance/'
 
 	it("Create a record with an attachment", async () => {
 		// Create record key
@@ -19,7 +20,7 @@ describe("Creating records with attachments", () => {
 				blobType: 'deviceInitializer',
 				deviceName: "Create Record Test",
 				description: "An API Feature Test-Attachments",
-				tags: {},
+				tags: [],
 				children_key: '',
 				hasParent: false,
 				isPublicKey: false,
@@ -36,6 +37,7 @@ describe("Creating records with attachments", () => {
 				body: formData,
 			});
 
+	        expect(postResponse.status).toBe(200)
 			expect(postResponse.ok).toBe(true);
 
 		} catch (error) {
