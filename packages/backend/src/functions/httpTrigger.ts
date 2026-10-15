@@ -242,6 +242,7 @@ export async function livenessChecker(livenessTimer: Timer, context: InvocationC
 }
 
 async function endpointLivenessChecker(livenessTimer: any, context: InvocationContext) {
+    const totalEndpoints = 22;
     const apiUrl = process.env["api_url"];
     const frontendUrl = process.env['frontend_url'];
     const testEmail = process.env["LIVENESS_CHECK_TEST_EMAIL"];
@@ -314,7 +315,6 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
             requestBody?: FormData | string;
         })[] = [
             {"name":"addEntry", "url":`/addEntry/${key}`, "requestBody": entryFormData},
-            {"name":"boop", "url":`/stats/boop`},
             {"name":"createGroup", "url":`/createGroup`, "requestBody": groupFormData},
             {"name":"getAttachment", "url":`/attachment/${key}/${attachmentID}`},
             {"name":"getAttachmentName", "url":`/attachment/${key}/${attachmentID}/name`},
@@ -337,7 +337,6 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
         emailFormData.append("email", testEmail);
 
         endpointInfo = [
-            {"name":"emailSignupTestEndpoint", "url":`/emailSignupTestEndpoint`},
             {"name":"postEmail", "url":`/feedbackVolunteer`, "requestBody": emailFormData},
             {"name":"notifySubscribers", "url":`/notifySubscribers/${keyToEmail}`, "requestBody": recordFormData},
         ];
@@ -421,7 +420,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
         context.error("endpointLivelinessChecker Error:", error)
     }
 
-    // Loop through all our responses and send an email if any of them aren't 200
+    // Loop through all our responses and send an email if any of them aren't 200 or if we didn't test all endpoints
     let failedResponses = [];
     for (const storedResponse of responses) {
         if (storedResponse.status !== 200) {
@@ -429,7 +428,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
         }
     }
 
-    if (failedResponses.length > 0) {
+    if (failedResponses.length > 0 || responses.length < totalEndpoints) {
         const message = `Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures.`;
         await livenessCheckEmailer(`Important: Some Endpoints Are Down on ${environment}`, message, context);
     }
