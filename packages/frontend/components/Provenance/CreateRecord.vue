@@ -171,7 +171,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
  </template>
 
  <script lang="ts">
- import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers } from '~/services/azureFuncs';
+ import { postProvenance, getProvenance, displayOfflineBanner, displayOnlineBanner, postNotificationEmail, notifySubscribers, stashOfflineRequest } from '~/services/azureFuncs';
  import { EventBus } from '~/utils/event-bus';
  import { addChildKeys, addToGroup, notifyChildren, recallChildren } from '~/utils/descendantList';
  import { validateKey } from '~/utils/keyFuncs';
@@ -504,17 +504,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             } catch (error) {
                 // Remove the leading "Error:" text
-                let errorMessage;
-                if (error instanceof Error) {
-                    errorMessage = error.message;
-                } else {
-                    errorMessage = error;
-                }
+                const errorMessage = error instanceof Error ? error.message : error;
 
                 console.log(error)
                 console.log(errorMessage)
 
-                if (typeof errorMessage == "string" && errorMessage.includes('high volume of requests')) {
+                if (error && error.toString().includes("202")) {
+                    stashOfflineRequest(this.recordKey, "gdt-stash-queued", record);
+                    this.$snackbar.add({
+                        type: 'success',
+                        text: `Status 202: User is offline but the record has been stashed`
+                    });
+                } else if (typeof errorMessage == "string" && errorMessage.includes('high volume of requests')) {
                     this.$snackbar.add({
                         type: 'error',
                         text: `Error sending email: ${errorMessage}`
