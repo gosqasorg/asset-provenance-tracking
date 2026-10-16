@@ -27,8 +27,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h4 class="dark-mode-heading">Global Distributed Tracking enables closed-loop tracking for products, information, and logistics at no cost to the user.</h4> </div>
                 <div class="row" style="display:inline-flex">
                     <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
-                        <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
-                            backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
+                        <!-- TODO: WHEN OFFLINE REPLACE THIS BUTTON WITH SCAN QR BUTTON (get v-if when offline to work first!!) -->
+                         <!-- TODO: recolor scan qr button to be visible (see figma colors..? HAVE ALL THREE BUTTONS INSTEAD???) -->
+                         <!-- TODO: confirm the camera that appears looks clean, and that it navigates to history/offline -->
+                        <div v-if=isOffline id="test">
+                            <button-component class="button purple_btn" id="homeTrackButton" buttonText="Scan QR" type="submit" style="opacity:100;"
+                                backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
+                        </div>
+                        <div v-else>
+                            <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
+                                backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
+                        </div>
                     </form>
 
                     <div id="createRecordButton" style="width: 60%; width: 230px; margin-top: 20px;">
@@ -110,6 +119,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import Learn_more from '~/layouts/learn_more.vue';
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import NavButton from '~/components/Buttons/NavButton.vue';
+import { displayOfflineBanner } from '~/services/azureFuncs';
 let showTrack = false;
 
 const second_row = [
@@ -122,7 +132,8 @@ export default {
     components: { NavButton },
     data() {
     return {
-    trackDivVisible: false
+    trackDivVisible: false,
+    isOffline: displayOfflineBanner
     }
     },
 
@@ -130,6 +141,15 @@ methods: {
     getPDF() {
         window.open('/Global_Distributed_Tracking.pdf', '_blank')
     }
+},
+
+async mounted() {
+    // TODO: delete loop when done testing
+    // while(true) {
+        // this.userOffline();
+    //     console.log("index offline?", this.isOffline, displayOfflineBanner)
+    //     await new Promise((r) => setTimeout(r, 5000));
+    // }
 }
 }
 </script>

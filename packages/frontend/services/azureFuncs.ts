@@ -14,13 +14,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import { validateKey } from "~/utils/keyFuncs";
+import { ref } from "vue";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
 // If we're not on prod turn offline features on
 export var offlineModeFeatureFlag = false;
 
 // Global variable used to control the display of offline banner on create pages
-export var displayOfflineBanner = false;
+export var displayOfflineBanner = ref(false);
 
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
@@ -282,6 +283,19 @@ export async function offlineQueueConsumerWorker() {
     while (workerIsActive == 'true') {
         // If a new instance of the worker was opened close this one
         workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
+
+        // TODO: new func that is called here..? Merge with try/catch below..? (key only exists locally!)
+        // Determine whether or not we're offline
+        try {
+            await getProvenance('RfDQ72ku2HmWikVuL8Z1gg');
+            console.log("online");
+            displayOfflineBanner.value = false;
+        } catch (error) {
+            if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+                console.log("we're offline!");
+                displayOfflineBanner.value = true;
+            }
+        }
 
         try {
             let queuedRequest = getFirstQueueItem();
