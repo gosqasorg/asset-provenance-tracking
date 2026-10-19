@@ -7,7 +7,7 @@ import { webcrypto as crypto } from 'node:crypto';
 // Azure
 import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils.js'
 import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
@@ -304,7 +304,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
 
             responses.push({"endpoint":"createRecord", "status": response.status});
         } catch (error) {
-            responses.push({"endpoint":"createRecord", "status": error.cause.status || 500});
+            responses.push({"endpoint":"createRecord", "status": error.cause ? error.cause.status || 500 : 500});
             throw new Error("createRecord Error:", error);
         }
 
@@ -355,7 +355,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
             
             responses.push({"endpoint":"postNotificationEmail", "status": response.status});
         } catch (error) {
-            responses.push({"endpoint":"postNotificationEmail", "status": error.cause.status || 500});
+            responses.push({"endpoint":"createRecord", "status": error.cause ? error.cause.status || 500 : 500});
             throw new Error("postNotificationEmail Error:", error);
         }
 
@@ -396,7 +396,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
 
             responses.push({"endpoint":"postVerifyCode", "status": response.status});
         } catch (error) {
-            responses.push({"endpoint":"postVerifyCode", "status": error.cause.status || 500});
+            responses.push({"endpoint":"createRecord", "status": error.cause ? error.cause.status || 500 : 500});
             throw new Error("postVerifyCode Error:", error);
         }
         
@@ -421,15 +421,17 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
     }
 
     // Loop through all our responses and send an email if any of them aren't 200 or if we didn't test all endpoints
+    let allResponses = [];
     let failedResponses = [];
     for (const storedResponse of responses) {
         if (storedResponse.status !== 200) {
             failedResponses.push(storedResponse.endpoint);
         }
+        allResponses.push(`${storedResponse.endpoint}: ${storedResponse.status}`);
     }
 
     if (failedResponses.length > 0 || responses.length < totalEndpoints) {
-        const message = `Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures.`;
+        const message = `Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures, see all statuses below.\n\n${allResponses.join('\n')}`;
         await livenessCheckEmailer(`Important: Some Endpoints Are Down on ${environment}`, message, context);
     }
 }
@@ -443,7 +445,7 @@ async function testEndpoints(endpointInfo: any[], responses: any[], context: Inv
             if (response.status == 204) { responses.push({"endpoint": endpoint["name"], "status": 200}) }
             else { responses.push({"endpoint": endpoint["name"], "status": response.status}) };
         } catch (error) {
-            responses.push({"endpoint": endpoint["name"], "status": error.cause.status || 500});
+            responses.push({"endpoint": endpoint["name"], "status": error.cause ? error.cause.status || 500 : 500});
         }
     }
 }
@@ -720,7 +722,9 @@ async function fetchWithRetry(context: InvocationContext, url: string, requestBo
 
     if (response !== undefined && !response.ok) {
         context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText, { 
+            cause: { status: response.status } 
+        });
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
