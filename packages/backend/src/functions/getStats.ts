@@ -4,6 +4,7 @@ interface ServerResponseTime {
     points: Array<{
         x: number;
         y: number;
+        requestCount?: number;
     }>;
     updatedAt: string | null;
 }
@@ -48,7 +49,7 @@ const tokenResponse = await fetch(
 const { access_token: token } = await tokenResponse.json();
 
 
-async function runQuery(query: string, context): Promise<[string, number][]> {
+async function runQuery(query: string, context): Promise<[string, number, number?][]> {
     context.log('Entering runQuery')
 
     try {
@@ -81,20 +82,23 @@ async function prepareServerResponseTimeDataForChart(context: InvocationContext)
         const rows = await runQuery(`
             AppRequests
             | where TimeGenerated > ago(365d)
-            | summarize avgRequestDuration=avg(DurationMs) by bin(TimeGenerated, 10m)
+            | summarize avgRequestDuration=avg(DurationMs), requestCount=count() by bin(TimeGenerated, 10m)
+            | project TimeGenerated, avgRequestDuration, requestCount
         `, context)
 
         if (!rows) {
             throw new Error('Server response time query returned no result')
         }
 
-        // Transform data to points: { x, y }, checks x, y are finite numbers, and sorts by timeGenerated (in ascending order)
+        // Convert rows to chart points, validate the values, and sort by time.
         const points = rows
-            .map(([timeGenerated, avgRequestDuration]) => ({
+            .map(([timeGenerated, avgRequestDuration, requestCount]) => ({
                 x: Date.parse(timeGenerated),
                 y: Number(avgRequestDuration),
+                requestCount: requestCount == null ? undefined : Number(requestCount),
             }))
             .filter(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
+            .filter(({ requestCount }) => requestCount === undefined || (Number.isFinite(requestCount) && requestCount >= 0))
             .sort((a, b) => a.x - b.x)
 
         serverResponseTimeStore.points = points
