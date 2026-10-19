@@ -55,6 +55,7 @@ class MapData {
     private requestStats = null;
     private countryStats = {};
     private stateStats = {};
+    private cityStats = {};
 
 
     // Getter
@@ -70,34 +71,40 @@ class MapData {
         return this.stateStats;
     }
 
+    getCityStats() {
+        return this.cityStats;
+    }
+
     // Updater Function
     async updateRequests(context: InvocationContext): Promise <void> {
         const rows = await runQuery(`
             AppRequests
-            | where TimeGenerated > ago(90d)
-            | summarize
+            | where TimeGenerated > ago(365d)
+            | extend 
+                day = bin(TimeGenerated, 7d), 
+                country = ClientCountryOrRegion, 
+                state = ClientStateOrProvince, 
+                city = ClientCity
+            | summarize 
                 requests = count(),
-                failed  = countif(Success == false)
-            by day     = bin(TimeGenerated, 1d),
-                country = ClientCountryOrRegion,
-                state   = ClientStateOrProvince,
-                city    = ClientCity
+                failed = countif(Success == false),
+                responseTime = sum(DurationMs)
+                by day, country, state, city
+            | order by country asc, state asc, city asc, day asc
         `, context);
         
-        // TODO: add response time 
-
         this.requestStats = rows
     }
 
 
     // Group requests by country 
-    // azure uses the country name, but the map uses the iso code - convert key to iso code
     sumByCountry(context: InvocationContext) {
         const stats = {};
         
-        for (const [, country, , , requests, failed] of this.requestStats) {
+        for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
             if (!country) continue;
             
+            // covert country name to iso, so mapbox can query it
             const iso = countryToAlpha2(country);
             
             // if not there must add manually
@@ -105,14 +112,27 @@ class MapData {
                 context.log(`No ISO code for "${country}"`); 
                 continue; 
             }
+
+            const weekKey = String(day).slice(0, 10)
             
             // dont override existing entry,only add if not there
             if (stats[iso] === null || stats[iso] === undefined) {
-                stats[iso] = { name: country, requests: 0, failed: 0 }
+                stats[iso] = {name: country, requests: 0, failed: 0, responseTime:0, weeks: {}}
             }
 
-            stats[iso].requests += requests;
-            stats[iso].failed += failed;
+            const countryTotal = stats[iso]
+            countryTotal.requests += requests
+            countryTotal.failed += failed
+            countryTotal.responseTime += responseTime
+
+            // group data by week, azure uses monday as the start of the week
+            if (countryTotal.weeks[weekKey] === null || countryTotal.weeks[weekKey] === undefined) {
+                countryTotal.weeks[weekKey] = {requests: 0, failed: 0, responseTime: 0}
+            }
+
+            countryTotal.weeks[weekKey].requests += requests
+            countryTotal.weeks[weekKey].failed += failed
+            countryTotal.weeks[weekKey].responseTime += responseTime
         }
         this.countryStats = stats;
     }
@@ -121,7 +141,49 @@ class MapData {
     sumByState(context: InvocationContext) {
         const stats = {};
         
-        for (const [, country, state, , requests, failed] of this.requestStats) {
+        for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
+            if (!country || !state) continue;
+            
+            const iso = countryToAlpha2(country);
+            
+            // incase not there
+            if (!iso) { 
+                context.log(`No ISO code for "${country}"`); 
+                continue; 
+            }
+
+            const weekKey = String(day).slice(0, 10)
+
+            
+            // using iso|state as key because duplicates
+            const stateKey = `${iso}|${state.toLowerCase()}`;
+            console.log(stateKey)
+            context.log(stateKey)
+            if (stats[stateKey] === null || stats[stateKey] === undefined) {
+                stats[stateKey] = { name: state, iso, requests: 0, failed: 0, responseTime: 0, weeks: {} }
+            }
+
+            const stateTotal = stats[stateKey]
+            stateTotal.requests += requests;
+            stateTotal.failed += failed;
+            stateTotal.responseTime += responseTime;
+
+            if (stateTotal.weeks[weekKey] === null || stateTotal.weeks[weekKey] === undefined) {
+                stateTotal.weeks[weekKey] = {requests: 0, failed: 0, responseTime: 0}
+            }
+
+            stateTotal.weeks[weekKey].requests += requests
+            stateTotal.weeks[weekKey].failed += failed
+            stateTotal.weeks[weekKey].responseTime += responseTime
+        }
+        this.stateStats = stats;
+    }
+
+    // Group requests by city 
+    sumByCity(context: InvocationContext) {
+        const stats = {};
+        
+        for (const [day, country, state, city, requests, failed,] of this.requestStats) {
             if (!country || !state) continue;
             
             const iso = countryToAlpha2(country);
@@ -133,15 +195,16 @@ class MapData {
             }
             
             // using iso|state as key because duplicates
-            const key = `${iso}|${state.toLowerCase()}`;
+            const stateKey = `${iso}|${state.toLowerCase()}`;
+            const key = `${stateKey}|${city.toLowerCase()}`;
+
             if (stats[key] === null || stats[key] === undefined) {
-                stats[key] = { name: state, requests: 0, failed: 0 }
+                stats[key] = { name: city, iso, stateKey, requests: 0 }
             }
 
             stats[key].requests += requests;
-            stats[key].failed += failed;
         }
-        this.stateStats = stats;
+        this.cityStats = stats;
     }
 
     // Refresh Function
@@ -150,6 +213,7 @@ class MapData {
         await this.updateRequests(context);
         this.sumByCountry(context);
         this.sumByState(context);
+        this.sumByCity(context);
 
         context.log('Map data refreshed :D');
     }

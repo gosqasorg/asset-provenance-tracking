@@ -1,12 +1,9 @@
-<!-- Centralize the data the map uses by moving it all to one file. 
-At the top of this file, create a json object that stores as key-value pairs the "variable name as used by the map at present" as the key, 
-with "the variable containing the data" as the value.
-Set the map to reference this data object. -->
+
 
 <!-- 
-TODO: FInd a better way to upload the geoJSON to frontend / mapbox
+TODO: Find a better way to upload the geoJSON to frontend / mapbox
 TODO: Add  states (error, loading) for mapbox section
-TODO: Outline logic for Additional Stats Section
+BUG: some countries in India are undefined
 -->
 
 <template>
@@ -18,59 +15,72 @@ TODO: Outline logic for Additional Stats Section
         
         <!-- TODO: Map Section -->
         <button id="reset-btn" @click="resetView">Back to World View</button>
+        
+        <div class="page">
+          <div>
+            <div id="map" style="width: 800px; height: 600px;"></div>
+          </div>
 
-        <div>
-          <div id="map" style="width: 800px; height: 600px;"></div>
+          <!-- TODO: Stats Section -->
+          <div> 
+              <!--  Adds a >[Location] when specific location is clicked -->
+              <p>World</p> 
+              <h2>Whole Network</h2>
+
+              <div v-if="loading">Loading stats...</div>
+              <div v-else>
+                  <!-- Row for  # of requests, avg response, succeeded %-->
+                   
+                  <p v-if="selectedStats">Country: {{ selectedStats.name }}</p>
+                  <p>State: {{  }}</p>
+                  <p v-if="selectedStats">Requests: {{ selectedStats.requests }}</p>
+                  <p v-if="selectedStats">Succeeded Rate: {{ (selectedStats.requests - selectedStats.failed) / selectedStats.requests }}</p>
+
+                  <p v-if="selectedStats">Avg Response: {{ avgResponse }}</p>
+              </div>
+              <div>
+                  <!-- Row for % of total requests -->
+                  <p>Portion of Traffic: {{ selectedStats?.requests / worldStats.requests * 100 }}</p>
+              </div>
+              <div>
+                  <!-- Top Cities Section -->
+                  <p>Top places in {{ selectedPlace.level === 'world' ? 'the world' : selectedPlace.name }}: </p>
+                  <ul v-if="topPlaces.length">
+                    <li v-for="p in topPlaces" :key="p.name">{{ p.name }}: {{ p.requests }}</li>
+                  </ul>
+              </div>
+
+              <p v-if="selectedStats">{{ selectedStats }}</p>
+              <p v-else>None selected</p>
+
+              <!-- <p>{{ countryData }}</p>
+
+              <p>State</p>
+              <p>{{ stateData }}</p>
+
+              <p>{{ cityData }}</p> -->
+          </div>
         </div>
-
-        <!-- TODO: Stats Section -->
-        <div> 
-             <!--  Adds a >[Location] when specific location is clicked -->
-             <p>World</p> 
-             <h2>Whole Network</h2>
-             <p>{{ rawData?.length }}</p>
-             <p>{{ rawData }}</p>
-            <div>
-                <!-- Row for  # of requests, avg response, succeeded %-->
-                <p>Country: {{  }}</p>
-                <p>State: {{  }}</p>
-                <p>Requests: {{  }}</p>
-                <p>Succeeded Rate: {{  }}</p>
-
-                <p>Avg Response: {{  }}</p>
-            </div>
-            <div>
-                <!-- Row for % of total requests -->
-                <p>Portion of Traffic: {{  }}</p>
-            </div>
-            <div>
-                <!-- Line Graph for requests per day -->
-            </div>
-            <div>
-                <!-- Top Cities Section -->
-                <p>Cities in {{  }} </p>
-                <p>List of the cities: {{  }}</p>
-            </div>
-        </div>
+        <!-- for testing -->
+        
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, markRaw } from 'vue'
-import mapboxgl, { MapMouseEvent } from 'mapbox-gl'
+import { markRaw } from 'vue'
+import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { getCountryStats, getStateStats } from '~/services/azureFuncs'
+import { getCityStats, getCountryStats, getStateStats } from '~/services/azureFuncs'
 import countryBounds from '../data_viz/files/country-bounds.json';
-
 
 let map: mapboxgl.Map | null = null
 
 const LOW = '#33332D';
 const HIGH = '#BFE4F3';
-const WORLDVIEW = 'US';
 
 type CountryStat = Record<string, { name: string; requests: number; failed: number }>;
 type StateStat = Record<string, { name: string; requests: number; failed: number }>;
+type SelectionType = {level: 'world'} | {level: 'country' | 'state'; key: string; name: string}
 
 type CountryBounds = Record<string, { name: string; bounds: number[][] }>;
 const BOUNDS = countryBounds as CountryBounds
@@ -80,17 +90,79 @@ export default {
 
   data() {
     return {
-      rawData: null as any[] | null    }
+      countryData: {} as Record<string, any>,
+      stateData: {} as Record<string, any>,
+      cityData: {} as Record<string, any>,
+      selectedPlace: { level: 'world'} as SelectionType ,
+      loading: true 
+    }
+  },
+  computed: {
+    selectedStats(): {requests: number; failed: number} | null {
+      // for each selected place return the data that matches its key
+      const s = this.selectedPlace
+
+      if (s.level === 'state') {
+        return this.stateData[s.key] ?? { requests: 0, failed: 0 }
+      }
+
+      if (s.level === 'country') {
+        return this.countryData[s.key] ?? { requests: 0, failed: 0 }
+      }
+
+      return this.worldStats
+    },
+
+    worldStats() {
+      const worldData = { name: 'World', requests: 0, failed: 0, responseTime: 0}
+      for (const country of Object.values(this.countryData ?? {})){
+        worldData.requests += country.requests
+        worldData.failed += country.failed
+        worldData.responseTime += country.responseTime
+      }
+
+      return worldData
+    },
+
+    topPlaces() {
+      const s = this.selectedPlace
+
+      // filter state data by country iso and grab top 5 states/provinces
+      if (s.level === 'country') {
+        let list = Object.values(this.stateData ?? {})
+        return list.filter(st => st.iso === s.key)
+        .sort((a, b) => b.requests - a.requests)
+        .slice(0, 5)
+      }
+      
+      // filter city data by stateKey and grab top 5 citys
+      if (s.level === 'state') {
+        let list = Object.values(this.cityData ?? {})
+        return list.filter(c => c.stateKey === s.key)
+        .sort((a, b) => b.requests - a.requests)
+        .slice(0, 5)
+      }
+
+      // if neither country or state return top places as countries
+      return Object.values(this.countryData ?? {}).sort((a, b) => b.requests - a.requests).slice(0, 5)
+
+    },
+
+    avgResponse() {
+      const s = this.selectedStats
+      return s.requests ? s.responseTime / s.requests : "-"
+    },
+
   },
 
   mounted() {
 
     // fetch data - statistics, countryGEOJSON, stateGEOJSON
     const dataPromise = this.fetchData()
-    const countryPromise = fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_0_countries.geojson')
+    const countryPromise =  fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_0_countries.geojson')
     .then(res => res.json())
 
-    const statePromise = fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_1_states_provinces.geojson')
+    const statePromise =  fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_1_states_provinces.geojson')
     .then(res => res.json())
 
     mapboxgl.accessToken = this.$config.public.mapboxToken
@@ -226,7 +298,7 @@ export default {
           'fill-opacity': [
             'interpolate', ['linear'], ['zoom'],
             2.5, 0,  
-            3.5, 1
+            3, 1
           ],
         },
       }, 'states-outline');
@@ -267,7 +339,7 @@ export default {
         },
       })
 
-      const STATE_VISIBLE_ZOOM = 3.5
+      const STATE_VISIBLE_ZOOM = 3
       m.on('mousemove', 'countries-fill', (e) => {
           m.getCanvas().style.cursor = 'pointer';
 
@@ -328,16 +400,27 @@ export default {
       });
 
       // Zoom Functionality 
+      // TODO: Don't Trigger when user clicks a state - but center to state??? 
+      m.addControl(new mapboxgl.NavigationControl({showCompass: false}));
+
       m.on('click', 'countries-fill', (e) => {
         m.getCanvas().style.cursor = 'pointer';
 
         if (e.features && e.features.length > 0) {
           const country = e.features[0]
           const isoCode = country?.properties.ISO_A2_EH as string
-          console.log(isoCode)
+          // console.log(isoCode)
           const result = BOUNDS[isoCode]
 
-          if (result) {
+          // check if area has a state-fill
+          const state = m.getLayer('states-fill') 
+          ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]
+          : undefined;
+
+          // check if at statelevel zoom and if a state is available
+          const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
+
+          if (result && !showState) {
             m.fitBounds(result.bounds, {
               padding: 50,      
               duration: 2000   
@@ -349,6 +432,16 @@ export default {
           m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], country?.properties.ISO_A2_EH]);
 
           
+          // if states are visible and available, the selectedPlace is a state
+          if (showState) {
+            const name = state!.properties.gn_name;
+            this.selectedPlace = { level: 'state', key: `${state!.properties.iso_a2}|${String(name).toLowerCase()}`,name}
+
+          } else {
+            this.selectedPlace = { level: 'country', key: country?.properties.ISO_A2_EH, name: country?.properties.NAME}
+          }
+
+          
         }
       })
 
@@ -356,6 +449,7 @@ export default {
       m.on('click', (e) => {
         const hit = m.queryRenderedFeatures(e.point, { layers: ['countries-fill'] });
         if (hit.length === 0) this.resetView();    
+        // this.selectedPlace = { level: 'world'}
       })
 
     });
@@ -371,24 +465,29 @@ export default {
     async fetchData(): Promise<{countries: CountryStat | null, states: StateStat | null}> {
       // TODO: add filtering and state management
       try {
-        const countries = await getCountryStats()
-        const states = await getStateStats()
-        // console.log(states)
-        this.rawData = states
+        const [countries, states, cities] = await Promise.all([getCountryStats(), getStateStats(), getCityStats()])
 
-        return {countries, states}
+        // console.log(states)
+        this.countryData = countries ?? {}
+        this.stateData = states ?? {}
+        this.cityData = cities ?? {}
+
+        return {countries: this.countryData, states: this.stateData}
 
       } catch (err) {
         this.$snackbar.add({
             type: 'error',
             text: 'Failed to fetch data error: ' + err
         });
-        return {countries: null, states: null}
+        return {countries: {}, states: {}}
+      } finally {
+        this.loading = false
       }
     },
     resetView() {
-      map.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
-      map.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
+      map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+      map?.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
+      this.selectedPlace = { level: 'world'}
     }
 
 
@@ -400,8 +499,13 @@ export default {
 
 
 <style scoped>
-  p {
+  p, li {
     color: #FFFFFF
+  }
+
+  .page {
+    display: flex;
+    flex-direction: row;
   }
 
   :deep(.map-popup .mapboxgl-popup-content) {

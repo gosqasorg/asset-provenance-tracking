@@ -498,7 +498,7 @@ export async function getAttachmentName(request: HttpRequest, context: Invocatio
 export async function getRequestStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Collecting requests statistics')
     try {
-        const rows = mapData.getRequestStats(); 
+        const rows = mapData.getRequestStats();
         return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
     } catch (error) {
         context.error("getRequestStats error: ", error)
@@ -521,6 +521,17 @@ export async function getStateStats(_request: HttpRequest, context: InvocationCo
     context.log('Collecting state statistics')
     try {
         const rows = mapData.getStateStats(); 
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
+export async function getCityStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting city statistics')
+    try {
+        const rows = mapData.getCityStats(); 
         return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
     } catch (error) {
         context.error("getRequestStats error: ", error)
@@ -2022,4 +2033,10 @@ app.get("getStateStats", {
     authLevel: 'anonymous',
     route: 'stats/state',
     handler: getStateStats
+})
+
+app.get("getCityStats", {
+    authLevel: 'anonymous',
+    route: 'stats/city',
+    handler: getCityStats
 })

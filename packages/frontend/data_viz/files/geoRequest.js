@@ -1,3 +1,8 @@
+// Centralize the data the map uses by moving it all to one file. 
+// At the top of this file, create a json object that stores as key-value pairs the "variable name as used by the map at present" as the key, 
+// with "the variable containing the data" as the value.
+// Set the map to reference this data object.
+
 const cityGeocoded = [
   {
     "city": "Vancouver",
