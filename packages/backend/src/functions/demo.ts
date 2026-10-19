@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --no-warnings
 
 function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
     let theTagBundle = { no_tag: [] }
@@ -48,6 +48,17 @@ function addTagSpecificSignupDataToBundle(
 }
 
 
+
+import fs from 'node:fs';
+function writeBundle(theObj) {
+    fs.writeFileSync('./tagBundle.json', JSON.stringify(theObj, null, 2));
+}
+
+function readBundle() {
+    return JSON.parse(fs.readFileSync('./tagBundle.json', 'utf8'))
+}
+
+
 let bundle = addTagSpecificSignupDataToBundle(
     baz,
     'foo@bar.com',
@@ -63,4 +74,5 @@ bundle = addTagSpecificSignupDataToBundle(
     ['bamboo', 'observer', 'wizard']
 )
 
+writeBundle(bundle)
 console.dir(bundle)
