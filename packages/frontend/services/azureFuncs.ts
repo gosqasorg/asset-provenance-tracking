@@ -21,10 +21,13 @@ import { ref } from "vue";
 export var offlineModeFeatureFlag = false;
 
 // Global variable used to control the display of offline banner on create pages
-export var displayOfflineBanner = ref(false);
+export var displayOfflineBanner = false;
 
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
+
+// Global variables used to control the display of offline buttons
+export var displayOfflineButtons = ref(false);
 
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
@@ -284,20 +287,11 @@ export async function offlineQueueConsumerWorker() {
         // If a new instance of the worker was opened close this one
         workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
 
-        // TODO: new func that is called here..? Merge with try/catch below..? (key only exists locally!)
-        // Determine whether or not we're offline
         try {
-            await getProvenance('RfDQ72ku2HmWikVuL8Z1gg');
-            console.log("online");
-            displayOfflineBanner.value = false;
-        } catch (error) {
-            if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
-                console.log("we're offline!");
-                displayOfflineBanner.value = true;
-            }
-        }
+            // Attempt to ping our backend to determine if we should display offline features
+            await fetchUrl(`${baseUrl}/getNewDeviceKey`);
+            displayOfflineButtons.value = false;
 
-        try {
             let queuedRequest = getFirstQueueItem();
             if (!queuedRequest) {
                 await new Promise((r) => setTimeout(r, 5000));
@@ -320,6 +314,7 @@ export async function offlineQueueConsumerWorker() {
 
         } catch (error) {
             if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+                displayOfflineButtons.value = true;
                 await new Promise((r) => setTimeout(r, 5000));
             } else {
                 stashOfflineRequest(deviceKey, "gdt-stash-failed", record);
