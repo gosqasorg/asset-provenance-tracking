@@ -39,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 </template>
 
 <script lang="ts">
+import { displayOfflineButtons } from '~/services/azureFuncs';
 
 export default {
     props: {
@@ -46,7 +47,8 @@ export default {
     },
     data() {
         return {
-            deviceKey: ''
+            deviceKey: '',
+            isOffline: displayOfflineButtons
         }
     },
     mounted() {
@@ -57,7 +59,13 @@ export default {
         async submit() {
             // Get the record/device key from the end of an entered URL, or just use the entered key
             var extractedDeviceKey = this.deviceKey.split("/").pop();
-            this.$router.push({ path: `/history/${extractedDeviceKey}` });
+
+            // Navigate based on whether the user is online or offline
+            if (this.isOffline) {
+                this.$router.push({ path: `/history/offline`, query: { key: extractedDeviceKey } });
+            } else {
+                this.$router.push({ path: `/history/${extractedDeviceKey}` });
+            }
         }
     }
 }
