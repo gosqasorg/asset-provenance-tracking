@@ -1,7 +1,9 @@
 import * as z from 'zod';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, offlineQueueConsumerWorker, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import OfflineEdits from '~/pages/offline-edits.vue';
+import { mount } from '@vue/test-utils';
 
 async function createRequest (
   name: string,
@@ -216,5 +218,38 @@ describe("Get/Remove First Queued Request", async() => {
     expect(firstQueueItem["data"]).not.toEqual(queuedData.get('provenanceRecord'));
     expect(firstQueueItem["key"]).toEqual(queuedKey2);
     expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
+  });
+});
+
+describe("Confirm offline edits page buttons do not interrupt the worker", async() => {
+  // Clear localStorage mock data before each test
+  beforeEach(() => {
+    localStorage.clear()
+  });
+
+  it("Dismiss all edits button", async() => {
+    // Set up stashes in localStorage
+    localStorage.setItem('gdt-stash-queued', 'testkey123')
+    localStorage.setItem('gdt-stash-failed', 'failedkey123')
+    localStorage.setItem('gdt-stash-fulfilled', 'fulfilledkey123')
+
+    const mockPush = vi.fn();
+
+    // Mount component so wrapper can render the component
+    const wrapper = mount(OfflineEdits, {
+      global: {
+        stubs: ['RouterLink'], 
+        mocks: {
+          $router: { push: mockPush },
+          $route: { path: '/' }
+        }
+      }
+    });
+
+    await wrapper.find('btn dismiss all').trigger('click');
+
+    expect(localStorage.getItem('gdt-stash-queued')).toBe('');
+    expect(localStorage.getItem('gdt-stash-failed')).toBe('');
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe('');
   });
 });
