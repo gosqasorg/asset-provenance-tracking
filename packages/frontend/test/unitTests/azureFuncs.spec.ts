@@ -246,10 +246,12 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
       }
     });
 
-    await wrapper.find('btn dismiss all').trigger('click');
+    console.log(wrapper.html());
+    await wrapper.find('button.btn:nth-child(3)').trigger('click');
+    await wrapper.find('.confirm-dismiss').trigger('click');
 
-    expect(localStorage.getItem('gdt-stash-queued')).toBe('');
-    expect(localStorage.getItem('gdt-stash-failed')).toBe('');
-    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe('');
+    expect(localStorage.getItem('gdt-stash-queued')).toBe(null);
+    expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null);
   });
 });
