@@ -42,7 +42,7 @@ const visualizationsFeatureFlag = environment === 'dev'
                 <UserAgentVisualization />
             </div>
             <div class="container py-4">
-                <ServerResponseTimeVisualization />
+                <ServerResponseTimeVisualization embedded />
             </div>
         </section>
 
