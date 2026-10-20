@@ -15,28 +15,64 @@ async function getToken(): Promise<string> {
     return tokenResponse.token;
 }
 
-export async function runQuery(query: string, context): Promise<[string, number][]> {
-    const token = await getToken();
+// export async function runQuery(query: string, context): Promise<[string, number][]> {
+//     const token = await getToken();
 
+//     try {
+//         const result = await fetch(
+//             `https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`,
+//             {
+//                 method: "POST",
+//                 headers: {
+//                     "Authorization": `Bearer ${token}`,
+//                     "Content-Type": "application/json"
+//                 },
+//                 body: JSON.stringify({ query })
+//             }
+//         );
+
+//         const data = await result.json();
+//         return data.tables[0].rows
+//     } catch(error) {
+//         context.error(`Leaving runQuery: error occurred: ${error}`)
+//     }
+// }
+
+export async function runQuery(query: string, token: string): Promise<[string, number][]> {
     try {
-        const result = await fetch(
-            `https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`,
-            {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ query })
-            }
-        );
+        const res = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
+            method: "POST",
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query }),
+        });
 
-        const data = await result.json();
-        return data.tables[0].rows
+        // check if good response
+        if (res.ok) {
+            const rows = (await res.json())?.tables?.[0]?.rows
+            // check if rows are in a proper array
+            if (!Array.isArray(rows)) {
+                throw new Error("Improper response shape of tables.rows[0]")
+            }
+
+            return rows
+        }
+
+        throw new Error(` Log Analytics returned ${res.status}: ${await res.text()}`)
     } catch(error) {
-        context.error(`Leaving runQuery: error occurred: ${error}`)
+        throw new Error (`Leaving runQuery: error occurred: ${error}`)
     }
 }
+
+export async function queryCount(query: string, token: string): Promise<number> {
+    const rows = await runQuery(query, token)
+    const val = rows[0]?.[0]
+    if (typeof val !== "number"){
+        throw new Error (`Expected number got ${JSON.stringify(rows)} from queryCount on ${query}`)
+    }
+    return val;
+
+}
+
 
 export function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -92,18 +128,14 @@ class StatsCache {
 
     async updateStats() : Promise<void> {
         let token = await getToken();
+        let successful = "AppRequests | where Name == 'postProvenance' |  where ResultCode == 200"
 
         const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
         let valsAtTimes = [0, 0, 0]
 
         // Get time-based record entry counts
         for (let v in timesToCheck) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
-                method: "POST",
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | count"}`,
-            });
-            valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+            valsAtTimes[v] = await queryCount(`${successful} | where TimeGenerated > ${timesToCheck[v]} | count`, token);
         }
         let records1h = valsAtTimes[0]
         let records24h = valsAtTimes[1]
@@ -111,12 +143,7 @@ class StatsCache {
 
         // Get time-based unique record counts
         for (let v in timesToCheck) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
-                method: "POST",
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ${timesToCheck[v]} | where ResultCode == 200 | distinct Url | count"}`,
-            });
-            valsAtTimes[v] = (await logs.json()).tables[0].rows[0][0];
+            valsAtTimes[v] = await queryCount(`${successful} | where TimeGenerated > ${timesToCheck[v]} | distinct Url | count`, token);
         }
         let devices1h = valsAtTimes[0]
         let devices24h = valsAtTimes[1]
@@ -131,13 +158,7 @@ class StatsCache {
 
         // Get record entries per day (last 7 days) for the graph
         for (let i = 0; i <= today; i++) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
-                method: "POST",
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                // Gets number of records created 'hours' ago ('hours' == time today in hours + i * 24h)
-                body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(${hours}h) | where ResultCode == 200 | count"}`,
-            });
-            let recent = (await logs.json()).tables[0].rows[0][0];
+            let recent = await queryCount(`${successful} | where TimeGenerated > ago(${hours}h) | count`, token);
             
             // Add the records we found to the current day, subtracting records we already counted
             recordsPerDayY[today - i] = recent - counted
@@ -149,32 +170,15 @@ class StatsCache {
         let recordsPerHourY = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
         for (let hour = 0; hour < 24; hour++) {
-            let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
-                method: "POST",
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                // Gets number of records created in the last 7 days at 'hour'
-                body: `{"query": "AppRequests | where Name == 'postProvenance' | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | where ResultCode == 200 | count"}`,
-            });
-            let hourly = (await logs.json()).tables[0].rows[0][0];
+            let hourly = await queryCount(`${successful} | where TimeGenerated > ago(7d) | where datetime_part('hour', TimeGenerated) == ${hour} | count`, token);
             recordsPerHourY[hour] = hourly
         }
 
         // Get number of calls to postProvenance that failed in the last 3 months
-        let logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count"}`,
-        });
-        let totalFailures = (await logs.json()).tables[0].rows[0][0];
+        let totalFailures = await queryCount(`AppRequests | where Name == 'postProvenance' | where ResultCode != 200 | count`, token);
 
         // Get number of calls to postProvenance that succeeded in the last 3 months
-        logs = await fetch(`https://api.loganalytics.io/v1/workspaces/${workspaceId}/query`, {
-            method: "POST",
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: `{"query": "AppRequests | where Name == 'postProvenance' | where ResultCode == 200 | count"}`,
-        });
-        let totalSuccesses = (await logs.json()).tables[0].rows[0][0];
-
+        let totalSuccesses = await queryCount(`${successful} | count`, token);
 
         this.queryStats = {records1h, records24h, records7d, devices1h, devices24h, devices7d, recordsPerDayY, recordsPerHourY, totalFailures, totalSuccesses}
     }
