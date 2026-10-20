@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 Implemented with assistance from OpenAI Codex. -->
 
 <template>
+    <!-- :class is shorthand for v-bind:class; it adds this class only when the embedded prop is true. -->
     <div class="server-response-time" :class="{ embedded }">
         <div class="chart-header">
             <p class="h2 mb-4">Server Response Time</p>
@@ -23,6 +24,7 @@ Implemented with assistance from OpenAI Codex. -->
             <p>Requests are grouped into {{ displayRange.intervalLabel }} intervals. Empty intervals are not shown.</p>
         </div>
 
+        <!-- v-if / v-else-if / v-else render only the first matching data state. -->
         <p v-if="loading">Loading server response time data...</p>
         <p v-else-if="error" role="alert">{{ error }}</p>
         <p v-else-if="!points.length">No server response time data is available.</p>
@@ -32,11 +34,13 @@ Implemented with assistance from OpenAI Codex. -->
 
         <div class="range-controls" role="group" aria-label="Time window">
             <span class="range-label">Time window</span>
+            <!-- v-for creates one option per range; :key lets Vue track each option by its unique day count. -->
             <label
                 v-for="range in ranges"
                 :key="range.days"
                 class="range-option"
             >
+                <!-- :value and :checked bind JavaScript values; @change calls the handler when the user selects an option. -->
                 <input
                     type="radio"
                     name="server-response-time-range"
@@ -48,6 +52,7 @@ Implemented with assistance from OpenAI Codex. -->
             </label>
         </div>
 
+        <!-- Do not show a last-updated label until the API has supplied a timestamp. -->
         <p v-if="updatedAt" class="updated-at">Last updated: {{ formattedUpdatedAt }}</p>
     </div>
 </template>
@@ -85,7 +90,8 @@ const ranges = [
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 const points = ref<ResponseTimePoint[]>([])
 const updatedAt = ref<string | null>(null)
-const displayRange = ref(ranges[4])
+const defaultRange = ranges.find(range => range.days === 7) ?? ranges[0]
+const displayRange = ref(defaultRange)
 const selectedRange = computed(() => displayRange.value.days)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -95,7 +101,7 @@ const formattedUpdatedAt = computed(() => {
     return updatedAt.value ? new Date(updatedAt.value).toLocaleString() : ''
 })
 
-function getVisiblePoints(start: number, end: number): ResponseTimePoint[] {
+function getGroupedPoints(start: number, end: number): ResponseTimePoint[] {
     const interval = displayRange.value.intervalMinutes * 60 * 1000
     const groups = new Map<number, ResponseTimePoint[]>()
 
@@ -124,8 +130,9 @@ function getVisiblePoints(start: number, end: number): ResponseTimePoint[] {
 
 function getBubbleRadius(requestCount: number, maxCount: number): number {
     if (requestCount === 0) return 0
-    // Keep small counts visible while giving every larger count a larger radius.
-    // Sizes are relative to the largest count in the selected time window.
+    // Compare each count with the largest count in the selected time window.
+    // Square-root scaling keeps large counts from producing oversized bubbles.
+    // The 2-pixel base keeps small counts visible, and the largest bubble is 10 pixels.
     return 2 + 8 * Math.sqrt(requestCount / maxCount)
 }
 
@@ -149,7 +156,7 @@ function buildChart(): void {
 
     const end = Date.now()
     const start = end - selectedRange.value * 24 * 60 * 60 * 1000
-    const visiblePoints = getVisiblePoints(start, end)
+    const visiblePoints = getGroupedPoints(start, end)
     const maxCount = visiblePoints.reduce((max, point) => Math.max(max, point.requestCount ?? 0), 1)
     const bubbles = visiblePoints
         .filter(point => point.requestCount !== undefined && Number.isFinite(point.requestCount) && point.requestCount > 0)
