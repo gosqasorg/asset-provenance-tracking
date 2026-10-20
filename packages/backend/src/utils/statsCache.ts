@@ -2,6 +2,7 @@ import { app, InvocationContext } from '@azure/functions';
 import { ContainerClient } from "@azure/storage-blob";
 import { ClientSecretCredential } from "@azure/identity";
 import { containerClient } from '../functions/httpTrigger.js';
+import { HttpRequest, HttpResponseInit } from '@azure/functions';
 
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
@@ -242,3 +243,55 @@ app.timer('refreshUsageStats', {
     runOnStartup: true,
     handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
 });
+
+async function getUsers(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering getUsers')
+    try {
+        // NOTE: Below is sorting counts by city (change the last two lines to update this)
+        // Run a query that (a) removes bots and (b) removes dev users based on city
+        const rows = await runQuery(`
+            AppRequests
+            | where TimeGenerated > ago(999d)
+            | where not(ClientCity has_any (dynamic(${process.env["DEV_CITIES"]})))
+            | extend ua = tostring(parse_json(Properties)["user_agent.original"])
+            | extend UserBrowsers = case(
+                ua contains "ClaudeBot", "ClaudeBot",
+                ua contains "Googlebot", "Googlebot",
+                ua contains "bingbot", "Bingbot",
+                ua contains "Baiduspider", "Baiduspider",
+                ua contains "bot" or ua contains "crawler" or ua contains "spider", "Other bot",
+                ua contains "curl", "curl",
+                ua contains "node", "Node",
+                ua contains "python" or ua contains "Python", "Python",
+                ua contains "MSIE" or ua contains "Trident", "Internet Explorer",
+                ua contains ".NET", ".NET",
+                ua contains "Edg/", "Edge",
+                ua contains "Chrome", "Chrome",
+                ua contains "Firefox", "Firefox",
+                ua contains "Safari", "Safari",
+                ua contains "DuckDuckGo", "DuckDuckGo",
+                ua == "", "Unknown",
+                "Other"
+            )
+            | where UserBrowsers !contains "bot"
+            | summarize count() by ClientCity
+            | order by count_ desc
+        `, context)
+
+        let response = { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } }
+        context.log(rows)
+        context.log(response)
+        context.log('Returning successfully from getUsers')
+        return response
+    } catch (error) {
+        context.error("getUsers error:", error);
+        return { body: "Error fetching user stats", status: 500 }
+    }
+}
+
+// Endpoint to retrieve non-dev/non-bot users
+app.get("getUsers", {
+    authLevel: 'anonymous',
+    route: 'stats/users',
+    handler: getUsers
+})
