@@ -36,6 +36,7 @@
     "@emnapi/core": "^1.10.0",
     "@emnapi/runtime": "^1.10.0",
     "@emnapi/wasi-threads": "^1.2.1",
+    "@scalar/api-reference": "^1.72.3",
     "@urlpack/base58": "^2.0.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "bootstrap": "^5.3.3",
