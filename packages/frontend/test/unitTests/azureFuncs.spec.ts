@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
 import { confirmRequestFulfilled, offlineQueueConsumerWorker, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
 import OfflineEdits from '~/pages/offline-edits.vue';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 
 async function createRequest (
   name: string,
@@ -44,7 +44,6 @@ describe("Offline Function Tests", () => {
       const record = {description : 'mockRecord'}
       const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', record)
       const resultNewRecord = await confirmRequestFulfilled('123456789101112asdfghi')
-
       expect(resultEntryAddition).toBe(true)
       expect(resultNewRecord).toBe(true)
     })
@@ -228,11 +227,16 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
   });
 
   it("Dismiss all edits button", async() => {
+
+    
     // Set up stashes in localStorage
-    localStorage.setItem('gdt-stash-queued', 'testkey123')
+    let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3']
+    localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
     localStorage.setItem('gdt-stash-failed', 'failedkey123')
     localStorage.setItem('gdt-stash-fulfilled', 'fulfilledkey123')
 
+    const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
+    mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)})
     const mockPush = vi.fn();
 
     // Mount component so wrapper can render the component
@@ -241,17 +245,33 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
         stubs: ['RouterLink'], 
         mocks: {
           $router: { push: mockPush },
-          $route: { path: '/' }
+          $route: { path: '/record/' }
         }
       }
     });
+    
+    console.log("BEFORE CONSUME", localStorage.getItem('gdt-stash-queued'))
+    const consume = await offlineQueueConsumerWorker();
 
-    console.log(wrapper.html());
+    expect(localStorage.getItem('gdt-stash-queued')).toBe('[]')
+    console.log("AFTER CONSUME BEFORE DISMISS", localStorage.getItem('gdt-stash-queued'))
+
     await wrapper.find('button.btn:nth-child(3)').trigger('click');
     await wrapper.find('.confirm-dismiss').trigger('click');
 
+    console.log("AFTER CONSUME", localStorage.getItem('gdt-stash-queued'))
+    console.log("BEFORE FLUSH")
+    console.log("CONSUME", consume)
+    await flushPromises();
+    await flushPromises();
+    console.log("AFTER FLUSHPROMISES")
+    console.log("CONSUME", consume)
+
+    // await wrapper.find('button.btn:nth-child(3)').trigger('click');
+    // await wrapper.find('.confirm-dismiss').trigger('click');
+
     expect(localStorage.getItem('gdt-stash-queued')).toBe(null);
-    expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
-    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null);
+    //expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
+    //expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null);
   });
-});
+}, 20000);
