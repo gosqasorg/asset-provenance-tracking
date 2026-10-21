@@ -244,7 +244,7 @@ app.timer('refreshUsageStats', {
     handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
 });
 
-async function getUsers(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+async function getSelfIdentifiedUsers(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getUsers')
     try {
         // NOTE: Below is sorting counts by city (change the last two lines to update this)
@@ -290,8 +290,8 @@ async function getUsers(request: HttpRequest, context: InvocationContext): Promi
 }
 
 // Endpoint to retrieve non-dev/non-bot users
-app.get("getUsers", {
+app.get("getSelfIdentifiedUsers", {
     authLevel: 'anonymous',
-    route: 'stats/users',
-    handler: getUsers
+    route: 'stats/selfIdentifiedUsers',
+    handler: getSelfIdentifiedUsers
 })
