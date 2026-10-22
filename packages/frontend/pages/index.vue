@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
 
-                    <div v-if=isOffline id="scanQROfflineButton">
+                    <div id="scanQROfflineButton">
                         <input class="btn button scan-qr-button" value="Scan QR" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
                     </div>
                     <div id="scanQROfflineCamera">
@@ -118,7 +118,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import Learn_more from '~/layouts/learn_more.vue';
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import NavButton from '~/components/Buttons/NavButton.vue';
-import { displayOfflineButtons } from '~/services/azureFuncs';
 import jsQR from 'jsqr';
 
 const video = ref();
@@ -138,8 +137,7 @@ export default {
     components: { NavButton },
     data() {
         return {
-            trackDivVisible: false,
-            isOffline: displayOfflineButtons
+            trackDivVisible: false
         }
     },
 
