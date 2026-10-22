@@ -36,10 +36,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
 
-                    <div id="scanQROfflineButton">
+                    <div v-if="offlineModeFeatureFlag" id="scanQROfflineButton">
                         <input class="btn button scan-qr-button" value="Scan QR" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
                     </div>
-                    <div id="scanQROfflineCamera">
+                    <div v-if="offlineModeFeatureFlag" id="scanQROfflineCamera">
                         <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
                         <canvas ref="canvas" hidden ></canvas>
                     </div>
@@ -119,6 +119,7 @@ import Learn_more from '~/layouts/learn_more.vue';
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import NavButton from '~/components/Buttons/NavButton.vue';
 import jsQR from 'jsqr';
+import { offlineModeFeatureFlag } from '~/services/azureFuncs';
 
 const video = ref();
 const canvas = ref();
