@@ -7,7 +7,7 @@ import { webcrypto as crypto } from 'node:crypto';
 // Azure
 import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils.js'
 import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
@@ -103,7 +103,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${theKey.length}`);
+            throw new Error(`Invalid Key Length ${key.length}`);
     }
 }
 
@@ -336,7 +336,12 @@ app.timer('livenessChecker', {
 
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
     const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    let deviceID: string;
+    try {
+        deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    } catch (error) {
+        throw new Error(`Invalid key provided: ${error.message}`);
+    }
     const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
     const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
 
@@ -549,10 +554,15 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
 }
 
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return undefined;
+    }
+    if (request.params.deviceKey.length != 22) { return undefined; }
     const attachmentID = request.params.attachmentID;
-    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, attachmentID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return undefined; }
@@ -581,8 +591,15 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 // --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    let deviceID: string;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+        deviceID = await calculateDeviceID(deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
+
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
@@ -606,6 +623,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
+
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
     if (!decryptedBlob) { return { status: 404 } }
@@ -613,10 +631,16 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
     const { data, contentType, filename } = decryptedBlob;
     const headers = new Headers();
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
-    if (contentType) { headers.append("Content-Type", contentType); }
-    if (filename) {
-        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-        headers.append("Attachment-Name", filename);
+
+    try {
+        if (contentType) { headers.append("Content-Type", contentType); }
+        if (filename) {
+            headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+            headers.append("Attachment-Name", filename);
+        }
+    } catch (error) {
+        // Edge-case where image is attached to a record but not actually stored
+        return { status: 404, body: error.message };
     }
 
     return { body: data, headers };
@@ -681,9 +705,15 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    let deviceID: string;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+        deviceID = await calculateDeviceID(deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
 
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
     await containerClient.createIfNotExists();
     const formData = await request.formData();
     context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
@@ -799,6 +829,14 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
 
     try {
         const deviceKey = request.params.deviceKey;
+
+        // Confirm that the device key is valid
+        try {
+            decodeKey(request.params.deviceKey);
+        } catch (error) {
+            return { status: 400, body: error.message };
+        }
+
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -864,6 +902,14 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+
+    // Confirm that the device key is valid
+    try {
+        decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
+
     context.log(deviceKey)
     context.error(deviceKey)
 
@@ -872,14 +918,14 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     const records = await getRecords.json()
 
     for (let record of records) {
-		if (record.record.tags && (record.record.tags).includes("recall")) {
-			context.error(`Record has already been recalled`);
-            return {
-                status: 400,
-                body: "Record has already been recalled"
-            }
-		}
-	}
+      if (record.record.tags && (record.record.tags).includes("recall")) {
+        context.error(`Record has already been recalled`);
+              return {
+                  status: 400,
+                  body: "Record has already been recalled"
+              }
+      }
+	  }
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
@@ -1368,9 +1414,13 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
 // --- GETs --- //
 
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const body = await upgradeProvenance(containerClient, deviceKey);
-    return { jsonBody: body ?? { "already-converted": true} };
+    try {
+        const deviceKey = decodeKey(request.params.deviceKey);
+        const body = await upgradeProvenance(containerClient, deviceKey);
+        return { jsonBody: body ?? { "already-converted": true } };
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
 }
 
 
@@ -1755,6 +1805,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 
     // Check the first record entry in the provenance to see if the key is a group or not
     const provenance = await getProvenance(request, context);
+    if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
     const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
     if (!creationRecord) {
         context.error('addEntryHandler: returning 400')
