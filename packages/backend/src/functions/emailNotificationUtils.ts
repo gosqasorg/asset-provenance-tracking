@@ -139,12 +139,22 @@ async function getExistingEmails(
 
     if(!text) { return [emailSet, emailIDSet] as const }
 
+    context.error('---vvv---')
+    context.dir(text)
+    context.error('---^^^---')
+    context.erro('')
+
 
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
 
     const parsed = JSON.parse(text) as any;
+    context.error('---vvv---')
+    context.dir(parsed)
+    context.error('---^^^---')
+    context.erro('')
+
     const emailsFromBlob = parsed?.email;
     if (Array.isArray(emailsFromBlob)) {
         existingEmails = emailsFromBlob.filter(email => {
@@ -238,6 +248,10 @@ function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
     return theTagBundle
 }
 
+function removeEmailFromTagBundle(tagBundle) {
+    // To be implemented by Jara
+    // Jara: note: this should take the entire tag bundle, not just the no tags only one
+}
 
 /* TODO: check before adding. This will add duplicates. Do not use a set type data structure, instead, check before adding */
 function addTagSpecificSignupDataToBundle(
@@ -315,8 +329,11 @@ export async function subscribeToNotifications(
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
     let tagBundleNoTagsOnly = convertEmailSetsToTagBundle(emailSet, emailIDSet)  // does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
 
+    let tagBundle;
+    // Jara is writing this
+    // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
     let tagBundle = addTagSpecificSignupDataToBundle(
-        tagBundleNoTagsOnly, email, uniqueEmailString, tags
+        tagBundle, email, uniqueEmailString, tags
     )
 
     // End Block_1
