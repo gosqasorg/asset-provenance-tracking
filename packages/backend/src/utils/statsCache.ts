@@ -1,4 +1,4 @@
-import { app, InvocationContext } from '@azure/functions';
+import { app } from '@azure/functions';
 import { ContainerClient } from "@azure/storage-blob";
 import { ClientSecretCredential } from "@azure/identity";
 import { containerClient } from '../functions/httpTrigger.js';
@@ -47,7 +47,7 @@ export async function queryCount(query: string, token: string): Promise<number> 
     const rows = await runQuery(query, token)
     const val = rows[0]?.[0]
     if (typeof val !== "number"){
-        throw new Error (`Expected number got ${JSON.stringify(rows)} from queryCount on ${query}`)
+        throw new Error (`Leaving queryCount: Expected number got ${JSON.stringify(rows)}`)
     }
     return val;
 }
@@ -142,6 +142,7 @@ class StatsCache {
             for (let v in timesToCheck) {
                 valsAtTimes[v] = await queryCount(`${successful} | where TimeGenerated > ${timesToCheck[v]} | count`, token);
             }
+
             let records1h = valsAtTimes[0]
             let records24h = valsAtTimes[1]
             let records7d = valsAtTimes[2]
