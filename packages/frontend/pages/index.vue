@@ -26,28 +26,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
                 <div class="row"> <h4 class="dark-mode-heading">Global Distributed Tracking enables closed-loop tracking for products, information, and logistics at no cost to the user.</h4> </div>
                 <div class="row" style="display:inline-flex">
-                    <form id="viewRecordButton" style="width: max-content; margin-right: 8px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
+                    <form v-if="!offlineModeFeatureFlag" id="viewRecordButton" style="width: max-content; margin-right: 8px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
                         <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
                     </form>
+
+                    <div v-if="offlineModeFeatureFlag" id="viewRecordButton" style="width: max-content;">
+                    <ViewRecordDropdown
+                        @toggle-track-div="toggleTrackDiv"
+                        @toggle-camera="qrCameraOffline"
+                        :fontSize="20"
+                        :width="'max-content'"
+                    ></ViewRecordDropdown>
+                    </div>
 
                     <div id="createRecordButton" style="width: max-content; margin-top: 20px; margin-right: 8px; padding-right: 0px;">
                     <RouterLink to="/gdt"><button-component class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
                         borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
                     </div>
 
-                    <div v-if="offlineModeFeatureFlag" id="scanQROfflineButton">
-                        <input class="btn button scan-qr-button" value="Scan QR" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+                    <div v-if=trackDivVisible id="homeTrackAssetDiv" style="height: auto; padding-bottom: 20px;">
+                        <TrackAsset inputWidth="75%"></TrackAsset>
                     </div>
+                    <div v-else style="padding-bottom: 20px;"></div>
+
                     <div v-if="offlineModeFeatureFlag" id="scanQROfflineCamera">
                         <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
                         <canvas ref="canvas" hidden ></canvas>
                     </div>
 
-                    <div v-if=trackDivVisible id="homeTrackAssetDiv" style="height: auto; padding-bottom: 20px;">
-                        <TrackAsset inputWidth="75%"></TrackAsset>
-                    </div>
-                    <div v-else style="padding-bottom: 20px;"></div>
                 </div>
             </div>
         </div>
@@ -120,6 +127,7 @@ import ButtonComponent from '~/components/ButtonComponent.vue';
 import NavButton from '~/components/Buttons/NavButton.vue';
 import jsQR from 'jsqr';
 import { offlineModeFeatureFlag } from '~/services/azureFuncs';
+import ViewRecordDropdown from '~/components/Provenance/ViewRecordDropdown.vue';
 
 const video = ref();
 const canvas = ref();
@@ -145,6 +153,9 @@ export default {
 methods: {
     getPDF() {
         window.open('/Global_Distributed_Tracking.pdf', '_blank')
+    },
+    toggleTrackDiv() {
+        this.trackDivVisible = !this.trackDivVisible;
     },
     async qrCameraOffline () {
         // Prevent spam clicking/reloading of the camera
@@ -319,27 +330,8 @@ methods: {
     height: auto;
 }
 
-#scanQROfflineButton {
-    margin-top: 20px;
-    width: max-content !important;
-}
-
 .odd-stripe {
     padding: 30px 39px;
-}
-
-.scan-qr-button {
-    background-color: #CCECFD;
-    border-color: #CCECFD;
-    padding: 18px 22px;
-    border-radius: 10px;
-    height: 70px;
-}
-
-.scan-qr-button:active,
-.scan-qr-button:hover {
-    background-color: #E6F6FF;
-    border-color: #E6F6FF;
 }
 
 /* For screens less than 991px resize hand logo*/
@@ -443,15 +435,11 @@ methods: {
         margin-top: 0px !important;
         margin-bottom: 20px !important;
     }
-    #scanQROfflineButton {
-        order: 2;
-        margin-top: 0px !important;
-    }
     #scanQROfflineCamera {
         order: 3;
     }
-    .scan-qr-button {
-        height: 67px;
+    #qr-scan-video {
+        width: 75%;
     }
 }
 
