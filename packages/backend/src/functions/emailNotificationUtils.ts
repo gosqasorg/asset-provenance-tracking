@@ -125,6 +125,50 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
     return [blobName, blobClient] as const;
 }
 
+function emailSignupIsLegacy
+
+// Todo: Redo the condition check in Zod
+// Doing: throwing error and making sure all callers detect the options: 500 and return as such.
+function detectAndConvertLegacyEmailSignup(context, parsed) {
+    /*
+     * Before tag specific signup, data was: { email: [email_array], email_id: [email_id_array] }
+     */
+
+    // If tag-specific, we're done
+    // 'email', 'email_id' could be tags a user chooses
+    if('no_tag' in parsed) {
+        return parsed
+    }
+
+
+    // If we don't have 
+    // email, email_id, length 2, arrays nonempty, arrays not of strings, then
+    // something has gone wrong. Throw error to original API caller.
+    let keys = Object.keys(parsed)
+    let condition = (
+        'email' in keys &&
+        'email_id' in keys &&
+        keys.length == 2 &&
+        parsed.email.length > 0 &&
+        parsed.email_id.length > 0 &&
+        typeof([parsed.email[0]]) == 'string' &&  // Just checking one
+        typeof([parsed.email_id[0]]) == 'string'
+    )
+
+    if( !condition ) {
+        let message = (
+            'emailNotificationUtils.ts:detectAndConvertLegacyEmailSignup: ' +
+            'variable "parsed" evaluating as neither legacy nor modern format.'
+        )
+        context.error(message)
+
+    }
+
+
+
+
+}
+
 
 async function getExistingEmails(
     exists: boolean, 
@@ -254,8 +298,7 @@ function removeEmailFromTagBundle(tagBundle) {
 }
 
 /* TODO: check before adding. This will add duplicates. Do not use a set type data structure, instead, check before adding */
-function addTagSpecificSignupDataToBundle(
-    the_bundle, theEmail, theEmailId, theTags) {
+function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
 
     if(!theTags.length) {
         the_bundle.no_tags.push({
