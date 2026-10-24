@@ -203,62 +203,31 @@ function detectLegacyEmailSignup(context, parsed) {
 
 
 // Todo next: Call detectAndConvertLegacyEmailSignup()
+// Todo: this function needs context passed to it. 
+// Todo: exists should be evaluated outside this function. 
 async function getExistingEmails(
     exists: boolean, 
     blobClient: BlockBlobClient
 ) {
-    let emailSet = new Set<string>();
-    let emailIDSet = new Set<string>();
-    if(!exists) { return [emailSet, emailIDSet] as const }
+    // Todo: This should happen in the caller
+    let theTagBundle = { no_tag: [] }
+    if(!exists) { return theTagBundle }
 
     const buffer = await blobClient.downloadToBuffer();
     const text = buffer.toString("utf8");
+    if(!text) { return theTagBundle }
+    
+    const parsed = JSON.parse(text)// as any;
 
-    if(!text) { return [emailSet, emailIDSet] as const }
-
+    // Just logging. Console.error for border highlighting. No true error. 
     context.error('---vvv---')
     context.dir(text)
-    context.error('---^^^---')
-    context.erro('')
-
-
-    // Get all the emails and ids currently stored in the blob
-    let existingEmails: string[] = [];
-    let existingEmailIDs: string[] = [];
-
-    const parsed = JSON.parse(text) as any;
+    context.error('---^^^---\n')
     context.error('---vvv---')
     context.dir(parsed)
-    context.error('---^^^---')
-    context.erro('')
+    context.error('---^^^---\n')
 
-    const emailsFromBlob = parsed?.email;
-    if (Array.isArray(emailsFromBlob)) {
-        existingEmails = emailsFromBlob.filter(email => {
-            return typeof email === "string";
-        });
-    }
-
-    const emailIDsFromBlob = parsed?.email_id;
-    if (Array.isArray(emailIDsFromBlob)) {
-        existingEmailIDs = emailIDsFromBlob.filter(id => {
-            return typeof id === "string";
-        });
-    }
-
-    emailSet = new Set(
-        existingEmails
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    emailIDSet = new Set(
-        existingEmailIDs
-        .map(s => s.trim())
-        .filter(Boolean)
-    );
-
-    return [emailSet, emailIDSet] as const;
+    return detectAndConvertLegacyEmailSignup(parsed)
 }
 
 async function uploadBlob(
@@ -380,6 +349,8 @@ export async function subscribeToNotifications(
 
     const uniqueEmailString = createNewEmailId()
 
+    // Todo: Call conditional on exists. Do not pass exists. 
+    //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
     let tagBundleNoTagsOnly = convertEmailSetsToTagBundle(emailSet, emailIDSet)  // does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
 
