@@ -125,21 +125,54 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
     return [blobName, blobClient] as const;
 }
 
-function emailSignupIsLegacy
 
-// Todo: Redo the condition check in Zod
 // Doing: throwing error and making sure all callers detect the options: 500 and return as such.
 function detectAndConvertLegacyEmailSignup(context, parsed) {
     /*
      * Before tag specific signup, data was: { email: [email_array], email_id: [email_id_array] }
      */
+    try {
+        detectLegacyEmailSignup(context, parsed)
+    } catch(error) {
+        // To be handled by endpoint handler
+        throw(error)
+    }
 
+    return convertLegacyEmailSignup(parsed.email, parsed.email_id)
+}
+
+
+function convertLegacyEmailSignup(theEmailSet, theEmailIdSet) {
+    /*
+        Does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
+    */
+
+    /* Code for writing a unit test later
+        let fizz = [1, 2, 3]
+        let buzz = ['a', 'b', 'c']
+        let baz = convertEmailSetsToTagBundle(fizz, buzz)
+        console.dir(baz)
+    */
+
+    let theTagBundle = { no_tag: [] }
+
+    for(let i = 0; i < theEmailSet.length; i++) {
+        let pair = { email: theEmailSet[i], id: theEmailIdSet[i] }
+        theTagBundle['no_tag'].push(pair)
+    }
+
+    return theTagBundle
+}
+
+
+// Todo: Ensure 500 is handled by all callers. 
+// Todo: Redo the condition check in Zod
+function detectLegacyEmailSignup(context, parsed) {
     // If tag-specific, we're done
     // 'email', 'email_id' could be tags a user chooses
     if('no_tag' in parsed) {
-        return parsed
+        return
     }
-
 
     // If we don't have 
     // email, email_id, length 2, arrays nonempty, arrays not of strings, then
@@ -158,18 +191,18 @@ function detectAndConvertLegacyEmailSignup(context, parsed) {
     if( !condition ) {
         let message = (
             'emailNotificationUtils.ts:detectAndConvertLegacyEmailSignup: ' +
-            'variable "parsed" evaluating as neither legacy nor modern format.'
+            'variable "parsed" evaluating as neither legacy nor modern format.' +
+            'Called with: --- vvv ---\n' +
+            `${parsed}` + 
+            '             --- ^^^ ---\n' 
         )
         context.error(message)
-
+        throw new Error(message, {cause: 500})
     }
-
-
-
-
 }
 
 
+// Todo next: Call detectAndConvertLegacyEmailSignup()
 async function getExistingEmails(
     exists: boolean, 
     blobClient: BlockBlobClient
@@ -269,28 +302,6 @@ async function uploadBlob(
     }
 }
 
-
-function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
-    /*
-        Does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
-    */
-
-    /* Code for writing a unit test later
-        let fizz = [1, 2, 3]
-        let buzz = ['a', 'b', 'c']
-        let baz = convertEmailSetsToTagBundle(fizz, buzz)
-        console.dir(baz)
-    */
-
-    let theTagBundle = { no_tag: [] }
-
-    for(let i = 0; i < theEmailSet.length; i++) {
-        let pair = { email: theEmailSet[i], id: theEmailIdSet[i] }
-        theTagBundle['no_tag'].push(pair)
-    }
-
-    return theTagBundle
-}
 
 function removeEmailFromTagBundle(tagBundle) {
     // To be implemented by Jara
