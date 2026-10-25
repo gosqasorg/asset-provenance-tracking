@@ -112,11 +112,11 @@ const BOUNDS = countryBounds as CountryBounds
 // Map ColorPalette
 const mapColors = {
   dark : {
-    low: '#33332d',
+    low: '#383d3d',
     high: '#BFE4F3',
     background: '#1C1C19',
     selected: '#ffffff',
-    outline: '#1C1C19',
+    outline: '#121211',
     noData: '#262622',
   }, 
   light : {
@@ -129,7 +129,6 @@ const mapColors = {
   }
 }
 
-
 export default {
 
   data() {
@@ -140,7 +139,13 @@ export default {
       selectedPlace: { level: 'world'} as SelectionType ,
       loading: true ,
       error: null as string | null,
+      stats:  { countries: null, states:  null} as {countries: CountryStat | null, states: StateStat | null},
+
+      // for switching colors in the map
       isDark: false,
+      darkQuery: null as MediaQueryList | null,
+      onModeChange: null as ((e: MediaQueryListEvent) => void) | null
+
     }
   },
   computed: {
@@ -199,10 +204,24 @@ export default {
       const s = this.selectedStats
       return s.requests ? s.responseTime / s.requests : 0
     },
+    // get palette based on darkmode or lightmode
+    palette() {
+      return mapColors[this.isDark ? "dark" : "light"]
+    }
 
   },
 
   mounted() {
+
+    // Check if dark mode or light mode
+    this.darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    this.isDark = this.darkQuery.matches
+    this.onModeChange = (e: MediaQueryListEvent) => { this.isDark = e.matches }
+    this.darkQuery.addEventListener('change', this.onModeChange)
+
+
+
+
     const el = this.$refs.mapEl as HTMLDivElement | undefined
     if (!el) return
 
@@ -221,7 +240,7 @@ export default {
       style: {
         version: 8,
         sources: {},
-        layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#1C1C19' } }],
+        layers: [{ id: 'background', type: 'background', paint: { 'background-color': this.palette.background } }],
       },
       center: [0, 0],
       zoom: 0.75,
@@ -244,25 +263,13 @@ export default {
     })
 
     m.on('load', async () => {
-      const [stats, countriesGeo] = await Promise.all([dataPromise, countryPromise]);
+      let countriesGeo;
+      [this.stats, countriesGeo] = await Promise.all([dataPromise, countryPromise]);
 
-      // TODO: repeat code, turn into function
       // get statistics
-      const countries: CountryStat  = stats.countries as CountryStat;
-      const statesRequests: StateStat = stats.states as StateStat;
-      
-      const codes = Object.keys(countries);
-      // if (codes.length === 0) return;
-
-      // take log of requests so color scale is less skewed
-      const logOf = (country: string) => Math.log10(countries[country]!.requests + 1);
-      const logs = codes.map(logOf);
-      const minLog = Math.min(...logs);
-      const maxLog = Math.max(...logs);
-
-      // map country to to its log val
-      const logValues = codes.flatMap(code => [code, logOf(code)]);
-
+      const countries: CountryStat  = this.stats.countries as CountryStat;
+      const statesRequests: StateStat = this.stats.states as StateStat;
+  
       m.addSource('country-boundaries', {
         type: 'geojson',
         data: countriesGeo
@@ -275,17 +282,7 @@ export default {
         type: 'fill',
         source: 'country-boundaries',
         paint: {
-          'fill-color': codes.length
-          ? [
-            'match', ['get', 'ISO_A2_EH'],
-            codes,
-            ['interpolate', ['linear'],
-              ['match', ['get', 'ISO_A2_EH'], ...logValues, minLog],
-              minLog, LOW,
-              maxLog > minLog ? maxLog : minLog + 1, HIGH],
-            '#33332d',
-            ]
-          : '#33332d',
+          'fill-color': this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.stats.countries),
         },
       });
 
@@ -293,12 +290,12 @@ export default {
         id: 'countries-outline',
         type: 'line',
         source: 'country-boundaries',
-        paint: { 'line-color': '#1C1C19', 'line-width': 0.8, 'line-opacity': 0.75 },
+        paint: { 'line-color': this.palette.outline, 'line-width': 0.8, 'line-opacity': 0.75 },
       });
 
       // CITY-LEVEL'
       // get state keys
-      const stateKeys = Object.keys(stats.states as StateStat);
+      const stateKeys = Object.keys(this.stats.states as StateStat);
       // console.log(stateKeys)
       // console.log(stats.states)
       const statesGeo = await statePromise;
@@ -315,21 +312,12 @@ export default {
         source: 'states',
         minzoom: 2.5,
         paint: {
-          'line-color': '#1c1c1a',
-          'line-width': 0.8,
+          'line-color': this.palette.outline,
+          'line-width': 1,
           'line-opacity': ['interpolate',['linear'], ['zoom'], 2.5, 0, 3.5, 0.75]
         },
       })
 
-      // TODO: repeat code, turn into function
-      // take log of requests so color scale is less skewed
-      const stateLog = (key: string) => Math.log10((stats.states as StateStat)[key]!.requests + 1);
-      const sLogs = stateKeys.map(stateLog);
-      const sminLog = Math.min(...sLogs);
-      const smaxLog = Math.max(...sLogs);
-
-      // map city to its log val
-      const slogValues = stateKeys.flatMap(key => [key, stateLog(key)]);
       const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'gn_name']]]
     
       // fill in state based on requests amount- if no requests color state blank to cover up country-fill
@@ -339,17 +327,7 @@ export default {
         source: 'states',
         minzoom: 2.5,
         paint: {
-          'fill-color': stateKeys.length 
-          ? [
-            'match', stateKey,
-            stateKeys,
-            ['interpolate', ['linear'],
-              ['match', stateKey, ...slogValues, sminLog],
-              sminLog, LOW,
-              smaxLog > sminLog ? smaxLog : sminLog + 1, HIGH],
-            '#33332d',
-            ]
-          : '#33332d',
+          'fill-color': this.fillByStats(this.palette, stateKey, this.stats.states),
           'fill-opacity': [
             'interpolate', ['linear'], ['zoom'],
             2.5, 0,  
@@ -367,7 +345,7 @@ export default {
         source: 'country-boundaries', 
         filter: ['==', ['get', 'ISO_A2_EH'], ''],  
         paint: { 
-          'line-color': '#ffffff', 
+          'line-color': this.palette.selected, 
           'line-width': 2, 
           'line-opacity': 0.8 } 
         })
@@ -378,7 +356,7 @@ export default {
         source: 'country-boundaries', 
         filter: ['==', ['get', 'ISO_A2_EH'], ''],  
         paint: { 
-          'line-color': '#ffffff', 
+          'line-color': this.palette.selected, 
           'line-width': 2, 
           'line-opacity': 0.8 } 
       })
@@ -389,7 +367,7 @@ export default {
         source: 'states',
         filter: ['==', ['get', 'iso_3166_2'], ''],
         paint: {
-          'line-color': '#ffffff',
+          'line-color': this.palette.selected,
           'line-width': 1.5 }
       })
 
@@ -399,7 +377,7 @@ export default {
         source: 'states', 
         filter: ['==', ['get', 'iso_3166_2'], ''],  
         paint: { 
-          'line-color': '#ffffff', 
+          'line-color': this.palette.selected, 
           'line-width': 2, 
           'line-opacity': 0.8 } 
       })
@@ -531,6 +509,9 @@ export default {
     resize?.disconnect()
     map?.remove()
     map = null
+    if (this.onModeChange){
+      this.darkQuery?.removeEventListener('change', this.onModeChange)
+    }
   },
 
   methods: {
@@ -565,11 +546,52 @@ export default {
       map?.setFilter('state-selected', ['==', ['get', 'ISO_A2_EH'], '']);
       map?.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
       this.selectedPlace = { level: 'world'}
+    },
+    updateMapColors(){
+      if (!map || !map.isStyleLoaded()) return;
+      const p = this.palette;
+      map?.setPaintProperty('background', 'background-color', p.background)
+      map?.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(p, ['get', 'ISO_A2_EH'], this.stats.countries))
+      
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'gn_name']]]
+      map?.setPaintProperty('states-fill', 'fill-color', this.fillByStats(p, stateKey, this.stats.states))
+
+      map.setPaintProperty('countries-outline', 'line-color', p.outline)
+      map.setPaintProperty('states-outline', 'line-color', p.outline)
+
+      map.setPaintProperty('state-hover', 'line-color', p.selected)
+      map.setPaintProperty('country-hover', 'line-color', p.selected)
+      map.setPaintProperty('state-selected', 'line-color', p.selected)
+      map.setPaintProperty('country-selected', 'line-color', p.selected)
+    },
+    fillByStats(p, featKey, stats){
+      const keys = Object.keys(stats);
+      if (!keys.length) return p.noData
+
+      const logOf = (k: string) => Math.log10(stats[k]!.requests + 1);
+      const logs = keys.map(logOf);
+      const minLog = Math.min(...logs);
+      const maxLog = Math.max(...logs);
+
+      // map country to to its log val
+      const logValues = keys.flatMap((k, i) => [k, logs[i]!]);
+
+      return [
+        'match', featKey,
+        keys,
+        ['interpolate', ['linear'],
+          ['match', featKey, ...logValues, minLog],
+          minLog, p.low,
+          maxLog > minLog ? maxLog : minLog + 1, p.high],
+        p.noData,
+      ]
     }
-
-
-    // 
   },
+  watch: {
+    palette() {
+      this.updateMapColors()
+    }
+  }
 };
 
 </script>
@@ -631,7 +653,7 @@ export default {
   }
 
   #map-box {
-    border: #353535 solid 1px;
+    border: #D8D8D8 solid 1px;
     border-radius: 15px;
     position: relative;
 
@@ -840,10 +862,12 @@ export default {
       color: #CCCCCC;
     }
 
-
-
     .legend-bar {
-      background: linear-gradient(to right, #33332D, #BFE4F3);
+      background: linear-gradient(to right, #383d3d, #BFE4F3);
+    }
+
+    #map-box {
+      border-color: #353535;
     }
 
   }
@@ -893,11 +917,7 @@ export default {
       padding: 14px 18px;
     }
 
-    /* .stat-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 20px
-    } */
+    
 
     
     
