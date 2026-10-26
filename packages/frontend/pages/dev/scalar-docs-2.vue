@@ -39,7 +39,35 @@ onBeforeUnmount(() => observer?.disconnect())
 <template>
     <div ref="root" style="width: 100vw; min-height: 100vh;">
   <ClientOnly>
-      <ApiReference :configuration="{ content: spec, agent: { disabled: true } }" />
+      <ApiReference :configuration="{ 
+        content: spec, 
+        agent: { disabled: true },
+        hiddenClients: {
+          'shell': ['httpie', 'wget'],
+          'node': true, 
+          'clojure': true,
+          'c': true,
+          'csharp': true,
+          'go': true,
+          'java': true,
+          'kotlin': true,
+          'objc': true,
+          'ocaml': true,
+          'php': true,
+          'plugins': true,
+          'python': true,
+          'r': true,
+          'ruby': true,
+          'swift': true,
+          'rust': true,
+          'powershell': true,
+          'dart': true,
+          'fsharp': true,
+          'http': true,
+          'julia': true,
+          'js': true,
+        }
+      }"/>
   </ClientOnly>
     </div>
 </template>
