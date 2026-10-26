@@ -28,9 +28,6 @@ export var displayOnlineBanner = false;
 // Global variable used to control the display of offline elements
 export var displayOfflineFeatures = ref(false);
 
-// TODO: sidequest, why can't we just called offlineQueueConsumerWorker from this file? (does it not reload on prod?)
-console.log("azure funcs!")
-
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
