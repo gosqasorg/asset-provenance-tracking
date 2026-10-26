@@ -73,19 +73,6 @@ Sub-tasks:
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
-async function streamToString(readableStream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        readableStream.on("data", (data) => {
-            chunks.push(data.toString());
-        });
-        readableStream.on("end", () => {
-            resolve(chunks.join(""));
-        });
-        readableStream.on("error", reject);
-    });
-}
-
 async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
 
@@ -98,6 +85,60 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
 
     // 2: Return blob content (so we can read existing content, merge email list, write back)
     return [blobName, blobClient] as const;
+}
+
+async function uploadBlob(
+    containerClient: ContainerClient, 
+    blobName: string, 
+    emailSet: Set<string>, 
+    emailIDSet: Set<string>, 
+    tags: string[],
+    context
+) {
+    context.log('Entering uploadBlob')
+
+    // Setup data to upload
+    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
+    const data = JSON.stringify(payloadObj);
+
+    const uploadOptions = {
+        tier: "Cool",
+        blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" }
+    };
+
+    // Note: do not reformat; leave as commented
+    let status = (await containerClient.uploadBlockBlob(
+                    blobName,        // 1. Blob name
+                    data,           // 2. body (can be a string)
+                    data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
+                    uploadOptions // 4. optional options
+    )).response._response.status
+
+    if (status < 300 && status >= 200) {
+        context.log('Returning without error from uploadBlob')
+        return { 
+            jsonBody: { message: "Success", name: blobName },
+            status: 200 
+        }
+        // TODO: have frontend display in snackbar for status 4xx
+        // This means nothing for now since we're not validating that what we're being handed is an email.
+    } else {
+        context.log('Throwing error from uploadBlob')
+        throw new Error()
+    }
+}
+
+async function streamToString(readableStream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => {
+            chunks.push(data.toString());
+        });
+        readableStream.on("end", () => {
+            resolve(chunks.join(""));
+        });
+        readableStream.on("error", reject);
+    });
 }
 
 function createNewEmailId() {
@@ -149,7 +190,6 @@ function convertLegacyEmailSignup(theEmailSet, theEmailIdSet) {
 
     return theTagBundle
 }
-
 
 // Todo: Ensure 500 is handled by all callers. 
 // Todo: Redo the condition check in Zod
@@ -243,54 +283,13 @@ async function getExistingEmails(
     return detectAndConvertLegacyEmailSignup(parsed)
 }
 
-async function uploadBlob(
-    containerClient: ContainerClient, 
-    blobName: string, 
-    emailSet: Set<string>, 
-    emailIDSet: Set<string>, 
-    tags: string[],
-    context
-) {
-    context.log('Entering uploadBlob')
-
-    // Setup data to upload
-    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
-    const data = JSON.stringify(payloadObj);
-
-    const uploadOptions = {
-        tier: "Cool",
-        blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" }
-    };
-
-    // Note: do not reformat; leave as commented
-    let status = (await containerClient.uploadBlockBlob(
-                    blobName,        // 1. Blob name
-                    data,           // 2. body (can be a string)
-                    data.length,   // 3. length of body in bytes (or Buffer.byteLength(data))
-                    uploadOptions // 4. optional options
-    )).response._response.status
-
-    if (status < 300 && status >= 200) {
-        context.log('Returning without error from uploadBlob')
-        return { 
-            jsonBody: { message: "Success", name: blobName },
-            status: 200 
-        }
-        // TODO: have frontend display in snackbar for status 4xx
-        // This means nothing for now since we're not validating that what we're being handed is an email.
-    } else {
-        context.log('Throwing error from uploadBlob')
-        throw new Error()
-    }
-}
-
-
 function removeEmailFromTagBundle(tagBundle) {
     // To be implemented by Jara
     // Jara: note: this should take the entire tag bundle, not just the no tags only one
 }
 
 
+// Todo: extractEmailsFromResponse needs to be updated
 export function extractEmailsFromResponse(response: any, context) {
     const emailSet = new Set<string>();
     const emailIDArray = new Array<string>();
@@ -492,6 +491,7 @@ export async function unsubscribeFromNotifications(
 }
 
 
+// Todo: extractEmailsFromResponse needs to be updated
 export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entered notifySubscribers')
     const record = JSON.parse(formData.get('provenanceRecord'));
