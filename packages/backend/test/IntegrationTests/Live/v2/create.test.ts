@@ -8,6 +8,10 @@ const api_url = process.env['api_url']
 
 describe ("Send to All Children Tests", () => {
     it("Should send entry to the child record", async() => {
+        // --- Note! If this test is updated, also update the example code in 
+        // --- GDT-OpenAPI-Spec.yaml > createGroup > x-codeSamples
+        // --- All that's needed is here up to expect(response.status)...
+
 		// Create the group/children
         const payload = {
             deviceName: "Send To Children Basic Test",
