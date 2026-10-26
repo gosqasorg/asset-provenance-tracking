@@ -1179,7 +1179,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const body = await request.json() as any;
         const token = body.token;
         const code = body.code;
-        const tags = []
 
         if (!token || !code) {
             context.error('postVerifyCode: returning 400')
@@ -1217,6 +1216,11 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
                 status: 400
             }
         }
+
+        // get tags as array of strings if entity exists and has tags. 
+        const tags = typeof entity.tags === 'string'
+            ? z.array(z.string()).parse(JSON.parse(entity.tags))
+            : [];
 
         await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
 
