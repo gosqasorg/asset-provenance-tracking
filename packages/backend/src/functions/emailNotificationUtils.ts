@@ -288,7 +288,6 @@ function removeEmailFromTagBundle(tagBundle) {
     // Jara: note: this should take the entire tag bundle, not just the no tags only one
 }
 
-
 // Todo: extractEmailsFromResponse needs to be updated
 export function extractEmailsFromResponse(response: any, context) {
     const emailSet = new Set<string>();
@@ -308,6 +307,7 @@ export function extractEmailsFromResponse(response: any, context) {
     return [emailSet, emailIDArray];
 }
 
+// Todo: check this
 export async function retrieveNotifEmails(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -336,6 +336,28 @@ export async function retrieveNotifEmails(
         }
     }
 }
+
+function getTagsFromSignupBundle(email, bundle) {
+
+    let tags = []
+    for(let tag in bundle) {
+
+        // signup: {email: "foo@bar.baz", id: 12345}
+        for(let a_signup of bundle[tag]) {
+
+            if(a_signup.email != email) {
+                continue
+            }
+
+            if(tags.indexOf(tag) < 0) {
+                tags.push(tag)
+            }
+        }
+    }
+    
+    return tags
+}
+
 
 // ---^^^--- Utiities Functions Section: End ---^^^--- //
 
@@ -373,6 +395,7 @@ export async function subscribeToNotifications(
     // Setup the blobClient
     let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
+    if(!exists) {}
 
     const uniqueEmailString = createNewEmailId()
 
@@ -380,6 +403,14 @@ export async function subscribeToNotifications(
     // Todo: Call conditional on exists. Do not pass exists. 
     // Converts legacy in background. Returns at least this: { no_tag: [] }
     let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
+
+    // If email is already stored return success
+    if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, email)) {
+        return {
+            jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
+            status: 304,
+        };
+    }
 
     // Step 2/3: Remove
     // Jara is writing this
@@ -389,38 +420,14 @@ export async function subscribeToNotifications(
     // Step 3/3: Add
     tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, email, uniqueEmailString, tags)
 
-
-    // Block_2
-    // Block 2 can check for membership by indexing into the object
-    // 1/3: Add the specified email to the set
-    const sizeBeforeAdding = emailSet.size;
-    context.log(1)
-    emailSet.add(normalized);
-    context.log(2)
-    // If email is already stored return success
-    if (exists && emailSet.size === sizeBeforeAdding) {
-        return {
-            jsonBody: { message: "Success", name: blobName },
-            status: 200,
-        };
-    }
-
-
-    // 3/3: We'd replace this with the call to the "pass in the data object, the email, the id, and the tags, and get back the object with the new data stored properly
-    emailIDSet.add(uniqueEmailString)
-
-    // Recommendation: go for a solution that is simple and works first
-    // const tagArray = tags.reduce((accumulator, tag) => {
-    //         accumulator[tag] = email;
-    //         return accumulator;
-    //     }, {});
-
-    // const tagArray = []
-
     try {
         // Update our stored emails to include the new email/id
         uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags, context)
         context.log('Returning without error from subscribeToNotifications')
+        return {
+            jsonBody: { message: "Success", name: blobName },
+            status: 200,
+        };
     } catch(error) {
         context.error('Returning with error from subscribeToNotifications')
         return {
