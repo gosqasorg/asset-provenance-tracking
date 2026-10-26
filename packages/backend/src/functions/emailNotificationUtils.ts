@@ -7,57 +7,6 @@ const FROM_ADDRESS = process.env['SENDER_EMAIL'];
 const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
-/*
-
-Notes from Weds pair programming session 14 Oct 26
-* Frontend to send tags in the payload of the call to notificationSubscription endpoint
-* Endpoint handler to store tags in table, temporarily, until user has verified
-* On verification, postVerifyCode will:
-  1. Retrieve tags
-  2. Sign the user up
-  3. Delete the row in the table
-
-Vincent to create issue: 
-* Carve off what you can of the frontend sending tags and / or storing in the table
-
-Converting to the new format
------------------------------------
-
-Old and busted: A pair of lists of strings; cannot handle tags
-New hotness: key-value pair keyed by tags, values as arrays of email address - email id pairs
-
-Converting to the new format involves altering:
-* getExistingEmails, and its two calls (one in subscribe, one in unsubscribe)
-
-In subscribeToNotifications
-* Done: First major function
-  - Name: convertEmailSetsToTagBundle
-    > Done: We at the present moment have enough to take what's returned from getExistingEmails and produce a { no_tag: [list of pairs] }
-    > Done: If tags are passed in, we get the whole data object, for that one email, eg { no_tag: [list], newly_selected_tag: [other list] }
-    > Done: So writing that function is one key item. 
-
-* Second major function:
-    > Another function we may want to write is:
-    > Pass in the data object described above, an email, and a list of tags, and get back the data object with the email added to the lists under the given tags
-      - This is the data that I expect we'll want to store
-
-Coming full circle: 
-> Data object gets handed to upload blob. This at present builds a single object and stores it. 
-> Then we come full circle with getExistingEmails, that retrieves that data object, which we just need to hand back, further meaning that altering this fn will be easy. 
-
-Note: convertEmailSetsToTagBundle is a stepping stone that allows us to get the right data format into the db at all. It will later be used for
-converting legacy signups (signups before tag-specificity)
-*/
-
-/*
-Sub-tasks:
-* In NotifySubscribers, alter extractEmailsFromResponse to take the new format, and output the same pair of lists
-* [Vincent] in extractEmailsFromResponse, call a new function that converts the old format to the new format
-* [Jara] in SubscribeToNotifications, update to new format
-* update UnsubscribeFromNotifications to the new format
-* Update uploadBlob to new format
-* Convert getExistingEmails to new format
-*/
 
 /* Vincent's todo
 
@@ -92,6 +41,7 @@ async function setupBlobClient(
     return [blobName, blobClient] as const;
 }
 
+// Todo: see todo inside this function
 async function uploadBlob(
     containerClient: ContainerClient, 
     blobName: string, 
@@ -517,13 +467,14 @@ export async function notifySubscribers(
     const description = record ? record.description : "";
 
 
+
     //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
     // Notify users who subscribed to this record.
     // 1. RetrieveNotifEmails hands back blob contents as string
-    //const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
     // 2. Parse the object and hand back a pair of lists of emails and email IDs
-    //const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
-    //const emailSignups = getExistingEmails() // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
+    const emailSignups = getExistingEmails() // TODO: left off here: try it. Will need this function to be updated to tag-specificity
     //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
     if (emailSet.size === 0) {
