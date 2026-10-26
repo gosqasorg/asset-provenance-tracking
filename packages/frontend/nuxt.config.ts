@@ -12,10 +12,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
   vite: {
+
+    optimizeDeps: {
+      include: [
+        '@scalar/api-reference',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'bootstrap/dist/js/bootstrap.bundle', // CJS
+        'qr-code-styling', // CJS
+        '@urlpack/base58',
+      ]
+    },
+
     css: {
       preprocessorOptions: {
         scss: {
@@ -23,10 +36,12 @@ export default defineNuxtConfig({
         }
       }
     },
+
     server: {
       allowedHosts: []
     }
   },
+
   runtimeConfig: {
     // The private keys which are only available server-side
     // Keys within public are also exposed client-side
@@ -44,23 +59,28 @@ export default defineNuxtConfig({
       gitCommit: process.env.GIT_COMMIT
     }
   },
+
   modules: ['@nuxt/test-utils/module', 'nuxt-snackbar', '@vite-pwa/nuxt'],
   snackbar: {
     bottom: true,
     duration: 5000
   },
+
   hooks: {
     ready(nuxt) {
       // Log the app config to ensure it is correct when deployed.
-      console.log(`App Config:
-baseUrl: ${nuxt.options.runtimeConfig.public.baseUrl}
-frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
+      console.log('App Config: ' +
+                  `baseUrl: ${nuxt.options.runtimeConfig.public.baseUrl}` +
+                  `frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
     }
   },
+
   ssr: false,
+
   nitro: {
     static: true
   },
+
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
@@ -93,6 +113,7 @@ frontendUrl: ${nuxt.options.runtimeConfig.public.frontendUrl}`);
       enabled: false
     }
   },
+
   compatibilityDate: '2024-11-12'
 });
 
