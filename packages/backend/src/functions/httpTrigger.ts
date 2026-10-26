@@ -1049,95 +1049,6 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
     }
 }
 
-// const TagSignupOrderSchema = z.object({
-//     deviceKey: z.string(),
-//     tags: z.array(z.string()).optional(),
-//     email: z.string()
-// });
-
-// dual purpose schema dependent on existence of email prop, or two schemas with the only difference being a mandatory email prop?
-// confusing state may lead to errors
-
-// const TaggedRecordEntryOrderSchema = z.object({
-//     deviceKey: z.string(),
-//     tags: z.array(z.string()).optional(),
-//     email: z.string().optional()
-// });
-
-// probably shouldn't be a concurrent fxn with new record addition. may lead to cases of email being sent but record not being added.
-// more evidence against one fxn handling both signup and add new record entry
-export async function tagNotificationHandler(request:HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const TagEmailNotificationOrderSchema = z.object({
-        deviceKey: z.string(),
-        tags: z.array(z.string()).optional(),
-        email: z.string().optional()
-    });
-    // sanitize input?
-
-    // validation
-    try {
-        const formData = await request.formData();
-        // may need to rework this code block
-        // possibly include the exact record id/key in order to pull tags manually
-        const recordStr = formData.get("provenanceRecord");
-        // change formData key, or use a different HTTP response body
-        // should we use one HTTP message that is broken apart and sent where needed or multiple messages that are sent separately?
-        if (typeof recordStr !== "string") {
-            throw new SyntaxError("Missing provenanceRecord in form data");
-        }
-
-        let theRequest = JSON.parse(recordStr);
-        TagEmailNotificationOrderSchema.parse(theRequest);
-        let deviceKey = theRequest['deviceKey'];
-        let tags = theRequest['tags'];
-        let email = theRequest['email'];
-
-        // or just separate into two fxns?
-
-        let data: object
-        if (email) {
-            // signup
-            data = {
-                tags: tags,
-                email: email
-            }
-
-            const formData = new FormData();
-			formData.append(`${deviceKey}`, JSON.stringify(data));
-
-            // !!! SIGNUP WITH NO TAGS & NO ENTRY, NO TAGS & ENTRY, TAGS & ENTRY ALL POSSIBLE. TAGS & NO ENTRY NOT POSSIBLE !!! MUST SPLIT CASES
-            // or two/three separate if statements lol
-
-            // send off to be added to key: {tag: email} data structure
-
-            // below block probably won't be executed here
-            // may be better to use a Set rather than list/array for emails
-            // if deviceKey exists && tag exists && email not a value to corresponding tag key, insert email
-            // else create and insert missing parts
-        } else {
-            // add new record entry
-            data = {
-                tags: tags
-            }
-            const formData = new FormData();
-			formData.append(`${deviceKey}`, JSON.stringify(data));
-
-            // send off to notify emails subscribed to specified tags
-
-            // retrieve email addresses associate with deviceKey and tags
-            // send emails
-            // loop a few times for each email on failure to increase success chance
-            // if enough failures, throw error/HTTP status
-            // log and store which emails and tags failed and still need to be notified?
-
-            // return success message/HTTP status
-        }
-    } catch(error) {}
-    
-    return null
-}
-
-
 
 export async function getPendingVerification(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
@@ -2029,12 +1940,6 @@ app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
     handler: postVerifyCode
-})
-
-app.post('tagNotification', {
-    authLevel: 'anonymous',
-    route: 'tagNotification/{deviceKey}',
-    handler: tagNotificationHandler
 })
 
 app.post("notifySubscribers", {
