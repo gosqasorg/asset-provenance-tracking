@@ -59,6 +59,16 @@ Sub-tasks:
 * Convert getExistingEmails to new format
 */
 
+/* Vincent's todo
+
+    Working on:
+    * Edit calls to getExistingEmails to accept new format
+    
+    Todo:
+    * Create cleanup ticket for the todos below
+    * Create cleanup ticket: use checkIfAlreadySignedUpWithTheseTags() to drop before / after size checking
+*/
+
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
@@ -205,7 +215,6 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
     return the_bundle 
 }
 
-// Todo next: Edit calls to accept new format
 // Todo: this function needs context passed to it. 
 // Todo: exists should be evaluated outside this function. 
 async function getExistingEmails(
@@ -354,13 +363,6 @@ export async function subscribeToNotifications(
 
     context.log('Entering subscribeToNotifications')
 
-    // const tagsToEmailsSet = new Map<string, Array>();
-    // JS Object instead
-    interface tagList {
-        email: string;
-        id: string;
-    };
-
     // Confirm the email exists
     const normalized = (email ?? "").trim().toLowerCase();
     if (!normalized) {
@@ -372,64 +374,22 @@ export async function subscribeToNotifications(
     let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
     const exists = await blobClient.exists();
 
-
     const uniqueEmailString = createNewEmailId()
 
+    // Step 1/3: Get
     // Todo: Call conditional on exists. Do not pass exists. 
-    //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-    let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-    let tagBundleNoTagsOnly = convertEmailSetsToTagBundle(emailSet, emailIDSet)  // does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
+    // Converts legacy in background. Returns at least this: { no_tag: [] }
+    let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
 
-    let tagBundle;
+    // Step 2/3: Remove
     // Jara is writing this
+    // Note: this call should be moved into addTagSpecificSignupDataToBundle()
     // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
-    let tagBundle = addTagSpecificSignupDataToBundle(
-        tagBundle, email, uniqueEmailString, tags
-    )
-
-    // End Block_1
-
-    // key1: {
-    //     no_tag: [{email: "theEmail@foo.bar", id: <the_id>}, 
-    //              {email: "anotherEmail@foo.bar", id: <the_id>}
-    //              ...
-    //             ],
-    //     tag1:   [{email: "theEmail@foo.bar", id: <the_id>}, 
-    //              {email: "anotherEmail@foo.bar", id: <the_id>}
-    //              ...
-    //             ],
-    //     tag2:   [{email: "theEmail@foob.bar", id: <the_id>}, 
-    //              {email: "anotherEmail@foo.bar", id: <the_id>}
-    //              ...
-    //             ],
-    //      .        .      .      .
-    //      .        .      .      .
-    //     tagn:     .      .      .
-    // },
-
-    // 0/2: Extract emails and email IDs from individual tag sets
-    // Need a top level loop
-    // or just fxnalize lol
-
-    /*
-    const tagsToEmailsSet = {
-        tags: Array<string>
-    };
-    if (!tags) {
-        // no_tags
-    }
-    */
-
-    /*
-    for (const tag in tags) {
-        let tagArray = []
-        // TODO: Array type {:, :}
+    
+    // Step 3/3: Add
+    tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, email, uniqueEmailString, tags)
 
 
-
-        // tagsToEmailsSet.add(tagArray)
-    }
-    */
     // Block_2
     // Block 2 can check for membership by indexing into the object
     // 1/3: Add the specified email to the set
