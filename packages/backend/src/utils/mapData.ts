@@ -6,8 +6,6 @@ import { app, InvocationContext } from '@azure/functions';
 import { ClientSecretCredential } from "@azure/identity";
 import { countryToAlpha2 } from "country-to-iso";
 
-
-
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
@@ -99,6 +97,15 @@ class MapData {
 
     // Group requests by country 
     sumByCountry(context: InvocationContext) {
+        this.countryStats = this.stateStats = this.sumBy(context, "country");
+    }
+
+    // Group requests by state 
+    sumByState(context: InvocationContext) {
+        this.stateStats = this.sumBy(context, "state");
+    }
+
+    sumBy(context: InvocationContext, level: "country" | "state"){
         const stats = {};
         
         for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
@@ -114,69 +121,37 @@ class MapData {
             }
 
             const weekKey = String(day).slice(0, 10)
-            
-            // dont override existing entry,only add if not there
-            if (stats[iso] === null || stats[iso] === undefined) {
-                stats[iso] = {name: country, requests: 0, failed: 0, responseTime:0, weeks: {}}
-            }
 
-            const countryTotal = stats[iso]
-            countryTotal.requests += requests
-            countryTotal.failed += failed
-            countryTotal.responseTime += responseTime
+            let key = ''
+            if (level === "state") {
+                if (!state) continue;
+                key = `${iso}|${state.toLowerCase()}`
+                if (stats[key] === null || stats[key] === undefined) {
+                    stats[key] = { name: state, iso, requests: 0, failed: 0, responseTime: 0, weeks: {} }
+                }
+            } else {
+                key = iso
+                if (stats[key] === null || stats[iso] === undefined) {
+                    stats[key] = {name: country, requests: 0, failed: 0, responseTime:0, weeks: {}}
+                }
+            }
+            
+
+            const locationTotal = stats[key]
+            locationTotal.requests += requests
+            locationTotal.failed += failed
+            locationTotal.responseTime += responseTime
 
             // group data by week, azure uses monday as the start of the week
-            if (countryTotal.weeks[weekKey] === null || countryTotal.weeks[weekKey] === undefined) {
-                countryTotal.weeks[weekKey] = {requests: 0, failed: 0, responseTime: 0}
+            if (locationTotal.weeks[weekKey] === null || locationTotal.weeks[weekKey] === undefined) {
+                locationTotal.weeks[weekKey] = {requests: 0, failed: 0, responseTime: 0}
             }
 
-            countryTotal.weeks[weekKey].requests += requests
-            countryTotal.weeks[weekKey].failed += failed
-            countryTotal.weeks[weekKey].responseTime += responseTime
+            locationTotal.weeks[weekKey].requests += requests
+            locationTotal.weeks[weekKey].failed += failed
+            locationTotal.weeks[weekKey].responseTime += responseTime
         }
-        this.countryStats = stats;
-    }
-
-    // Group requests by state 
-    sumByState(context: InvocationContext) {
-        const stats = {};
-        
-        for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
-            if (!country || !state) continue;
-            
-            const iso = countryToAlpha2(country);
-            
-            // incase not there
-            if (!iso) { 
-                context.log(`No ISO code for "${country}"`); 
-                continue; 
-            }
-
-            const weekKey = String(day).slice(0, 10)
-
-            
-            // using iso|state as key because duplicates
-            const stateKey = `${iso}|${state.toLowerCase()}`;
-            console.log(stateKey)
-            context.log(stateKey)
-            if (stats[stateKey] === null || stats[stateKey] === undefined) {
-                stats[stateKey] = { name: state, iso, requests: 0, failed: 0, responseTime: 0, weeks: {} }
-            }
-
-            const stateTotal = stats[stateKey]
-            stateTotal.requests += requests;
-            stateTotal.failed += failed;
-            stateTotal.responseTime += responseTime;
-
-            if (stateTotal.weeks[weekKey] === null || stateTotal.weeks[weekKey] === undefined) {
-                stateTotal.weeks[weekKey] = {requests: 0, failed: 0, responseTime: 0}
-            }
-
-            stateTotal.weeks[weekKey].requests += requests
-            stateTotal.weeks[weekKey].failed += failed
-            stateTotal.weeks[weekKey].responseTime += responseTime
-        }
-        this.stateStats = stats;
+        return stats;  
     }
 
     // Group requests by city 

@@ -1,11 +1,3 @@
-<!-- 
-TODO: Find a better way to upload the geoJSON to frontend / mapbox
-TODO: Add  states (error, loading) for mapbox section
-TODO: Add Ranges 30, 60, 90 potentially. Unsure since the data only goes back 4 months and a smaller ranger isnt super impactful looking
-BUG: some countries in India are undefined
-FIX: Zoom level for selecting states
--->
-
 <template>
     <div class="map-page">
         <div class="map-page-header">
@@ -31,8 +23,6 @@ FIX: Zoom level for selecting states
               <div class="country-info">
                 
                 <p>{{worldStats.count}} countries reached</p>
-                <!-- TODO: Add page for full map -->
-                <!-- <p id="map-link"> Open full map &rarr;</p> -->
               </div>
             </div>
           </div>
@@ -40,8 +30,7 @@ FIX: Zoom level for selecting states
           <div v-if="loading">Loading stats...</div>
           <!-- TODO: Stats Section -->
           <div v-else id="stat-section"> 
-            <!--  Adds a >[Location] when specific location is clicked --> 
-            <h2>{{ selectedStats.name === "World" ? "Whole World" : selectedStats.name }}</h2>
+            <h2>{{ selectedStats?.name === "World" ? "Whole World" : selectedStats?.name }}</h2>
             <!-- Row for  # of requests, avg response, succeeded %-->
             <div class="summary-row">
               <div class="summary-pill">
@@ -64,11 +53,6 @@ FIX: Zoom level for selecting states
               </div>
             </div> 
 
-        
-            <!-- <div>
-                <p>Portion of Traffic: {{ selectedStats?.requests / worldStats.requests * 100 }}</p>
-            </div> 
-            -->
             <div class="city-section">
                 <!-- Top Cities Section -->
                 <p>TOP {{ selectedPlace.level === 'world' ? 'COUNTRIES' : selectedPlace.level === 'country' ? 'STATES / PROVINCES' : 'CITIES' }}</p>
@@ -80,10 +64,6 @@ FIX: Zoom level for selecting states
                 </ul>
                 <p v-else style="font-weight: 300;">No city-level data for this country yet</p>
             </div>
-                
-              <!-- for testing -->
-              <!-- <p v-if="selectedStats">{{ selectedStats }}</p>
-              <p v-else>None selected</p> -->
           </div>
         </div>   
     </div>
@@ -91,7 +71,7 @@ FIX: Zoom level for selecting states
 
 <script lang="ts">
 import { markRaw } from 'vue'
-import mapboxgl from 'mapbox-gl'
+import mapboxgl, { type LngLatBoundsLike } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCityStats, getCountryStats, getStateStats } from '~/services/azureFuncs'
 import countryBounds from '../data_viz/files/country-bounds.json';
@@ -99,14 +79,13 @@ import countryBounds from '../data_viz/files/country-bounds.json';
 let map: mapboxgl.Map | null = null
 let resize: ResizeObserver | null = null
 
-const LOW = '#33332d';
-const HIGH = '#BFE4F3';
-
 type CountryStat = Record<string, { name: string; requests: number; failed: number }>;
 type StateStat = Record<string, { name: string; requests: number; failed: number }>;
 type SelectionType = {level: 'world'} | {level: 'country' | 'state'; key: string; name: string}
-
+type CountryProps = {NAME: string, ISO_A2_EH: string}
+type StateProps = {name: string, gn_name: string | null, iso_a2: string, iso_3166_2: string, latitude: number, longitude: number}
 type CountryBounds = Record<string, { name: string; bounds: number[][] }>;
+
 const BOUNDS = countryBounds as CountryBounds
 
 // Map ColorPalette
@@ -149,7 +128,7 @@ export default {
     }
   },
   computed: {
-    selectedStats(): {requests: number; failed: number} | null {
+    selectedStats(): {name: string, requests: number; failed: number, responseTime: number} | null {
       // for each selected place return the data that matches its key
       const s = this.selectedPlace
 
@@ -201,6 +180,7 @@ export default {
     },
 
     avgResponse() {
+      if (!this.selectedStats) return 0
       const s = this.selectedStats
       return s.requests ? s.responseTime / s.requests : 0
     },
@@ -211,7 +191,7 @@ export default {
 
   },
 
-  mounted() {
+  async mounted() {
 
     // Check if dark mode or light mode
     this.darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -219,20 +199,13 @@ export default {
     this.onModeChange = (e: MediaQueryListEvent) => { this.isDark = e.matches }
     this.darkQuery.addEventListener('change', this.onModeChange)
 
-
-
-
     const el = this.$refs.mapEl as HTMLDivElement | undefined
     if (!el) return
 
     // fetch data - statistics, countryGEOJSON, stateGEOJSON
     const dataPromise = this.fetchData()
-    const countryPromise =  fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_0_countries.geojson')
-    .then(res => res.json())
-
-    const statePromise =  fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_1_states_provinces.geojson')
-    .then(res => res.json())
-
+    const geoPromise = this.loadGeo()
+  
     mapboxgl.accessToken = this.$config.public.mapboxToken
     const m = markRaw(new mapboxgl.Map({
       container: el,
@@ -263,8 +236,10 @@ export default {
     })
 
     m.on('load', async () => {
-      let countriesGeo;
-      [this.stats, countriesGeo] = await Promise.all([dataPromise, countryPromise]);
+      this.stats = await dataPromise;
+      const geo = await geoPromise;
+
+      if (!geo) return
 
       // get statistics
       const countries: CountryStat  = this.stats.countries as CountryStat;
@@ -272,7 +247,7 @@ export default {
   
       m.addSource('country-boundaries', {
         type: 'geojson',
-        data: countriesGeo
+        data: geo.countriesGeo
       });
 
       // COUNTRY-LEVEL
@@ -296,14 +271,11 @@ export default {
       // CITY-LEVEL'
       // get state keys
       const stateKeys = Object.keys(this.stats.states as StateStat);
-      // console.log(stateKeys)
-      // console.log(stats.states)
-      const statesGeo = await statePromise;
 
       // use geojson to draw states
       m.addSource('states', {
         type: 'geojson',
-        data: statesGeo
+        data: geo.statesGeo
       });
 
       m.addLayer({
@@ -318,7 +290,12 @@ export default {
         },
       })
 
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'gn_name']]]
+      const validName = ['case', 
+        ['==', ['get', 'iso_a2'], 'IN'], 
+        ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
+      ]
+
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
     
       // fill in state based on requests amount- if no requests color state blank to cover up country-fill
         m.addLayer({
@@ -391,31 +368,26 @@ export default {
           // and if theres a state use that info instead of country
 
           if (e.features && e.features.length > 0) {
-            const country = e.features[0]
+            const country = e.features[0]?.properties as CountryProps
 
             // check if area has a state-fill
             const state = m.getLayer('states-fill') 
-            ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]
+            ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]?.properties as StateProps
             : undefined;
 
             // check if at statelevel zoom and if a state is available
             const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
 
-            // console.log(` Country Features: ${JSON.stringify(country?.properties, null, 2)}`)
-            // console.log(` State Features: ${JSON.stringify(state?.properties, null, 2)}`)
-
-
             // enable highlight on countries
-            // const isCountry = country.layer.id === 'countries-fill';
-            m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], showState ? '' : country.properties!.ISO_A2_EH]);
-            m.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], showState ? state!.properties!.iso_3166_2 : '']);
+            m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], showState ? '' : country.ISO_A2_EH]);
+            m.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], showState ? state.iso_3166_2 : '']);
             
-            const countryKey = country.properties.ISO_A2_EH;
+            const countryKey = country.ISO_A2_EH;
             const stateKey = showState 
-            ? `${state!.properties!.iso_a2}|${String(state!.properties!.gn_name).toLowerCase()}`
+            ? `${state.iso_a2}|${String(this.stateNameOf(state)).toLowerCase()}`
             : '';
 
-            const name = showState ? state!.properties!.gn_name : country.properties.NAME
+            const name = showState ? this.stateNameOf(state) : country.NAME
             const stats = showState ? statesRequests[stateKey] : countries[countryKey]
             const value = stats ? `${stats!.requests} requests`  : 'No requests yet'
 
@@ -436,54 +408,48 @@ export default {
       });
 
       // Zoom Functionality 
-      // TODO: Don't Trigger when user clicks a state - but center to state??? 
       m.addControl(new mapboxgl.NavigationControl({showCompass: false}));
 
       m.on('click', 'countries-fill', (e) => {
         m.getCanvas().style.cursor = 'pointer';
 
         if (e.features && e.features.length > 0) {
-          const country = e.features[0]
-          const isoCode = country?.properties.ISO_A2_EH as string
+          const country = e.features[0]?.properties as CountryProps
+          const isoCode = country.ISO_A2_EH as string
           
           const result = BOUNDS[isoCode]
 
           // check if area has a state-fill
           const state = m.getLayer('states-fill') 
-          ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]
+          ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]?.properties as StateProps
           : undefined;
 
           // check if at statelevel zoom and if a state is available
           const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
 
           if (result && !showState) {
-            m.fitBounds(result.bounds, {
+            m.fitBounds(result.bounds as LngLatBoundsLike, {
               padding: 50,      
               duration: 2000   
             });
           } else {
-            let long = (state?.properties.longitude)
-            let lat = (state?.properties.latitude)
-            console.log(result?.bounds)
+            let long = (state!.longitude)
+            let lat = (state!.latitude)
             m.flyTo({
               center: [long, lat],
               duration: 1500
             })
           }
 
-          
-          
-
-          
           // if states are visible and available, the selectedPlace is a state
           if (showState) {
-            const name = state!.properties.gn_name;
-            this.selectedPlace = { level: 'state', key: `${state!.properties.iso_a2}|${String(name).toLowerCase()}`,name}
-            m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], showState ? state!.properties!.iso_3166_2 : '']);
+            const name = this.stateNameOf(state)
+            this.selectedPlace = { level: 'state', key: `${state.iso_a2}|${String(name).toLowerCase()}`,name}
+            m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], showState ? state.iso_3166_2 : '']);
             map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
           } else {
-            m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], country?.properties.ISO_A2_EH]);
-            this.selectedPlace = { level: 'country', key: country?.properties.ISO_A2_EH, name: country?.properties.NAME}
+            m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], country.ISO_A2_EH]);
+            this.selectedPlace = { level: 'country', key: country.ISO_A2_EH, name: country.NAME}
             map?.setFilter('state-selected', ['==', ['get', 'ISO_A2_EH'], '']);
           }
 
@@ -495,7 +461,6 @@ export default {
       m.on('click', (e) => {
         const hit = m.queryRenderedFeatures(e.point, { layers: ['countries-fill'] });
         if (hit.length === 0) this.resetView();    
-        // this.selectedPlace = { level: 'world'}
       })
 
       // Fullscreen Functionality
@@ -516,14 +481,11 @@ export default {
 
   methods: {
     async fetchData(): Promise<{countries: CountryStat | null, states: StateStat | null}> {
-      // TODO: add filtering and state management
       this.loading = true
       this.error = null
 
       try {
         const [countries, states, cities] = await Promise.all([getCountryStats(), getStateStats(), getCityStats()])
-        // const [countries, states, cities] = [undefined, undefined, undefined]
-        // console.log(states)
         this.countryData = countries ?? {}
         this.stateData = states ?? {}
         this.cityData = cities ?? {}
@@ -553,7 +515,12 @@ export default {
       map?.setPaintProperty('background', 'background-color', p.background)
       map?.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(p, ['get', 'ISO_A2_EH'], this.stats.countries))
       
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['get', 'gn_name']]]
+      const validName = ['case', 
+      ['==', ['get', 'iso_a2'], 'IN'], 
+      ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
+      ]
+
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
       map?.setPaintProperty('states-fill', 'fill-color', this.fillByStats(p, stateKey, this.stats.states))
 
       map.setPaintProperty('countries-outline', 'line-color', p.outline)
@@ -585,6 +552,35 @@ export default {
           maxLog > minLog ? maxLog : minLog + 1, p.high],
         p.noData,
       ]
+    },
+    stateNameOf(props) {
+      if (props.iso_a2 === 'IN') return props.name
+      return props.gn_name ?? props.name
+    },
+
+    async fetchGeo(url: string) {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error (`${res.status} from ${url}`)
+      return res.json()
+    },
+
+    async loadGeo() {
+      const NE = "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@ca96624/geojson"
+      try {
+        const [countriesGeo, statesGeo] = await Promise.all([
+          this.fetchGeo(`${NE}/ne_50m_admin_0_countries.geojson`),
+          this.fetchGeo(`${NE}/ne_50m_admin_1_states_provinces.geojson`),
+        ])
+        return {countriesGeo, statesGeo}
+      } catch (err) {
+        this.error = String(err)
+        this.$snackbar.add({
+            type: 'error',
+            text: 'Failed to load map data: ' + err
+        });
+        return null
+    
+      }
     }
   },
   watch: {
@@ -601,7 +597,6 @@ export default {
   .map-page {
     /* font-size: 18px; */
     
-    height: fit-content;
     width: 100%;
     padding: 22px 24px; 
     margin: 32px 110px;
@@ -610,23 +605,29 @@ export default {
     gap: 20px;
 
     /* styling for dashbaord */
-    background-color: #F3F3F3;
+    /* background-color: #F3F3F3;
     border: #D8D8D8 solid 1px;
-    border-radius: 15px;
+    border-radius: 15px; */
   }
 
   .map-page-header {
     gap: 10px
   }
 
-  h1 {
+  .map-page h1 {
     font-size: 48px;
     font-weight: bold;
     color: #4E3681;
     margin-bottom: 0;
   }
 
-  p {
+  .map-page h2 {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 30px;
+  }
+
+  .map-page p {
     font-size: 20px;
     line-height: 30px;
     color: #1E2019;
@@ -722,13 +723,6 @@ export default {
     gap: 10px;
   }
 
-  h2 {
-    font-size: 24px;
-    font-weight: bold;
-    color: #1e2019;
-    line-height: 30px;
-  }
-
   .summary-row {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -751,7 +745,6 @@ export default {
   .pill-num {
     font-size: 24px;
     line-height: 1.2;
-    color: #1E2019;
     font-weight: 600;
   }
 
@@ -762,10 +755,6 @@ export default {
     color: #7E807C;
     text-transform: uppercase;
     letter-spacing: 2px;
-  }
-
-  .city-section {
-    color: #1E2019;
   }
 
   .city-section > p {
@@ -788,7 +777,6 @@ export default {
 
   .city-items > p {
     font-size: 18px;
-    color: #1E2019;
   }
 
 
@@ -820,8 +808,8 @@ export default {
 
   @media (prefers-color-scheme: dark) {
     .map-page {
-      background-color: #262820;
-      border: #353535 solid 1px;
+      /* background-color: #262820;
+      border: #353535 solid 1px; */
     }
 
     h1 {
@@ -832,12 +820,8 @@ export default {
       color: #fdf9f9
     }
 
-    p {
+    p, .pill-num {
       color: #FFFFFF
-    }
-    
-    .stat-page {
-      color: #ffffff;
     }
 
     .summary-pill {
@@ -845,20 +829,11 @@ export default {
       border: 1px solid #353535;
     }
 
-    .pill-num {
-      color: #FFFFFF;
-    }
-
     .pill-label {
       color: #9D9E9A
     }
 
-    .city-section {
-      /* color: #9D9E9A */
-      color: #CCCCCC;
-    }
-
-    .city-items > p {
+    .city-section, .city-items > p {
       color: #CCCCCC;
     }
 
@@ -872,7 +847,6 @@ export default {
 
   }
 
-
   /* Mobile */
   @media (max-width: 1280px) {
     .map-page {
@@ -885,7 +859,6 @@ export default {
     h1 {
       font-size: 32px;
       font-weight: 600;
-      /* line-height: 50px; */
     }
 
     h2 {
@@ -909,18 +882,12 @@ export default {
       flex-direction: column;
       flex: 1;
       gap: 20px;
-      /* flex-wrap: wrap; */
-      /* justify-content: space-evenly; */
     }
 
     #reset-btn {
       padding: 14px 18px;
     }
-
-    
-
-    
-    
+  
     .pill-num {
       font-size: 26px;
     }
@@ -931,11 +898,6 @@ export default {
       line-height: 25px;
       letter-spacing: 0px;
     }
-
-    
-
   }
 
 </style>
-
-
