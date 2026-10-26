@@ -1,4 +1,6 @@
-#!/usr/bin/env node --no-warnings
+#!/usr/bin/env node
+
+import { start } from 'node:repl';
 
 function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
     let theTagBundle = { no_tag: [] }
@@ -15,7 +17,6 @@ let fizz = [1, 2, 3]
 let buzz = ['a', 'b', 'c']
 let baz = convertEmailSetsToTagBundle(fizz, buzz)
 console.dir(baz)
-
 
 function addTagSpecificSignupDataToBundle(
     the_bundle, theEmail, theEmailId, theTags) {
@@ -76,3 +77,28 @@ bundle = addTagSpecificSignupDataToBundle(
 
 writeBundle(bundle)
 console.dir(bundle)
+
+function getTagsFromSignupBundle(email, bundle) {
+
+    let tags = []
+    for(let tag in bundle) {
+
+        // signup: {email: "foo@bar.baz", id: 12345}
+        for(let a_signup of bundle[tag]) {
+
+            if(a_signup.email != email) {
+                continue
+            }
+
+            if(tags.indexOf(tag) < 0) {
+                tags.push(tag)
+            }
+        }
+    }
+    
+    return tags
+}
+
+console.dir(getTagsFromSignupBundle(1, bundle))
+console.dir(getTagsFromSignupBundle('foo@bar.com', bundle))
+
