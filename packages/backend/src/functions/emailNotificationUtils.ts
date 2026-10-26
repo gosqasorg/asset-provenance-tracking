@@ -394,19 +394,7 @@ export async function subscribeToNotifications(
     }
 }
 
-/*
-All this does is:
-- Gets handed an ID
-- Grabs both lists
-- Looks up the index of the id in the id list
-- Uses that index to grab the email in the email list
-- Delete both from each list
-- Store back in blob store
 
-The next question for this is:
-* What modifications do we need to make to uploadBlob to convert it from taking a pair of lists to taking a json object
-
-*/
 export async function unsubscribeFromNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
