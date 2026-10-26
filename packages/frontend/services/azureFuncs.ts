@@ -25,6 +25,12 @@ export var displayOfflineBanner = false;
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
 
+// Global variable used to control the display of offline elements
+export var displayOfflineFeatures = ref(false);
+
+// TODO: sidequest, why can't we just called offlineQueueConsumerWorker from this file? (does it not reload on prod?)
+console.log("azure funcs!")
+
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
@@ -261,6 +267,34 @@ export async function fetchUrlWithErrorHandling(
     }
 
     throw new Error(errorMessage);
+}
+
+export async function checkConnectionStatus() {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    while (true) { // todo shouldn't use while true, see worker, loop fetch while online?
+        // *TODO: can this be optimized (ergo only wait when we need to fetch?)
+            // 2 funcs then watch for change in online
+                // offline -> ref(true)
+                // online -> loop fetch and update ref() as needed
+        await new Promise((r) => setTimeout(r, 5000));
+        console.log("connect func hit")
+        
+        if (navigator.onLine) {
+            // If navigator says we're online then confirm it's not a false positive
+            try {
+                // Note: It might be worth having a custom endpoint dedicated to detecting offline
+                const response = await fetch(`${baseUrl}/getNewDeviceKey`, {
+                    method: "GET"
+                });
+                displayOfflineFeatures.value = false;
+            } catch (error) {
+                displayOfflineFeatures.value = true;
+            }
+        } else {
+            // If navigator says we're offline then dispaly offline features
+            displayOfflineFeatures.value = true;
+        }
+    }
 }
 
 export async function offlineQueueConsumerWorker() {
