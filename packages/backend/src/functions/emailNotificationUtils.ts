@@ -63,6 +63,7 @@ Sub-tasks:
 
     Working on:
     * Edit calls to getExistingEmails to accept new format
+      * Next: Create function: checkIfSignedUpAndWithTheseTags()
     
     Todo:
     * Create cleanup ticket for the todos below
