@@ -59,56 +59,20 @@ Sub-tasks:
 * Convert getExistingEmails to new format
 */
 
-export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entered notifySubscribers')
-    const record = JSON.parse(formData.get('provenanceRecord'));
-    const description = record ? record.description : "";
 
+// ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
-    //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
-    // Notify users who subscribed to this record.
-    // 1. RetrieveNotifEmails hands back blob contents as string
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
-    // 2. Parse the object and hand back a pair of lists of emails and email IDs
-    const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
-    //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
-
-    if (emailSet.size === 0) {
-        context.log("No subscribers found for this record.");
-        return { status: 204 };
-    }
-
-    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
-        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
-        return;
-    }
-
-    const displayName: string = FROM_ADDRESS;
-    let index = 0;
-    try {
-        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-        for (const to_email of emailSet) {
-            const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
-            let email_body: string;
-            if(description) {
-                // Non-blank description
-                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
-            } else {
-                // Blank description
-                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
-            }
-            index++
-            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT + ` for record ${deviceKey}`, email_body, displayName, context);
-
-            if (result.status !== "Succeeded") {
-                throw result.message
-            }
-        }
-        return { status: 200 };
-    } catch (error) {
-        context.error("Error sending email: ", error.statusCode, error);
-        throw error
-    }
+async function streamToString(readableStream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        readableStream.on("data", (data) => {
+            chunks.push(data.toString());
+        });
+        readableStream.on("end", () => {
+            resolve(chunks.join(""));
+        });
+        readableStream.on("error", reject);
+    });
 }
 
 async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
@@ -125,8 +89,19 @@ async function setupBlobClient(containerClient: ContainerClient, calculateDevice
     return [blobName, blobClient] as const;
 }
 
+function createNewEmailId() {
+    const uniqueString = await crypto.subtle.generateKey(
+        { name: "AES-CBC", length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
 
-// Doing: throwing error and making sure all callers detect the options: 500 and return as such.
+    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+    const uniqueEmailString = base58encode(new Uint8Array(buffer));
+
+    return uniqueEmailString
+}
+
 function detectAndConvertLegacyEmailSignup(context, parsed) {
     /*
      * Before tag specific signup, data was: { email: [email_array], email_id: [email_id_array] }
@@ -134,13 +109,13 @@ function detectAndConvertLegacyEmailSignup(context, parsed) {
     try {
         detectLegacyEmailSignup(context, parsed)
     } catch(error) {
+        // Already logged
         // To be handled by endpoint handler
         throw(error)
     }
 
     return convertLegacyEmailSignup(parsed.email, parsed.email_id)
 }
-
 
 function convertLegacyEmailSignup(theEmailSet, theEmailIdSet) {
     /*
@@ -201,8 +176,36 @@ function detectLegacyEmailSignup(context, parsed) {
     }
 }
 
+/* TODO: check before adding. This will add duplicates. Do not use a set type data structure, instead, check before adding */
+function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
 
-// Todo next: Call detectAndConvertLegacyEmailSignup()
+    if(!theTags.length) {
+        the_bundle.no_tags.push({
+            email: theEmail,
+            id: theEmailId
+        })
+
+        return the_bundle
+    }
+
+    for(let i = 0; i < theTags.length; i++) {
+        if(!(theTags[i] in the_bundle)) {
+            the_bundle[theTags[i]] = [{
+                email: theEmail,
+                id: theEmailId
+            }]
+        } else {
+            the_bundle[theTags[i]].push({
+                email: theEmail,
+                id: theEmailId
+            })
+        }
+    }
+
+    return the_bundle 
+}
+
+// Todo next: Edit calls to accept new format
 // Todo: this function needs context passed to it. 
 // Todo: exists should be evaluated outside this function. 
 async function getExistingEmails(
@@ -277,35 +280,58 @@ function removeEmailFromTagBundle(tagBundle) {
     // Jara: note: this should take the entire tag bundle, not just the no tags only one
 }
 
-/* TODO: check before adding. This will add duplicates. Do not use a set type data structure, instead, check before adding */
-function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
 
-    if(!theTags.length) {
-        the_bundle.no_tags.push({
-            email: theEmail,
-            id: theEmailId
-        })
-
-        return the_bundle
+export function extractEmailsFromResponse(response: any, context) {
+    const emailSet = new Set<string>();
+    const emailIDArray = new Array<string>();
+    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
+        return [emailSet, emailIDArray];
     }
+    try {
+        const parsed = JSON.parse(response.jsonBody.message);
+        let emails = parsed.email
+        let emailIDs = parsed.email_id
+        emails.forEach((e: string) => emailSet.add(e));
+        emailIDs.forEach((e: string) => emailIDArray.push(e));
+    } catch (error) {
+        context.error("Failed to extract emails:", error.message)
+    }
+    return [emailSet, emailIDArray];
+}
 
-    for(let i = 0; i < theTags.length; i++) {
-        if(!(theTags[i] in the_bundle)) {
-            the_bundle[theTags[i]] = [{
-                email: theEmail,
-                id: theEmailId
-            }]
-        } else {
-            the_bundle[theTags[i]].push({
-                email: theEmail,
-                id: theEmailId
-            })
+export async function retrieveNotifEmails(
+    containerClient: ContainerClient, 
+    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
+    deviceKey: string, 
+    context
+) {
+    context.log('Entering retrieveNotifEmails')
+
+    try {
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+        const downloadResponse = await blobClient.download();
+        const downloaded = await streamToString(downloadResponse.readableStreamBody); // Possibly does not return a string?
+        context.log('Downloaded blob content:', downloaded.toString());  // Alternatively: surely already a string?
+
+        context.log('Returning without error from retrieveNotifEmails')
+        return {
+            jsonBody: { message: downloaded },
+            status: 200
+        }
+    } catch(error) {
+        context.error('Returning with error from retrieveNotifEmails')
+        context.error(error)
+        return {
+            jsonBody: { message: "Internal Server Error" },
+            status: 500,
         }
     }
-
-    return the_bundle
-    
 }
+
+// ---^^^--- Utiities Functions Section: End ---^^^--- //
+
+
+// -------vvv------- Core operations -------vvv------- //    
 
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
@@ -444,19 +470,6 @@ export async function subscribeToNotifications(
     }
 }
 
-function createNewEmailId() {
-    const uniqueString = await crypto.subtle.generateKey(
-        { name: "AES-CBC", length: 256 },
-        true,
-        ['encrypt', 'decrypt']
-    );
-
-    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
-    const uniqueEmailString = base58encode(new Uint8Array(buffer));
-
-    return uniqueEmailString
-}
-
 /*
 All this does is:
 - Gets handed an ID
@@ -517,62 +530,55 @@ export async function unsubscribeFromNotifications(
     }
 }
 
-export async function retrieveNotifEmails(
-    containerClient: ContainerClient, 
-    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
-    deviceKey: string, 
-    context
-) {
-    context.log('Entering retrieveNotifEmails')
 
-    try {
-        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-        const downloadResponse = await blobClient.download();
-        const downloaded = await streamToString(downloadResponse.readableStreamBody); // Possibly does not return a string?
-        context.log('Downloaded blob content:', downloaded.toString());  // Alternatively: surely already a string?
+export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entered notifySubscribers')
+    const record = JSON.parse(formData.get('provenanceRecord'));
+    const description = record ? record.description : "";
 
-        context.log('Returning without error from retrieveNotifEmails')
-        return {
-            jsonBody: { message: downloaded },
-            status: 200
-        }
-    } catch(error) {
-        context.error('Returning with error from retrieveNotifEmails')
-        context.error(error)
-        return {
-            jsonBody: { message: "Internal Server Error" },
-            status: 500,
-        }
+
+    //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
+    // Notify users who subscribed to this record.
+    // 1. RetrieveNotifEmails hands back blob contents as string
+    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
+    // 2. Parse the object and hand back a pair of lists of emails and email IDs
+    const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
+    //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
+
+    if (emailSet.size === 0) {
+        context.log("No subscribers found for this record.");
+        return { status: 204 };
     }
-}
 
-async function streamToString(readableStream) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        readableStream.on("data", (data) => {
-            chunks.push(data.toString());
-        });
-        readableStream.on("end", () => {
-            resolve(chunks.join(""));
-        });
-        readableStream.on("error", reject);
-    });
-}
-
-export function extractEmailsFromResponse(response: any, context) {
-    const emailSet = new Set<string>();
-    const emailIDArray = new Array<string>();
-    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
-        return [emailSet, emailIDArray];
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
+        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+        return;
     }
+
+    const displayName: string = FROM_ADDRESS;
+    let index = 0;
     try {
-        const parsed = JSON.parse(response.jsonBody.message);
-        let emails = parsed.email
-        let emailIDs = parsed.email_id
-        emails.forEach((e: string) => emailSet.add(e));
-        emailIDs.forEach((e: string) => emailIDArray.push(e));
+        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
+        for (const to_email of emailSet) {
+            const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
+            let email_body: string;
+            if(description) {
+                // Non-blank description
+                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+            } else {
+                // Blank description
+                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+            }
+            index++
+            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT + ` for record ${deviceKey}`, email_body, displayName, context);
+
+            if (result.status !== "Succeeded") {
+                throw result.message
+            }
+        }
+        return { status: 200 };
     } catch (error) {
-        context.error("Failed to extract emails:", error.message)
+        context.error("Error sending email: ", error.statusCode, error);
+        throw error
     }
-    return [emailSet, emailIDArray];
 }
