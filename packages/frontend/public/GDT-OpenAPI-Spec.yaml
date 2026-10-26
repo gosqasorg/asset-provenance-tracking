@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Azure Functions API
   version: 1.0.0
-  description: Auto-generated OpenAPI specification
+  description: OpenAPI specification for GDT APIv2
 servers:
   - url: http://localhost:7071/api
     description: Local development server
@@ -18,15 +18,15 @@ paths:
       summary: Create a new group
       description: This endpoint creates a group (and specified number of children), then returns a unique group URL via multipart/form-data.
       operationId: createGroup
-      x-codeSamples:
+      x-scalar-examples:
         - lang: javascript
-          label: GDT Example Fetch
+          label: GDT-Example-Fetch
           source: |
             const payload = {
-              deviceName: "Send To Children Basic Test",
-              description: "Test for send_to_all_children feature",
+              deviceName: "Case of Tourniquets",
+              description: "Example group",
               tags: [],
-              number_of_children: 1
+              number_of_children: 2
             };
             let formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(payload));
@@ -34,6 +34,7 @@ paths:
               method: "POST",
               body: formData,
             });
+            console.log(response)
             const data = await response.json()
             console.dir(data.groupUrl)
       requestBody:
