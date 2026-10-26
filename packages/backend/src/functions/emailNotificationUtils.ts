@@ -73,7 +73,12 @@ Sub-tasks:
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
-async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string) {
+// Todo: Consider moving blobClient.exists() check into here.
+async function setupBlobClient(
+    containerClient: ContainerClient, 
+    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
+    deviceKey: string) 
+{
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
 
     // 0: Setup id
@@ -308,6 +313,7 @@ export function extractEmailsFromResponse(response: any, context) {
 }
 
 // Todo: check this
+// Todo: this isn't an endpoint. It's called once, in this function. Why are we returning like it's an endpoint?
 export async function retrieveNotifEmails(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -364,6 +370,7 @@ function getTagsFromSignupBundle(email, bundle) {
 
 // -------vvv------- Core operations -------vvv------- //    
 
+// Status: untested update in place
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -397,8 +404,6 @@ export async function subscribeToNotifications(
     const exists = await blobClient.exists();
     if(!exists) {}
 
-    const uniqueEmailString = createNewEmailId()
-
     // Step 1/3: Get
     // Todo: Call conditional on exists. Do not pass exists. 
     // Converts legacy in background. Returns at least this: { no_tag: [] }
@@ -418,9 +423,11 @@ export async function subscribeToNotifications(
     // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
     
     // Step 3/3: Add
+    const uniqueEmailString = createNewEmailId()
     tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, email, uniqueEmailString, tags)
 
     try {
+        console.log('Attempting to store')
         // Update our stored emails to include the new email/id
         uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags, context)
         context.log('Returning without error from subscribeToNotifications')
@@ -498,8 +505,13 @@ export async function unsubscribeFromNotifications(
 }
 
 
+// Todo: left off here: see line 521 (or therabouts, containing TODO: left off here)
 // Todo: extractEmailsFromResponse needs to be updated
-export async function notifySubscribers(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
+// Todo: calculateDeviceId should be moved to a generalUtils file and imported here and in httpTrigger
+export async function notifySubscribers(
+    containerClient: ContainerClient, 
+    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
+    deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entered notifySubscribers')
     const record = JSON.parse(formData.get('provenanceRecord'));
     const description = record ? record.description : "";
@@ -508,9 +520,10 @@ export async function notifySubscribers(containerClient: ContainerClient, calcul
     //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
     // Notify users who subscribed to this record.
     // 1. RetrieveNotifEmails hands back blob contents as string
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
+    //const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
     // 2. Parse the object and hand back a pair of lists of emails and email IDs
-    const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
+    //const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
+    //const emailSignups = getExistingEmails() // TODO: left off here: try it. Will need this function to be updated to tag-specificity
     //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
     if (emailSet.size === 0) {
