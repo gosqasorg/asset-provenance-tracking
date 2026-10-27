@@ -632,6 +632,7 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
     const headers = new Headers();
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
 
+    // Edge-case where image is attached to a record but not actually stored
     try {
         if (contentType) { headers.append("Content-Type", contentType); }
         if (filename) {
@@ -639,7 +640,6 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
             headers.append("Attachment-Name", filename);
         }
     } catch (error) {
-        // Edge-case where image is attached to a record but not actually stored
         return { status: 404, body: error.message };
     }
 
@@ -827,15 +827,15 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     */
     const baseUrl = process.env['backend_url'];
 
+    // Confirm that the device key is valid
+    const deviceKey = request.params.deviceKey;
     try {
-        const deviceKey = request.params.deviceKey;
+        decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
 
-        // Confirm that the device key is valid
-        try {
-            decodeKey(request.params.deviceKey);
-        } catch (error) {
-            return { status: 400, body: error.message };
-        }
+    try {
 
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
