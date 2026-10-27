@@ -103,7 +103,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${key.length}`);
+            throw new Error(`Invalid Key Length ${theKey.length}`);
     }
 }
 
