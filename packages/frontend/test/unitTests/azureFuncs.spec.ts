@@ -226,52 +226,64 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     localStorage.clear()
   });
 
-  it("Dismiss all edits button", async() => {
+  it("Dismiss all edits, Dismiss published edits, and Dismiss edit buttons", async() => {
 
-    
     // Set up stashes in localStorage
-    let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3']
+    let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3', 'Qkey4', 'Qkey5', 'Qkey6']
+    let fulfilledKeys = ['fulfilledKey1', 'fulfilledKey2', 'fulfilledKey3', 'fulfilledKey4']
     localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
+    localStorage.setItem('gdt-stash-fulfilled', JSON.stringify(fulfilledKeys))
     localStorage.setItem('gdt-stash-failed', 'failedkey123')
-    localStorage.setItem('gdt-stash-fulfilled', 'fulfilledkey123')
 
+    // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
     mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)})
-    const mockPush = vi.fn();
 
-    // Mount component so wrapper can render the component
+    // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits, {
-      global: {
-        stubs: ['RouterLink'], 
-        mocks: {
-          $router: { push: mockPush },
-          $route: { path: '/record/' }
+    	data() {
+    		return {
+          // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
+          // Also need this here along with setting 'gdt-stash-fulfilled' above because here, it's to test the dismiss one edit button and that 
+          // modifies the fulfilledKeys array then the modifies fulfilled keys stash
+          fulfilledKeys: ['fulfilledKey1', 'fulfilledKey2', 'fulfilledKey3', 'fulfilledKey4']
         }
       }
     });
-    
-    console.log("BEFORE CONSUME", localStorage.getItem('gdt-stash-queued'))
-    const consume = await offlineQueueConsumerWorker();
 
-    expect(localStorage.getItem('gdt-stash-queued')).toBe('[]')
-    console.log("AFTER CONSUME BEFORE DISMISS", localStorage.getItem('gdt-stash-queued'))
+    // Because async mounted() provides a Promise, flushPromises() resolves it so that items to be mounted() are mounted here when the DOM loads
+    await flushPromises();
 
-    await wrapper.find('button.btn:nth-child(3)').trigger('click');
+    // Calling function without await so the testing buttons are clicked before the 15000ms timer inside offlineQueueConsumerWorker function expires
+    // and starts working on clearing the queued stash. The test can continue without waiting for a Promise from offlineQueueConsumerWorker function.
+    // I found this method similar to starting the worker and letting it run in the background.
+    offlineQueueConsumerWorker();
+
+    // Click on 'Dismiss edit' button to clear that specific published edit
+    await wrapper.find('#donate-container > div:nth-child(6) > div:nth-child(1) > button:nth-child(4)').trigger('click');
+    // Click 'Dismiss edit' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
-    console.log("AFTER CONSUME", localStorage.getItem('gdt-stash-queued'))
-    console.log("BEFORE FLUSH")
-    console.log("CONSUME", consume)
-    await flushPromises();
-    await flushPromises();
-    console.log("AFTER FLUSHPROMISES")
-    console.log("CONSUME", consume)
+    // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey1,fulfilledKey3,fulfilledKey4");
 
-    // await wrapper.find('button.btn:nth-child(3)').trigger('click');
-    // await wrapper.find('.confirm-dismiss').trigger('click');
+    // Click on the 'Dismiss published edits' button
+    await wrapper.find('button.btn:nth-child(4)').trigger('click');
+    // Click 'Dismiss published edits' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
 
+    // Test to see if published edits stash is empty after 'Dismiss published edits' button was clicked
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null)
+
+    // Click on the 'Dismiss all edits' button, then the confirmation button afterwards to clear all stashes
+    await wrapper.find('button.btn:nth-child(3)').trigger('click');
+    // Click on the 'Dismiss all edits' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
+
+    // Test to check if 'Dismiss all edits' button clears all keys in queued stash
     expect(localStorage.getItem('gdt-stash-queued')).toBe(null);
-    //expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
-    //expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null);
+
+    // Test to see if failed stash is cleared after 'Dismiss all edits' button was clicked
+    expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
   });
-}, 20000);
+}, 40000);
