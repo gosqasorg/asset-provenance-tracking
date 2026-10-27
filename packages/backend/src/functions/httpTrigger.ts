@@ -649,8 +649,8 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
 }
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const queryStats = usageStatsCache.getQueryStats();
-    const totals = usageStatsCache.getTotals();
+    const queryStats = await usageStatsCache.getQueryStats();
+    const totals = await usageStatsCache.getTotals();
 
     return {
         jsonBody: { ...queryStats, ...totals },
@@ -661,7 +661,7 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
 async function getBrowserStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering getBrowserStats')
     try {
-        const rows = usageStatsCache.getBrowserStats();
+        const rows = await usageStatsCache.getBrowserStats();
         return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json' } };
     } catch (error) {
         context.log("getBrowserStats error:", error);
