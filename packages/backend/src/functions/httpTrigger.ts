@@ -9,7 +9,7 @@ import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
 import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils.js'
 import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
-import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
+import { RestError, BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
 // Local
 import { sendEmail } from './sendEmail.js'
@@ -334,13 +334,14 @@ app.timer('livenessChecker', {
 
 /*==============  Core Utility Functions (to remain in this file)  ============*/
 
-export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined, context): Promise<string> {
     const dataHash = toHex(await sha256(data));
     let deviceID: string;
     try {
         deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
     } catch (error) {
-        throw new Error(`Invalid key provided: ${error.message}`);
+        context.error('Throwing error from upload()')
+        throw new Error(`Invalid key provided: ${error.message}`, {cause: 400});
     }
     const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
     const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
@@ -351,29 +352,45 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     } else if (type === 'attach') {
         blobName = `attach/${blobID}`;
     } else {
-        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
+        context.error('Throwing error from upload()')
+        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`, {cause: 400});
     }
 
     const { encryptedData: encryptedName } = fileName
         ? await encrypt(deviceKey as Uint8Array<ArrayBuffer>, new TextEncoder().encode(fileName), salt as Uint8Array<ArrayBuffer>)
         : { encryptedData: undefined };
 
-    await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
-        metadata: {
-            gdtcontenttype: contentType,
-            gdthash: dataHash,
-            gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
-            gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
-        },
-        blobHTTPHeaders: {
-            blobContentType: "application/octet-stream"
+    try {
+        await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
+            metadata: {
+                gdtcontenttype: contentType,
+                gdthash: dataHash,
+                gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
+                gdttimestamp: `${timestamp}`,
+                gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
+            },
+            blobHTTPHeaders: {
+                blobContentType: "application/octet-stream"
+            }
+        });
+    } catch(e) {
+        if(e instanceof RestError) {
+            context.error('Throwing RestError from upload(): ', e.code, e.message)
+            if(e.code <= 500 && e.code < 600) {
+                throw new Error('Internal error', {cause: 500})
+            } else if (e.code <= 400 && e.code < 500) {
+                throw new Error('Invalid request', {cause: e.code})
+            }
         }
-    });
+        context.error('Throwing error from upload()', e)
+        throw e
+    }
+    
+    context.log('Returning with success from upload()')    
     return blobID;
 }
 
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> {
+async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[], context): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> {
 
     const attachmentIDs = new Array<string>();
     const oversizedAttachments = new Array<string>();
@@ -427,14 +444,14 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     for (const attach of attachments) {    // Upload all attachments if they pass the size check
         if (typeof attach === 'string') continue;
         const data = await attach.blob.arrayBuffer()
-        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
+        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name, context);
         attachmentIDs.push(attachmentID);
     }
 
     const provRecord = { record, attachments: attachmentIDs };
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
-    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined, context);
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
@@ -516,7 +533,7 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 
 /*=================  Core functions invoked by endpoint handlers (endpoint operators)  =====================*/
 
-async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
+async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>, context) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
@@ -547,7 +564,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
             });
         }
 
-        const uploaded = await uploadProvenance(containerClient, key, timestamp, record, attachments);
+        const uploaded = await uploadProvenance(containerClient, key, timestamp, record, attachments, context);
         records.push(uploaded);
     }
     return records;
@@ -762,7 +779,24 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         }
     }
 
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
+    let body
+    try {
+        body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments, context);
+    } catch(error) {
+        context.error('Returning with error from postProvenance(): ', error)
+        if(error.cause == 400) {
+            return { 
+                status: 400,
+                jsonBody: { error: error.message }
+            }
+        } else {
+            return {
+                status: 500,
+                jsonBody: { error: 'Internal Server Error' }
+            }
+        }
+
+    }
     if (body.oversizedAttachments) {
         context.error('postProv: returning 400')
         return {
@@ -1416,7 +1450,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         const deviceKey = decodeKey(request.params.deviceKey);
-        const body = await upgradeProvenance(containerClient, deviceKey);
+        const body = await upgradeProvenance(containerClient, deviceKey, context);
         return { jsonBody: body ?? { "already-converted": true } };
     } catch (error) {
         return { status: 400, body: error.message };
@@ -1686,7 +1720,7 @@ async function createRecord(context, name, description, tags, attachments) {
         // use uploadProvenance to post the record and any attachments
         await containerClient.createIfNotExists();
         const timestamp = new Date().getTime();
-        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments, context);
         if (body.oversizedAttachments) {
             context.error('createRecord: returning 400')
             return {
