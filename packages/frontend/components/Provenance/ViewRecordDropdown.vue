@@ -25,19 +25,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 data-bs-target="#view-dropdown" @click="buttonFormat">
                 View Record
                 <picture v-if="!viewDropdown">
-                    <img src="~/assets/images/darkmode-dropdown.svg" class="dropdown-image" style="display:inline;">
+                    <img src="~/assets/images/darkmode-dropdown.svg" class="dropdown-image" style="display:inline; margin-left: 5px;">
                 </picture>
                 <picture v-else>
-                    <img src="~/assets/images/darkmode-up-dropdown.svg" class="dropdown-image" style="display:inline;">
+                    <img src="~/assets/images/darkmode-up-dropdown.svg" class="dropdown-image" style="display:inline; margin-left: 5px;">
                 </picture>
             </button>
 
             <ul id="view-dropdown" class="collapse" style="padding: 5px 20px 15px 20px;">
                 <li class="dropdown-item" style="padding: 7px">
-                    <a @click="enterKey()" class="drop-text item-link">Enter Key</a>
+                    <a @click="enterKey()" class="drop-text item-link">Enter Device Key</a>
                 </li>
                 <li class="dropdown-item" style="padding: 7px">
-                    <a @click="scanQR()" class="drop-text item-link">Scan QR</a>
+                    <a @click="scanQR()" class="drop-text item-link">Scan QR Code</a>
                 </li>
             </ul>
         </div>
@@ -114,6 +114,7 @@ export default {
 }
 
 #viewRecordBtn {
+    width: 218px;
     height: 70px;
 }
 
@@ -173,6 +174,7 @@ export default {
 
 .drop-text {
     color: white;
+    font-size: 18px;
 }
 
 /* Switches to mobile sizing */
@@ -180,6 +182,9 @@ export default {
     #viewRecordBtn {
         height: 67px;
         font-size: 18px !important;
+    }
+    .drop-text {
+        font-size: 16px;
     }
 }
 </style>

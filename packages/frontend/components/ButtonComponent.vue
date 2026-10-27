@@ -78,6 +78,10 @@ export default {
     line-height: 27px;
 }
 
+.homepage-btn {
+    width: 218px;
+}
+
 .learn-more {
    font-size: 16px;
    font-weight: 400;

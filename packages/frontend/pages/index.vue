@@ -41,8 +41,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     </div>
 
                     <div id="createRecordButton" style="width: max-content; margin-top: 20px; margin-right: 8px; padding-right: 0px;">
-                    <RouterLink to="/gdt"><button-component class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
-                        borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
+                    <!-- Note: Offline mode updates the style of this button, feature flagged here until offline is fully implemented -->
+                    <RouterLink to="/gdt">
+                        <button-component v-if="offlineModeFeatureFlag" class="button blue_btn homepage-btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
+                        borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component>
+                        <button-component v-if="!offlineModeFeatureFlag" class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
+                        borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component>
+                    </RouterLink>
                     </div>
 
                     <div v-if=trackDivVisible id="homeTrackAssetDiv" style="height: auto; padding-bottom: 20px;">
