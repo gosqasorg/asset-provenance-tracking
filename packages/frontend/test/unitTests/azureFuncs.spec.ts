@@ -260,12 +260,12 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     offlineQueueConsumerWorker();
 
     // Click on 'Dismiss edit' button to clear that specific published edit
-    await wrapper.find('#donate-container > div:nth-child(6) > div:nth-child(1) > button:nth-child(4)').trigger('click');
+    await wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
     // Click 'Dismiss edit' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
     // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
-    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey1,fulfilledKey3,fulfilledKey4");
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4");
 
     // Click on the 'Dismiss published edits' button
     await wrapper.find('button.btn:nth-child(4)').trigger('click');
