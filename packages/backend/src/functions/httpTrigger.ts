@@ -995,7 +995,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('httpTrigger: entering postNotificationEmail')
 
-    // is this schema proper? (checks email format, recordKey is non-empty string, and tags is an array of strings)
+    // checks email format, recordKey is non-empty string, and tags is an array of strings
     const notificationSignupSchema = z.object({
         email: z.email(),
         recordKey: z.string().min(1),
