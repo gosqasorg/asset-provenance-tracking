@@ -19,10 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     Resourses:
     https://test-utils.vuejs.org/guide/essentials/forms
 -->
-
-<script lang="ts" setup>
-    const offline = detectOffline();
-</script>
  
 <template>
     <!-- Form for creating a new record. Uses custom form submission. -->
@@ -127,7 +123,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
 
 <script lang="ts">
-import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, stashOfflineRequest, removeOfflineRequest, displayOfflineFeatures, offlineModeFeatureFlag } from '~/services/azureFuncs';
+import { postProvenance, postEmail, displayOnlineBanner, displayOfflineBanner, postNotificationEmail, stashOfflineRequest, removeOfflineRequest } from '~/services/azureFuncs';
 import { makeEncodedDeviceKey, validateKey } from '~/utils/keyFuncs';
 import { validateFileSize } from '~/utils/fileSizeValidation';
 import Banner from '../Banner.vue';
@@ -157,8 +153,7 @@ export default {
             emailInput: '',
             tagsEmailInput: '', // email for specified tag signup
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
-            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}'),
-            testOffline: displayOfflineFeatures
+            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
         }
     },
     mounted() {

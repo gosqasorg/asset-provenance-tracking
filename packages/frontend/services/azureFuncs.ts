@@ -25,9 +25,6 @@ export var displayOfflineBanner = false;
 // Global variable used to control the display of online banner 
 export var displayOnlineBanner = false;
 
-// Global variable used to control the display of offline elements
-export var displayOfflineFeatures = ref(false);
-
 // method takes the base58 encoded device key
 export async function getProvenance(deviceKey: string) {
     try {
