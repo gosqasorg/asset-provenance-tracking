@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as httpTrigger from '../../src/functions/httpTrigger';
 import { TableClient } from '@azure/data-tables';
 import { sendEmail } from '../../src/functions/sendEmail.js';
+import { subscribeToNotifications } from '../../src/functions/emailNotificationUtils.js';
 
 
 // Minimal Azure SDK mocks
@@ -78,6 +79,7 @@ vi.mock('@azure/data-tables', () => ({
     TableClient: vi.fn().mockImplementation(() => ({
         createTable: vi.fn().mockResolvedValue(undefined),
         upsertEntity: vi.fn().mockResolvedValue(undefined),
+        createEntity: vi.fn().mockResolvedValue(undefined),
         listEntities: vi.fn().mockReturnValue((async function* () {})()),
         deleteEntity: vi.fn().mockResolvedValue(undefined),
     })),
@@ -106,6 +108,14 @@ vi.mock('@azure/communication-email', () => {
 
 vi.mock('../../src/functions/sendEmail.js', () => ({
     sendEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
+// replaces the real email subscription logic with fake functions during the test
+vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
+    notifySubscribers: vi.fn(),
+    retrieveNotifEmails: vi.fn(),
+    subscribeToNotifications: vi.fn().mockResolvedValue(undefined),
+    unsubscribeFromNotifications: vi.fn(),
 }));
 
 
@@ -267,6 +277,9 @@ function makeMockTableInstance() {
     return {
         createTable: vi.fn().mockResolvedValue(undefined),
         upsertEntity: vi.fn().mockResolvedValue(undefined),
+        createEntity: vi.fn().mockResolvedValue(undefined),
+        getEntity: vi.fn().mockRejectedValue(new Error('not found')),
+        updateEntity: vi.fn().mockResolvedValue(undefined),
         listEntities: vi.fn().mockReturnValue((async function* () {})()),
         deleteEntity: vi.fn().mockResolvedValue(undefined),
     };
@@ -281,6 +294,7 @@ function makeValidEntity(overrides: Record<string, unknown> = {}) {
         token: 'validtoken',
         expiresAt: Date.now() + 600_000, // 10 min in the future
         recordKey: 'fakerecordkey',
+        email: 'test@example.com',
         tags: '[]',
         ...overrides,
     };
@@ -329,6 +343,31 @@ describe('postNotificationEmail - validation', () => {
         const res = await httpTrigger.postNotificationEmail(req, ctx);
         expect(res.status).toBe(200);
     });
+
+    // valid request with tags, verify tags will be stored
+    it('should pass if tags are stored in the pending verification table', async () => {
+        const email = 'user@example.com';
+        const recordKey = 'key123';
+        const tags = ['tag1'];
+        const req = { json: async () => ({ email, recordKey, tags }) } as any;
+        await httpTrigger.postNotificationEmail(req, ctx);
+
+        // checks that upsertEntity() was called with an object containing the expected tags serialized as a JSON string.
+        expect(mockTable.upsertEntity).toHaveBeenCalledWith(expect.objectContaining({
+            tags: JSON.stringify(tags),
+        }));
+    });
+
+    it('returns 400 when tags are not a list of strings', async () => {
+        const email = 'user@example.com';
+        const recordKey = 'key123';
+        const tags = ['valid', 123];
+        const req = { json: async () => ({ email, recordKey, tags }) } as any;
+        const res = await httpTrigger.postNotificationEmail(req, ctx);
+
+        expect(res.status).toBe(400);
+        expect(mockTable.upsertEntity).not.toHaveBeenCalled();
+    });
 });
 
 // postVerifyCode tests
@@ -340,6 +379,7 @@ describe('postVerifyCode', () => {
     beforeEach(() => {
         mockTable = makeMockTableInstance();
         vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(subscribeToNotifications).mockClear();
     });
 
     // no token or code
@@ -376,6 +416,25 @@ describe('postVerifyCode', () => {
         const res = await httpTrigger.postVerifyCode(req, ctx);
         
         expect(res.status).toBe(400);
+    });
+
+    
+    it('returns 200 when tags are valid and passed to subscribeToNotifications', async () => {
+        const tags = ['tag1', 'tag2'];
+        const entity = makeValidEntity({ tags: JSON.stringify(tags) });
+        mockTable.getEntity.mockResolvedValue(entity);
+        const req = { json: async () => ({ token: entity.token, code: entity.code }) } as any;
+
+        const res = await httpTrigger.postVerifyCode(req, ctx);
+
+        expect(res.status).toBe(200);
+        expect(subscribeToNotifications).toHaveBeenCalledWith(
+            expect.anything(),
+            httpTrigger.calculateDeviceID,
+            entity.recordKey,
+            entity.email,
+            tags,
+        );
     });
 });
 
@@ -452,4 +511,23 @@ describe('postResendCode', () => {
         expect(res.status).toBe(404);
     });
 
-}); 
+    it('preserves stored tags when resending the verification code', async () => {
+        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
+        const tags = JSON.stringify(['tag1', 'tag2']);
+        const entity = makeValidEntity({
+            partitionKey: 'validtoken',
+            rowKey: '123456',
+            email: 'user@example.com',
+            tags,
+        });
+        mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
+        const req = { json: async () => ({ token: entity.token }) } as any;
+
+        const res = await httpTrigger.postResendCode(req, ctx);
+
+        expect(res.status).toBe(200);
+        expect(mockTable.deleteEntity).toHaveBeenCalledWith(entity.token, entity.rowKey);
+        expect(mockTable.createEntity).toHaveBeenCalledWith(expect.objectContaining({ tags }));
+    });
+
+});

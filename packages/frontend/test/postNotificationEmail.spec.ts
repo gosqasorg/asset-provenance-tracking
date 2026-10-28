@@ -15,7 +15,7 @@ describe('postNotificationEmail', () => {
         delete (globalThis as any).fetch;
     });
 
-    it('calls backend notificationSubscription endpoint and sends deviceKey and email', async () => {
+    it('calls backend notificationSubscription endpoint and sends deviceKey, email, and tags', async () => {
         // stub useRuntimeConfig
         // @ts-ignore
         (globalThis as any).useRuntimeConfig = () => ({ public: { baseUrl: 'https://api.test' }});
@@ -31,8 +31,9 @@ describe('postNotificationEmail', () => {
 
         const testDeviceKey = '9mYGN9CpKs5cz42mZhaFuk';
         const testEmail = 'test@example.com';
+        const testTags = ['maintenance', 'recall'];
 
-        const token = await postNotificationEmail(testEmail, testDeviceKey);
+        const token = await postNotificationEmail(testEmail, testDeviceKey, testTags);
 
         expect(mockFetch).toHaveBeenCalledTimes(1);
         const calledUrl = mockFetch.mock.calls[0][0] as string;
@@ -47,8 +48,8 @@ describe('postNotificationEmail', () => {
         
         expect(body.recordKey).toBe(testDeviceKey);
         expect(body.email).toBe(testEmail);
+        expect(body.tags).toEqual(testTags);
         expect(token).toBe('test-token');
-        // expect(body.tags).toEqual([]);
     });
 
     // Running the same test for different status codes and expected error messages. 
@@ -117,8 +118,8 @@ describe('postNotificationEmail', () => {
 
         const requestBodies = mockFetch.mock.calls.map(call => JSON.parse(call[1].body));
         expect(requestBodies).toEqual([
-            { email: 'first@example.com', recordKey },
-            { email: 'second@example.com', recordKey }
+            { email: 'first@example.com', recordKey, tags: [] },
+            { email: 'second@example.com', recordKey, tags: [] }
         ]);
     });
 
