@@ -266,34 +266,6 @@ export async function fetchUrlWithErrorHandling(
     throw new Error(errorMessage);
 }
 
-export async function checkConnectionStatus() {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    while (true) { // todo shouldn't use while true, see worker, loop fetch while online?
-        // *TODO: can this be optimized (ergo only wait when we need to fetch?)
-            // 2 funcs then watch for change in online
-                // offline -> ref(true)
-                // online -> loop fetch and update ref() as needed
-        await new Promise((r) => setTimeout(r, 5000));
-        console.log("connect func hit")
-        
-        if (navigator.onLine) {
-            // If navigator says we're online then confirm it's not a false positive
-            try {
-                // Note: It might be worth having a custom endpoint dedicated to detecting offline
-                const response = await fetch(`${baseUrl}/getNewDeviceKey`, {
-                    method: "GET"
-                });
-                displayOfflineFeatures.value = false;
-            } catch (error) {
-                displayOfflineFeatures.value = true;
-            }
-        } else {
-            // If navigator says we're offline then dispaly offline features
-            displayOfflineFeatures.value = true;
-        }
-    }
-}
-
 export async function offlineQueueConsumerWorker() {
     // Wait for other instances of the worker to close
     await new Promise((r) => setTimeout(r, 15000));

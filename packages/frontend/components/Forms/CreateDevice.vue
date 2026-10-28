@@ -28,8 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <!-- Form for creating a new record. Uses custom form submission. -->
     <form enctype="multipart/form-data" class="p-3" id="record-form" @submit="submitForm">
         <h4 class="mt-1 mb-3">Create New Record</h4>
-        <!-- NOTE: below is a temporary demo for the offline meeting -->
-        <div v-if="offlineModeFeatureFlag">Are we offline? {{ offline }}</div>
         
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500" @keydown.enter.prevent>  

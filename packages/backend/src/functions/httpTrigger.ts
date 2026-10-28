@@ -677,6 +677,11 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
+async function getConnectionStatus(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that will return undefined if we're offline and 200 otherwise
+    return { status: 200 };
+}
+
 
 // --- POSTS --- //
 
@@ -1861,6 +1866,12 @@ app.get("getVersion", {
     authLevel: 'anonymous',
     route: 'version',
     handler: getVersion
+})
+
+app.get("getConnectionStatus", {
+    authLevel: 'anonymous',
+    route: 'connectionStatus',
+    handler: getConnectionStatus
 })
 
 

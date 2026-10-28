@@ -7,6 +7,7 @@ export function detectOffline() {
 
     function updateOfflineStatus() {
         // When a listener detects a change in connection update our offline status
+        // Note: navigator.onLine can return false positives, so if it detects online we need to double check
         if (navigator.onLine) {
             // If navigator says we're online then confirm it's not a false positive
             confirmOnlineOnce();
@@ -20,7 +21,7 @@ export function detectOffline() {
         // Make a fetch request to confirm we're online
         // (we use this to immediately update the offline status on a change, vs. the loop which must wait)
         try {
-            const response = await fetch(`${baseUrl}/getNewDeviceKey`, {
+            await fetch(`${baseUrl}/connectionStatus`, {
                 method: "GET"
             });
             offline.value = false;
@@ -33,19 +34,11 @@ export function detectOffline() {
         // Loop fetch requests as long as the navigator reports online to confirm we're still actually online
         // (we use this to make sure we don't get a false positive between connection changes)
         while (runLoop) {
-            if (navigator.onLine) {
-                try {
-                    // NOTE: It might be worth having a custom endpoint dedicated to detecting offline
-                    const response = await fetch(`${baseUrl}/getNewDeviceKey`, {
-                        method: "GET"
-                    });
-                    offline.value = false;
-                } catch (error) {
-                    offline.value = true;
-                }
-            }
-
             await new Promise((r) => setTimeout(r, 30000));
+
+            if (navigator.onLine) {
+                confirmOnlineOnce();
+            }
         }
     }
 
