@@ -703,7 +703,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const record = JSON5.parse(provenanceRecord);
     if (!validateJSON(record)) { return { status: 404 }; }
 
-    let condition = "deviceName" in record && (!validateRecordJSON(record) || !validateEntryJSON(record))
+    let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
     if (condition) {
         { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
     }
@@ -753,7 +753,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     return { jsonBody: body ?? { converted: true}};
 }
 
-export function validateRecordJSON(json: any) {
+export function validateRecordJSON(json: any, context: InvocationContext) {
     // Records/Groups require children_key, hasParent, deviceName, and description
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -770,15 +770,15 @@ export function validateRecordJSON(json: any) {
         Valid.parse(json);
         return true;
     } catch (e) {
-        console.error("Format of JSON provided was invalid.")
-        console.error(JSON.stringify(json))
-        console.error(e.cause)
-        console.error(e.message)
+        context.error("Format of JSON provided was invalid.")
+        context.error(JSON.stringify(json))
+        context.error(e.cause)
+        context.error(e.message)
         return false;
     }
 }
 
-export function validateEntryJSON(json: any) {
+export function validateEntryJSON(json: any, context: InvocationContext) {
     // Record entries only have blobType, description, childrenkeys, and tags (none required)
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -791,7 +791,7 @@ export function validateEntryJSON(json: any) {
         Valid.parse(json);
         return true;
     } catch (e) {
-        console.log("Format of JSON provided was invalid.")
+        context.error("Format of JSON provided was invalid.")
         return false;
     }
 }
