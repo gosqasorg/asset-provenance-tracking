@@ -16,7 +16,4 @@
     ".yaml": "text/yaml",
     ".pdf": "application/pdf"
   },
-  "platform": {
-    "apiRuntime": "node:20"
-  }
 }
