@@ -386,7 +386,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
                     const fileName = attach.name ?? "Unknown";
                     oversizedAttachments.push(fileName);
                     // Log the oversized attachment
-                    console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+                    context.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
                     //Stop reading further
                     try {
                         await reader.cancel();
@@ -409,7 +409,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
                 attach.blob = null as any; // Set the blob to null to help garbage collection
                 const fileName = attach.name ?? "Unknown";
                 oversizedAttachments.push(fileName);
-                console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+                context.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
             }
             throw error; // Throw other errors
         }
@@ -469,7 +469,7 @@ export async function validateJSON(json: any) {
         Valid.parse(json);
         return true;
     } catch (e) {
-        console.log("Format of JSON provided was invalid.")
+        context.log("Format of JSON provided was invalid.")
         return false;
     }
 }
@@ -639,7 +639,7 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        console.error('getNewDeviceKey: Failed to create a new key', error.message)
+        context.error('getNewDeviceKey: Failed to create a new key', error.message)
         return {
             status: 500,
             body: "",
@@ -954,7 +954,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
             status: 200
         }
     } catch (error) {
-        console.error(`Error recalling children: ${error}`);
+        context.error(`Error recalling children: ${error}`);
         return {
             status: 500
         }
@@ -984,16 +984,16 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         }
 
         const response = await tableClient.createEntity(entity);
-        console.log(response)
+        context.log(response)
 
-        console.log('postEmail: Added feedback volunteer contact info')
+        context.log('postEmail: Added feedback volunteer contact info')
         return {
             status: 200,
             body: "Created",
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+        context.error('postEmail: Failed to add feedback volunteer contact info', error.message)
     }
 }
 
@@ -1082,7 +1082,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
     } catch(error) {
         context.error(error.message);
-        console.log(error)
+        context.log(error)
         if(Object.hasOwn(error, 'message') && Object.hasOwn(error.message, 'statusCode') && error.message.statusCode == 429) {
             return {
                 jsonBody: { message: "" }, // Deliberately blank
@@ -1154,7 +1154,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     }
 
     } catch(error) {
-        console.error(error.message);
+        context.error(error.message);
         return {
             jsonBody: { message: "Internal Error" },
             status: 500
@@ -1222,7 +1222,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             status: 200
         } 
     } catch(error) {
-        console.error(error.message);
+        context.error(error.message);
         return {
             jsonBody: {message: "Internal Error"},
             status: 500,
@@ -1328,7 +1328,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         } 
         
     } catch(error) {
-        console.error(error.message);
+        context.error(error.message);
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
@@ -1541,6 +1541,8 @@ const GroupCreationOrderSchema = z.object({
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
+    context.log('Entering createGroupHandler')
+
     const GroupCreationOrderSchema = z.object({
         deviceName: z.string(),
         description: z.string(),
@@ -1554,11 +1556,13 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     });  
       
     try{
+        context.error(request.headers.get('content-type')) // dev
         const attachments: NamedBlob[] = [];
         const formData = await request.formData();
 
         const recordStr = formData.get("provenanceRecord"); 
         if (typeof recordStr !== "string") {
+            context.error('Throwing error from createGroupHandler')
             throw new SyntaxError(
                 "Missing provenanceRecord in form data"
             );
@@ -1580,12 +1584,14 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
+        context.log('Returning successfully from createGroupHandler')
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
             headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
+        context.error('Returning unsuccessfuly from createGroupHandler')
         context.error('Failed to create group: ', error.message)
         let message;
 
@@ -1622,6 +1628,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 }
 
 async function createRecord(context, name, description, tags, attachments) {
+    context.log('Entering createRecord')
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const deviceKey = await makeEncodedDeviceKey();
@@ -1674,6 +1681,8 @@ const RecordCreationOrderSchema = z.object({
 });
 
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering createRecordHandler')
+
     const RecordCreationOrderSchema = z.object({
         blobType: z.string().optional(),
         deviceName: z.string(),
@@ -1707,12 +1716,14 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 
         let recordUrl = await createRecord(context, name, description, tags, attachments)
         context.log(recordUrl)
+        context.log('Returning successfully from createRecordHandler')
         return {
             status: 200,
             jsonBody: { recordUrl: recordUrl },
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
+        context.error('Returning unsuccessfuly from createRecordHandler')
         context.error('createRecordHandler: Failed to create record: ', error.message)
         let message;
 
