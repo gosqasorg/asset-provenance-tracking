@@ -37,10 +37,10 @@ export async function notifySubscribers(containerClient: ContainerClient, device
             let email_body: string;
             if(description) {
                 // Non-blank description
-                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>The GDT Team</div>`;
             } else {
                 // Blank description
-                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>The GDT Team</div>`;
             }
             index++
             let result = await sendEmail(
@@ -70,33 +70,31 @@ export async function getExistingEmails(groupKey: string, containerClient: Conta
     // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
     const blobClient = containerClient.getBlockBlobClient(blobName);
-
     const exists = await blobClient.exists();
-    if (!exists) {
-        throw new Error("Key to subscribe to does not exist");
-    }
 
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
 
-    const buffer = await blobClient.downloadToBuffer();
-    const text = buffer.toString("utf8");
+    if (exists) {
+        const buffer = await blobClient.downloadToBuffer();
+        const text = buffer.toString("utf8");
 
-    if (text) {
-        const parsed = JSON.parse(text) as any;
-        const emailsFromBlob = parsed?.email;
-        if (Array.isArray(emailsFromBlob)) {
-            existingEmails = emailsFromBlob.filter(email => {
-                return typeof email === "string";
-            });
-        }
+        if (text) {
+            const parsed = JSON.parse(text) as any;
+            const emailsFromBlob = parsed?.email;
+            if (Array.isArray(emailsFromBlob)) {
+                existingEmails = emailsFromBlob.filter(email => {
+                    return typeof email === "string";
+                });
+            }
 
-        const emailIDsFromBlob = parsed?.email_id;
-        if (Array.isArray(emailIDsFromBlob)) {
-            existingEmailIDs = emailIDsFromBlob.filter(id => {
-                return typeof id === "string";
-            });
+            const emailIDsFromBlob = parsed?.email_id;
+            if (Array.isArray(emailIDsFromBlob)) {
+                existingEmailIDs = emailIDsFromBlob.filter(id => {
+                    return typeof id === "string";
+                });
+            }
         }
     }
 

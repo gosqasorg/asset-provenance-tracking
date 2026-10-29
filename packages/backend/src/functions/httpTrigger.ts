@@ -1045,7 +1045,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 process.env['SENDER_EMAIL'],
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                `<div>Dear GDT User,<br><br>Your verification code is: ${code}<br><br>Or click this link to verify automatically:<br>${verifyLink}<br><br>The code expires in 10 minutes. If you didn't request this, ignore this email.<br><br>Best regards,<br>The GDT Team</div>`,
                 "GOSQAS Notification",
                 context
             )
@@ -1211,14 +1211,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
     } catch(error) {
         console.error(error.message);
 
-        // If the blobClient doesn't exist throw a custom error
-        if (error.includes("Key to subscribe to does not exist")) {
-            return {
-                jsonBody: {message: 'Error: Key to subscribe to does not exist'},
-                status: 400
-            }
-        }
-
         return {
             jsonBody: {message: "Internal Error"},
             status: 500,
@@ -1301,7 +1293,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
                 process.env['SENDER_EMAIL'],
                 entity.email as string,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                `<div>Dear GDT User,<br><br>Your verification code is: ${code}<br><br>Or click this link to verify automatically:<br>${verifyLink}<br><br>The code expires in 10 minutes. If you didn't request this, ignore this email.<br><br>Best regards,<br>The GDT Team</div>`,
                 "GOSQAS Notification",
                 context
             ) 
