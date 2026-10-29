@@ -608,23 +608,46 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 // --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log("Entering getProvenance()")
     let deviceKey: Uint8Array<ArrayBuffer>;
     let deviceID: string;
     try {
         deviceKey = decodeKey(request.params.deviceKey);
         deviceID = await calculateDeviceID(deviceKey);
     } catch (error) {
+        context.error("Returning from getProvenance(): bad request")
         return { status: 400, body: error.message };
     }
 
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    if (!containerExists) { 
+        context.error("Returning from getProvenance(): bad request");
+        return { 
+            status: 404,
+            jsonBody: []
+        };
+    }
 
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
-        await upgradeProvenance(containerClient, deviceKey);
+        try {
+            await upgradeProvenance(containerClient, deviceKey, context);
+        } catch (error) {
+            context.error('Returning with error from getProvenance(): ', error)
+            if (error.cause == 400) {
+                return { 
+                    status: 400,
+                    jsonBody: { error: error.message }
+                }
+            } else {
+                return {
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            }
+        }
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
@@ -637,6 +660,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
+
+    context.log("Returning successfully from getProvenance()")
     return { jsonBody: records };
 }
 
