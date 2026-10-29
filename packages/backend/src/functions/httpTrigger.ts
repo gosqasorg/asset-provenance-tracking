@@ -153,7 +153,7 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
-async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT, context: InvocationContext): Promise<number> {
 
     let count = 0;
 
@@ -161,7 +161,7 @@ async function countExistingAttachments(containerClient: ContainerClient, device
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         
         try {
-            const { data } = await decryptBlob(blobClient, deviceKey);
+            const { data } = await decryptBlob(blobClient, deviceKey, context);
             const json = new TextDecoder().decode(data);
             const prov = JSON.parse(json) as { attachments?: string[] };
             
@@ -553,7 +553,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
     const records = new Array<unknown>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `legacy/prov/${legacyDeviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, key);
+        const { data, timestamp } = await decryptBlob(blobClient, key, context);
         const json = new TextDecoder().decode(data);
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
@@ -566,7 +566,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
         const attachments = new Array<NamedBlob>();
         for (const attachment of attachmentIDs) {
             const attachmentClient = containerClient.getBlockBlobClient(`legacy/attach/${attachment.attachmentID}`);
-            const { data, contentType, filename } = await decryptBlob(attachmentClient, key);
+            const { data, contentType, filename } = await decryptBlob(attachmentClient, key, context);
             attachments.push({
                 blob: new Blob([data], { type: contentType }),
                 name: filename
@@ -597,7 +597,7 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     const exists = await blobClient.exists();
     if (!exists) { return undefined; }
 
-    return await decryptBlob(blobClient, deviceKey);
+    return await decryptBlob(blobClient, deviceKey, context);
 }
 
 export function postProvenanceMiddleware(body: FormData): Boolean {
@@ -662,7 +662,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
+        const { data, timestamp } = await decryptBlob(blobClient, deviceKey, context);
         const json = new TextDecoder().decode(data);
         const parsed_json = JSON.parse(json);
         const provRecord = parsed_json as ProvenanceRecord;
@@ -806,7 +806,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     }
 
     if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT, context);
 
         if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
             return { status: 304 };
