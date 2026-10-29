@@ -662,7 +662,25 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, deviceKey, context);
+        let data: Uint8Array<ArrayBuffer>;
+        let timestamp: number;
+        try {
+            ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
+        } catch (error) {
+            context.error('Returning with error from getProvenance(): ', error)
+            if (error.cause == 500) {
+                return { 
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            } else {
+                // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
+                return {
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            }
+        }
         const json = new TextDecoder().decode(data);
         const parsed_json = JSON.parse(json);
         const provRecord = parsed_json as ProvenanceRecord;
