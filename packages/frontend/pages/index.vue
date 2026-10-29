@@ -252,8 +252,17 @@ methods: {
                 })
             }
 
-            // Navigate to the offline history page
-            await this.$router.push({ path: `/history/offline`, query: { key: recordKey } });
+            // If we're online, navigate to the regular history page
+            // If we're offline, navigate to the offline version of the history page
+            try {
+                const baseUrl = useRuntimeConfig().public.baseUrl;
+                await fetch(`${baseUrl}/connectionStatus`, {
+                    method: "GET"
+                });
+                await this.$router.push({ path: `/history/${recordKey}` });
+            } catch (error) {
+                await this.$router.push({ path: `/history/offline`, query: { key: recordKey } });
+            }
         }
         
         // Loop to keep scanning for qr code
