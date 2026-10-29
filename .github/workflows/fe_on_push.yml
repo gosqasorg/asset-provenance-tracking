@@ -35,10 +35,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Use Node.js 24
+      - name: Use Node.js 22
         uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version: 22.23.4
 
       - name: Build Frontend
         working-directory: packages/frontend
@@ -61,10 +61,10 @@ jobs:
     if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Use Node.js 24
+      - name: Use Node.js 22
         uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version: 22.23.4
       - name: Checkout
         uses: actions/checkout@v5
       - name: build frontend
