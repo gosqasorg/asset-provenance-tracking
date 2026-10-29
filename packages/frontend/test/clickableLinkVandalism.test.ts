@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 import clickableLink from "../utils/clickableLink";
 import { makeEncodedDeviceKey, validateKey } from "../../backend/src/utils/keyFuncs";
 
-const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/';
+const baseUrl = 'https://gosqasbe.azurewebsites.net/api/provenance/';
 let timeout = 30000;
 
 // Create a record with a given description and return the device key
