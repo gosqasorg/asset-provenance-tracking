@@ -26,20 +26,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="row"> <h1 class="dark-mode-heading">Trust and transparency when you need it most.</h1> </div>
                 <div class="row"> <h4 class="dark-mode-heading">Global Distributed Tracking enables closed-loop tracking for products, information, and logistics at no cost to the user.</h4> </div>
                 <div class="row" style="display:inline-flex">
-                    <form id="viewRecordButton" style="margin-right: 8px; width:40%; width: 190px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
+                    <form v-if="!offlineModeFeatureFlag" id="viewRecordButton" style="width: max-content; margin-right: 8px; padding-right: 0px; margin-top: 20px;" @submit.prevent="trackDivVisible = !trackDivVisible">
                         <button-component class="button purple_btn" id="homeTrackButton" buttonText="View Record" type="submit" style="opacity:100;"
                             backgroundColor="#4E3681" borderColor="#4E3681" color="white" padding="18px 22px"></button-component>
                     </form>
 
-                    <div id="createRecordButton" style="width: 60%; width: 230px; margin-top: 20px;">
-                        <RouterLink to="/gdt"><button-component class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
-                            borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component></RouterLink>
+                    <div v-if="offlineModeFeatureFlag" id="viewRecordButton" style="width: max-content;">
+                    <ViewRecordDropdown
+                        @toggle-track-div="toggleTrackDiv"
+                        @toggle-camera="qrCameraOffline"
+                        :fontSize="20"
+                        :width="'max-content'"
+                    ></ViewRecordDropdown>
+                    </div>
+
+                    <div id="createRecordButton" style="width: max-content; margin-top: 20px; margin-right: 8px; padding-right: 0px;">
+                    <!-- Note: Offline mode updates the style of this button, feature flagged here until offline is fully implemented -->
+                    <RouterLink to="/gdt">
+                        <button-component v-if="offlineModeFeatureFlag" class="button blue_btn homepage-btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
+                        borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component>
+                        <button-component v-if="!offlineModeFeatureFlag" class="button blue_btn" id="homeCreateButton" buttonText="Create Record" backgroundColor="#CCECFD"
+                        borderColor="#CCECFD" color="#1E2019" padding="18px 22px" margin="0px 0px 0px 0px"></button-component>
+                    </RouterLink>
                     </div>
 
                     <div v-if=trackDivVisible id="homeTrackAssetDiv" style="height: auto; padding-bottom: 20px;">
                         <TrackAsset inputWidth="75%"></TrackAsset>
                     </div>
                     <div v-else style="padding-bottom: 20px;"></div>
+
+                    <div v-if="offlineModeFeatureFlag" id="scanQROfflineCamera">
+                        <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
+                        <canvas ref="canvas" hidden ></canvas>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -110,6 +130,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import Learn_more from '~/layouts/learn_more.vue';
 import ButtonComponent from '~/components/ButtonComponent.vue';
 import NavButton from '~/components/Buttons/NavButton.vue';
+import jsQR from 'jsqr';
+import { offlineModeFeatureFlag } from '~/services/azureFuncs';
+import ViewRecordDropdown from '~/components/Provenance/ViewRecordDropdown.vue';
+
+const video = ref();
+const canvas = ref();
+let qrdata = null;
+let cameraOn = false;
+let listenerMade = false;
 let showTrack = false;
 
 const second_row = [
@@ -121,16 +150,127 @@ const second_row = [
 export default {
     components: { NavButton },
     data() {
-    return {
-    trackDivVisible: false
-    }
+        return {
+            trackDivVisible: false
+        }
     },
 
 methods: {
     getPDF() {
         window.open('/Global_Distributed_Tracking.pdf', '_blank')
+    },
+    toggleTrackDiv() {
+        this.trackDivVisible = !this.trackDivVisible;
+    },
+    async qrCameraOffline () {
+        // Prevent spam clicking/reloading of the camera
+        if (!cameraOn) {
+            cameraOn = true;
+        } else {
+            return;
+        }
+
+        // Constraints of video screen to fit on most mobile devices
+        const constraints = {
+            video: {
+                width: {ideal: 1280},
+                height: {ideal: 720},
+                facingMode: "environment",
+                aspectRatio: {ideal: 1.777777778}
+            }
+        }
+        try {
+            var videoDisplay = document.getElementById("qr-scan-video");
+            if (videoDisplay && videoDisplay.style.display === "none") {
+                videoDisplay.style.display = "block";
+            }
+            
+            // Get user permission to use camera then display camera view once readyState is 4 or 'loadedmetadata'
+            navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+                video.value.srcObject = stream;
+                video.value.load();
+
+                // Make sure we only ever create one event listener
+                if (!listenerMade) {
+                    video.value.addEventListener('loadedmetadata', () => {
+                        listenerMade = true;
+                        video.value.play()
+                        requestAnimationFrame(this.tick)
+                    })
+                }
+            })
+        } 
+        catch (error) {
+            alert(error);
+        }
+    },
+    async tick () {
+        // Draw video elements onto canvas to get image data
+        canvas.value.width = video.value.videoWidth;
+        canvas.value.height = video.value.videoHeight;
+        var ctx = canvas.value.getContext('2d' , { willReadFrequently: true })
+        ctx.drawImage(video.value, 0, 0, canvas.value.width, canvas.value.height);
+        var imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+
+        // Parse ImageData using jsQR to extract deviceKey
+        qrdata = jsQR(imageData.data, imageData.width, imageData.height);
+        var toRegEx = qrdata?.data;
+
+        // Use RegEx to extract the deviceKey to display to user
+        if (toRegEx) {
+            var deviceKey = toRegEx.match('([^/]*)$');
+            var recordKey = undefined;
+
+            if (deviceKey) {
+                recordKey = deviceKey[1] || undefined;
+            }
+            alert('QR Code Scanned');
+
+            // Close the video stream when done
+            const stream = video.value.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+
+                tracks.forEach((track: any) => {
+                    track.stop()
+                })
+                video.value.srcObject = null
+            }
+
+            // Hide the video element
+            var videoDisplay = document.getElementById("qr-scan-video");
+            if (videoDisplay && videoDisplay.style.display === "block") {
+                videoDisplay.style.display = "none";
+            }
+            cameraOn = false;
+
+            // If the record key wasn't found, display an error in the snackbar
+            if (!recordKey) {
+                this.$snackbar.add({
+                    type: 'error',
+                    text: 'Could not read key from the qr code'
+                })
+            }
+
+            // If we're online, navigate to the regular history page
+            // If we're offline, navigate to the offline version of the history page
+            try {
+                const baseUrl = useRuntimeConfig().public.baseUrl;
+                await fetch(`${baseUrl}/connectionStatus`, {
+                    method: "GET"
+                });
+                await this.$router.push({ path: `/history/${recordKey}` });
+            } catch (error) {
+                await this.$router.push({ path: `/history/offline`, query: { key: recordKey } });
+            }
+        }
+        
+        // Loop to keep scanning for qr code
+        if (cameraOn) {
+            requestAnimationFrame(this.tick);
+        }
     }
-}
+},
 }
 </script>
 
@@ -198,6 +338,12 @@ methods: {
     flex-wrap: wrap;
 }
 
+#qr-scan-video {
+    /* Make video rescale dynamically */
+    width: 95%;
+    height: auto;
+}
+
 .odd-stripe {
     padding: 30px 39px;
 }
@@ -219,6 +365,10 @@ methods: {
     /* Remove extra padding on the right of the top white box */
     #first-row-col {
         width: 100% !important;
+    }
+
+    #qr-scan-video {
+        width: 80%;
     }
 
     #news-text-container h4 {
@@ -297,6 +447,13 @@ methods: {
     #createRecordButton {
         order: 1;
         margin-top: 0px !important;
+        margin-bottom: 20px !important;
+    }
+    #scanQROfflineCamera {
+        order: 3;
+    }
+    #qr-scan-video {
+        width: 75%;
     }
 }
 
@@ -328,7 +485,6 @@ methods: {
     }
     .button{
         font-size: 20px;
-        padding: 1px;
     }
     #latest-big-header {
         font-size: 32px; 
