@@ -3,8 +3,8 @@ import { readFile } from "fs/promises";
 
 
 // const baseUrl = "http://localhost:7071/api";
-//const baseUrl = "https://gosqasbe.azurewebsites.net/api";
-const api_url = process.env['api_url']
+const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+//const api_url = process.env['api_url']
 
 describe ("Send to All Children Tests", () => {
     it("Should send entry to the child record", async() => {
