@@ -178,12 +178,19 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     return count;
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>, context: InvocationContext): Promise<DecryptedBlob> {
+    context.log("Entering decryptBlob()")
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
-    if (!salt) throw new Error(`Missing Salt ${client.name}`);
+    if (!salt) {
+        context.error("Returning from decryptBlob() with error: Missing salt")
+        throw new Error(`Missing Salt ${client.name}`, { cause: 500 });
+    }
     const timestamp = parseInt(props.metadata?.["gdttimestamp"]);
-    if (isNaN(timestamp) || !isFinite(timestamp)) throw new Error(`Invalid Timestamp ${client.name}`);
+    if (isNaN(timestamp) || !isFinite(timestamp)) {
+        context.error("Returning from decryptBlob() with error: Invalid timestamp")
+        throw new Error(`Invalid Timestamp ${client.name}`, { cause: 500 });
+    }
 
     const buffer = await client.downloadToBuffer();
     const saltBuffer = fromHex(salt);
@@ -191,7 +198,8 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
-            throw new Error(`Invalid Hash ${client.name}`);
+            context.error("Returning from decryptBlob() with error: Invalid hash")
+            throw new Error(`Invalid Hash ${client.name}`, { cause: 500 });
         }
     }
 
@@ -200,6 +208,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
     const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
 
+    context.log("Returning successfully from decryptBlob()")
     return { data, contentType, timestamp, filename };
 
     function areEqual(first: Uint8Array, second: Uint8Array) {
