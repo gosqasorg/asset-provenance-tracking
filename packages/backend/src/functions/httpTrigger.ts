@@ -497,7 +497,8 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
 }
 
 export function validateJSON(json: any, context) {
-    context.log('Entering validateJson')
+    context.log('Entering validateJson with: ')
+    context.log(JSON.stringify(json))
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
