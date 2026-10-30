@@ -16,7 +16,7 @@
     "test-noninteractive": "vitest run",
     "microtest": "vitest run test/Microtest",
     "unittest": "npx vitest run test/UnitTests",
-    "api_integration_tests": "npx vitest run test/IntegrationTests",
+    "integration": "npx vitest run test/IntegrationTests",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
