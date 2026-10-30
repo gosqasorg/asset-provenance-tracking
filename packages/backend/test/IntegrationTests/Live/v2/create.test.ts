@@ -5,7 +5,6 @@ import { readFile } from "fs/promises";
 // const baseUrl = "http://localhost:7071/api";
 const baseUrl = "https://gosqasbe.azurewebsites.net/api";
 const api_url = baseUrl;
-//const api_url = process.env['api_url']
 
 describe ("Send to All Children Tests", () => {
     it("Should send entry to the child record", async() => {
@@ -32,7 +31,7 @@ describe ("Send to All Children Tests", () => {
         console.log("APIv2 Test: Send to all children: Attempting to check response")
         console.log('The url and formdata: ', api_url, formData)
         console.log(`The response:`)
-        context.dir(response)
+        console.dir(response)
         expect(response.status).toBe(200);
 
         const data = await response.json();
@@ -63,7 +62,7 @@ describe ("Send to All Children Tests", () => {
         console.log("APIv2 Test: Send to all children: Attempting to check response")
         console.log('The url and formdata: ', api_url, formData)
         console.log(`The response:`)
-        context.dir(response)
+        console.dir(response)
         expect(response.status).toBe(200);
 
         // Look at the most recent record entry on the group and confirm the entry was added successfully
@@ -83,7 +82,6 @@ describe ("Send to All Children Tests", () => {
 
         expect(childRecord.description).toBe(newPayload.description);
         expect(childRecord.tags).toEqual(["Harry", "Ron", "sent_to_all_children"]);
-
     }, 60000);
 
     it("Should send entry to children but not to the public key", async() => {
@@ -221,7 +219,6 @@ describe ("Send to All Children Tests", () => {
 
     }, 60000);
 
-});
 
     it("Should use default 'Sent from Group' description when entry has no description", async() => {
         // Create the group/children
@@ -276,8 +273,10 @@ describe ("Send to All Children Tests", () => {
             expect(childRecord.description).toBe("Record Entry sent from Group");
             expect(childRecord.tags).toEqual(["Draco", "sent_to_all_children"]);
         }
+    }, 60000);
 
-}, 60000);
+});
+
 
 
 describe("Group Creation Tests", () => {
