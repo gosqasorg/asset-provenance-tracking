@@ -799,7 +799,7 @@ export function validateRecordJSON(json: any, context) {
         deviceName: z.string(),
         tags: z.array(z.string()).optional(),
         children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),  // Only groups can have children name
+        children_name: z.array(z.string()).optional(),  // Only groups may have children name
         hasParent: z.boolean().optional(),
         isPublicKey: z.boolean().optional()
     });
@@ -884,7 +884,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         if (typeof provenanceRecord !== 'string') { return { status: 400 }; }
 
         const record = JSON5.parse(provenanceRecord);
-        if (!validateJSON(record, context)) { return { status: 400 }; }
+        //if (!(await validateJSON(record, context))) { return { status: 400 }; }
 
         // TODO: we need to parse out whether we're using an entry or a record. 
         let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
@@ -955,20 +955,20 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         return { jsonBody: body ?? { converted: true}};
 
     } catch(error) { 
-        let message = 'Error: Check argument format.'
+        console.error('Returning unsuccessfully from postProvenance')
         if (error instanceof z.ZodError) {
-            context.error(message)
+            context.error(`postProvenance: zodError: ${error.message}`)
             context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
-                jsonBody: { data: message },
+                jsonBody: { data: error.message },
                 headers: { "Content-Type": "text/plain" }
             }
         }
 
         return {
-            status: 400,
-            jsonBody: { data: message },
+            status: 500,
+            jsonBody: { data: error.message },
             headers: { "Content-Type": "text/plain" }
         }
     }
