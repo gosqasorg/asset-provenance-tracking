@@ -24,7 +24,7 @@ describe("Group of tests", () => {
 
 let timeout= 30000;
 let api_url = "https://gosqasbe.azurewebsites.net/api";
-let baseUrl = api_url + '/provenance'
+let baseUrl = api_url + '/provenance/'
 //api_url = "http://localhost:7071/api"
 //baseUrl = api_url + '/provenance/'
 
