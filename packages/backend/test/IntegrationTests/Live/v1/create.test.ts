@@ -1099,7 +1099,7 @@ describe("Group Creation Tests", () => {
 			body: groupFormData,
 		});
 		
-		// Expect the response to indicate failure (e.g., 500 Internal Server Error)
+		// Expect the response to indicate failure on bad request
 		console.log("Response Status for Invalid Key Test: " + groupResponse.status);
 		expect(groupResponse.ok).toBe(false);
 		expect(groupResponse.status).toBe(400);

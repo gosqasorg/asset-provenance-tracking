@@ -31,7 +31,8 @@ describe ("Send to All Children Tests", () => {
 
         console.log("APIv2 Test: Send to all children: Attempting to check response")
         console.log('The url and formdata: ', api_url, formData)
-        console.log(`The response: ${response.toString()}`)
+        console.log(`The response:`)
+        context.dir(response)
         expect(response.status).toBe(200);
 
         const data = await response.json();
@@ -61,7 +62,8 @@ describe ("Send to All Children Tests", () => {
         });
         console.log("APIv2 Test: Send to all children: Attempting to check response")
         console.log('The url and formdata: ', api_url, formData)
-        console.log(`The response: ${response.toString()}`)
+        console.log(`The response:`)
+        context.dir(response)
         expect(response.status).toBe(200);
 
         // Look at the most recent record entry on the group and confirm the entry was added successfully
