@@ -502,13 +502,14 @@ export function validateJSON(json: any, context) {
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
         children_name: z.array(z.string()).optional(),
-        description: z.string(),
+        description: z.string().optional(),
         deviceName: z.string().optional(),
         hasParent: z.boolean().optional(),
         isPublicKey: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
+        send_to_all_children: z.boolean().optional()
     });
 
     try {
@@ -518,6 +519,8 @@ export function validateJSON(json: any, context) {
     } catch (e) {
         context.error('Returning unsuccessfully from validateJSON')
         context.error("Format of JSON provided was invalid.")
+        context.error(e.cause)
+        context.error(e.message)
         context.error("The json in question: ")
         context.error('--- vvv ---')
         context.error(`${JSON.stringify(json)}`)
@@ -810,7 +813,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
 
         // --- Guard Clauses --- //
-
         if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
 
         const provenanceRecord = formData.get("provenanceRecord");
@@ -819,6 +821,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         const record = JSON5.parse(provenanceRecord);
         if (!validateJSON(record, context)) { return { status: 400 }; }
 
+        // TODO: we need to parse out whether we're using an entry or a record. 
         let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
         if (condition) {
             { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
@@ -910,11 +913,11 @@ export function validateRecordJSON(json: any, context) {
     // Records/Groups require children_key, hasParent, deviceName, and description
     const Valid = z.object({
         blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
         children_name: z.array(z.string()).optional(),
         description: z.string(),
         deviceName: z.string(),
-        hasParent: z.boolean(),
+        hasParent: z.boolean().optional(),
         isPublicKey: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
     });
@@ -938,6 +941,7 @@ export function validateEntryJSON(json: any, context) {
         description: z.string().optional(),
         children_key: z.union([z.string(), z.array(z.string())]).optional(),
         tags: z.array(z.string()).optional(),
+        send_to_all_children: z.boolean().optional()
     });
 
     try {
@@ -945,6 +949,10 @@ export function validateEntryJSON(json: any, context) {
         return true;
     } catch (e) {
         context.log("Format of JSON provided was invalid.")
+        context.error("Format of JSON provided was invalid.")
+        context.error(JSON.stringify(json))
+        context.error(e.cause)
+        context.error(e.message)
         return false;
     }
 }
@@ -1971,6 +1979,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         }
     }
 
+    // TODO: Always call directly if possible. 
     // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
     const response = await fetch(`${backendUrl}${deviceKey}`, {
         method: "POST",
