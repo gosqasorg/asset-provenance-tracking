@@ -29,6 +29,8 @@ describe(baseName = "Group of tests", () => {
 */
 let timeout = 30000;  // Milliseconds; integration testing can be laggy
 let baseTestName;
+const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+
 describe(baseTestName = "API Integration Tests: Read", () => {
 
 	/*
@@ -72,7 +74,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 	it(testName = 'Record with > 1 tags and a photo attachment: ', async () => {
 
 		const theRecord = 'FXFukdAGkkUzmC87G8vjZX'  // Hardcoded - this record has 3 attachments: LwaSzacaPz26aDd1RVaaxP
-		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
+
 		const fullUrl = `${baseUrl}${theRecord}`
 
 		let response; 
@@ -112,6 +114,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(attachmentCount >= 1).toBe(true);
 
 		// Testing attachment name retrieval
+		// NOTE: This needs to be a dev address. 
 		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
 		let resp = await fetch(url)
 		let attachmentName = resp['headers'].get('attachment-name')
@@ -156,7 +159,6 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		// ---- Section 1/2: Invoking the API ---- //
 
 		const theRecord = 'Ra1rnStUK7CctNehGVWtDa'  // Hardcoded
-		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 		const fullUrl = `${baseUrl}${theRecord}`
 
 		let response; 
@@ -198,7 +200,6 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		// ---- Section 1/2 : Invoking the API ---- //
 
 		const theRecord = '7Lj7CPGcmbXr7izpahPG7P' // manually created because record creation by api is in progress
-		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 		const fullUrl = `${baseUrl}${theRecord}`
 
 		let response;
@@ -327,6 +328,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		let pdfCounter = 0
 		let arrayCounter = attachmentsArray.length
 		while (arrayCounter > 0){
+			// TODO: Aim at dev, not prod
 			let imageResponse = await fetch('https://gdtprodbackend.azurewebsites.net/api/attachment/QHnRKH9tJiTEvVQnLHM6pG/' + attachmentsArray[arrayCounter - 1])
 			const imageData = await imageResponse.blob()
 			if (imageData.type == 'application/pdf'){
@@ -343,7 +345,6 @@ describe(baseTestName = "API Integration Tests: Read", () => {
     // Feature-complete test
 	it(testName = 'feature complete', async () => {
 		const theRecord = 'R37xk8yAX8sPfMFLoG4U2c'
-		const baseUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 		const fullUrl = `${baseUrl}${theRecord}`
 
 		let response;
@@ -392,6 +393,7 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		expect(recallSet.has('recall')).toBe(true);
 
 		// Tests for valid file extension name
+		// TODO: Aim at dev, not prod
 		let url = 'https://gdtprodbackend.azurewebsites.net/api/attachment/FXFukdAGkkUzmC87G8vjZX/61dba2296597cb49597c8f755d169ed2c511c08324b3bd589591eeef21fd5112'
 		let resp = await fetch(url)
 		let attachmentName = resp['headers'].get('attachment-name')
@@ -407,10 +409,14 @@ describe(baseTestName = "API Integration Tests: Read", () => {
 		// Hieu's  attachment tests//
 
 		const firstRecord = 'XXGWwmjS5A8EUVQyCzDLXN'										// record with one jpeg attachment
+
+		// TODO: Aim at dev, not prod
 		const firstUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'
 		const firstFullUrl = `${firstUrl}${firstRecord}`
 
 		const secondRecord = 'QHnRKH9tJiTEvVQnLHM6pG'
+
+		// TODO: Aim at dev, not prod
 		const secondUrl = 'https://gdtprodbackend.azurewebsites.net/api/provenance/'		// record with two attachments (1 jpeg, 1 pdf)
 		const secondFullUrl = `${secondUrl}${secondRecord}`
 
