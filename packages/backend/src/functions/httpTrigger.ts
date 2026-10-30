@@ -496,7 +496,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     });
 }
 
-export async function validateJSON(json: any) {
+export function validateJSON(json: any, context) {
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -808,7 +808,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
 
     const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
+    if (!validateJSON(record, context)) { return { status: 404 }; }
 
     let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
     if (condition) {
