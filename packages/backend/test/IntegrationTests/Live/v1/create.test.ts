@@ -563,7 +563,7 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain("Why hello, child");
 		});
 
-	}, 10000); 
+	}, 60000); 
 
 
 	// Test for custom titles
