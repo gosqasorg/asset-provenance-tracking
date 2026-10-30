@@ -497,7 +497,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
 }
 
 export function validateJSON(json: any, context) {
-    context.error('Entering validateJson')
+    context.log('Entering validateJson')
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -519,7 +519,7 @@ export function validateJSON(json: any, context) {
         context.error("Format of JSON provided was invalid.")
         context.error("The json in question: ")
         context.error('--- vvv ---')
-        context.dir(json)
+        context.error(`${JSON.stringify(json)}`)
         context.error('--- ^^^ ---')
         return false;
     }
@@ -794,94 +794,115 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    let deviceKey: Uint8Array<ArrayBuffer>;
-    let deviceID: string;
     try {
-        deviceKey = decodeKey(request.params.deviceKey);
-        deviceID = await calculateDeviceID(deviceKey);
-    } catch (error) {
-        return { status: 400, body: error.message };
-    }
-
-    await containerClient.createIfNotExists();
-    const formData = await request.formData();
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
-
-    // --- Guard Clauses --- //
-
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
-
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record, context)) { return { status: 404 }; }
-
-    let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
-    if (condition) {
-        { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
-    }
-
-    // -- Handle Attachments -- // 
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        context.log("Attachment Type: " + typeof(attach))
-
-        // Content Moderation        
-        // Silently skip if not permitted
-        context.log('Checking attachment')
-        if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
-            context.log(`Content Moderation flagged image named: ${attach.name}`)
-            continue
+        let deviceKey: Uint8Array<ArrayBuffer>;
+        let deviceID: string;
+        try {
+            deviceKey = decodeKey(request.params.deviceKey);
+            deviceID = await calculateDeviceID(deviceKey);
+        } catch (error) {
+            return { status: 400, body: error.message };
         }
-        context.log('Image is permitted')
-        
-        attachments.push({ blob: attach, name: attach.name });
-    }
 
-    if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT, context);
+        await containerClient.createIfNotExists();
+        const formData = await request.formData();
+        context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
 
-        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
-            return { status: 304 };
+        // --- Guard Clauses --- //
+
+        if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
+
+        const provenanceRecord = formData.get("provenanceRecord");
+        if (typeof provenanceRecord !== 'string') { return { status: 400 }; }
+
+        const record = JSON5.parse(provenanceRecord);
+        //if (!validateJSON(record, context)) { return { status: 400 }; }
+
+        let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
+        if (condition) {
+            { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
         }
-    }
 
-    let body
-    try {
-        body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments, context);
-    } catch(error) {
-        context.error('Returning with error from postProvenance(): ', error)
-        if(error.cause == 400) {
-            return { 
-                status: 400,
-                jsonBody: { error: error.message }
+        // -- Handle Attachments -- // 
+
+        // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+        const timestamp = new Date().getTime();
+        const attachments = new Array<NamedBlob>();
+        for (const attach of formData.values()) {
+            if (typeof attach === 'string') continue;
+            context.log("Attachment Type: " + typeof(attach))
+
+            // Content Moderation        
+            // Silently skip if not permitted
+            context.log('Checking attachment')
+            if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
+                context.log(`Content Moderation flagged image named: ${attach.name}`)
+                continue
             }
-        } else {
+            context.log('Image is permitted')
+            
+            attachments.push({ blob: attach, name: attach.name });
+        }
+
+        if (attachments.length > 0) {
+            const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT, context);
+
+            if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+                return { status: 304 };
+            }
+        }
+
+        let body
+        try {
+            body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments, context);
+        } catch(error) {
+            context.error('Returning with error from postProvenance(): ', error)
+            if(error.cause == 400) {
+                return { 
+                    status: 400,
+                    jsonBody: { error: error.message }
+                }
+            } else {
+                return {
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            }
+
+        }
+        if (body.oversizedAttachments) {
+            context.error('postProv: returning 400')
             return {
-                status: 500,
-                jsonBody: { error: 'Internal Server Error' }
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
             }
         }
 
-    }
-    if (body.oversizedAttachments) {
-        context.error('postProv: returning 400')
+        context.log('Returning successfully from postProvenance')
+        return { jsonBody: body ?? { converted: true}};
+
+    } catch(error) { 
+        if (error instanceof z.ZodError) {
+            message = 'Error: Check argument format.'
+            context.error(message)
+            context.error('createGroupHandler: returning 400')
+            return {
+                status: 400,
+                jsonBody: { data: message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
         return {
             status: 400,
-            jsonBody: {
-                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
-                oversizedAttachments: body.oversizedAttachments,
-                attachments: body.attachments
-            }
+            jsonBody: { data: message },
+            headers: { "Content-Type": "text/plain" }
         }
     }
-  
-    return { jsonBody: body ?? { converted: true}};
 }
 
 export function validateRecordJSON(json: any, context) {
@@ -1966,7 +1987,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     if (isGroup && sendEntryToAllChildren) {
         const notifChildrenResponse = await notifyChildren(request, context);
         if (notifChildrenResponse.status !== 200) {
-            context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' notifChildrenResponse.status)
+            context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' + notifChildrenResponse.status)
             return {
                 status: notifChildrenResponse.status,
                 jsonBody: { error: "Record entry was unable to be sent to children." }
