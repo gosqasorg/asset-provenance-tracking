@@ -65,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <h4>
                     <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
-                <div v-if="isChecked">
+                <div id="feedback-email-input" v-if="isChecked">
                     <!-- TODO: API call function -->
                     <input
                         type="text"
