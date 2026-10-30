@@ -1,4 +1,4 @@
-// Ecosystem
+// Working
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -496,39 +496,6 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     });
 }
 
-export function validateJSON(json: any, context) {
-    context.log('Entering validateJson with: ')
-    context.log(JSON.stringify(json))
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
-        children_name: z.array(z.string()).optional(),
-        description: z.string().optional(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-        send_to_all_children: z.boolean().optional()
-    });
-
-    try {
-        Valid.parse(json);
-        context.log('Returning successfully from validateJSON')
-        return true;
-    } catch (e) {
-        context.error('Returning unsuccessfully from validateJSON')
-        context.error("Format of JSON provided was invalid.")
-        context.error(e.cause)
-        context.error(e.message)
-        context.error("The json in question: ")
-        context.error('--- vvv ---')
-        context.error(`${JSON.stringify(json)}`)
-        context.error('--- ^^^ ---')
-        return false;
-    }
-}
-
 async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
     let response = undefined;
     const MAX_RETRIES = 3;
@@ -909,11 +876,46 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     }
 }
 
+
+
+export function validateJSON(json: any, context) {
+    context.log('Entering validateJson with: ')
+    context.log(JSON.stringify(json))
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        children_name: z.array(z.string()).optional(),
+        description: z.string().optional(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+        send_to_all_children: z.boolean().optional()
+    });
+
+    try {
+        Valid.parse(json);
+        context.log('Returning successfully from validateJSON')
+        return true;
+    } catch (e) {
+        context.error('Returning unsuccessfully from validateJSON')
+        context.error("Format of JSON provided was invalid.")
+        context.error(e.cause)
+        context.error(e.message)
+        context.error("The json in question: ")
+        context.error('--- vvv ---')
+        context.error(`${JSON.stringify(json)}`)
+        context.error('--- ^^^ ---')
+        return false;
+    }
+}
+
 export function validateRecordJSON(json: any, context) {
     // Records/Groups require children_key, hasParent, deviceName, and description
     const Valid = z.object({
         blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
         children_name: z.array(z.string()).optional(),
         description: z.string(),
         deviceName: z.string(),
@@ -935,7 +937,9 @@ export function validateRecordJSON(json: any, context) {
 }
 
 export function validateEntryJSON(json: any, context) {
-    // Record entries only have blobType, description, childrenkeys, and tags (none required)
+    // Record entries only have blobType, description, childrenkeys, tags, and send to all children
+    // Note: our frontend presently allows totally empty entries, so these all are truly optional
+    // The goal is to ensure nothing outside of these items is passed
     const Valid = z.object({
         blobType: z.string().optional(),
         description: z.string().optional(),
@@ -948,7 +952,6 @@ export function validateEntryJSON(json: any, context) {
         Valid.parse(json);
         return true;
     } catch (e) {
-        context.log("Format of JSON provided was invalid.")
         context.error("Format of JSON provided was invalid.")
         context.error(JSON.stringify(json))
         context.error(e.cause)
@@ -1061,7 +1064,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                   body: "Record has already been recalled"
               }
       }
-	  }
+      }
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
