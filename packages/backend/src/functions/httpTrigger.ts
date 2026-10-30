@@ -764,6 +764,104 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 
 // --- POSTS --- //
 
+
+// TODO: split up into two schemata or two functions: records and groups differ
+export function validateRecordJSON(json: any, context) {
+    /* --- Records post to the backend with:
+     * 
+     *  {
+     *      "blobType":"deviceInitializer",
+     *      "deviceName":"foo",              // Required from user
+     *      "description":"bar",             // Required from user
+     *      "tags":[],                       // It's our responsibility for the rest to be here.
+     *      "children_key":"",
+     *      "hasParent":false,
+     *      "isPublicKey":false
+     *  }
+     *
+     *  // Groups have, at least:
+     *  {
+     *      "blobType":"deviceInitializer",
+     *      "deviceName":"foo",
+     *      "description":"bar",
+     *      "tags":[],"publicKey":"",
+     *      "children_key":[],
+     *      "children_name":[],
+     *      "hasParent":false,
+     *      "isPublicKey":false
+     *  }
+     *
+     */
+
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        description: z.string(),
+        deviceName: z.string(),
+        tags: z.array(z.string()).optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),  // Only groups can have children name
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional()
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        context.error("Format of JSON provided was invalid.")
+        context.error(JSON.stringify(json))
+        context.error(e.cause)
+        context.error(e.message)
+        return false;
+    }
+}
+
+export function validateEntryJSON(json: any, context) {
+    // Record entries only have blobType, description, childrenkeys, tags, and send to all children
+    // Note: our frontend presently allows totally empty entries, so these all are truly optional
+    // The goal is to ensure nothing outside of these items is passed
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        description: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        tags: z.array(z.string()).optional(),
+        send_to_all_children: z.boolean().optional()
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        context.error("Format of JSON provided was invalid.")
+        context.error(JSON.stringify(json))
+        context.error(e.cause)
+        context.error(e.message)
+        return false;
+    }
+}
+
+export async function validateJSON(json: any, context) {
+    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),
+        description: z.string(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        context.log("Format of JSON provided was invalid.")
+        return false;
+    }
+}
+
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
         let deviceKey: Uint8Array<ArrayBuffer>;
@@ -857,8 +955,8 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         return { jsonBody: body ?? { converted: true}};
 
     } catch(error) { 
+        let message = 'Error: Check argument format.'
         if (error instanceof z.ZodError) {
-            message = 'Error: Check argument format.'
             context.error(message)
             context.error('createGroupHandler: returning 400')
             return {
@@ -876,89 +974,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     }
 }
 
-
-
-export function validateJSON(json: any, context) {
-    context.log('Entering validateJson with: ')
-    context.log(JSON.stringify(json))
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
-        children_name: z.array(z.string()).optional(),
-        description: z.string().optional(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-        send_to_all_children: z.boolean().optional()
-    });
-
-    try {
-        Valid.parse(json);
-        context.log('Returning successfully from validateJSON')
-        return true;
-    } catch (e) {
-        context.error('Returning unsuccessfully from validateJSON')
-        context.error("Format of JSON provided was invalid.")
-        context.error(e.cause)
-        context.error(e.message)
-        context.error("The json in question: ")
-        context.error('--- vvv ---')
-        context.error(`${JSON.stringify(json)}`)
-        context.error('--- ^^^ ---')
-        return false;
-    }
-}
-
-export function validateRecordJSON(json: any, context) {
-    // Records/Groups require children_key, hasParent, deviceName, and description
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),
-        description: z.string(),
-        deviceName: z.string(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        context.error("Format of JSON provided was invalid.")
-        context.error(JSON.stringify(json))
-        context.error(e.cause)
-        context.error(e.message)
-        return false;
-    }
-}
-
-export function validateEntryJSON(json: any, context) {
-    // Record entries only have blobType, description, childrenkeys, tags, and send to all children
-    // Note: our frontend presently allows totally empty entries, so these all are truly optional
-    // The goal is to ensure nothing outside of these items is passed
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        description: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
-        tags: z.array(z.string()).optional(),
-        send_to_all_children: z.boolean().optional()
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        context.error("Format of JSON provided was invalid.")
-        context.error(JSON.stringify(json))
-        context.error(e.cause)
-        context.error(e.message)
-        return false;
-    }
-}
 
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /*
