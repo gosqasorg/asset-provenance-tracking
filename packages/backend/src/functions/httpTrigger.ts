@@ -153,7 +153,13 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
-async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT, context: InvocationContext): Promise<number> {
+async function countExistingAttachments(
+    containerClient: ContainerClient, 
+    deviceID: string, 
+    deviceKey: Uint8Array<ArrayBuffer>, 
+    limit: number = MAX_ATTACHMENTS_LIMIT, 
+    context: InvocationContext): Promise<number> 
+{
 
     let count = 0;
 
@@ -399,7 +405,14 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     return blobID;
 }
 
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[], context): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> {
+async function uploadProvenance(
+    containerClient: ContainerClient, 
+    deviceKey: Uint8Array, 
+    timestamp: number, 
+    record: any, 
+    attachments: NamedBlob[], 
+    context): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> 
+{
 
     const attachmentIDs = new Array<string>();
     const oversizedAttachments = new Array<string>();
