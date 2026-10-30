@@ -857,7 +857,7 @@ export async function validateJSON(json: any, context) {
         Valid.parse(json);
         return true;
     } catch (e) {
-        context.log("Format of JSON provided was invalid.")
+        context.error("Format of JSON provided was invalid.")
         return false;
     }
 }
