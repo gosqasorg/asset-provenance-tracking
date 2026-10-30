@@ -497,6 +497,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
 }
 
 export function validateJSON(json: any, context) {
+    context.error('Entering validateJson')
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -511,9 +512,15 @@ export function validateJSON(json: any, context) {
 
     try {
         Valid.parse(json);
+        context.log('Returning successfully from validateJSON')
         return true;
     } catch (e) {
-        context.log("Format of JSON provided was invalid.")
+        context.error('Returning unsuccessfully from validateJSON')
+        context.error("Format of JSON provided was invalid.")
+        context.error("The json in question: ")
+        context.error('--- vvv ---')
+        context.dir(json)
+        context.error('--- ^^^ ---')
         return false;
     }
 }
@@ -1735,7 +1742,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
             headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
-        context.error('Returning unsuccessfuly from createGroupHandler')
+        context.error('Returning unsuccessfully from createGroupHandler')
         context.error('Failed to create group: ', error.message)
         let message;
 
@@ -1867,7 +1874,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        context.error('Returning unsuccessfuly from createRecordHandler')
+        context.error('Returning unsuccessfully from createRecordHandler')
         context.error('createRecordHandler: Failed to create record: ', error.message)
         let message;
 
@@ -1904,6 +1911,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering addEntryHandler for /addEntry')
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const backendUrl = process.env['backend_url'];
@@ -1958,6 +1966,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     if (isGroup && sendEntryToAllChildren) {
         const notifChildrenResponse = await notifyChildren(request, context);
         if (notifChildrenResponse.status !== 200) {
+            context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' notifChildrenResponse.status)
             return {
                 status: notifChildrenResponse.status,
                 jsonBody: { error: "Record entry was unable to be sent to children." }
@@ -1965,6 +1974,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         }
     }
 
+    context.log('Returning successfully from addEntryHandler')
     return {
         jsonBody: postProvResponse,
         headers: { "Content-Type": "application/json" }
