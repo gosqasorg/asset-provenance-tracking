@@ -817,7 +817,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         if (typeof provenanceRecord !== 'string') { return { status: 400 }; }
 
         const record = JSON5.parse(provenanceRecord);
-        //if (!validateJSON(record, context)) { return { status: 400 }; }
+        if (!validateJSON(record, context)) { return { status: 400 }; }
 
         let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
         if (condition) {
