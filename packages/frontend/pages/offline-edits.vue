@@ -110,7 +110,6 @@ async mounted() {
         this.getKeysFromStash("gdt-stash-failed");
         this.getKeysFromStash("gdt-stash-queued");
         this.getFulfilledKeys();
-        this.clearOneEdit();
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({

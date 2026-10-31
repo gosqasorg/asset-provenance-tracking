@@ -228,6 +228,8 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
   it("Dismiss all edits, Dismiss published edits, and Dismiss edit buttons", async() => {
 
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
     // Set up stashes in localStorage
     let failedKeys = ['failedKey1', 'failedKey2']
     let fulfilledKeys = "fulfilledKey5"
@@ -236,7 +238,13 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
-    mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)})
+    mockFetch.mockImplementation(async () => {
+      await delay(120000)
+      return {
+        json: async () => ({ data: mockRecord})
+      }
+    })
+    //mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)})
 
     // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits, {
