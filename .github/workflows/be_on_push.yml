@@ -99,5 +99,5 @@ jobs:
         ENDPOINT: ${{ secrets.ENDPOINT }}
 
       working-directory: packages/backend
-      run: npm run api_integration_tests
+      run: npm run integration
 
