@@ -162,7 +162,16 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     */
 
     // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    let blobName: string;
+    let blobClient: BlockBlobClient;
+    try {
+        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    } catch (error) {
+        return {
+            jsonBody: { message: `subscribeToNotifications setup failed: ${error.message}` },
+            status: 400
+        }
+    }
     const exists = await blobClient.exists();
 
     // Confirm the email exists
@@ -212,7 +221,16 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 
 export async function unsubscribeFromNotifications(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, emailID: string, tags: string[] = []) {
     // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    let blobName: string;
+    let blobClient: BlockBlobClient;
+    try {
+        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    } catch (error) {
+        return {
+            jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
+            status: 400
+        }
+    }
     const exists = await blobClient.exists();
 
     let [emailSet, emailIDSet] = await getExisitingEmails(exists, blobClient);
@@ -252,7 +270,15 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
 
 export async function retrieveNotifEmails(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
-    const deviceID = await calculateDeviceID(key);
+    let deviceID: string;
+    try {
+        deviceID = await calculateDeviceID(key);
+    } catch (error) {
+        return {
+            jsonBody: { message: error.message },
+            status: 400
+        }
+    }
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
 
     try {
