@@ -262,11 +262,14 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     // I found this method similar to starting the worker and letting it run in the background.
     offlineQueueConsumerWorker();
 
+    // *TODO: My guess is that mount isn't actually creating the elements, which is why it's not allowing us to interact with them
+      // Classes don't help since v-for creates multiple elements (which would all have the same classes)
+      // Look into v-for and see if that's the issue?
     // TODO: print different values from wrapper.find and see at what point we're getting undefined
-    console.log("(1) Finding dismiss edit button:", wrapper.find('#donate-container'))
-    console.log("(2) Finding dismiss edit button:", wrapper.find('#donate-container > div:nth-child(5)'))
+    console.log("(1) Finding dismiss edit button:", wrapper.find('#offline-edits-container').html())
+    console.log("(2) Finding dismiss edit button:", wrapper.find('#offline-edits-container > div:nth-child(5)').html()) // github is not finding this, but locally we are
     // Click on 'Dismiss edit' button to clear that specific published edit
-    await wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
+    await wrapper.find('#offline-edits-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
     // // Click 'Dismiss edit' button again to confirm
     // await wrapper.find('.confirm-dismiss').trigger('click');
 
