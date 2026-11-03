@@ -263,7 +263,8 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     offlineQueueConsumerWorker();
 
     // TODO: print different values from wrapper.find and see at what point we're getting undefined
-    console.log("Finding dismiss edit button:", wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1)'))
+    console.log("(1) Finding dismiss edit button:", wrapper.find('#donate-container'))
+    console.log("(2) Finding dismiss edit button:", wrapper.find('#donate-container > div:nth-child(5)'))
     // Click on 'Dismiss edit' button to clear that specific published edit
     await wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
     // // Click 'Dismiss edit' button again to confirm
