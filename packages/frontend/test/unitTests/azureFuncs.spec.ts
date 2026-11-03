@@ -230,12 +230,6 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-    // Set up stashes in localStorage
-    let failedKeys = ['failedKey1', 'failedKey2']
-    // let fulfilledKeys = "fulfilledKey5"
-    // localStorage.setItem('gdt-stash-fulfilled', fulfilledKeys)
-    localStorage.setItem('gdt-stash-failed', JSON.stringify(failedKeys))
-
     // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
     mockFetch.mockImplementation(async () => {
@@ -246,6 +240,7 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     })
     //mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)})
 
+    // TODO: print statement shows data values working and localStorage ones not, so set keys here and try to get the first test to work
     // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits, {
       data() {
@@ -253,8 +248,8 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
           // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
           // Also need this here along with setting 'gdt-stash-fulfilled' above because here, it's to test the dismiss one edit button and that 
           // modifies the fulfilledKeys array then the modifies fulfilled keys stash
-          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"]
-          // failedKeys: ['failedKey1', 'failedKey2']
+          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"],
+          failedKeys: ['failedKey1', 'failedKey2']
         }
       }
     });
@@ -267,18 +262,18 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     // I found this method similar to starting the worker and letting it run in the background.
     offlineQueueConsumerWorker();
 
-    // TODO: can start with a simpler example (aka clicking on "dismiss all", which is always visible, to determine if just the keys aren't appearing or we aren't getting the whole page)
-    // // Click on 'Dismiss edit' button to clear that specific published edit
-    // await wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
+    // TODO: print different values from wrapper.find and see at what point we're getting undefined
+    console.log("Finding dismiss edit button:", wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1)'))
+    // Click on 'Dismiss edit' button to clear that specific published edit
+    await wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
     // // Click 'Dismiss edit' button again to confirm
     // await wrapper.find('.confirm-dismiss').trigger('click');
 
     // // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
     // expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
 
-    // TODO: define button by class instead
     // Click on the 'Dismiss published edits' button
-    await wrapper.find('.published').trigger('click');
+    await wrapper.find('button.btn:nth-child(4)').trigger('click');
     // Click 'Dismiss published edits' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
