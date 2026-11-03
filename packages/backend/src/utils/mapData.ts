@@ -142,7 +142,7 @@ class MapData {
             locationTotal.failed += failed
             locationTotal.responseTime += responseTime
 
-            // group data by week, azure uses monday as the start of the week
+            // group data by week
             if (locationTotal.weeks[weekKey] === null || locationTotal.weeks[weekKey] === undefined) {
                 locationTotal.weeks[weekKey] = {requests: 0, failed: 0, responseTime: 0}
             }
@@ -172,13 +172,23 @@ class MapData {
             // using iso|state as key because duplicates
             const stateKey = `${iso}|${state.toLowerCase()}`;
             const key = `${stateKey}|${city.toLowerCase()}`;
+            const weekKey = String(day).slice(0, 10)
 
             if (stats[key] === null || stats[key] === undefined) {
-                stats[key] = { name: city, iso, stateKey, requests: 0 }
+                stats[key] = { name: city, iso, stateKey, requests: 0, weeks: {} }
             }
 
-            stats[key].requests += requests;
+            const cityStat = stats[key]
+            cityStat.requests += requests;
+
+            if (cityStat.weeks[weekKey] === null || cityStat.weeks[weekKey] === undefined) {
+                cityStat.weeks[weekKey] = requests
+            } 
+
+            cityStat.weeks[weekKey] += requests
+
         }
+        
         this.cityStats = stats;
     }
 

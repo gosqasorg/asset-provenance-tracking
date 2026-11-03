@@ -1,8 +1,18 @@
 <template>
     <div class="map-page">
         <div class="map-page-header">
-            <h1>Requests by Geography</h1>
-            <p>Click a country, region or city to see request details</p>
+          <div class="map-page-title">
+              <h1>Requests by Geography</h1>
+              <p>Click a country, region or city to see request details</p>
+          </div>
+
+          <div class="range-buttons">
+            <button v-for="d in [30, 90, 365]" :key="d"
+            :class="{ active: rangeDays === d }"
+            @click="console.log('clicked', d); rangeDays = d">
+              {{ d === 365 ? '1 yr' : `${d}d` }}
+            </button>
+          </div>
         </div>
         
         <!-- TODO: Map Section -->
@@ -65,7 +75,17 @@
                 <p v-else style="font-weight: 300;">No city-level data for this country yet</p>
             </div>
           </div>
-        </div>   
+        </div>  
+        
+        <div>
+          <p>Testing for {{ rangeDays }} days</p>
+          <p>{{ filterByRange(countryData) }}</p>
+          <p>==================</p>
+          <p>{{ filterByRange(stateData) }}</p>
+          <p>==================</p>
+          <p>{{ filterByRange(cityData) }}</p>
+
+        </div>
     </div>
 </template>
 
@@ -79,8 +99,7 @@ import countryBounds from '../data_viz/files/country-bounds.json';
 let map: mapboxgl.Map | null = null
 let resize: ResizeObserver | null = null
 
-type CountryStat = Record<string, { name: string; requests: number; failed: number }>;
-type StateStat = Record<string, { name: string; requests: number; failed: number }>;
+type LocationStat = Record<string, { name: string; requests: number; failed: number }>;
 type SelectionType = {level: 'world'} | {level: 'country' | 'state'; key: string; name: string}
 type CountryProps = {NAME: string, ISO_A2_EH: string}
 type StateProps = {name: string, gn_name: string | null, iso_a2: string, iso_3166_2: string, latitude: number, longitude: number}
@@ -95,7 +114,6 @@ const mapColors = {
     high: '#BFE4F3',
     background: '#1C1C19',
     selected: '#ffffff',
-    outline: '#121211',
     noData: '#262622',
   }, 
   light : {
@@ -103,8 +121,7 @@ const mapColors = {
     high: '#4E3681',
     background: '#FFFFFF',
     selected: '#1C1C19',
-    outline: '#FFFFFF',
-    noData: '#D8D8D8',
+    noData: '#FFFFFF',
   }
 }
 
@@ -118,12 +135,15 @@ export default {
       selectedPlace: { level: 'world'} as SelectionType ,
       loading: true ,
       error: null as string | null,
-      stats:  { countries: null, states:  null} as {countries: CountryStat | null, states: StateStat | null},
+      stats:  { countries: null, states:  null} as {countries: LocationStat | null, states: LocationStat | null},
 
       // for switching colors in the map
       isDark: false,
       darkQuery: null as MediaQueryList | null,
-      onModeChange: null as ((e: MediaQueryListEvent) => void) | null
+      onModeChange: null as ((e: MediaQueryListEvent) => void) | null,
+      dataPromise: null as Promise<void> | null,
+      geoPromise: null as Promise<any> | null,
+      rangeDays : 30 as 30 | 90 | 365
 
     }
   },
@@ -133,11 +153,11 @@ export default {
       const s = this.selectedPlace
 
       if (s.level === 'state') {
-        return this.stateData[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
+        return this.filteredCity[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
       }
 
       if (s.level === 'country') {
-        return this.countryData[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
+        return this.filteredCountry[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
       }
 
       return this.worldStats
@@ -145,7 +165,7 @@ export default {
 
     worldStats() {
       const worldData = { name: 'World', count: 0, requests: 0, failed: 0, responseTime: 0}
-      for (const country of Object.values(this.countryData ?? {})){
+      for (const country of Object.values(this.filteredCountry ?? {})){
         worldData.count += 1
         worldData.requests += country.requests
         worldData.failed += country.failed
@@ -160,7 +180,7 @@ export default {
 
       // filter state data by country iso and grab top 5 states/provinces
       if (s.level === 'country') {
-        let list = Object.values(this.stateData ?? {})
+        let list = Object.values(this.filteredStates ?? {})
         return list.filter(st => st.iso === s.key)
         .sort((a, b) => b.requests - a.requests)
         .slice(0, 5)
@@ -168,14 +188,14 @@ export default {
       
       // filter city data by stateKey and grab top 5 citys
       if (s.level === 'state') {
-        let list = Object.values(this.cityData ?? {})
+        let list = Object.values(this.filteredCity ?? {})
         return list.filter(c => c.stateKey === s.key)
         .sort((a, b) => b.requests - a.requests)
         .slice(0, 5)
       }
 
       // if neither country or state return top places as countries
-      return Object.values(this.countryData ?? {}).sort((a, b) => b.requests - a.requests).slice(0, 5)
+      return Object.values(this.filteredCountry ?? {}).sort((a, b) => b.requests - a.requests).slice(0, 5)
 
     },
 
@@ -187,8 +207,16 @@ export default {
     // get palette based on darkmode or lightmode
     palette() {
       return mapColors[this.isDark ? "dark" : "light"]
+    },
+    filteredCountry() {
+      return this.filterByRange(this.countryData)
+    },
+    filteredStates() {
+      return this.filterByRange(this.stateData)
+    },
+    filteredCity() {
+      return this.filterByRange(this.cityData)
     }
-
   },
 
   async mounted() {
@@ -203,24 +231,20 @@ export default {
     if (!el) return
 
     // fetch data - statistics, countryGEOJSON, stateGEOJSON
-    const dataPromise = this.fetchData()
-    const geoPromise = this.loadGeo()
+    this.dataPromise =  this.fetchData()
+    this.geoPromise = this.loadGeo()
   
     mapboxgl.accessToken = this.$config.public.mapboxToken
     const m = markRaw(new mapboxgl.Map({
       container: el,
       projection: 'mercator',
-      style: {
-        version: 8,
-        sources: {},
-        layers: [{ id: 'background', type: 'background', paint: { 'background-color': this.palette.background } }],
-      },
+      style: `mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`,
       center: [0, 0],
       zoom: 0.75,
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
-      maxZoom: 7,
+      maxZoom: 18,
       minZoom: 0.75,
     }));
 
@@ -235,130 +259,12 @@ export default {
       offset: [0, -20],      
     })
 
+    m.on('style.load', async () => {
+      ////////////////
+      await this.addMapLayers(m)
+    });
+
     m.on('load', async () => {
-      this.stats = await dataPromise;
-      const geo = await geoPromise;
-
-      if (!geo) return
-
-      // get statistics
-      const countries: CountryStat  = this.stats.countries as CountryStat;
-      const statesRequests: StateStat = this.stats.states as StateStat;
-  
-      m.addSource('country-boundaries', {
-        type: 'geojson',
-        data: geo.countriesGeo
-      });
-
-      // COUNTRY-LEVEL
-      // fill each country based on the number of requests using the minLog and maxlog as the range
-      m.addLayer({
-        id: 'countries-fill',
-        type: 'fill',
-        source: 'country-boundaries',
-        paint: {
-          'fill-color': this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.stats.countries),
-        },
-      });
-
-      m.addLayer({
-        id: 'countries-outline',
-        type: 'line',
-        source: 'country-boundaries',
-        paint: { 'line-color': this.palette.outline, 'line-width': 0.8, 'line-opacity': 0.75 },
-      });
-
-      // CITY-LEVEL'
-      // get state keys
-      const stateKeys = Object.keys(this.stats.states as StateStat);
-
-      // use geojson to draw states
-      m.addSource('states', {
-        type: 'geojson',
-        data: geo.statesGeo
-      });
-
-      m.addLayer({
-        id: 'states-outline',
-        type: 'line',
-        source: 'states',
-        minzoom: 2.5,
-        paint: {
-          'line-color': this.palette.outline,
-          'line-width': 1,
-          'line-opacity': ['interpolate',['linear'], ['zoom'], 2.5, 0, 3.5, 0.75]
-        },
-      })
-
-      const validName = ['case', 
-        ['==', ['get', 'iso_a2'], 'IN'], 
-        ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
-      ]
-
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
-    
-      // fill in state based on requests amount- if no requests color state blank to cover up country-fill
-        m.addLayer({
-        id: 'states-fill',
-        type: 'fill',
-        source: 'states',
-        minzoom: 2.5,
-        paint: {
-          'fill-color': this.fillByStats(this.palette, stateKey, this.stats.states),
-          'fill-opacity': [
-            'interpolate', ['linear'], ['zoom'],
-            2.5, 0,  
-            3, 1
-          ],
-        },
-      }, 'states-outline');
-      
-
-      // hover outline layers
-      // idea is to filter show for matching countries/states using iso code of hovered area
-      m.addLayer({ 
-        id: 'country-hover', 
-        type: 'line', 
-        source: 'country-boundaries', 
-        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
-        paint: { 
-          'line-color': this.palette.selected, 
-          'line-width': 2, 
-          'line-opacity': 0.8 } 
-        })
-
-      m.addLayer({ 
-        id: 'country-selected', 
-        type: 'line', 
-        source: 'country-boundaries', 
-        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
-        paint: { 
-          'line-color': this.palette.selected, 
-          'line-width': 2, 
-          'line-opacity': 0.8 } 
-      })
-
-      m.addLayer({
-        id: 'state-hover',
-        type: 'line',
-        source: 'states',
-        filter: ['==', ['get', 'iso_3166_2'], ''],
-        paint: {
-          'line-color': this.palette.selected,
-          'line-width': 1.5 }
-      })
-
-      m.addLayer({ 
-        id: 'state-selected', 
-        type: 'line', 
-        source: 'states', 
-        filter: ['==', ['get', 'iso_3166_2'], ''],  
-        paint: { 
-          'line-color': this.palette.selected, 
-          'line-width': 2, 
-          'line-opacity': 0.8 } 
-      })
-
       const STATE_VISIBLE_ZOOM = 3
       m.on('mousemove', 'countries-fill', (e) => {
           m.getCanvas().style.cursor = 'pointer';
@@ -388,7 +294,7 @@ export default {
             : '';
 
             const name = showState ? this.stateNameOf(state) : country.NAME
-            const stats = showState ? statesRequests[stateKey] : countries[countryKey]
+            const stats = showState ? this.filteredStates[stateKey] : this.filteredCountry[countryKey]
             const value = stats ? `${stats!.requests} requests`  : 'No requests yet'
 
             popup.setLngLat(e.lngLat)
@@ -446,11 +352,11 @@ export default {
             const name = this.stateNameOf(state)
             this.selectedPlace = { level: 'state', key: `${state.iso_a2}|${String(name).toLowerCase()}`,name}
             m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], showState ? state.iso_3166_2 : '']);
-            map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+            m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
           } else {
             m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], country.ISO_A2_EH]);
             this.selectedPlace = { level: 'country', key: country.ISO_A2_EH, name: country.NAME}
-            map?.setFilter('state-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+            m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
           }
 
           
@@ -480,7 +386,7 @@ export default {
   },
 
   methods: {
-    async fetchData(): Promise<{countries: CountryStat | null, states: StateStat | null}> {
+    async fetchData() {
       this.loading = true
       this.error = null
 
@@ -490,7 +396,7 @@ export default {
         this.stateData = states ?? {}
         this.cityData = cities ?? {}
 
-        return {countries: this.countryData, states: this.stateData}
+        // return {countries: this.countryData, states: this.stateData}
 
       } catch (err) {
         this.error = String(err)
@@ -498,7 +404,7 @@ export default {
             type: 'error',
             text: 'Failed to fetch data error: ' + err
         });
-        return {countries: {}, states: {}}
+        // return {countries: {}, states: {}}
       } finally {
         this.loading = false
       }
@@ -512,8 +418,8 @@ export default {
     updateMapColors(){
       if (!map || !map.isStyleLoaded()) return;
       const p = this.palette;
-      map?.setPaintProperty('background', 'background-color', p.background)
-      map?.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(p, ['get', 'ISO_A2_EH'], this.stats.countries))
+      // map?.setPaintProperty('background', 'background-color', p.background)
+      map?.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(p, ['get', 'ISO_A2_EH'], this.filteredCountry))
       
       const validName = ['case', 
       ['==', ['get', 'iso_a2'], 'IN'], 
@@ -521,10 +427,7 @@ export default {
       ]
 
       const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
-      map?.setPaintProperty('states-fill', 'fill-color', this.fillByStats(p, stateKey, this.stats.states))
-
-      map.setPaintProperty('countries-outline', 'line-color', p.outline)
-      map.setPaintProperty('states-outline', 'line-color', p.outline)
+      map?.setPaintProperty('states-fill', 'fill-color', this.fillByStats(p, stateKey, this.filteredStates))
 
       map.setPaintProperty('state-hover', 'line-color', p.selected)
       map.setPaintProperty('country-hover', 'line-color', p.selected)
@@ -579,13 +482,166 @@ export default {
             text: 'Failed to load map data: ' + err
         });
         return null
-    
       }
+    },
+    async addMapLayers(m: mapboxgl.Map) {
+      const firstLabelId = m.getStyle().layers.find(l => l.type === 'symbol')?.id;
+
+      const layers = m.getStyle().layers;
+      const firstRoadId = layers.find(l => l.id.startsWith('road') || l.id.startsWith('tunnel'))?.id ?? firstLabelId;
+
+      
+      await this.dataPromise;
+      const geo = await this.geoPromise;
+      if (!geo) return
+  
+      m.addSource('country-boundaries', {
+        type: 'geojson',
+        data: geo.countriesGeo
+      });
+
+      // COUNTRY-LEVEL
+      // fill each country based on the number of requests using the minLog and maxlog as the range
+      m.addLayer({
+        id: 'countries-fill',
+        type: 'fill',
+        source: 'country-boundaries',
+        paint: {
+          'fill-color': this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry),
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 1, 12, 0],
+        },
+      }, firstRoadId);
+
+      // CITY-LEVEL'
+      // use geojson to draw states
+      m.addSource('states', {
+        type: 'geojson',
+        data: geo.statesGeo
+      });
+
+      const validName = ['case', 
+        ['==', ['get', 'iso_a2'], 'IN'], 
+        ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
+      ]
+
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
+    
+      // fill in state based on requests amount- if no requests color state blank to cover up country-fill
+        m.addLayer({
+        id: 'states-fill',
+        type: 'fill',
+        source: 'states',
+        minzoom: 2.5,
+        paint: {
+          'fill-color': this.fillByStats(this.palette, stateKey, this.filteredStates),
+          'fill-opacity': [
+            'interpolate', ['linear'], ['zoom'],
+            2.5, 0,  
+            3, 1,
+            8, 1,
+            12, 0
+          ],
+        },
+      }, firstRoadId);
+      
+
+      // hover outline layers
+      // idea is to filter show for matching countries/states using iso code of hovered area
+      m.addLayer({ 
+        id: 'country-hover', 
+        type: 'line', 
+        source: 'country-boundaries', 
+        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
+        paint: { 
+          'line-color': this.palette.selected, 
+          'line-width': 2, 
+          'line-opacity': 0.8 } 
+        })
+
+      m.addLayer({ 
+        id: 'country-selected', 
+        type: 'line', 
+        source: 'country-boundaries', 
+        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
+        paint: { 
+          'line-color': this.palette.selected, 
+          'line-width': 2, 
+          'line-opacity': 0.8 } 
+      })
+
+      m.addLayer({
+        id: 'state-hover',
+        type: 'line',
+        source: 'states',
+        filter: ['==', ['get', 'iso_3166_2'], ''],
+        paint: {
+          'line-color': this.palette.selected,
+          'line-width': 1.5 }
+      })
+
+      m.addLayer({ 
+        id: 'state-selected', 
+        type: 'line', 
+        source: 'states', 
+        filter: ['==', ['get', 'iso_3166_2'], ''],  
+        paint: { 
+          'line-color': this.palette.selected, 
+          'line-width': 2, 
+          'line-opacity': 0.8 } 
+      })
+    },
+    filterByRange(data: Record<string, any>){
+      const out: Record<string, any> = {}
+
+      // Get the end date of the range
+      const date = new Date()
+      date.setDate(date.getDate() - this.rangeDays)
+      const endDate = date.toISOString().slice(0, 10)
+
+      for (const [key, stats] of Object.entries(data ?? {})){
+        // console.log(stat)
+        let requests = 0, failed = 0, responseTime = 0
+        // iterate over each week, adding the data for the weeks that fall into range
+        for (const [week, w] of Object.entries(stats.weeks ?? {})) {
+          if (week < endDate) continue
+
+          if (typeof w === 'number') {
+            requests += w;
+            continue;
+          
+          }
+          requests += w.requests
+          failed += w.failed
+          responseTime += w.responseTime
+        }
+        const summed = {...stats, requests, failed, responseTime}
+
+        // console.log(key, summed)
+
+        if (summed.requests > 0) {
+          out[key] = summed
+        }
+      }
+      return out
     }
   },
   watch: {
     palette() {
+      map?.setStyle(`mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`)
       this.updateMapColors()
+    },
+    rangeDays() {
+      const validName = ['case', 
+      ['==', ['get', 'iso_a2'], 'IN'], 
+      ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
+      ]
+
+      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
+
+
+      if (!map?.getLayer('countries-fill')) return
+      map.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry))
+      map.setPaintProperty('states-fill', 'fill-color', this.fillByStats(this.palette, stateKey, this.filteredStates))
     }
   }
 };
@@ -611,6 +667,12 @@ export default {
   }
 
   .map-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .map-page-title {
     gap: 10px
   }
 
@@ -810,6 +872,10 @@ export default {
     .map-page {
       /* background-color: #262820;
       border: #353535 solid 1px; */
+    }
+
+    .map-page p {
+      color: #FFFFFF
     }
 
     h1 {
