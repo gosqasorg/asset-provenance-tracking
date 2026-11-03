@@ -230,6 +230,12 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+    // Set up stashes in localStorage
+    let failedKeys = ['failedKey1', 'failedKey2']
+    // let fulfilledKeys = "fulfilledKey5"
+    // localStorage.setItem('gdt-stash-fulfilled', fulfilledKeys)
+    localStorage.setItem('gdt-stash-failed', JSON.stringify(failedKeys))
+
     // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
     mockFetch.mockImplementation(async () => {
@@ -247,8 +253,8 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
           // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
           // Also need this here along with setting 'gdt-stash-fulfilled' above because here, it's to test the dismiss one edit button and that 
           // modifies the fulfilledKeys array then the modifies fulfilled keys stash
-          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"],
-          failedKeys: ['failedKey1', 'failedKey2']
+          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"]
+          // failedKeys: ['failedKey1', 'failedKey2']
         }
       }
     });
@@ -270,28 +276,29 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     // // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
     // expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
 
+    // TODO: define button by class instead
     // Click on the 'Dismiss published edits' button
-    await wrapper.find('button.btn:nth-child(4)').trigger('click');
+    await wrapper.find('.published').trigger('click');
     // Click 'Dismiss published edits' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
-    // // Test to see if published edits stash is empty after 'Dismiss published edits' button was clicked
-    // expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null)
+    // Test to see if published edits stash is empty after 'Dismiss published edits' button was clicked
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null)
 
     // // Set up queued keys here so the tests above aren't affected by the button placements
     // let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3', 'Qkey4', 'Qkey5', 'Qkey6']
     // localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
     // localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
 
-    // // Click on the 'Dismiss all edits' button, then the confirmation button afterwards to clear all stashes
-    // await wrapper.find('button.btn:nth-child(3)').trigger('click');
-    // // Click on the 'Dismiss all edits' button again to confirm
-    // await wrapper.find('.confirm-dismiss').trigger('click');
+    // Click on the 'Dismiss all edits' button, then the confirmation button afterwards to clear all stashes
+    await wrapper.find('button.btn:nth-child(3)').trigger('click');
+    // Click on the 'Dismiss all edits' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
 
-    // // Test to check if 'Dismiss all edits' button clears all keys in queued stash
-    // expect(localStorage.getItem('gdt-stash-queued')).toBe(null);
+    // Test to check if 'Dismiss all edits' button clears all keys in queued stash
+    expect(localStorage.getItem('gdt-stash-queued')).toBe(null);
 
-    // // Test to see if failed stash is cleared after 'Dismiss all edits' button was clicked
-    // expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
+    // Test to see if failed stash is cleared after 'Dismiss all edits' button was clicked
+    expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
   });
 }, 40000);

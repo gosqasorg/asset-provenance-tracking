@@ -107,9 +107,12 @@ data() {
 
 async mounted() {
     try {
+        console.log("Offline edits page has started mounting")
         this.getKeysFromStash("gdt-stash-failed");
         this.getKeysFromStash("gdt-stash-queued");
         this.getFulfilledKeys();
+        console.log("Fulfilled Keys on Offline Edits page:", this.fulfilledKeys)
+        console.log("Failed Keys on Offline Edits page:", this.failedKeys)
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({
