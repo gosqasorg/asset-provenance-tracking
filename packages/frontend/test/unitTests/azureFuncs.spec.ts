@@ -230,13 +230,6 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-    // TODO: If below doesn't work attempt the reverse (define fulfilledKeys only in the data section)
-    // Set up stashes in localStorage
-    let failedKeys = ['failedKey1', 'failedKey2']
-    let fulfilledKeys = 'fulfilledKey1,fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5'
-    localStorage.setItem('gdt-stash-fulfilled', fulfilledKeys)
-    localStorage.setItem('gdt-stash-failed', JSON.stringify(failedKeys))
-
     // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
     mockFetch.mockImplementation(async () => {
@@ -249,6 +242,15 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits, {
+      data() {
+    		return {
+          // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
+          // Also need this here along with setting 'gdt-stash-fulfilled' above because here, it's to test the dismiss one edit button and that 
+          // modifies the fulfilledKeys array then the modifies fulfilled keys stash
+          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"],
+          failedKeys: ['failedKey1', 'failedKey2']
+        }
+      }
     });
 
     // Because async mounted() provides a Promise, flushPromises() resolves it so that items to be mounted() are mounted here when the DOM loads
