@@ -77,15 +77,6 @@
           </div>
         </div>  
         
-        <div>
-          <p>Testing for {{ rangeDays }} days</p>
-          <p>{{ filterByRange(countryData) }}</p>
-          <p>==================</p>
-          <p>{{ filterByRange(stateData) }}</p>
-          <p>==================</p>
-          <p>{{ filterByRange(cityData) }}</p>
-
-        </div>
     </div>
 </template>
 
@@ -114,14 +105,14 @@ const mapColors = {
     high: '#BFE4F3',
     background: '#1C1C19',
     selected: '#ffffff',
-    noData: '#262622',
+    noData: 'rgba(0, 0, 0, 0)',
   }, 
   light : {
     low: '#B9B1CA',
     high: '#4E3681',
     background: '#FFFFFF',
     selected: '#1C1C19',
-    noData: '#FFFFFF',
+    noData: 'rgba(0, 0, 0, 0)',
   }
 }
 
@@ -143,7 +134,7 @@ export default {
       onModeChange: null as ((e: MediaQueryListEvent) => void) | null,
       dataPromise: null as Promise<void> | null,
       geoPromise: null as Promise<any> | null,
-      rangeDays : 30 as 30 | 90 | 365
+      rangeDays : 365 as 30 | 90 | 365
 
     }
   },
@@ -485,10 +476,9 @@ export default {
       }
     },
     async addMapLayers(m: mapboxgl.Map) {
-      const firstLabelId = m.getStyle().layers.find(l => l.type === 'symbol')?.id;
-
-      const layers = m.getStyle().layers;
-      const firstRoadId = layers.find(l => l.id.startsWith('road') || l.id.startsWith('tunnel'))?.id ?? firstLabelId;
+      // drawing the choropleth under the roads and labels, so that they're visible
+      const labelLayersId = m.getStyle().layers.find(l => l.type === 'symbol')?.id;
+      const roadLayerId = m.getStyle().layers.find(l => l.id.startsWith('road'))?.id ?? labelLayersId
 
       
       await this.dataPromise;
@@ -508,9 +498,9 @@ export default {
         source: 'country-boundaries',
         paint: {
           'fill-color': this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry),
-          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 1, 12, 0],
+          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 0, 1, 3.5, 0],
         },
-      }, firstRoadId);
+      }, roadLayerId);
 
       // CITY-LEVEL'
       // use geojson to draw states
@@ -536,13 +526,12 @@ export default {
           'fill-color': this.fillByStats(this.palette, stateKey, this.filteredStates),
           'fill-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            2.5, 0,  
-            3, 1,
+            4, 1,
             8, 1,
             12, 0
           ],
         },
-      }, firstRoadId);
+      }, roadLayerId);
       
 
       // hover outline layers
@@ -664,6 +653,35 @@ export default {
     /* background-color: #F3F3F3;
     border: #D8D8D8 solid 1px;
     border-radius: 15px; */
+  }
+
+  .range-buttons {
+    display: flex;
+    gap: 12px;
+    border: #D8D8D8 solid 1px;
+    border-radius: 10px;
+    padding: 15px 10px;
+  }
+
+  .range-buttons button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: 400;
+    border-radius: 5px;
+    padding: 5px 11px;
+    cursor: pointer;
+
+  }
+
+  .range-buttons button.active {
+    background: #4E3681;
+    color: #fff;
+  }
+
+  .range-buttons button:hover {
+    background: #322253;
+    color: #fff;
   }
 
   .map-page-header {
@@ -869,6 +887,7 @@ export default {
     
 
   @media (prefers-color-scheme: dark) {
+    /* styling for dashboard */
     .map-page {
       /* background-color: #262820;
       border: #353535 solid 1px; */
@@ -878,11 +897,11 @@ export default {
       color: #FFFFFF
     }
 
-    h1 {
+    .map-page h1 {
       color: #CCECFD
     }
 
-    h2 {
+    .map-page h2 {
       color: #fdf9f9
     }
 
@@ -909,6 +928,24 @@ export default {
 
     #map-box {
       border-color: #353535;
+    }
+
+    .range-buttons {
+      border: #353535 solid 1px;
+    }
+
+    .range-buttons button {
+      color: #FFFFFF;
+    }
+
+    .range-buttons button.active {
+      background: #CCECFD;
+      color: #000000;
+    }
+
+    .range-buttons button:hover {
+      background: #ffffff;
+      color: #000000;
     }
 
   }
