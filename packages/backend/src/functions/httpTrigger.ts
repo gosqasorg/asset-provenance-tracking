@@ -1,4 +1,4 @@
-// Working
+ // Working
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -551,6 +551,8 @@ async function uploadProvenance(
     const provRecord = { record, attachments: attachmentIDs };
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
+    
+    // Upload does throw error, to be caught by endpoint handler
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined, context);
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
@@ -642,6 +644,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
             });
         }
 
+        // This does throw error, to be caught by endpoint handler
         const uploaded = await uploadProvenance(containerClient, key, timestamp, record, attachments, context);
         records.push(uploaded);
     }
@@ -708,6 +711,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         };
     }
 
+    // 
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
         try {
