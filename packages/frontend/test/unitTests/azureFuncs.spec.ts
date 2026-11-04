@@ -240,14 +240,11 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     })
     //mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)})
 
-    // TODO: print statement shows data values working and localStorage ones not, so set keys here and try to get the first test to work
     // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits, {
       data() {
     		return {
-          // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
-          // Also need this here along with setting 'gdt-stash-fulfilled' above because here, it's to test the dismiss one edit button and that 
-          // modifies the fulfilledKeys array then the modifies fulfilled keys stash
+          // NOTE: Need to define values here (when defined through localStorage.setItem() the page will register the values as undefined)
           fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"],
           failedKeys: ['failedKey1', 'failedKey2']
         }
@@ -261,24 +258,17 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     // and starts working on clearing the queued stash. The test can continue without waiting for a Promise from offlineQueueConsumerWorker function.
     // I found this method similar to starting the worker and letting it run in the background.
     offlineQueueConsumerWorker();
-
-    // *TODO: Elements ARE being created, but :nth-child can't find them on github (could try and print each nth-element..? But then tests won't run on either github or locally)
-      // Specifically 'div:nth-child(5)', since the container we want DOES appear in '#offline-edits-container', even on github
-    console.log("(1) Finding dismiss edit button:\n", wrapper.find('#offline-edits-container').html())
-    console.log("\n(2) Finding dismiss edit button:\n", wrapper.find('#offline-edits-container > div:nth-of-type(2)').html()) // github is not finding this, but locally we are
-    console.log("\n(3) Finding dismiss edit button:\n", wrapper.find('#offline-edits-container > div:nth-of-type(2) > .key-box').html())
-    console.log("\n(4) Finding dismiss edit button:\n", wrapper.find('#offline-edits-container > div:nth-of-type(2) > .key-box > button:nth-of-type(2)').html())
     
-    // TODO: attempting to use nth-of-type instead of nth-child and classes (to hopefully make behavior more consistent between local and github)
+    // NOTE: nth-of-type + classes works! Github just got confused with nth-child because it was counting children differently than local versions
       // nth-child: returns IF child at position 5 is a div
       // nth-of-child: returns 2nd div
     // Click on 'Dismiss edit' button to clear that specific published edit
     await wrapper.find('#offline-edits-container > div:nth-of-type(2) > .key-box > button:nth-of-type(2)').trigger('click');
-    // // Click 'Dismiss edit' button again to confirm
-    // await wrapper.find('.confirm-dismiss').trigger('click');
+    // Click 'Dismiss edit' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
 
-    // // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
-    // expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
+    // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
 
     // Click on the 'Dismiss published edits' button
     await wrapper.find('button.btn:nth-child(4)').trigger('click');
@@ -288,10 +278,10 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     // Test to see if published edits stash is empty after 'Dismiss published edits' button was clicked
     expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null)
 
-    // // Set up queued keys here so the tests above aren't affected by the button placements
-    // let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3', 'Qkey4', 'Qkey5', 'Qkey6']
-    // localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
-    // localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
+    // Set up queued keys here so the tests above aren't affected by the button placements
+    let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3', 'Qkey4', 'Qkey5', 'Qkey6']
+    localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
+    localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
 
     // Click on the 'Dismiss all edits' button, then the confirmation button afterwards to clear all stashes
     await wrapper.find('button.btn:nth-child(3)').trigger('click');
