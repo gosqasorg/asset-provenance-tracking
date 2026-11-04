@@ -228,13 +228,7 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
   it("Dismiss all edits, Dismiss published edits, and Dismiss edit buttons", async() => {
 
-    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-    // Set up stashes in localStorage
-    let failedKeys = ['failedKey1', 'failedKey2']
-    let fulfilledKeys = "fulfilledKey5"
-    localStorage.setItem('gdt-stash-fulfilled', fulfilledKeys)
-    localStorage.setItem('gdt-stash-failed', JSON.stringify(failedKeys))
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
     // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
@@ -251,9 +245,8 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     	data() {
     		return {
           // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
-          // Also need this here along with setting 'gdt-stash-fulfilled' above because here, it's to test the dismiss one edit button and that 
-          // modifies the fulfilledKeys array then the modifies fulfilled keys stash
-          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4"]
+          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"],
+          failedKeys: ['failedKey1', 'failedKey2']
         }
       }
     });
@@ -267,7 +260,7 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     offlineQueueConsumerWorker();
 
     // Click on 'Dismiss edit' button to clear that specific published edit
-    await wrapper.find('#donate-container > div:nth-child(5) > div:nth-child(1) > button:nth-child(4)').trigger('click');
+    await wrapper.find('#offline-edits-container > div:nth-of-type(2) > .key-box > button:nth-of-type(2)').trigger('click');
     // Click 'Dismiss edit' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
