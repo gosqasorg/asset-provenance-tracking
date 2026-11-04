@@ -237,7 +237,7 @@ describe("Offline Worker Spotty Connection Tests", async() => {
       'Check for record loss on POST failure offline'
     );
     stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
-    await new Promise((r) => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 5005));
 
     // Confirm that fetch ran and that the record is still in the queue
     expect(mockFetch).toHaveLastResolvedWith(undefined);
@@ -246,7 +246,7 @@ describe("Offline Worker Spotty Connection Tests", async() => {
 
     // Mock fetch to return 500
     mockFetch.mockResolvedValue({ok: false, status: 500});
-    await new Promise((r) => setTimeout(r, 5000)); // todo is this enough time (consistent, less time possible, same for all tests [5005])?? could tests be combine to save time (last)?
+    await new Promise((r) => setTimeout(r, 5005));
 
     // Confirm that the record was moved into the failed stash
     queuedStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
@@ -256,7 +256,6 @@ describe("Offline Worker Spotty Connection Tests", async() => {
   }, 20000);
 
   // Test GET offline failures (post passes get offline)
-    // *NOTE! As of now this will fail in our code, so fix first!
   it("Test GET Failure Offline", async() => {
     resetStashValues();
 
@@ -271,17 +270,19 @@ describe("Offline Worker Spotty Connection Tests", async() => {
       'Check for record loss on GET failure offline'
     );
     stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
-    await new Promise((r) => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 5005));
 
     // Confirm that the record was successfully "posted" (-3 to check before fetchUrl's three GET checks)
     expect(mockFetch).toHaveNthResolvedWith(mockFetch.mock.calls.length - 3, {ok: true, status: 200});
 
-    // TODO: where SHOULD the record go??
-    // Confirm that the request was moved to ___
+    // Confirm that the get request failed and the record was moved into the fulfilled stash
+    // Note: we move it to fulfilled because if we put it in failed and the user retries creation it will be created twice
+    // (since post succeeded initially, meaning there's a very high chance the record was made)
     expect(mockFetch).toHaveLastResolvedWith(undefined);
-
     const queuedStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
-    expect(queuedStash.length).toEqual(1);
+    const fulfilledStash = localStorage.getItem('gdt-stash-fulfilled')?.split(',') || [];
+    expect(queuedStash.length).toEqual(0);
+    expect(fulfilledStash.length).toEqual(1);
   });
 
   // Test GET online failures (post passes get 404)
@@ -299,7 +300,7 @@ describe("Offline Worker Spotty Connection Tests", async() => {
       'Check for record loss on GET failure online'
     );
     stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
-    await new Promise((r) => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 5005));
 
     // Confirm that the record was successfully "posted" (-3 to check before fetchUrl's three GET checks)
     expect(mockFetch).toHaveNthResolvedWith(mockFetch.mock.calls.length - 3, {ok: true, status: 200});
