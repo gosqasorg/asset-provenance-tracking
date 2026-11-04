@@ -54,8 +54,28 @@ function errorHandler(functionName, error) {
 
   context.error(`Returning unsuccessfully from ${functionName}`)
 
-  context.error(`Cause: ${error.cause}`)
+  // Uncategorizable errors
+  // To be assessed + addressed in upcoming ticket
+  // Validate the error itself
+  if(!('cause' in error)) {
+    const message = `${functionName} returning error without cause. Error: ${JSON.stringify(error)}`
+    context.error(message)
+
+    // During dev, crash everything so we can find errors that don't follow the format of always having a cause.
+    throw Error(message)
+
+    // During prod, log and return. We can't go down over one error
+    // Note re: duplication: two instances is not a pattern
+    return {
+      status: 500,
+      body: "Internal server error. Not to worry: we stay vigilant for these.",
+      headers: { "Content-Type": "text/plain" }
+    }
+  }
+
   if(error.cause == 404) {
+    context.error(`Cause: ${error.cause}`)
+    context.error(error.message)
     return {
       status: 404,
       body: "Not found",
@@ -76,8 +96,7 @@ describe('MicroTestLand', () => {
   });
 
 
-   // This will be a unit test
-  // Group Creation test with 2 child keys + send_to_all_children
+  // This will be a unit test
   it("Develop", async () => {
     const returned = errorHandler('foobar', new Error('404 test', { cause: 404 }))
     console.dir(returned)
@@ -86,6 +105,7 @@ describe('MicroTestLand', () => {
       body: "Not found",
       headers: { "Content-Type": "text/plain" }
     })
+    expect(consoleMock).toHaveBeenCalledWith('404 test');
     expect(consoleMock).toHaveBeenCalledWith('Returning unsuccessfully from ' + 'foobar');
     expect(consoleMock).toHaveBeenCalledWith('Cause: 404');
   })
