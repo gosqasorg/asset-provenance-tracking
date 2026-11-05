@@ -689,80 +689,82 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 // --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log("Entering getProvenance()")
-    let deviceKey: Uint8Array<ArrayBuffer>;
-    let deviceID: string;
-    try {
-        deviceKey = decodeKey(request.params.deviceKey);
-        deviceID = await calculateDeviceID(deviceKey);
-    } catch (error) {
-        context.error("Returning from getProvenance(): bad request")
-        return { status: 400, body: error.message };
-    }
-
-    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { 
-        context.error("Returning from getProvenance(): bad request");
-        return { 
-            status: 404,
-            jsonBody: []
-        };
-    }
-
-    // 
-    const provExists = await pathExists(containerClient, `prov/${deviceID}`);
-    if (!provExists) {
+    try{
+        context.log("Entering getProvenance()")
+        let deviceKey: Uint8Array<ArrayBuffer>;
+        let deviceID: string;
         try {
+            deviceKey = decodeKey(request.params.deviceKey);
+            deviceID = await calculateDeviceID(deviceKey);
+        } catch (error) {
+            context.error("Returning from getProvenance(): bad request")
+            return { status: 400, body: error.message };
+        }
+
+        context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+
+        const containerExists = await containerClient.exists();
+        if (!containerExists) { 
+            context.error("Returning from getProvenance(): bad request");
+            return { 
+                status: 404,
+                jsonBody: []
+            };
+        }
+
+        // 
+        const provExists = await pathExists(containerClient, `prov/${deviceID}`);
+        if (!provExists) {
             await upgradeProvenance(containerClient, deviceKey, context);
-        } catch (error) {
-            context.error('Returning with error from getProvenance(): ', error)
-            if (error.cause == 400) {
-                return { 
-                    status: 400,
-                    jsonBody: { error: error.message }
+        }
+
+        const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+        for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+            const blobClient = containerClient.getBlockBlobClient(blob.name);
+            let data: Uint8Array<ArrayBuffer>;
+            let timestamp: number;
+            try {
+                ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
+            } catch (error) {
+                context.error('Returning with error from getProvenance(): ', error)
+                if (error.cause == 500) {
+                    return { 
+                        status: 500,
+                        jsonBody: { error: 'Internal Server Error' }
+                    }
+                } else {
+                    // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
+                    return {
+                        status: 500,
+                        jsonBody: { error: 'Internal Server Error' }
+                    }
                 }
-            } else {
-                return {
-                    status: 500,
-                    jsonBody: { error: 'Internal Server Error' }
-                }
+            }
+            const json = new TextDecoder().decode(data);
+            const parsed_json = JSON.parse(json);
+            const provRecord = parsed_json as ProvenanceRecord;
+            records.push({ ...provRecord, deviceID, timestamp });
+        }
+        records.sort((a, b) => b.timestamp - a.timestamp)
+
+        context.log("Returning successfully from getProvenance()")
+        return { jsonBody: records };
+        
+    } catch (error) {
+        context.error('Returning with error from getProvenance(): ', error)
+        if (error.cause == 400) {
+            return { 
+                status: 400,
+                jsonBody: { error: error.message }
+            }
+        } else {
+            return {
+                status: 500,
+                jsonBody: { error: 'Internal Server Error' }
             }
         }
     }
-
-    const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        let data: Uint8Array<ArrayBuffer>;
-        let timestamp: number;
-        try {
-            ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
-        } catch (error) {
-            context.error('Returning with error from getProvenance(): ', error)
-            if (error.cause == 500) {
-                return { 
-                    status: 500,
-                    jsonBody: { error: 'Internal Server Error' }
-                }
-            } else {
-                // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
-                return {
-                    status: 500,
-                    jsonBody: { error: 'Internal Server Error' }
-                }
-            }
-        }
-        const json = new TextDecoder().decode(data);
-        const parsed_json = JSON.parse(json);
-        const provRecord = parsed_json as ProvenanceRecord;
-        records.push({ ...provRecord, deviceID, timestamp });
-    }
-    records.sort((a, b) => b.timestamp - a.timestamp)
-
-    context.log("Returning successfully from getProvenance()")
-    return { jsonBody: records };
+    
 }
 
 
