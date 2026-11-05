@@ -82,6 +82,30 @@ function errorHandler(functionName, error) {
       headers: { "Content-Type": "text/plain" }
     } 
   }
+
+  if (error.cause == 400) {
+    context.error(`Cause: ${error.cause}`)
+    context.error(error.message)
+    return { 
+      status: 400,
+      body: error.message,
+      headers: { "Content-Type": "text/plain" },
+      jsonBody: { error: error.message }
+    }
+  }
+
+  // Regarding the lack of conditional on the 500 case:
+  // If the error is ours (500) or any other type we're not catching, which we'd like to highlight as a 500
+  context.error(`${functionName}: experienced 500 internal server error or uncategorized error`)
+  context.error(`Cause: ${error.cause}`)
+  context.error(JSON.stringify(error))
+  const message = "Internal server error. Not to worry: we stay vigilant for these.";
+  return {
+    status: 500,
+    body: message,  // With Viz, we intend to show 500s as a time series + table, much like the first map. 
+    headers: { "Content-Type": "text/plain" },
+    jsonBody: { error: message }
+  }
 }
 
 /* ========================= The Test ============================ */
@@ -108,6 +132,34 @@ describe('MicroTestLand', () => {
     expect(consoleMock).toHaveBeenCalledWith('404 test');
     expect(consoleMock).toHaveBeenCalledWith('Returning unsuccessfully from ' + 'foobar');
     expect(consoleMock).toHaveBeenCalledWith('Cause: 404');
+  })
+
+  it("Develop 400", async () => {
+    const returned = errorHandler('foobar', new Error('400 test', { cause: 400 }))
+    console.dir(returned)
+    expect(returned).toEqual({ 
+      status: 400,
+      body: "400 test",
+      headers: { "Content-Type": "text/plain" },
+      jsonBody: { error: "400 test" }
+    })
+    expect(consoleMock).toHaveBeenCalledWith('400 test');
+    expect(consoleMock).toHaveBeenCalledWith('Returning unsuccessfully from ' + 'foobar');
+    expect(consoleMock).toHaveBeenCalledWith('Cause: 400');
+  })
+
+  it("Develop 500", async () => {
+    const returned = errorHandler('foobar', new Error('500 test', { cause: 500 }))
+    console.dir(returned)
+    expect(returned).toEqual({ 
+      status: 500,
+      body: "Internal server error. Not to worry: we stay vigilant for these.",
+      headers: { "Content-Type": "text/plain" },
+      jsonBody: { error: "Internal server error. Not to worry: we stay vigilant for these." }
+    })
+    expect(consoleMock).toHaveBeenCalledWith('foobar: experienced 500 internal server error or uncategorized error');
+    expect(consoleMock).toHaveBeenCalledWith('Cause: 500');
+    expect(consoleMock).toHaveBeenCalledWith(JSON.stringify(new Error('500 test', { cause: 500 })));
   })
 });
 
