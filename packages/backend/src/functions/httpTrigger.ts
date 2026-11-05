@@ -688,6 +688,64 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 
 // --- GETs --- //
 
+function errorHandler(functionName, error, context) {
+
+  context.error(`Returning unsuccessfully from ${functionName}`)
+
+  // Uncategorizable errors
+  // To be assessed + addressed in upcoming ticket
+  // Validate the error itself
+  if(!('cause' in error)) {
+    const message = `${functionName} returning error without cause. Error: ${JSON.stringify(error)}`
+    context.error(message)
+
+    // During dev, crash everything so we can find errors that don't follow the format of always having a cause.
+    // throw Error(message)
+
+    // During prod, log and return. We can't go down over one error
+    // Note re: duplication: two instances is not a pattern
+    return {
+      status: 500,
+      body: "Internal server error. Not to worry: we stay vigilant for these.",
+      headers: { "Content-Type": "text/plain" }
+    }
+  }
+
+  if(error.cause == 404) {
+    context.error(`Cause: ${error.cause}`)
+    context.error(error.message)
+    return {
+      status: 404,
+      body: "Not found",
+      headers: { "Content-Type": "text/plain" }
+    } 
+  }
+
+  if (error.cause == 400) {
+    context.error(`Cause: ${error.cause}`)
+    context.error(error.message)
+    return { 
+      status: 400,
+      body: error.message,
+      headers: { "Content-Type": "text/plain" },
+      jsonBody: { error: error.message }
+    }
+  }
+
+  // Regarding the lack of conditional on the 500 case:
+  // If the error is ours (500) or any other type we're not catching, which we'd like to highlight as a 500
+  context.error(`${functionName}: experienced 500 internal server error or uncategorized error`)
+  context.error(`Cause: ${error.cause}`)
+  context.error(JSON.stringify(error))
+  const message = "Internal server error. Not to worry: we stay vigilant for these.";
+  return {
+    status: 500,
+    body: message,  // With Viz, we intend to show 500s as a time series + table, much like the first map. 
+    headers: { "Content-Type": "text/plain" },
+    jsonBody: { error: message }
+  }
+}
+
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         context.log("Entering getProvenance()")
@@ -751,18 +809,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         return { jsonBody: records };
         
     } catch (error) {
-        context.error('Returning with error from getProvenance(): ', error)
-        if (error.cause == 400) {
-            return { 
-                status: 400,
-                jsonBody: { error: error.message }
-            }
-        } else {
-            return {
-                status: 500,
-                jsonBody: { error: 'Internal Server Error' }
-            }
-        }
+        return errorHandler("getProvenance", error, context)
     }
     
 }
