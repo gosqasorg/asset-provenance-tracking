@@ -103,7 +103,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${theKey.length}`);
+            throw new Error(`Invalid Key Length ${theKey.length}`, { cause: 400 });
     }
 }
 
@@ -604,9 +604,9 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 
     if (response !== undefined && !response.ok) {
         context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText, { cause: 500 })
     } else {
-        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
+        throw new Error(`Could not connect to ${url}, check your internet connection and try again`, { cause: 500 });
     }
 }
 
@@ -1152,8 +1152,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
         const formData = await request.formData();
         let email; if (typeof (email = formData.get('email')) !== 'string') {
-            throw new Error('postEmail: Unexpected non-string value received')
-            return { status: 404 };
+            throw new Error('postEmail: Unexpected non-string value received', { cause: 404 })
         }
 
         const entity = {
@@ -1666,7 +1665,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
     let totalChildren = n_children + (hasPublicKey ? 1 : 0)
     if (childKeys.length !== totalChildren) {
-        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
+        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`, { cause: 500 });
     }
 
     const groupKey = await makeEncodedDeviceKey()
@@ -1700,7 +1699,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     });
     if (!groupResponse.ok) {
         const errorBody = await groupResponse.text().catch(() => "");
-        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`, { cause: 500 });
     }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
@@ -1745,9 +1744,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         const recordStr = formData.get("provenanceRecord"); 
         if (typeof recordStr !== "string") {
             context.error('Throwing error from createGroupHandler')
-            throw new SyntaxError(
-                "Missing provenanceRecord in form data"
-            );
+            throw new Error("Missing provenanceRecord in form data", { cause: 400 });
         }
 
         let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
@@ -1880,7 +1877,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         const formData = await request.formData();
         const recordStr = formData.get("provenanceRecord");
         if (typeof recordStr !== "string") {
-            throw new SyntaxError("Missing provenanceRecord in form data");
+            throw new Error("Missing provenanceRecord in form data", { cause: 400 });
         }
 
         let theRequest = JSON.parse(recordStr);
