@@ -54,7 +54,7 @@ input {
 
 input[type=text] {
     height: 36px;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 input[type=checkbox] {
@@ -112,6 +112,11 @@ input[type=checkbox] {
     display: flex;
   }
 
+  h5 {
+    font-weight: 400;
+    margin-bottom: 16px;
+  }
+
 
 /*  For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -147,6 +152,7 @@ input[type=checkbox] {
 
     input[type=text] {
         margin-top: 16px;
+        font-size: 18px;
     }
 
     form {

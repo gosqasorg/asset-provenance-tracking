@@ -29,8 +29,8 @@ their items while offline.
 <div v-else>
     <div class="deviceKey-history">
         <div class="row pt-3 pb-6 mx-4">
-            <!-- Display record key -->
             <section id="device-details" class="details-container">
+            <!-- Page Title and Description -->
             <div class="record-description">
                 <div class="my-4 text-iris fs-1">
                 <p class="text-bold mb-0 device-name">Asset History Records</p>
@@ -42,14 +42,14 @@ their items while offline.
                     <span style="word-break: break-word;">This page allows you to add new record entries to existing keys while offline. Create entries here and they will be stored until you are back online, at which point they will be created automatically. If you want to scan a QR while offline please use the button below.</span>
                 </div>
             </div>
-            </section>
-        </div>
 
-        <!-- Button to Scan QRs while offline -->
-        <div style="padding-left: 40px">
-            <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
-            <canvas ref="canvas" hidden ></canvas>
-            <input class="btn record-button mt-3" value="Scan QR Offline" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+            <!-- Button to Scan QRs While Offline -->
+            <div>
+                <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
+                <canvas ref="canvas" hidden ></canvas>
+                <input class="btn record-button mt-3" value="Scan QR Offline" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+            </div>
+            </section>
         </div>
 
         <!-- Form to create a history record -->
