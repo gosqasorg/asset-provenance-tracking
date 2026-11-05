@@ -210,6 +210,28 @@ input[type=checkbox] {
     .banner-link {
         color: white;
     }
+
+    .popup-inner {
+        color: white;
+        background-color: #1e201a; 
+        border: solid; 
+        border-color: #CCECFD; 
+        border-width: 2px;
+    }
+
+    .popup-buttons {
+        color: white !important;
+        border-color: white !important;
+    }
+
+    .popup-buttons:hover {
+        background-color: #636262 !important;
+    }
+
+    #continueBtn {
+        background-color: #CCECFD !important;
+        color: black !important;
+    }
 }
 
 /* Light mode version*/
