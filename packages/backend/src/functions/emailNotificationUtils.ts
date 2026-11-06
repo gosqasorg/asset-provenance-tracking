@@ -19,7 +19,6 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
     * Create cleanup ticket: use checkIfAlreadySignedUpWithTheseTags() to drop before / after size checking
 */
 
-
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
 // Todo: Consider moving blobClient.exists() check into here.
@@ -340,7 +339,20 @@ export async function subscribeToNotifications(
          - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */
 
+
     context.log('Entering subscribeToNotifications')
+    // Setup the blobClient
+    let blobName: string;
+    let blobClient: BlockBlobClient;
+    try {
+        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    } catch (error) {
+        return {
+            jsonBody: { message: `subscribeToNotifications setup failed: ${error.message}` },
+            status: 400
+        }
+    }
+    const exists = await blobClient.exists();
 
     // Confirm the email exists
     const normalized = (email ?? "").trim().toLowerCase();
@@ -404,7 +416,16 @@ export async function unsubscribeFromNotifications(
     context
 ) {
     // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    let blobName: string;
+    let blobClient: BlockBlobClient;
+    try {
+        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+    } catch (error) {
+        return {
+            jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
+            status: 400
+        }
+    }
     const exists = await blobClient.exists();
 
     let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);

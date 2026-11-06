@@ -2,9 +2,10 @@ import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile } from 'fs/promises';
 
-describe("Creating records with attachments", () => {
-	const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
+const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+
+describe("Creating records with attachments", () => {
 	it("Create a record with an attachment", async () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
@@ -36,6 +37,7 @@ describe("Creating records with attachments", () => {
 				body: formData,
 			});
 
+	        expect(postResponse.status).toBe(200)
 			expect(postResponse.ok).toBe(true);
 
 		} catch (error) {
