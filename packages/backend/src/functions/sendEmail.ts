@@ -17,6 +17,18 @@ export async function sendEmail(
   displayName: string, 
   context: InvocationContext) 
 {
+
+  context.log('Entering sendEmail')
+  // For dev purposes, detect if running locally, and if so, log the email, and resturn an object with a status and a message
+  if((process.env.frontend_url || '').includes('localhost')) {
+    context.log('sendEmail: Running locally detected')
+    context.log('Logging email. Email is:')
+    context.log(htmlMessage)
+
+    return { status: "Succeeded", message: "Email logged only, as local environment was detected" }
+  }
+
+
   if (!from_address || !to_address || !subject || !htmlMessage || !displayName) {
     throw "Missing required parameter(s).";
   }
