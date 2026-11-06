@@ -96,7 +96,7 @@ async function streamToString(readableStream) {
     });
 }
 
-function createNewEmailId() {
+async function createNewEmailId() {
     const uniqueString = await crypto.subtle.generateKey(
         { name: "AES-CBC", length: 256 },
         true,
@@ -387,7 +387,7 @@ export async function subscribeToNotifications(
     // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
     
     // Step 3/3: Add
-    const uniqueEmailString = createNewEmailId()
+    const uniqueEmailString = await createNewEmailId()
     tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, email, uniqueEmailString, tags)
 
     try {
@@ -396,7 +396,7 @@ export async function subscribeToNotifications(
         uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags, context)
         context.log('Returning without error from subscribeToNotifications')
         return {
-            jsonBody: { message: "Success", name: blobName },
+            jsonBody: { message: "Success" },
             status: 200,
         };
     } catch(error) {
