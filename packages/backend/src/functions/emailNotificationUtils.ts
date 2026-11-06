@@ -43,16 +43,18 @@ async function setupBlobClient(
 async function uploadBlob(
     containerClient: ContainerClient, 
     blobName: string, 
-    emailSet: Set<string>, 
-    emailIDSet: Set<string>, 
-    tags: string[],
+    //emailSet: Set<string>, 
+    //emailIDSet: Set<string>, 
+    tagBundle,
+    //tags: string[],
     context
 ) {
     context.log('Entering uploadBlob')
 
     // Setup data to upload
-    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
-    const data = JSON.stringify(payloadObj);
+    //const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
+    //const data = JSON.stringify(payloadObj);
+    const data = JSON.stringify(tagBundle);
 
     const uploadOptions = {
         tier: "Cool",
@@ -395,7 +397,7 @@ export async function subscribeToNotifications(
     try {
         console.log('Attempting to store')
         // Update our stored emails to include the new email/id
-        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags, context)
+        await uploadBlob(containerClient, blobName, tagSpecificSignupBundle, context)
         context.log('Returning without error from subscribeToNotifications')
         return {
             jsonBody: { message: "Success" },
@@ -503,10 +505,12 @@ export async function unsubscribeFromNotifications(
         }
     }
 
-    // Step 3: 
+    // Step 3: Upload
     try {
         // Update our stored emails to no longer include the specified email/id
-        uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags, context);
+        context.log('Attempting upload')
+        await uploadBlob(containerClient, blobName, bundleAfterRemoving, context);
+        context.log('Returning without error from unSubscribeFromNotifications')
         return {
             jsonBody: { message: "Success. Email has been unsubscribed." },
             status: 200,
