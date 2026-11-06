@@ -15,6 +15,7 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
     
     Todo:
     * Create cleanup ticket for the todos below
+    * Create ticket: Move calculateDeviceID into its own file, generalUtils.ts, import it here, change the signatures, and also import it in httpTrigger and all others that use it (if any)
 */
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
