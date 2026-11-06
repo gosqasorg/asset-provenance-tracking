@@ -2,11 +2,10 @@ import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile, writeFile } from 'fs/promises';
 
-const baseUrl = process.env['backend_url']
-const apiUrl = process.env['api_url']
+const api_url = "https://gosqasbe.azurewebsites.net/api";
+const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
 describe("Creating records with attachments", () => {
-	//const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
 
 	// Create a record with an attachement 
 	it("Create record with one attachment ", async () => {
@@ -65,7 +64,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare original attached file and downlaod
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = apiUrl + `/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = api_url + `/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);
@@ -142,7 +141,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare FIRST attachment
             const attachmentHash1 = responseString.attachments[0];
-            const downloadUrl1 = apiUrl + `/attachment/${deviceKey}/${attachmentHash1}`;
+            const downloadUrl1 = api_url + `/attachment/${deviceKey}/${attachmentHash1}`;
             console.log('Downloading first attachment from:', downloadUrl1);
             const downloadResponse1 = await fetch(downloadUrl1);
             expect(downloadResponse1.ok).toBe(true);
@@ -153,7 +152,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare SECOND attachment
             const attachmentHash2 = responseString.attachments[1];
-            const downloadUrl2 = apiUrl + `/attachment/${deviceKey}/${attachmentHash2}`;
+            const downloadUrl2 = api_url + `/attachment/${deviceKey}/${attachmentHash2}`;
             console.log('Downloading second attachment from:', downloadUrl2);
             const downloadResponse2 = await fetch(downloadUrl2);
             expect(downloadResponse2.ok).toBe(true);
@@ -223,7 +222,7 @@ describe("Creating records with attachments", () => {
 
             // Download and compare PDF attachment
             const attachmentHash = responseString.attachments[0];
-            const downloadUrl = apiUrl + `/attachment/${deviceKey}/${attachmentHash}`;
+            const downloadUrl = api_url + `/attachment/${deviceKey}/${attachmentHash}`;
             console.log('Downloading PDF from:', downloadUrl);
             const downloadResponse = await fetch(downloadUrl);
             expect(downloadResponse.ok).toBe(true);

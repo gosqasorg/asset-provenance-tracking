@@ -317,7 +317,15 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
 
 export async function retrieveNotifEmails(containerClient: ContainerClient, key: string) {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
-    const deviceID = await calculateDeviceID(key);
+    let deviceID: string;
+    try {
+        deviceID = await calculateDeviceID(key);
+    } catch (error) {
+        return {
+            jsonBody: { message: error.message },
+            status: 400
+        }
+    }
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
 
     try {

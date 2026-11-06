@@ -130,14 +130,8 @@ function makeHttpRequest(overrides: any = {}) {
 
 // smoke tests
 describe('httpTrigger endpoints (shallow mocks)', () => {
-  const context = {
-    invocationId: 'test-invocation-id',
-    functionName: 'test-function',
-    extraInputs: { get: vi.fn(), set: vi.fn() },
-    extraOutputs: { get: vi.fn(), set: vi.fn() },
-    log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(),
-    options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
-  };
+  const context = console
+
   const deviceKey = '5LAtuNjm3iuAR3ohpjTMy7';
   const attachmentID = 'testattachid';
 
