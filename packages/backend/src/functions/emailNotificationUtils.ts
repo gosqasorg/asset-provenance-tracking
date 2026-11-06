@@ -212,7 +212,7 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
 }
 
 // Todo: this function needs context passed to it. 
-// Todo: exists should be evaluated outside this function. 
+// Todo: exists should stay outside this function. 
 async function getExistingEmails(
     exists: boolean, 
     blobClient: BlockBlobClient
@@ -238,6 +238,7 @@ async function getExistingEmails(
     return detectAndConvertLegacyEmailSignup(parsed)
 }
 
+// Todo: to be called ~line 387 in subscribetonotifications
 function removeEmailFromTagBundle(tagBundle) {
     // this should take the entire tag bundle, not just the no tags only one
 }
@@ -321,7 +322,7 @@ function getTagsFromSignupBundle(email, bundle) {
 // -------vvv------- Core operations -------vvv------- //    
 
 // Todo: once done, move to httpTrigger. This is a core function that belongs there. 
-// Status: untested update in place
+// Status: Ready for removeEmailFromTagBundle.
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -357,15 +358,14 @@ export async function subscribeToNotifications(
     }
     const exists = await blobClient.exists();
 
-
-    // Setup the blobClient
-    if(!exists) {}
-
-
-    // Confirm the email exists
+    // TODO: zod
+    // Perform rough email validation 
     const normalized = (email ?? "").trim().toLowerCase();
     if (!normalized) {
-        return { jsonBody: { message: "Email not provided or email malformed" }, status: 400 };
+        return { 
+            jsonBody: { message: "Email not provided or email malformed" }, 
+            status: 400
+        }
     }
 
 
@@ -383,7 +383,6 @@ export async function subscribeToNotifications(
     }
 
     // Step 2/3: Remove
-    // Jara is writing this
     // Note: this call should be moved into addTagSpecificSignupDataToBundle()
     // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
     
