@@ -596,12 +596,12 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
                 return response;
             }
         } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
+            context.error(`Fetch attempt failed: ${url}: ` + e);
         }
     }
 
     if (response !== undefined && !response.ok) {
-        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
         throw new Error(url + " failed: " + response.status + " " + response.statusText)
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
@@ -1391,7 +1391,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await subscribeToNotifications(
+        return await subscribeToNotifications(
             containerClient, 
             calculateDeviceID, 
             entity.recordKey as string, 
@@ -1399,12 +1399,7 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             tags, 
             context
         );
-        // return response
 
-        return {
-            jsonBody: {message: "Success", recordKey: entity.recordKey as string},
-            status: 200
-        } 
     } catch(error) {
         context.error(error.message);
         return {
@@ -1555,40 +1550,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
             jsonBody: {message: "Internal Server Error"},
             status: 500,
         }
-    }
-}
-
-async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
-    let response = undefined;
-    const MAX_RETRIES = 3;
-
-    for (let i = 1; i <= MAX_RETRIES; i++) {
-        response = undefined //resets each retry attempt
-        try {
-            if (typeof formData !== 'undefined') {
-                response = await fetch(`${url}`, {
-                    method: "POST",
-                    body: formData,
-                });
-            } else {
-                response = await fetch(`${url}`, {
-                    method: "GET"
-                });
-            }
-
-            if (response !== undefined && response.ok) {
-                return response;
-            }
-        } catch (e) {
-            context.error(`Fetch attempt failed: ${url}: ` + e);
-        }
-    }
-
-    if (response !== undefined && !response.ok) {
-        context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
-    } else {
-        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
     }
 }
 
