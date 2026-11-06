@@ -16,7 +16,7 @@ import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
 import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -452,7 +452,7 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
     });
 }
 
-export async function validateJSON(json: any) {
+export async function validateJSON(json: any, context: InvocationContext) {
     // NOTE: Create Record only has blobType, description, childrenkeys, and tags
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -696,9 +696,9 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
 
     const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
+    if (!validateJSON(record, context)) { return { status: 404 }; }
 
-    let condition = "deviceName" in record && (!validateRecordJSON(record) || !validateEntryJSON(record))
+    let condition = "deviceName" in record && (!validateRecordJSON(record, context) || !validateEntryJSON(record, context))
     if (condition) {
         { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
     }
@@ -748,7 +748,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     return { jsonBody: body ?? { converted: true}};
 }
 
-export function validateRecordJSON(json: any) {
+export function validateRecordJSON(json: any, context: InvocationContext) {
     // Records/Groups require children_key, hasParent, deviceName, and description
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -773,7 +773,7 @@ export function validateRecordJSON(json: any) {
     }
 }
 
-export function validateEntryJSON(json: any) {
+export function validateEntryJSON(json: any, context: InvocationContext) {
     // Record entries only have blobType, description, childrenkeys, and tags (none required)
     const Valid = z.object({
         blobType: z.string().optional(),
@@ -1348,14 +1348,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
     } catch(error) {
         context.error(error.message);
 
-        // If the blobClient doesn't exist throw a custom error
-        if (error.includes("Key to subscribe to does not exist")) {
-            return {
-                jsonBody: {message: 'Key to subscribe to does not exist'},
-                status: 400
-            }
-        }
-
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
@@ -1638,9 +1630,19 @@ async function subscribeGroupToChildren(request: HttpRequest, context: Invocatio
 
     await containerClient.createIfNotExists();
 
-    // 1. Get emails subscribed to the groupKey
     try {
-        let [blobName, emailSet, emailIDSet] = await getExistingEmails(groupKey, containerClient);
+        // 1. Setup the blobClient and get emails subscribed to the groupKey
+        let blobName: string;
+        let blobClient: BlockBlobClient;
+        try {
+            [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
+        } catch (error) {
+            return {
+                jsonBody: {message: `Error: subscribeGroupToChildren setup failed: ${error.message}`},
+                status: 400
+            }
+        }
+        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
 
         // 2. Subscribe all emails from the groupKey to the childKey
         for (let email of emailSet) {
@@ -1653,14 +1655,6 @@ async function subscribeGroupToChildren(request: HttpRequest, context: Invocatio
             }
         }
     } catch (error) {
-        // If the blobClient doesn't exist throw a custom error
-        if (error.includes("Key to subscribe to does not exist")) {
-            return {
-                jsonBody: {message: 'Error: Key to subscribe to does not exist'},
-                status: 400
-            }
-        }
-
         return {
             jsonBody: {message: 'Error: Failed to subscribe group to children'},
             status: 500

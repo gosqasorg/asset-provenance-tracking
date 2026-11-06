@@ -63,18 +63,23 @@ export async function notifySubscribers(containerClient: ContainerClient, device
     }
 }
 
-export async function getExistingEmails(groupKey: string, containerClient: ContainerClient) {
+export async function setupBlobClient(containerClient: ContainerClient, deviceKey: string) {
     // 0: Setup id
-    const deviceID = await calculateDeviceID(groupKey);
+    const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
     const blobClient = containerClient.getBlockBlobClient(blobName);
-    const exists = await blobClient.exists();
 
+    // 2: Return blob content (so we can read existing content, merge email list, write back)
+    return [blobName, blobClient] as const;
+}
+
+export async function getExistingEmails(blobClient: BlockBlobClient) {
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
+    const exists = await blobClient.exists();
 
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
@@ -110,7 +115,7 @@ export async function getExistingEmails(groupKey: string, containerClient: Conta
         .filter(Boolean)
     );
 
-    return [blobName, emailSet, emailIDSet] as const;
+    return [emailSet, emailIDSet] as const;
 }
 
 async function uploadBlob(containerClient: ContainerClient, blobName: string, emailSet: Set<string>, emailIDSet: Set<string>, tags: string[]) {
@@ -174,7 +179,18 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
         keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
-        let [blobName, emailSet, emailIDSet] = await getExistingEmails(key, containerClient);
+        let blobName: string;
+        let blobClient: BlockBlobClient;
+        try {
+            [blobName, blobClient] = await setupBlobClient(containerClient, key);
+        } catch (error) {
+            return {
+                jsonBody: { message: `subscribeToNotifications setup failed: ${error.message}` },
+                status: 400
+            }
+        }
+
+        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
 
         // Add the specified email to the set, if the email was already stored then move on to the next key to check
         if (emailSet.has(normalizedEmail)) {
@@ -218,9 +234,21 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 }
 
 export async function unsubscribeFromNotifications(containerClient: ContainerClient, deviceKey: string, emailID: string, tags: string[] = []) {
+    // Setup the blobClient
+    let blobName: string;
+    let blobClient: BlockBlobClient;
+    try {
+        [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey);
+    } catch (error) {
+        return {
+            jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
+            status: 400
+        }
+    }
+    
     // Get the email that corresponds to the given email id
     let keysToCheck = [deviceKey];
-    const [blobName, emailSet, emailIDSet] = await getExistingEmails(deviceKey, containerClient);
+    const [emailSet, emailIDSet] = await getExistingEmails(blobClient);
 
     // Confirm the emailID/email exists
     const emailIndex = Array.from(emailIDSet).indexOf(emailID);
@@ -239,7 +267,18 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
         keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
-        let [blobName, emailSet, emailIDSet] = await getExistingEmails(deviceKey, containerClient);
+        let blobName: string;
+        let blobClient: BlockBlobClient;
+        try {
+            [blobName, blobClient] = await setupBlobClient(containerClient, key);
+        } catch (error) {
+            return {
+                jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
+                status: 400
+            }
+        }
+
+        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
 
         // Check if the email is subscribed to the child record
         const emailIndex = Array.from(emailSet).indexOf(email);
