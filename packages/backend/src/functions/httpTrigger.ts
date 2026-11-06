@@ -1174,21 +1174,35 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('httpTrigger: entering postNotificationEmail')
+
+    // checks email format, recordKey is non-empty string, and tags is an array of strings
+    const notificationSignupSchema = z.object({
+        email: z.email(),
+        recordKey: z.string().min(1),
+        tags: z.array(z.string()).default([]),
+    });
+
     try {
         // parse email, recordKey and tags from body
-        const body = await request.json() as any;
+        const body = await request.json();
         context.log('body:', body);
-        const email = body.email;
-        const recordKey = body.recordKey;
-        // const tags = body.tags ?? [];
 
-        if (!email || !recordKey) {
-            context.error('postNotificationEmail: returning 400')
-            return {
-                jsonBody: {error: "Error: email and record key required"},
-                status: 400
+        let notificationSignupData;
+
+        try {
+            notificationSignupData = notificationSignupSchema.parse(body);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                context.error('postNotificationEmail: returning 400')
+                return {
+                    jsonBody: {error: error.issues},
+                    status: 400
+                }
             }
+            throw error;
         }
+
+        const { email, recordKey, tags } = notificationSignupData;
 
         context.log("Received signup for " + email)
 
@@ -1216,7 +1230,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             verified: false,
             expiresAt: Date.now() + codeExpiration,
             recordKey: recordKey,
-            // tags: JSON.stringify(tags),
+            tags: JSON.stringify(tags),
         };
 
         await tableClient.upsertEntity(entity);
@@ -1346,9 +1360,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const token = body.token;
         const code = body.code;
 
-        // TODO: Connect to real data before merge
-        const tags = ['foo', 'bar', 'baz'] // Dummy data while the frontend isn't sending tags back 
-
         if (!token || !code) {
             context.error('postVerifyCode: returning 400')
             return {
@@ -1386,6 +1397,11 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             }
         }
 
+        // get tags as array of strings if entity exists and has tags. 
+        const tags = typeof entity.tags === 'string'
+            ? z.array(z.string()).parse(JSON.parse(entity.tags))
+            : [];
+
         await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
 
         // Proof of concept 
@@ -1401,6 +1417,13 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         );
 
     } catch(error) {
+        if (error instanceof z.ZodError) {
+            context.error('postVerifyCode: returning 400')
+            return {
+                jsonBody: {error: error.issues},
+                status: 400
+            }
+        }     
         context.error(error.message);
         return {
             jsonBody: {message: "Internal Error"},
@@ -1467,7 +1490,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             verified: false,
             expiresAt: Date.now() + codeExpiration,
             recordKey: entity.recordKey as string,
-            // tags: entity.tags as string ?? '[]'
+            tags: entity.tags as string ?? '[]'
         };
 
         await tableClient.createEntity(updatedEntity);
