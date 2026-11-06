@@ -321,6 +321,7 @@ function getTagsFromSignupBundle(email, bundle) {
 
 // -------vvv------- Core operations -------vvv------- //    
 
+// Todo: once done, move to httpTrigger. This is a core function that belongs there. 
 // Status: untested update in place
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
@@ -343,7 +344,8 @@ export async function subscribeToNotifications(
 
 
     context.log('Entering subscribeToNotifications')
-    // Setup the blobClient
+
+    // Step 1: Setup the blobClient, return API response
     let blobName: string;
     let blobClient: BlockBlobClient;
     try {
@@ -356,17 +358,17 @@ export async function subscribeToNotifications(
     }
     const exists = await blobClient.exists();
 
+
+    // Setup the blobClient
+    if(!exists) {}
+
+
     // Confirm the email exists
     const normalized = (email ?? "").trim().toLowerCase();
     if (!normalized) {
         return { jsonBody: { message: "Email not provided or email malformed" }, status: 400 };
     }
 
-    // Begin Block_1
-    // Setup the blobClient
-    let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    const exists = await blobClient.exists();
-    if(!exists) {}
 
     // Step 1/3: Get
     // Todo: Call conditional on exists. Do not pass exists. 
