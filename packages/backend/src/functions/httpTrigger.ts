@@ -1194,7 +1194,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             if (error instanceof z.ZodError) {
                 context.error('postNotificationEmail: returning 400')
                 return {
-                    jsonBody: {error: "Error: valid email, record key, and tags required"},
+                    jsonBody: {error: error.issues},
                     status: 400
                 }
             }
@@ -1414,6 +1414,13 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             status: 200
         } 
     } catch(error) {
+        if (error instanceof z.ZodError) {
+            context.error('postVerifyCode: returning 400')
+            return {
+                jsonBody: {error: error.issues},
+                status: 400
+            }
+        }     
         context.error(error.message);
         return {
             jsonBody: {message: "Internal Error"},

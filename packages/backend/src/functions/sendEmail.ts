@@ -19,7 +19,8 @@ export async function sendEmail(
 {
 
   context.log('Entering sendEmail')
-  // For dev purposes, detect if running locally, and if so, log the email, and resturn an object with a status and a message
+
+  // For dev purposes, when running locally: detect if running locally, and if so, log the email, and return an object with a status and a message
   if((process.env.frontend_url || '').includes('localhost')) {
     context.log('sendEmail: Running locally detected')
     context.log('Logging email. Email is:')
