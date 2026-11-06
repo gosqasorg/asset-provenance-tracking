@@ -6,11 +6,11 @@
       "isEnabled": true
     },
     "logLevel": {
-      "default": "Error",
-      "Host.Aggregator": "Warning",
-      "Host.Results": "Warning",
-      "Function": "Warning",
-      "Host.Function.Console": "Warning"
+      "default": "Trace",
+      "Host.Aggregator": "Error",
+      "Host.Results": "Error",
+      "Function": "Trace",
+      "Host.Function.Console": "Trace"
     },
     "applicationInsights": {
       "samplingSettings": {
