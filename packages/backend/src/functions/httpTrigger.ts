@@ -1417,8 +1417,10 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         );
 
     } catch(error) {
+        console.error('Returning with error from postVerifyCode')
         if (error instanceof z.ZodError) {
             context.error('postVerifyCode: returning 400')
+            context.error(error.issues)
             return {
                 jsonBody: {error: error.issues},
                 status: 400
