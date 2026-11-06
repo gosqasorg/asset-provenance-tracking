@@ -21,6 +21,7 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
+// Todo: ensure throw handled in endpoint
 // Todo: Consider moving blobClient.exists() check into here.
 async function setupBlobClient(
     containerClient: ContainerClient, 
@@ -29,7 +30,7 @@ async function setupBlobClient(
 {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
 
-    // 0: Setup id
+    // 0: Setup id         // Transitively throws error originating in decodeKey
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: Setup blob name & client
@@ -261,6 +262,7 @@ export function extractEmailsFromResponse(response: any, context) {
     return [emailSet, emailIDArray];
 }
 
+// Todo: Ensure transitive throw is handled in caller, or change it to a falsey return and have the whole chain operate that way
 // Todo: check this
 // Todo: this isn't an endpoint. It's called once, in this function. Why are we returning like it's an endpoint?
 export async function retrieveNotifEmails(
@@ -271,7 +273,7 @@ export async function retrieveNotifEmails(
 ) {
     context.log('Entering retrieveNotifEmails')
 
-    try {
+    try {                                  // Transitively throws
         let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
         const downloadResponse = await blobClient.download();
         const downloaded = await streamToString(downloadResponse.readableStreamBody); // Possibly does not return a string?
@@ -475,8 +477,6 @@ export async function notifySubscribers(
     const record = JSON.parse(formData.get('provenanceRecord'));
     const description = record ? record.description : "";
 
-
-
     //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
     // Notify users who subscribed to this record.
     // 1. RetrieveNotifEmails hands back blob contents as string
@@ -511,7 +511,14 @@ export async function notifySubscribers(
                 email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
             }
             index++
-            let result = await sendEmail(FROM_ADDRESS, to_email, SUBJECT + ` for record ${deviceKey}`, email_body, displayName, context);
+            let result = await sendEmail(
+                FROM_ADDRESS, 
+                to_email, 
+                SUBJECT + ` for record ${deviceKey}`, 
+                email_body, 
+                displayName, 
+                context
+            );
 
             if (result.status !== "Succeeded") {
                 throw result.message
