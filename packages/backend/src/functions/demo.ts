@@ -102,3 +102,21 @@ function getTagsFromSignupBundle(email, bundle) {
 console.dir(getTagsFromSignupBundle(1, bundle))
 console.dir(getTagsFromSignupBundle('foo@bar.com', bundle))
 
+
+function emailIsSignedUp(email, bundle) {
+
+    for(let tag in bundle) {
+        for(let a_signup of bundle[tag]) {
+            if(email == a_signup.email) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+console.log('is foo@bar.com signed up?')
+console.log(emailIsSignedUp('foo@bar.com', bundle))
+console.log('is bar@foo.com signed up?')
+console.log(emailIsSignedUp('bar@foo.com', bundle))

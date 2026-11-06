@@ -316,6 +316,20 @@ function getTagsFromSignupBundle(email, bundle) {
 }
 
 
+function emailIsSignedUp(email, bundle) {
+
+    for(let tag in bundle) {
+        for(let a_signup of bundle[tag]) {
+            if(email == a_signup.email) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+
 // ---^^^--- Utiities Functions Section: End ---^^^--- //
 
 
@@ -408,7 +422,7 @@ export async function subscribeToNotifications(
     }
 }
 
-
+// Todo: Convert to new return type of getExistingEmails
 export async function unsubscribeFromNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -430,13 +444,20 @@ export async function unsubscribeFromNotifications(
     }
     const exists = await blobClient.exists();
 
-    let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+//////////////
+// TODO: Redo emailIsSignedUp: we only are passed an email ID, not the email itself.
+/////////////
+    // Edit this, and what follows, to take the tagBundle ie { no_tag: [emails], tag1: [], ... }
+    //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+    let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
 
     // Confirm the emailID exists and convert it to an email
-    const emailIndex = Array.from(emailIDSet).indexOf(emailID);
-    if (emailIndex < 0) {
-        return { jsonBody: { message: "Email not found in the database" }, status: 200 };
+    //const emailIndex = Array.from(emailIDSet).indexOf(emailID);
+    //if (emailIndex < 0) {
+    if( !emailIsSignedUp(email, bundle)) {
+        return { jsonBody: { message: "Already unsubscribed: Email not found in the database." }, status: 304 };
     }
+
     const existingEmails = Array.from(emailSet);
     const email = existingEmails[emailIndex];
     const normalized = (email ?? "").trim().toLowerCase();
