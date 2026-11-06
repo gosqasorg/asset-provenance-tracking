@@ -120,3 +120,41 @@ console.log('is foo@bar.com signed up?')
 console.log(emailIsSignedUp('foo@bar.com', bundle))
 console.log('is bar@foo.com signed up?')
 console.log(emailIsSignedUp('bar@foo.com', bundle))
+
+function emailIDIsNotSignedUp(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return false
+            }
+        }
+    }
+
+    return true
+}
+
+
+console.log('is 12345 not signed up?')
+console.log(emailIDIsNotSignedUp(12345, bundle))
+console.log("is '12345', as a string, not signed up?")
+console.log(emailIDIsNotSignedUp('12345', bundle))
+console.log('is 00000 not signed up?')
+console.log(emailIDIsNotSignedUp('00000', bundle))
+
+
+function getEmailGivenEmailID(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return someSignup.email
+            }
+        }
+    }
+
+    return true
+}
+
+console.log("is the email for id 12345 foo@bar.com?")
+console.log(getEmailGivenEmailID(12345, bundle))

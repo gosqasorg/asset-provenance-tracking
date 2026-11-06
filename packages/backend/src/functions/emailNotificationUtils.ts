@@ -11,12 +11,10 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 /* Vincent's todo
 
     Working on:
-    * Edit calls to getExistingEmails to accept new format
-      * Next: Create function: checkIfSignedUpAndWithTheseTags()
+    * Updating subscribe and unsubscribe. Next: edit calls to uploadBlob, which will require editing uploadBlob
     
     Todo:
     * Create cleanup ticket for the todos below
-    * Create cleanup ticket: use checkIfAlreadySignedUpWithTheseTags() to drop before / after size checking
 */
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
@@ -238,7 +236,7 @@ async function getExistingEmails(
     return detectAndConvertLegacyEmailSignup(parsed)
 }
 
-// Todo: to be called ~line 387 in subscribetonotifications
+// Todo: to be called ~line 391 and 485 in subscribe and unsubscribe.
 function removeEmailFromTagBundle(tagBundle) {
     // this should take the entire tag bundle, not just the no tags only one
 }
@@ -316,18 +314,7 @@ function getTagsFromSignupBundle(email, bundle) {
 }
 
 
-function emailIsSignedUp(email, bundle) {
 
-    for(let tag in bundle) {
-        for(let a_signup of bundle[tag]) {
-            if(email == a_signup.email) {
-                return true
-            }
-        }
-    }
-
-    return false
-}
 
 
 // ---^^^--- Utiities Functions Section: End ---^^^--- //
@@ -337,6 +324,7 @@ function emailIsSignedUp(email, bundle) {
 
 // Todo: once done, move to httpTrigger. This is a core function that belongs there. 
 // Status: Ready for removeEmailFromTagBundle.
+// Status: Not done. Need to edit call to uploadBlob, and then uploadBlob itself. 
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -375,7 +363,7 @@ export async function subscribeToNotifications(
     // TODO: zod
     // Perform rough email validation 
     const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalized) {
+    if (!normalizedEmail) {
         return { 
             jsonBody: { message: "Email not provided or email malformed" }, 
             status: 400
@@ -389,7 +377,7 @@ export async function subscribeToNotifications(
     let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
 
     // If email is already stored return success
-    if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, email)) {
+    if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, normalizedEmail)) {
         return {
             jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
             status: 304,
@@ -402,7 +390,7 @@ export async function subscribeToNotifications(
     
     // Step 3/3: Add
     const uniqueEmailString = await createNewEmailId()
-    tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, email, uniqueEmailString, tags)
+    tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, normalizedEmail, uniqueEmailString, tags)
 
     try {
         console.log('Attempting to store')
@@ -422,6 +410,46 @@ export async function subscribeToNotifications(
     }
 }
 
+function getEmailGivenEmailID(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return someSignup.email
+            }
+        }
+    }
+
+    return true
+}
+
+function emailIsSignedUp(email, bundle) {
+
+    for(let tag in bundle) {
+        for(let a_signup of bundle[tag]) {
+            if(email == a_signup.email) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+function emailIDIsNotSignedUp(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return false
+            }
+        }
+    }
+
+    return true
+}
+
+// Todo: update call to uploadBlob, and edit uploadBlob itself. 
 // Todo: Convert to new return type of getExistingEmails
 export async function unsubscribeFromNotifications(
     containerClient: ContainerClient, 
@@ -431,6 +459,7 @@ export async function unsubscribeFromNotifications(
     tags: string[] = [],
     context
 ) {
+    // Step 1: Ensure we're being called correctly
     // Setup the blobClient
     let blobName: string;
     let blobClient: BlockBlobClient;
@@ -444,43 +473,47 @@ export async function unsubscribeFromNotifications(
     }
     const exists = await blobClient.exists();
 
-//////////////
-// TODO: Redo emailIsSignedUp: we only are passed an email ID, not the email itself.
-/////////////
+    // WORKING ON
     // Edit this, and what follows, to take the tagBundle ie { no_tag: [emails], tag1: [], ... }
     //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-    let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
+    let bundle = await getExistingEmails(exists, blobClient); 
 
     // Confirm the emailID exists and convert it to an email
     //const emailIndex = Array.from(emailIDSet).indexOf(emailID);
     //if (emailIndex < 0) {
-    if( !emailIsSignedUp(email, bundle)) {
-        return { jsonBody: { message: "Already unsubscribed: Email not found in the database." }, status: 304 };
-    }
-
-    const existingEmails = Array.from(emailSet);
-    const email = existingEmails[emailIndex];
+    let email;
+    if( email = getEmailGivenEmailID(emailID, bundle) ) {
+        return { 
+            jsonBody: { message: "Already unsubscribed: Email not found in the database." }, 
+            status: 304 
+        };
+    } // So we have the email
     const normalized = (email ?? "").trim().toLowerCase();
 
-    // Remove the specified email from the set
-    const sizeBeforeAdding = emailSet.size;
-    emailSet.delete(normalized);
-    emailIDSet.delete(emailID);
+    // Step 2: Remove
+    // let bundleAfterRemoving = removeEmailFromTagBundle(tagBundleNoTagsOnly)
 
-    // If the email wasn't stored originally return success
-    if (exists && emailSet.size === sizeBeforeAdding) {
+
+    // Remove the specified email from the set
+    if(emailIsSignedUp(normalized, bundleAfterRemoving)) {
+        context.error('unsubscribeFromNotifications: Error: Failed to unsubscribe!')
         return {
-            jsonBody: { message: "Success", name: blobName },
-            status: 200,
-        };
+            jsonBody: {message: 'Internal Server Error'},
+            status: 500,
+        }
     }
 
+    // Step 3: 
     try {
         // Update our stored emails to no longer include the specified email/id
         uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags, context);
+        return {
+            jsonBody: { message: "Success. Email has been unsubscribed." },
+            status: 200,
+        };
     } catch(error) {
         return {
-            jsonBody: {message: 'Failed to unsubscribe from email notifications'},
+            jsonBody: {message: 'Internal Server Error'},
             status: 500,
         }
     }
