@@ -239,8 +239,7 @@ async function getExistingEmails(
 }
 
 function removeEmailFromTagBundle(tagBundle) {
-    // To be implemented by Jara
-    // Jara: note: this should take the entire tag bundle, not just the no tags only one
+    // this should take the entire tag bundle, not just the no tags only one
 }
 
 // Todo: extractEmailsFromResponse needs to be updated
