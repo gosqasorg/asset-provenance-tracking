@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, offlineQueueConsumerWorker } from '~/services/azureFuncs';
 
 async function createRequest (
   name: string,
@@ -32,7 +32,7 @@ function resetStashValues(): void {
 
 // Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
 const mockFetch = vi.fn();
-global.fetch = mockFetch
+global.fetch = mockFetch;
 
 describe("Offline Function Tests", () => {
     it("Test to confirmRequestFulfilled for new record and record entry created offline", async () => {
@@ -217,4 +217,99 @@ describe("Get/Remove First Queued Request", async() => {
     expect(firstQueueItem["key"]).toEqual(queuedKey2);
     expect(firstQueueItem["data"]).toEqual(queuedData2.get('provenanceRecord'));
   });
+});
+
+describe("Offline Worker Spotty Connection Tests", async() => {
+  // Wait for the offline worker to start
+  offlineQueueConsumerWorker();
+  await new Promise((r) => setTimeout(r, 10000));
+
+  // Test POST failures (offline AND regular failure [aka post failed for another reason])
+  it("Test POST Failure", async() => {
+    resetStashValues();
+
+    // Mock fetch to return undefined (post comes first so we can generally just mock fetch)
+    mockFetch.mockResolvedValue(undefined);
+
+    // Put a record into the queue
+    let [queuedKey, queuedData] = await createRequest(
+      'POST Offline',
+      'Check for record loss on POST failure offline'
+    );
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    await new Promise((r) => setTimeout(r, 5005));
+
+    // Confirm that fetch ran and that the record is still in the queue
+    expect(mockFetch).toHaveLastResolvedWith(undefined);
+    let queuedStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    expect(queuedStash.length).toEqual(1);
+
+    // Mock fetch to return 500
+    mockFetch.mockResolvedValue({ok: false, status: 500});
+    await new Promise((r) => setTimeout(r, 5005));
+
+    // Confirm that the record was moved into the failed stash
+    queuedStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    const failedStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
+    expect(queuedStash.length).toEqual(0);
+    expect(failedStash.length).toEqual(1);
+  }, 20000);
+
+  // Test GET offline failures (post passes get offline)
+  it("Test GET Failure Offline", async() => {
+    resetStashValues();
+
+    // Mock post requests to succeed and get requests to return undefined
+    mockFetch
+      .mockResolvedValueOnce({ok: true, status: 200})  // POST should succeed
+      .mockResolvedValue(undefined)  // GET should fail
+
+    // Put a record into the queue
+    let [queuedKey, queuedData] = await createRequest(
+      'GET Offline',
+      'Check for record loss on GET failure offline'
+    );
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    await new Promise((r) => setTimeout(r, 5005));
+
+    // Confirm that the record was successfully "posted" (-3 to check before fetchUrl's three GET checks)
+    expect(mockFetch).toHaveNthResolvedWith(mockFetch.mock.calls.length - 3, {ok: true, status: 200});
+
+    // Confirm that the get request failed and the record was moved into the fulfilled stash
+    // Note: we move it to fulfilled because if we put it in failed and the user retries creation it will be created twice
+    // (since post succeeded initially, meaning there's a very high chance the record was made)
+    expect(mockFetch).toHaveLastResolvedWith(undefined);
+    const queuedStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    const fulfilledStash = localStorage.getItem('gdt-stash-fulfilled')?.split(',') || [];
+    expect(queuedStash.length).toEqual(0);
+    expect(fulfilledStash.length).toEqual(1);
+  });
+
+  // Test GET online failures (post passes get 404)
+  it("Test GET Failure Online", async() => {
+    resetStashValues();
+
+    // Mock post requests to succeed and get requests to return 404
+    mockFetch
+      .mockResolvedValueOnce({ok: true, status: 200})  // POST should succeed
+      .mockResolvedValue({ok: false, status: 404})  // GET should fail
+
+    // Put a record into the queue
+    let [queuedKey, queuedData] = await createRequest(
+      'GET Online',
+      'Check for record loss on GET failure online'
+    );
+    stashOfflineRequest(queuedKey, "gdt-stash-queued", queuedData.get('provenanceRecord'));
+    await new Promise((r) => setTimeout(r, 5005));
+
+    // Confirm that the record was successfully "posted" (-3 to check before fetchUrl's three GET checks)
+    expect(mockFetch).toHaveNthResolvedWith(mockFetch.mock.calls.length - 3, {ok: true, status: 200});
+    
+    // Confirm that the get request failed and the record was moved into the failed stash
+    expect(mockFetch).toHaveLastResolvedWith({ok: false, status: 404});
+    const queuedStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    const failedStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
+    expect(queuedStash.length).toEqual(0);
+    expect(failedStash.length).toEqual(1);
+  }, 20000);
 });

@@ -280,6 +280,8 @@ export async function offlineQueueConsumerWorker() {
     }
 
     while (workerIsActive == 'true') {
+        let response = undefined;
+
         // If a new instance of the worker was opened close this one
         workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
 
@@ -296,18 +298,24 @@ export async function offlineQueueConsumerWorker() {
             const fullUrl = baseUrl + "/provenance/" + deviceKey;
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(record));
-            await fetchUrl(fullUrl, formData)
+            response = await fetchUrl(fullUrl, formData);
 
             // Attempt to get the new request to confirm it posted successfully
-            await fetchUrl(fullUrl)
+            await fetchUrl(fullUrl);
 
             stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
             removeFirstQueueItem();
 
         } catch (error) {
-            if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+            if (!response && error && error.toString().includes("Could not connect")) {
+                // If we're offline and post did not succeed leave the request in the queue
                 await new Promise((r) => setTimeout(r, 5000));
+            } else if (response && error && error.toString().includes("Could not connect")) {
+                // If we're offline and post did succeed then move the request to fulfilled
+                stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
+                removeFirstQueueItem();
             } else {
+                // If we're online and experienced a failure move the request to failed
                 stashOfflineRequest(deviceKey, "gdt-stash-failed", record);
                 removeFirstQueueItem();
             }
