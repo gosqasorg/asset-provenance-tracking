@@ -596,12 +596,12 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
                 return response;
             }
         } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
+            context.error(`Fetch attempt failed: ${url}: ` + e);
         }
     }
 
     if (response !== undefined && !response.ok) {
-        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
         throw new Error(url + " failed: " + response.status + " " + response.statusText)
     } else {
         throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
@@ -1171,6 +1171,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
     }
 }
 
+
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('httpTrigger: entering postNotificationEmail')
 
@@ -1353,19 +1354,24 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfied
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering postVerifyCode')
     try {
         // get email and code
         const body = await request.json() as any;
         const token = body.token;
         const code = body.code;
 
+        context.log('postVerifyCode: Do we have token and code?')
+
         if (!token || !code) {
+            context.error('postVerifyCode: No.')
             context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Token and code required" },
                 status: 400
             }
         }
+        context.log('postVerifyCode: Yes.')
 
         // get the PendingVerifications table
         const tableUrl = accountName === "devstoreaccount1"
@@ -1377,7 +1383,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
         await tableClient.createTable();  // Create if not exist, no error if it does
-
 
         // look up directly by partitionKey (token) and rowKey (code)
         let entity = null;
@@ -1406,16 +1411,24 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await subscribeToNotifications(containerClient, calculateDeviceID, entity.recordKey as string, entity.email as string, tags);
-        // return response
+        context.log('postVerifyCode: Attempting to call subscribeToNotifications')
+        const result = await subscribeToNotifications(
+            containerClient, 
+            calculateDeviceID, 
+            entity.recordKey as string, 
+            entity.email as string, 
+            tags, 
+            context
+        );
+        context.log('postVerifyCode: Returned from subscribeToNotifications to postVerifyCode')
+        context.log(result)
+        return result
 
-        return {
-            jsonBody: {message: "Success", recordKey: entity.recordKey as string},
-            status: 200
-        } 
     } catch(error) {
+        context.error('Returning with error from postVerifyCode')
         if (error instanceof z.ZodError) {
             context.error('postVerifyCode: returning 400')
+            context.error(error.issues)
             return {
                 jsonBody: {error: error.issues},
                 status: 400
@@ -1552,7 +1565,14 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
 
         await containerClient.createIfNotExists();
-        const response = await unsubscribeFromNotifications(containerClient, calculateDeviceID, recordKey, emailID, tags); 
+        const response = await unsubscribeFromNotifications(
+            containerClient, 
+            calculateDeviceID, 
+            recordKey, 
+            emailID, 
+            tags,
+            context
+        ); 
 
         context.error("Unsubscribed from the record");
         return response;
@@ -1565,7 +1585,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
     }
 }
-
 
 /* ----- True Handlers ----- */
 
@@ -1581,7 +1600,6 @@ async function upgradeProvenanceHandler(request: HttpRequest, context: Invocatio
     }
 }
 
-
 // --- POSTs --- //
 
 
@@ -1596,6 +1614,7 @@ async function notifySubscribersHandler(request: HttpRequest, context: Invocatio
             status: error.statusCode || 500,
             jsonBody: {
                 error: 'Failed to send email'
+
             }
         }
     }

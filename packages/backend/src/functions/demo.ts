@@ -1,0 +1,160 @@
+#!/usr/bin/env node
+
+import { start } from 'node:repl';
+
+function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
+    let theTagBundle = { no_tag: [] }
+
+    for(let i = 0; i < theEmailSet.length; i++) {
+        let pair = { email: theEmailSet[i], id: theEmailIdSet[i] }
+        theTagBundle['no_tag'].push(pair)
+    }
+
+    return theTagBundle
+}
+
+let fizz = [1, 2, 3]
+let buzz = ['a', 'b', 'c']
+let baz = convertEmailSetsToTagBundle(fizz, buzz)
+console.dir(baz)
+
+function addTagSpecificSignupDataToBundle(
+    the_bundle, theEmail, theEmailId, theTags) {
+
+    if(!theTags.length) {
+        the_bundle.no_tags.push({
+            email: theEmail,
+            id: theEmailId
+        })
+
+        return the_bundle
+    }
+
+    for(let i = 0; i < theTags.length; i++) {
+        if(!(theTags[i] in the_bundle)) {
+            the_bundle[theTags[i]] = [{
+                email: theEmail,
+                id: theEmailId
+            }]
+        } else {
+            the_bundle[theTags[i]].push({
+                email: theEmail,
+                id: theEmailId
+            })
+        }
+    }
+
+    return the_bundle
+    
+}
+
+
+
+import fs from 'node:fs';
+function writeBundle(theObj) {
+    fs.writeFileSync('./tagBundle.json', JSON.stringify(theObj, null, 2));
+}
+
+function readBundle() {
+    return JSON.parse(fs.readFileSync('./tagBundle.json', 'utf8'))
+}
+
+
+let bundle = addTagSpecificSignupDataToBundle(
+    baz,
+    'foo@bar.com',
+    '12345',
+    ['bamboo', 'observer', 'wizard']
+)
+
+
+bundle = addTagSpecificSignupDataToBundle(
+    baz,
+    'foo@bar.com',
+    '12345',
+    ['bamboo', 'observer', 'wizard']
+)
+
+writeBundle(bundle)
+console.dir(bundle)
+
+function getTagsFromSignupBundle(email, bundle) {
+
+    let tags = []
+    for(let tag in bundle) {
+
+        // signup: {email: "foo@bar.baz", id: 12345}
+        for(let a_signup of bundle[tag]) {
+
+            if(a_signup.email != email) {
+                continue
+            }
+
+            if(tags.indexOf(tag) < 0) {
+                tags.push(tag)
+            }
+        }
+    }
+    
+    return tags
+}
+
+console.dir(getTagsFromSignupBundle(1, bundle))
+console.dir(getTagsFromSignupBundle('foo@bar.com', bundle))
+
+
+function emailIsSignedUp(email, bundle) {
+
+    for(let tag in bundle) {
+        for(let a_signup of bundle[tag]) {
+            if(email == a_signup.email) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+console.log('is foo@bar.com signed up?')
+console.log(emailIsSignedUp('foo@bar.com', bundle))
+console.log('is bar@foo.com signed up?')
+console.log(emailIsSignedUp('bar@foo.com', bundle))
+
+function emailIDIsNotSignedUp(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return false
+            }
+        }
+    }
+
+    return true
+}
+
+
+console.log('is 12345 not signed up?')
+console.log(emailIDIsNotSignedUp(12345, bundle))
+console.log("is '12345', as a string, not signed up?")
+console.log(emailIDIsNotSignedUp('12345', bundle))
+console.log('is 00000 not signed up?')
+console.log(emailIDIsNotSignedUp('00000', bundle))
+
+
+function getEmailGivenEmailID(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return someSignup.email
+            }
+        }
+    }
+
+    return true
+}
+
+console.log("is the email for id 12345 foo@bar.com?")
+console.log(getEmailGivenEmailID(12345, bundle))
