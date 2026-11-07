@@ -179,7 +179,6 @@ function makeQueryRequest(params: Record<string, string>) {
 }
 
 
-/*
 
 // smoke tests
 describe('httpTrigger endpoints (shallow mocks)', () => {
@@ -308,10 +307,8 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
  
 });
 
-*/
 
 
-/*
 
 // postNotificationEmail tests
 describe('postNotificationEmail - validation', () => {
@@ -376,7 +373,6 @@ describe('postNotificationEmail - validation', () => {
     });
 });
 
-*/
 
 // postVerifyCode tests
 describe('postVerifyCode', () => {
@@ -390,7 +386,6 @@ describe('postVerifyCode', () => {
         vi.mocked(subscribeToNotifications).mockClear();
     });
 
-/*
     // no token or code
     it('returns 400 when token or code are missing', async () => {
         const req = { json: async () => ({}) } as any;
@@ -426,7 +421,7 @@ describe('postVerifyCode', () => {
         
         expect(res.status).toBe(400);
     });
-*/
+
     
     it('returns 200 when tags are valid and passed to subscribeToNotifications', async () => {
         const tags = ['tag1', 'tag2'];
@@ -448,7 +443,6 @@ describe('postVerifyCode', () => {
     });
 });
 
-/*
 
 // getPendingVerification tests
 describe('getPendingVerification', () => {
@@ -544,5 +538,4 @@ describe('postResendCode', () => {
 
 });
 
-*/
 
