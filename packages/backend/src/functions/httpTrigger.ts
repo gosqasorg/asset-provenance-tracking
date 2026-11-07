@@ -1380,8 +1380,14 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        await subscribeToNotifications(containerClient, entity.recordKey as string, entity.email as string, tags);
-        // return response
+        const response = await subscribeToNotifications(containerClient, entity.recordKey as string, entity.email as string, tags);
+        if (response.status !== 200) {
+            context.error("postVerifyCode: failed to subscribe to notifications")
+            return {
+                jsonBody: {error: "postVerifyCode: failed to subscribe to notifications"},
+                status: response.status || 500
+            }
+        }
 
         return {
             jsonBody: {message: "Success", recordKey: entity.recordKey as string},
@@ -1797,7 +1803,10 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
-async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    context.log("Entering subscribeGroupToChildren")
+
     // parse email, recordKey, and tags from body
     const body = await request.json() as any;
     const groupKey = body.groupKey;
@@ -1811,6 +1820,8 @@ async function subscribeGroupToChildren(request: HttpRequest, context: Invocatio
         }
     }
 
+    context.log(`Subscribing emails from ${groupKey} to ${childKey}`);
+
     await containerClient.createIfNotExists();
 
     try {
@@ -1820,6 +1831,7 @@ async function subscribeGroupToChildren(request: HttpRequest, context: Invocatio
         try {
             [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
         } catch (error) {
+            context.error(`Error: subscribeGroupToChildren setup failed: ${error.message}`)
             return {
                 jsonBody: {message: `Error: subscribeGroupToChildren setup failed: ${error.message}`},
                 status: 400
@@ -1831,18 +1843,23 @@ async function subscribeGroupToChildren(request: HttpRequest, context: Invocatio
         for (let email of emailSet) {
             let response = await subscribeToNotifications(containerClient, childKey, email, tags);
             if (response.status !== 200) {
+                context.error("Error: subscribeGroupToChildren failed to subscribe email to child")
                 return {
-                    jsonBody: {error: "Error: Failed to subscribe group to children"},
-                    status: 500
+                    jsonBody: {error: "Error: subscribeGroupToChildren failed to subscribe email to child"},
+                    status: response.status || 500
                 }
             }
         }
     } catch (error) {
+        context.error('Error: subscribeGroupToChildren failed to subscribe', error.message)
+
         return {
-            jsonBody: {message: 'Error: Failed to subscribe group to children'},
+            jsonBody: {message: 'Error: subscribeGroupToChildren failed to subscribe group to children'},
             status: 500
         }
     }
+
+    context.log("Returning successfully from subscribeGroupToChildren")
     
     // 3. If all emails are succesfully subscribed return success
     return {

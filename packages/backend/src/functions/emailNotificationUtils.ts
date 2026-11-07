@@ -175,7 +175,15 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     while (keysToCheck.length != 0) {
         // Add any children of the current key to the list to subscribe to
         let key = keysToCheck[0];
-        let uniqueChildKeys = await getChildKeys(key, deviceKey);
+        let uniqueChildKeys: string[];
+        try {
+            uniqueChildKeys = await getChildKeys(key, deviceKey);
+        } catch (error) {
+            return {
+                jsonBody: { message: `subscribeToNotifications failed to get child keys: ${error.message}` },
+                status: 400
+            }
+        }
         keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record

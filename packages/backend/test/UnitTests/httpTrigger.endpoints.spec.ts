@@ -447,3 +447,52 @@ describe('postResendCode', () => {
     });
 
 }); 
+
+describe('subscribeGroupToChildren', () => {
+	let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
+    });
+
+	// missing group/child key
+	it('returns 400 when group key is missing', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+	});
+
+	it('returns 400 when child key is missing', async () => {
+		const req = { json: async () => ({ groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+		expect(res.status).toBe(400);
+    });
+
+	// mocking process.env['backend_url'], otherwise some tests falsely return 500
+	vi.stubEnv('backend_url', 'https://gosqasbe.azurewebsites.net/api/provenance/');
+
+	// invalid group/child key
+	it('returns 400 when group key is invalid', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "badKey" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+	it('returns 400 when child key is invalid', async () => {
+		const req = { json: async () => ({ childKey: "badKey", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+	// valid request
+	it('returns 200 when all required fields are present and valid', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+		expect(res.status).toBe(200);
+	});
+});
+
+vi.unstubAllEnvs();
