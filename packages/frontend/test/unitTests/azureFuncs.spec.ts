@@ -228,7 +228,7 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
   it("Dismiss all edits, Dismiss published edits, and Dismiss edit buttons", async() => {
 
-    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
     // Mock fetch, response, and push so that we won't have to connect to real network
     const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
@@ -245,11 +245,15 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     	data() {
     		return {
           // This is for the dismiss one edit button to show up. It mimics our async mount() function in the offline-edits page
-          fulfilledKeys: ["fulfilledKey1", "fulfilledKey2", "fulfilledKey3", "fulfilledKey4", "fulfilledKey5"],
-          failedKeys: ['failedKey1', 'failedKey2']
+          fulfilledKeys: ['fulfilledKey1', 'fulfilledKey2', 'fulfilledKey3', 'fulfilledKey4', 'fulfilledKey5'],
+          failedKeys: ['failedKey1', 'failedKey2'],
+          queuedKeys: ['queuedKey1', 'queuedKey2', 'queuedKey3', 'queuedKey4', 'queuedKey5', 'queuedKey6']
         }
       }
     });
+
+    const queuedKeyInLocalStorage = "queuedKeyInLocalStorage1"
+    localStorage.setItem('gdt-stash-queued', JSON.stringify(queuedKeyInLocalStorage));
 
     // Because async mounted() provides a Promise, flushPromises() resolves it so that items to be mounted() are mounted here when the DOM loads
     await flushPromises();
@@ -258,9 +262,16 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     // and starts working on clearing the queued stash. The test can continue without waiting for a Promise from offlineQueueConsumerWorker function.
     // I found this method similar to starting the worker and letting it run in the background.
     offlineQueueConsumerWorker();
+    delay(15000);
+
+    await flushPromises();
+    await flushPromises();
 
     // Click on 'Dismiss edit' button to clear that specific published edit
-    await wrapper.find('#offline-edits-container > div:nth-of-type(2) > .key-box > button:nth-of-type(2)').trigger('click');
+    await wrapper.find('#offline-edits-container > div:nth-child(11) > div:nth-child(1) > button:nth-child(4)').trigger('click');
+    //await wrapper.find('#offline-edits-container > div:nth-of-type(11) > div:nth-of-type(1) > button:nth-of-type(4)').trigger('click');
+    //await wrapper.find('#offline-edits-container > div:nth-of-type(11) > .key-box > button:nth-of-type(4)').trigger('click');
+
     // Click 'Dismiss edit' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
@@ -268,20 +279,19 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
 
     // Click on the 'Dismiss published edits' button
-    await wrapper.find('button.btn:nth-child(4)').trigger('click');
+    await wrapper.find('button.dismiss:nth-child(4)').trigger('click');
     // Click 'Dismiss published edits' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
     // Test to see if published edits stash is empty after 'Dismiss published edits' button was clicked
     expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null)
 
-    // Set up queued keys here so the tests above aren't affected by the button placements
-    let queueKeys = ['Qkey1', 'Qkey2', 'Qkey3', 'Qkey4', 'Qkey5', 'Qkey6']
-    localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
-    localStorage.setItem('gdt-stash-queued', JSON.stringify(queueKeys))
+    const failedKeyInLocaLStorage = "failedKeyInLocaLStorage1";
+    localStorage.setItem('gdt-stash-failed', JSON.stringify(failedKeyInLocaLStorage));
+
 
     // Click on the 'Dismiss all edits' button, then the confirmation button afterwards to clear all stashes
-    await wrapper.find('button.btn:nth-child(3)').trigger('click');
+    await wrapper.find('button.dismiss:nth-child(3)').trigger('click');
     // Click on the 'Dismiss all edits' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
