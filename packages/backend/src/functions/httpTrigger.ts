@@ -1354,19 +1354,24 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfied
 export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering postVerifyCode')
     try {
         // get email and code
         const body = await request.json() as any;
         const token = body.token;
         const code = body.code;
 
+        context.log('postVerifyCode: Do we have token and code?')
+
         if (!token || !code) {
+            context.error('postVerifyCode: No.')
             context.error('postVerifyCode: returning 400')
             return {
                 jsonBody: { error: "Token and code required" },
                 status: 400
             }
         }
+        context.log('postVerifyCode: Yes.')
 
         // get the PendingVerifications table
         const tableUrl = accountName === "devstoreaccount1"
@@ -1378,7 +1383,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const credential = new AzureNamedKeyCredential(accountName, accountKey);
         const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
         await tableClient.createTable();  // Create if not exist, no error if it does
-
 
         // look up directly by partitionKey (token) and rowKey (code)
         let entity = null;
@@ -1407,7 +1411,8 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         // Proof of concept 
         // on success, delete pending entity and call signupForNotifications
         await containerClient.createIfNotExists();
-        return await subscribeToNotifications(
+        context.log('postVerifyCode: Attempting to call subscribeToNotifications')
+        const result = await subscribeToNotifications(
             containerClient, 
             calculateDeviceID, 
             entity.recordKey as string, 
@@ -1415,9 +1420,12 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             tags, 
             context
         );
+        context.log('postVerifyCode: Returned from subscribeToNotifications to postVerifyCode')
+        context.log(result)
+        return result
 
     } catch(error) {
-        console.error('Returning with error from postVerifyCode')
+        context.error('Returning with error from postVerifyCode')
         if (error instanceof z.ZodError) {
             context.error('postVerifyCode: returning 400')
             context.error(error.issues)

@@ -347,65 +347,74 @@ export async function subscribeToNotifications(
          - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */
 
-
-    context.log('Entering subscribeToNotifications')
-
-    // Step 1: Setup the blobClient, return API response
-    let blobName: string;
-    let blobClient: BlockBlobClient;
     try {
-        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
-    } catch (error) {
-        return {
-            jsonBody: { message: `subscribeToNotifications setup failed: ${error.message}` },
-            status: 400
+        // Step 1: Setup the blobClient, return API response
+        let blobName: string;
+        let blobClient: BlockBlobClient;
+        try {
+            [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+        } catch (error) {
+            let message = `subscribeToNotifications setup failed: ${error.message}`
+            context.error(message)
+            return {
+                jsonBody: { message: message },
+                status: 400
+            }
         }
-    }
-    const exists = await blobClient.exists();
+        const exists = await blobClient.exists();
 
-    // TODO: zod
-    // Perform rough email validation 
-    const normalized = (email ?? "").trim().toLowerCase();
-    if (!normalizedEmail) {
-        return { 
-            jsonBody: { message: "Email not provided or email malformed" }, 
-            status: 400
+        // TODO: zod
+        // Perform rough email validation 
+        const normalized = (email ?? "").trim().toLowerCase();
+        if (!normalizedEmail) {
+            return { 
+                jsonBody: { message: "Email not provided or email malformed" }, 
+                status: 400
+            }
         }
-    }
 
 
-    // Step 1/3: Get
-    // Todo: Call conditional on exists. Do not pass exists. 
-    // Converts legacy in background. Returns at least this: { no_tag: [] }
-    let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
+        // Step 1/3: Get
+        // Todo: Call conditional on exists. Do not pass exists. 
+        // Converts legacy in background. Returns at least this: { no_tag: [] }
+        let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient); 
 
-    // If email is already stored return success
-    if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, normalizedEmail)) {
-        return {
-            jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
-            status: 304,
-        };
-    }
+        // If email is already stored return success
+        if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, normalizedEmail)) {
+            return {
+                jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
+                status: 304,
+            };
+        }
 
-    // Step 2/3: Remove
-    // Note: this call should be moved into addTagSpecificSignupDataToBundle()
-    // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
-    
-    // Step 3/3: Add
-    const uniqueEmailString = await createNewEmailId()
-    tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, normalizedEmail, uniqueEmailString, tags)
+        // Step 2/3: Remove
+        // Note: this call should be moved into addTagSpecificSignupDataToBundle()
+        // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
+        
+        // Step 3/3: Add
+        const uniqueEmailString = await createNewEmailId()
+        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, normalizedEmail, uniqueEmailString, tags)
 
-    try {
-        console.log('Attempting to store')
-        // Update our stored emails to include the new email/id
-        await uploadBlob(containerClient, blobName, tagSpecificSignupBundle, context)
-        context.log('Returning without error from subscribeToNotifications')
-        return {
-            jsonBody: { message: "Success" },
-            status: 200,
-        };
+        try {
+            console.log('Attempting to store')
+            // Update our stored emails to include the new email/id
+            await uploadBlob(containerClient, blobName, tagSpecificSignupBundle, context)
+            context.log('Returning without error from subscribeToNotifications')
+            return {
+                jsonBody: { message: "Success" },
+                status: 200,
+            };
+        } catch(error) {
+            context.error('Returning with error from subscribeToNotifications')
+            return {
+                jsonBody: { message: 'Failed to subscribe to email notifications' },
+                status: 500,
+            }
+        }
     } catch(error) {
         context.error('Returning with error from subscribeToNotifications')
+        context.error(error.message)
+        context.dir(error)
         return {
             jsonBody: { message: 'Failed to subscribe to email notifications' },
             status: 500,
