@@ -29,8 +29,8 @@ their items while offline.
 <div v-else>
     <div class="deviceKey-history">
         <div class="row pt-3 pb-6 mx-4">
-            <!-- Display record key -->
             <section id="device-details" class="details-container">
+            <!-- Page Title and Description -->
             <div class="record-description">
                 <div class="my-4 text-iris fs-1">
                 <p class="text-bold mb-0 device-name">Asset History Records</p>
@@ -42,14 +42,14 @@ their items while offline.
                     <span style="word-break: break-word;">This page allows you to add new record entries to existing keys while offline. Create entries here and they will be stored until you are back online, at which point they will be created automatically. If you want to scan a QR while offline please use the button below.</span>
                 </div>
             </div>
-            </section>
-        </div>
 
-        <!-- Button to Scan QRs while offline -->
-        <div style="padding-left: 40px">
-            <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
-            <canvas ref="canvas" hidden ></canvas>
-            <input class="btn record-button mt-3" value="Scan QR Offline" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+            <!-- Button to Scan QRs While Offline -->
+            <div>
+                <video class="mt-3" id="qr-scan-video" ref="video" preload="auto" autoplay playsinline style="display:none"></video>
+                <canvas ref="canvas" hidden ></canvas>
+                <input class="btn record-button mt-3" value="Scan QR Offline" type="button" @click="qrCameraOffline" accept="image/*" capture="environment" />
+            </div>
+            </section>
         </div>
 
         <!-- Form to create a history record -->
@@ -75,17 +75,18 @@ their items while offline.
             </div>
 
             <!-- Offline Banner Bottom-->
-            <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
-                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+            <Banner v-if="displayBanner" class="banner offline-banner">
+                <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px; color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> To post your changes, reopen this window when you're online again. Don't clear your cookies or your changes will be lost.
+                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
                 </div> 
             </Banner>
 
             <!-- Back Online Banner -->
-            <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+            <Banner v-if="onlineBannerToggle" class="banner online-banner">
                 <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
-                <div style="margin-left: 10px;"><strong>You're back online!</strong>  Click on the link to view the posted records >>Back Online Page Link Here (This feature is still in development)<<
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
+                <RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
                 </div>
             </Banner>
 

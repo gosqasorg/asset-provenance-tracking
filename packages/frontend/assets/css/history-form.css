@@ -54,7 +54,7 @@ input {
 
 input[type=text] {
     height: 36px;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 input[type=checkbox] {
@@ -100,6 +100,23 @@ input[type=checkbox] {
     margin-left: 2px;
   }
 
+  .banner-link {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .offline-banner,
+  .online-banner {
+    margin-top: 18px;
+    align-items: center;
+    display: flex;
+  }
+
+  h5 {
+    font-weight: 400;
+    margin-bottom: 16px;
+  }
+
 
 /*  For screens smaller than 768px */
 @media (max-width: 768px) {
@@ -135,10 +152,15 @@ input[type=checkbox] {
 
     input[type=text] {
         margin-top: 16px;
+        font-size: 18px;
     }
 
     form {
         padding: 2px 20px 20px 20px;
+    }
+
+    .banner-link {
+        font-size: 18px;
     }
 }
 
@@ -186,7 +208,29 @@ input[type=checkbox] {
     }
 
     .banner-link {
-        color: #CCECFD;
+        color: white;
+    }
+
+    .popup-inner {
+        color: white;
+        background-color: #1e201a; 
+        border: solid; 
+        border-color: #CCECFD; 
+        border-width: 2px;
+    }
+
+    .popup-buttons {
+        color: white !important;
+        border-color: white !important;
+    }
+
+    .popup-buttons:hover {
+        background-color: #636262 !important;
+    }
+
+    #continueBtn {
+        background-color: #CCECFD !important;
+        color: black !important;
     }
 }
 

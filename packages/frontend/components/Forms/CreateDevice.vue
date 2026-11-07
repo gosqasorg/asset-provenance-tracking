@@ -371,6 +371,17 @@ export default {
         margin-left: 2px;
     }
 
+    .banner-link {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+@media (min-width: 768px) {
+    .banner-link {
+        font-size: 18px;
+    }
+}
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
@@ -399,7 +410,7 @@ export default {
         background-color: #e6f6ff !important;
     }
     .banner-link {
-        color: #CCECFD;
+        color: white;
     }
 }
 /* Light mode version*/
