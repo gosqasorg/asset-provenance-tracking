@@ -16,8 +16,9 @@
   ],
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
-    "vitest": "^4.1.9",
-    "chart.js": "^4.5.1"
+    "@vitejs/plugin-vue": "^6.0.10",
+    "chart.js": "^4.5.1",
+    "vitest": "^4.1.9"
   },
   "devDependencies": {
     "@azure/static-web-apps-cli": "2.0.6",
