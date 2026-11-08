@@ -3,6 +3,7 @@ import * as httpTrigger from '../../src/functions/httpTrigger';
 import { TableClient } from '@azure/data-tables';
 import { sendEmail } from '../../src/functions/sendEmail.js';
 import { subscribeToNotifications } from '../../src/functions/emailNotificationUtils.js';
+import * as emailNotificationUtils from '../../src/functions/emailNotificationUtils.js';
 
 
 // Minimal Azure SDK mocks
@@ -111,12 +112,17 @@ vi.mock('../../src/functions/sendEmail.js', () => ({
 }));
 
 // replaces the real email subscription logic with fake functions during the test
-vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
-    notifySubscribers: vi.fn(),
-    retrieveNotifEmails: vi.fn(),
-    subscribeToNotifications: vi.fn().mockResolvedValue(undefined),
-    unsubscribeFromNotifications: vi.fn(),
-}));
+vi.mock('../../src/functions/emailNotificationUtils.js', async (importOriginal) => {
+	const actual: object = await importOriginal();
+
+	return {
+		...actual,
+		notifySubscribers: vi.fn(),
+		retrieveNotifEmails: vi.fn(),
+		subscribeToNotifications: vi.fn().mockResolvedValue({ status: 200 }),
+		unsubscribeFromNotifications: vi.fn(),
+	}
+});
 
 
 // minimal Azure Functions HttpRequest shape
@@ -412,7 +418,6 @@ describe('postVerifyCode', () => {
         expect(res.status).toBe(400);
     });
 
-    
     it('returns 200 when tags are valid and passed to subscribeToNotifications', async () => {
         const tags = ['tag1', 'tag2'];
         const entity = makeValidEntity({ tags: JSON.stringify(tags) });
@@ -424,7 +429,6 @@ describe('postVerifyCode', () => {
         expect(res.status).toBe(200);
         expect(subscribeToNotifications).toHaveBeenCalledWith(
             expect.anything(),
-            httpTrigger.calculateDeviceID,
             entity.recordKey,
             entity.email,
             tags,
@@ -548,9 +552,6 @@ describe('subscribeGroupToChildren', () => {
 		expect(res.status).toBe(400);
     });
 
-	// mocking process.env['backend_url'], otherwise some tests falsely return 500
-	vi.stubEnv('backend_url', 'https://gosqasbe.azurewebsites.net/api/provenance/');
-
 	// invalid group/child key
 	it('returns 400 when group key is invalid', async () => {
 		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "badKey" }) } as any;
@@ -559,6 +560,10 @@ describe('subscribeGroupToChildren', () => {
     });
 
 	it('returns 400 when child key is invalid', async () => {
+		// mock child key validation failure in subscribeToNotifications (setupBlobClient)
+		vi.spyOn(emailNotificationUtils, 'subscribeToNotifications').mockResolvedValueOnce(
+			{jsonBody: {message: "subscribeToNotifications setup failed: Invalid Key Length"}, status: 400}
+		);
 		const req = { json: async () => ({ childKey: "badKey", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
         const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
         expect(res.status).toBe(400);
@@ -571,5 +576,3 @@ describe('subscribeGroupToChildren', () => {
 		expect(res.status).toBe(200);
 	});
 });
-
-vi.unstubAllEnvs();
