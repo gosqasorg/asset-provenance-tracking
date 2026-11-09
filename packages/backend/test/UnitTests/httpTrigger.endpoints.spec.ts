@@ -114,7 +114,10 @@ vi.mock('../../src/functions/sendEmail.js', () => ({
 vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
     notifySubscribers: vi.fn(),
     retrieveNotifEmails: vi.fn(),
-    subscribeToNotifications: vi.fn().mockResolvedValue(undefined),
+    subscribeToNotifications: vi.fn().mockResolvedValue({
+      jsonBody: { message: "Success" },
+      status: 200,
+    }),
     unsubscribeFromNotifications: vi.fn(),
 }));
 
@@ -137,6 +140,45 @@ function makeHttpRequest(overrides: any = {}) {
     ...overrides,
   };
 }
+
+
+// helper funcs for email subscrip tests
+function makeMockTableInstance() {
+    // makes the plain obj with the mocked methods
+    return {
+        createTable: vi.fn().mockResolvedValue(undefined),
+        upsertEntity: vi.fn().mockResolvedValue(undefined),
+        createEntity: vi.fn().mockResolvedValue(undefined),
+        getEntity: vi.fn().mockRejectedValue(new Error('not found')),
+        updateEntity: vi.fn().mockResolvedValue(undefined),
+        listEntities: vi.fn().mockReturnValue((async function* () {})()),
+        deleteEntity: vi.fn().mockResolvedValue(undefined),
+    };
+}
+
+// valid entity + overrides just in case different fields need tweaking
+function makeValidEntity(overrides: Record<string, unknown> = {}) {
+    return {
+        partitionKey: 'PendingVerification',
+        rowKey: 'test@example.com',
+        code: '123456',
+        token: 'validtoken',
+        expiresAt: Date.now() + 600_000, // 10 min in the future
+        recordKey: 'fakerecordkey',
+        email: 'test@example.com',
+        tags: '[]',
+        ...overrides,
+    };
+}
+
+// mock httpRequests with query params
+function makeQueryRequest(params: Record<string, string>) {
+    return {
+        query: { get: (token: string) => params[token] ?? null },
+    } as any;
+}
+
+
 
 // smoke tests
 describe('httpTrigger endpoints (shallow mocks)', () => {
@@ -265,41 +307,8 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
  
 });
 
-// helper funcs for email subscrip tests
-function makeMockTableInstance() {
-    // makes the plain obj with the mocked methods
-    return {
-        createTable: vi.fn().mockResolvedValue(undefined),
-        upsertEntity: vi.fn().mockResolvedValue(undefined),
-        createEntity: vi.fn().mockResolvedValue(undefined),
-        getEntity: vi.fn().mockRejectedValue(new Error('not found')),
-        updateEntity: vi.fn().mockResolvedValue(undefined),
-        listEntities: vi.fn().mockReturnValue((async function* () {})()),
-        deleteEntity: vi.fn().mockResolvedValue(undefined),
-    };
-}
 
-// valid entity + overrides just in case different fields need tweaking
-function makeValidEntity(overrides: Record<string, unknown> = {}) {
-    return {
-        partitionKey: 'PendingVerification',
-        rowKey: 'test@example.com',
-        code: '123456',
-        token: 'validtoken',
-        expiresAt: Date.now() + 600_000, // 10 min in the future
-        recordKey: 'fakerecordkey',
-        email: 'test@example.com',
-        tags: '[]',
-        ...overrides,
-    };
-}
 
-// mock httpRequests with query params
-function makeQueryRequest(params: Record<string, string>) {
-    return {
-        query: { get: (token: string) => params[token] ?? null },
-    } as any;
-}
 
 // postNotificationEmail tests
 describe('postNotificationEmail - validation', () => {
@@ -364,10 +373,11 @@ describe('postNotificationEmail - validation', () => {
     });
 });
 
+
 // postVerifyCode tests
 describe('postVerifyCode', () => {
     let mockTable: ReturnType<typeof makeMockTableInstance>;
-    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+    const ctx = console //{ log: vi.fn(), error: vi.fn() } as any;
 
     // all tests need a table mock
     beforeEach(() => {
@@ -420,17 +430,19 @@ describe('postVerifyCode', () => {
         const req = { json: async () => ({ token: entity.token, code: entity.code }) } as any;
 
         const res = await httpTrigger.postVerifyCode(req, ctx);
-
         expect(res.status).toBe(200);
+
         expect(subscribeToNotifications).toHaveBeenCalledWith(
             expect.anything(),
             httpTrigger.calculateDeviceID,
             entity.recordKey,
             entity.email,
             tags,
+            console
         );
     });
 });
+
 
 // getPendingVerification tests
 describe('getPendingVerification', () => {
@@ -525,4 +537,5 @@ describe('postResendCode', () => {
     });
 
 });
+
 
