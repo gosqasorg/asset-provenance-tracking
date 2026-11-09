@@ -26,4 +26,13 @@ if [ "$(git diff --name-only @{u} HEAD | egrep -i backend | wc -l)" -ne 0 ]; the
         exit 1
     }
 fi
+cd ../..
+
+# Run frontend unit tests if frontend has changes
+if [ "$(git diff --name-only @{u} HEAD | egrep -i frontend | wc -l)" -ne 0 ]; then
+    cd packages/frontend && npm run unittest || {
+        echo 'Pre-push: frontend unit tests failed. Please resolve the failures and reattempt push'
+        exit 1
+    }
+fi
 
