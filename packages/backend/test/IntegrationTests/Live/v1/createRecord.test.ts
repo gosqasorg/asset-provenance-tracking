@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from 'fs/promises';
 
-const baseUrl = process.env['api_url']; //'https://gosqasbe.azurewebsites.net/api/';
+const baseUrl = 'https://gosqasbe.azurewebsites.net/api/';
 
 describe("Backend Record Creation Tests", () => {
     it("Create and Retrieve A Basic Record", async () => {

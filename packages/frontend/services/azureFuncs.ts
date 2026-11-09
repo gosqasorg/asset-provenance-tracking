@@ -454,14 +454,14 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
     return false
 }
 
-export async function postNotificationEmail(email:string, recordKey: string) {
+export async function postNotificationEmail(email:string, recordKey: string, tags: string[] = []) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetchUrlWithErrorHandling(
         `${baseUrl}/notificationSubscription`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, recordKey }),
+            body: JSON.stringify({ email, recordKey, tags }),
         },
         {
             429: "We are experiencing a high volume of requests. Please try again later.",
@@ -515,6 +515,7 @@ export async function postResendCode(token: string) {
         throw new Error('postResendCode: Failed to resend code')
     }
 }
+
 export async function getBrowserStats() {
     
         const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -529,5 +530,19 @@ export async function getBrowserStats() {
         return JSON.parse(stats);
     } catch (error) {
         throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}
+
+export async function subscribeGroupToChildren(groupKey: string, childKey: string, tags: string[]) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/subscribeGroupToChildren`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupKey, childKey, tags }),
+    });
+    
+    if (response.status != 200) {
+        console.log("subscribeGroupToChildren Error:", response)
+        throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
     }
 }
