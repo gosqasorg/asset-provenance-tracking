@@ -1,4 +1,4 @@
-// Ecosystem
+// Working
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -7,9 +7,9 @@ import { webcrypto as crypto } from 'node:crypto';
 // Azure
 import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils.js'
 import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
-import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
+import { RestError, BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
 // Local
 import { sendEmail } from './sendEmail.js'
@@ -153,7 +153,13 @@ async function pathExists(containerClient: ContainerClient, path: string) {
     }
 }
 
-async function countExistingAttachments(containerClient: ContainerClient, deviceID: string, deviceKey: Uint8Array<ArrayBuffer>, limit: number = MAX_ATTACHMENTS_LIMIT): Promise<number> {
+async function countExistingAttachments(
+    containerClient: ContainerClient, 
+    deviceID: string, 
+    deviceKey: Uint8Array<ArrayBuffer>, 
+    limit: number = MAX_ATTACHMENTS_LIMIT, 
+    context: InvocationContext): Promise<number> 
+{
 
     let count = 0;
 
@@ -161,7 +167,7 @@ async function countExistingAttachments(containerClient: ContainerClient, device
         const blobClient = containerClient.getBlockBlobClient(blob.name);
         
         try {
-            const { data } = await decryptBlob(blobClient, deviceKey);
+            const { data } = await decryptBlob(blobClient, deviceKey, context);
             const json = new TextDecoder().decode(data);
             const prov = JSON.parse(json) as { attachments?: string[] };
             
@@ -178,12 +184,19 @@ async function countExistingAttachments(containerClient: ContainerClient, device
     return count;
 }
 
-async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>): Promise<DecryptedBlob> {
+async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayBuffer>, context: InvocationContext): Promise<DecryptedBlob> {
+    context.log("Entering decryptBlob()")
     const props = await client.getProperties();
     const salt = props.metadata?.["gdtsalt"];
-    if (!salt) throw new Error(`Missing Salt ${client.name}`);
+    if (!salt) {
+        context.error("Returning from decryptBlob() with error: Missing salt")
+        throw new Error(`Missing Salt ${client.name}`, { cause: 500 });
+    }
     const timestamp = parseInt(props.metadata?.["gdttimestamp"]);
-    if (isNaN(timestamp) || !isFinite(timestamp)) throw new Error(`Invalid Timestamp ${client.name}`);
+    if (isNaN(timestamp) || !isFinite(timestamp)) {
+        context.error("Returning from decryptBlob() with error: Invalid timestamp")
+        throw new Error(`Invalid Timestamp ${client.name}`, { cause: 500 });
+    }
 
     const buffer = await client.downloadToBuffer();
     const saltBuffer = fromHex(salt);
@@ -191,7 +204,8 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     const hash = props.metadata?.["gdthash"];
     if (hash) {
         if (!areEqual(fromHex(hash), await sha256(data))) {
-            throw new Error(`Invalid Hash ${client.name}`);
+            context.error("Returning from decryptBlob() with error: Invalid hash")
+            throw new Error(`Invalid Hash ${client.name}`, { cause: 500 });
         }
     }
 
@@ -200,6 +214,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     const encodedName = encryptedName.length > 0 ? await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, fromHex(encryptedName) as Uint8Array<ArrayBuffer>) : undefined;
     const filename = encodedName ? new TextDecoder().decode(encodedName) : undefined;
 
+    context.log("Returning successfully from decryptBlob()")
     return { data, contentType, timestamp, filename };
 
     function areEqual(first: Uint8Array, second: Uint8Array) {
@@ -210,6 +225,84 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
 
 export function deduplicateKeys(keys: string[]): string[] {
     return Array.from(new Set(keys))
+}
+
+
+/*============== Validation functions ============*/
+
+// TODO: split up into two schemata or two functions: records and groups differ
+export function validateRecordJSON(json: any, context) {
+    /* --- Records post to the backend with:
+     * 
+     *  {
+     *      "blobType":"deviceInitializer",
+     *      "deviceName":"foo",              // Required from user
+     *      "description":"bar",             // Required from user
+     *      "tags":[],                       // It's our responsibility for the rest to be here.
+     *      "children_key":"",
+     *      "hasParent":false,
+     *      "isPublicKey":false
+     *  }
+     *
+     *  // Groups have, at least:
+     *  {
+     *      "blobType":"deviceInitializer",
+     *      "deviceName":"foo",
+     *      "description":"bar",
+     *      "tags":[],"publicKey":"",
+     *      "children_key":[],
+     *      "children_name":[],
+     *      "hasParent":false,
+     *      "isPublicKey":false
+     *  }
+     *
+     */
+
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        description: z.string(),
+        deviceName: z.string(),
+        tags: z.array(z.string()).optional(),
+        children_key: z.union([z.string(), z.array(z.string())]),
+        children_name: z.array(z.string()).optional(),  // Only groups may have children name
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional()
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        context.error("Format of JSON provided was invalid.")
+        context.error(JSON.stringify(json))
+        context.error(e.cause)
+        context.error(e.message)
+        return false;
+    }
+}
+
+export function validateEntryJSON(json: any, context) {
+    // Record entries only have blobType, description, childrenkeys, tags, and send to all children
+    // Note: our frontend presently allows totally empty entries, so these all are truly optional
+    // The goal is to ensure nothing outside of these items is passed
+    const Valid = z.object({
+        blobType: z.string().optional(),
+        description: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        tags: z.array(z.string()).optional(),
+        send_to_all_children: z.boolean().optional()
+    });
+
+    try {
+        Valid.parse(json);
+        return true;
+    } catch (e) {
+        context.error("Format of JSON provided was invalid.")
+        context.error(JSON.stringify(json))
+        context.error(e.cause)
+        context.error(e.message)
+        return false;
+    }
 }
 
 
@@ -334,9 +427,15 @@ app.timer('livenessChecker', {
 
 /*==============  Core Utility Functions (to remain in this file)  ============*/
 
-export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined): Promise<string> {
+export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined, context): Promise<string> {
     const dataHash = toHex(await sha256(data));
-    const deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    let deviceID: string;
+    try {
+        deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+    } catch (error) {
+        context.error('Throwing error from upload()')
+        throw new Error(`Invalid key provided: ${error.message}`, {cause: 400});
+    }
     const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
     const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
 
@@ -346,29 +445,52 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     } else if (type === 'attach') {
         blobName = `attach/${blobID}`;
     } else {
-        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`);
+        context.error('Throwing error from upload()')
+        throw new Error(`Invalid type provided: ${type}. Expected 'prov' or 'attach'.`, {cause: 400});
     }
 
     const { encryptedData: encryptedName } = fileName
         ? await encrypt(deviceKey as Uint8Array<ArrayBuffer>, new TextEncoder().encode(fileName), salt as Uint8Array<ArrayBuffer>)
         : { encryptedData: undefined };
 
-    await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
-        metadata: {
-            gdtcontenttype: contentType,
-            gdthash: dataHash,
-            gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
-            gdttimestamp: `${timestamp}`,
-            gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
-        },
-        blobHTTPHeaders: {
-            blobContentType: "application/octet-stream"
+    try {
+        await client.uploadBlockBlob(blobName, encryptedData.buffer as NodeJS.BufferSource, encryptedData.length, {
+            metadata: {
+                gdtcontenttype: contentType,
+                gdthash: dataHash,
+                gdtsalt: toHex(salt as Uint8Array<ArrayBuffer>),
+                gdttimestamp: `${timestamp}`,
+                gdtname: encryptedName ? toHex(encryptedName as Uint8Array<ArrayBuffer>) : ""
+            },
+            blobHTTPHeaders: {
+                blobContentType: "application/octet-stream"
+            }
+        });
+    } catch(e) {
+        if(e instanceof RestError) {
+            context.error('Throwing RestError from upload(): ', e.code, e.message)
+            if(e.code <= 500 && e.code < 600) {
+                throw new Error('Internal error', {cause: 500})
+            } else if (e.code <= 400 && e.code < 500) {
+                throw new Error('Invalid request', {cause: e.code})
+            }
         }
-    });
+        context.error('Throwing error from upload()', e)
+        throw e
+    }
+    
+    context.log('Returning with success from upload()')    
     return blobID;
 }
 
-async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uint8Array, timestamp: number, record: any, attachments: NamedBlob[]): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> {
+async function uploadProvenance(
+    containerClient: ContainerClient, 
+    deviceKey: Uint8Array, 
+    timestamp: number, 
+    record: any, 
+    attachments: NamedBlob[], 
+    context): Promise<{ record: string; attachments: NamedBlob[]; oversizedAttachments: string[] | undefined}> 
+{
 
     const attachmentIDs = new Array<string>();
     const oversizedAttachments = new Array<string>();
@@ -386,7 +508,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
                     const fileName = attach.name ?? "Unknown";
                     oversizedAttachments.push(fileName);
                     // Log the oversized attachment
-                    console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+                    context.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
                     //Stop reading further
                     try {
                         await reader.cancel();
@@ -409,7 +531,7 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
                 attach.blob = null as any; // Set the blob to null to help garbage collection
                 const fileName = attach.name ?? "Unknown";
                 oversizedAttachments.push(fileName);
-                console.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
+                context.log(`Attachment "${fileName}" exceeds maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB`);
             }
             throw error; // Throw other errors
         }
@@ -422,14 +544,14 @@ async function uploadProvenance(containerClient: ContainerClient, deviceKey: Uin
     for (const attach of attachments) {    // Upload all attachments if they pass the size check
         if (typeof attach === 'string') continue;
         const data = await attach.blob.arrayBuffer()
-        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name);
+        const attachmentID = await upload(containerClient, deviceKey, data, "attach", attach.blob.type, timestamp, attach.name, context);
         attachmentIDs.push(attachmentID);
     }
 
     const provRecord = { record, attachments: attachmentIDs };
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
-    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined);
+    const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined, context);
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
 
@@ -450,28 +572,6 @@ async function addRecordWithTags(baseUrl, deviceKey, tags, description) {
       method: "POST",
       body: updateFormData,
     });
-}
-
-export async function validateJSON(json: any) {
-    // NOTE: Create Record only has blobType, description, childrenkeys, and tags
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),
-        description: z.string(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        console.log("Format of JSON provided was invalid.")
-        return false;
-    }
 }
 
 async function fetchWithRetry(context: InvocationContext, url: string, formData?: FormData) {
@@ -511,7 +611,7 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 
 /*=================  Core functions invoked by endpoint handlers (endpoint operators)  =====================*/
 
-async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>) {
+async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>, context) {
     key = typeof key === 'string' ? decodeKey(key) : key;
     const deviceID = await calculateDeviceID(key);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
@@ -522,7 +622,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
     const records = new Array<unknown>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `legacy/prov/${legacyDeviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, key);
+        const { data, timestamp } = await decryptBlob(blobClient, key, context);
         const json = new TextDecoder().decode(data);
         const record = JSON.parse(json) as { attachments?: { attachmentID: string }[] };
         const attachmentIDs = record.attachments?.slice() ?? [];
@@ -535,24 +635,29 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
         const attachments = new Array<NamedBlob>();
         for (const attachment of attachmentIDs) {
             const attachmentClient = containerClient.getBlockBlobClient(`legacy/attach/${attachment.attachmentID}`);
-            const { data, contentType, filename } = await decryptBlob(attachmentClient, key);
+            const { data, contentType, filename } = await decryptBlob(attachmentClient, key, context);
             attachments.push({
                 blob: new Blob([data], { type: contentType }),
                 name: filename
             });
         }
 
-        const uploaded = await uploadProvenance(containerClient, key, timestamp, record, attachments);
+        const uploaded = await uploadProvenance(containerClient, key, timestamp, record, attachments, context);
         records.push(uploaded);
     }
     return records;
 }
 
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return undefined;
+    }
+    if (request.params.deviceKey.length != 22) { return undefined; }
     const attachmentID = request.params.attachmentID;
-    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, deviceID, attachmentID });
+    context.log(`getDecryptedBlob`, { accountName, deviceKey: request.params.deviceKey, attachmentID });
 
     const containerExists = await containerClient.exists();
     if (!containerExists) { return undefined; }
@@ -561,7 +666,7 @@ export async function getDecryptedBlob(request: HttpRequest, context: Invocation
     const exists = await blobClient.exists();
     if (!exists) { return undefined; }
 
-    return await decryptBlob(blobClient, deviceKey);
+    return await decryptBlob(blobClient, deviceKey, context);
 }
 
 export function postProvenanceMiddleware(body: FormData): Boolean {
@@ -581,30 +686,81 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 // --- GETs --- //
 
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
+    context.log("Entering getProvenance()")
+    let deviceKey: Uint8Array<ArrayBuffer>;
+    let deviceID: string;
+    try {
+        deviceKey = decodeKey(request.params.deviceKey);
+        deviceID = await calculateDeviceID(deviceKey);
+    } catch (error) {
+        context.error("Returning from getProvenance(): bad request")
+        return { status: 400, body: error.message };
+    }
+
     context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
     const containerExists = await containerClient.exists();
-    if (!containerExists) { return { jsonBody: [] }; }
+    if (!containerExists) { 
+        context.error("Returning from getProvenance(): bad request");
+        return { 
+            status: 404,
+            jsonBody: []
+        };
+    }
 
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
-        await upgradeProvenance(containerClient, deviceKey);
+        try {
+            await upgradeProvenance(containerClient, deviceKey, context);
+        } catch (error) {
+            context.error('Returning with error from getProvenance(): ', error)
+            if (error.cause == 400) {
+                return { 
+                    status: 400,
+                    jsonBody: { error: error.message }
+                }
+            } else {
+                return {
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            }
+        }
     }
 
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
-        const { data, timestamp } = await decryptBlob(blobClient, deviceKey);
+        let data: Uint8Array<ArrayBuffer>;
+        let timestamp: number;
+        try {
+            ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
+        } catch (error) {
+            context.error('Returning with error from getProvenance(): ', error)
+            if (error.cause == 500) {
+                return { 
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            } else {
+                // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
+                return {
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            }
+        }
         const json = new TextDecoder().decode(data);
         const parsed_json = JSON.parse(json);
         const provRecord = parsed_json as ProvenanceRecord;
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
+
+    context.log("Returning successfully from getProvenance()")
     return { jsonBody: records };
 }
+
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
@@ -613,10 +769,16 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
     const { data, contentType, filename } = decryptedBlob;
     const headers = new Headers();
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
-    if (contentType) { headers.append("Content-Type", contentType); }
-    if (filename) {
-        headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-        headers.append("Attachment-Name", filename);
+
+    // Edge-case where image is attached to a record but not actually stored
+    try {
+        if (contentType) { headers.append("Content-Type", contentType); }
+        if (filename) {
+            headers.append("Content-Disposition", `attachment; filename="${filename}"`);
+            headers.append("Attachment-Name", filename);
+        }
+    } catch (error) {
+        return { status: 404, body: error.message };
     }
 
     return { body: data, headers };
@@ -639,7 +801,7 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        console.error('getNewDeviceKey: Failed to create a new key', error.message)
+        context.error('getNewDeviceKey: Failed to create a new key', error.message)
         return {
             status: 500,
             body: "",
@@ -698,115 +860,116 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const deviceID = await calculateDeviceID(deviceKey);
-    await containerClient.createIfNotExists();
-    const formData = await request.formData();
-    context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
-
-    // --- Guard Clauses --- //
-
-    if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
-
-    const provenanceRecord = formData.get("provenanceRecord");
-    if (typeof provenanceRecord !== 'string') { return { status: 404 }; }
-
-    const record = JSON5.parse(provenanceRecord);
-    if (!validateJSON(record)) { return { status: 404 }; }
-
-    let condition = "deviceName" in record && (!validateRecordJSON(record) || !validateEntryJSON(record))
-    if (condition) {
-        { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
-    }
-
-    // -- Handle Attachments -- // 
-
-    // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
-    const timestamp = new Date().getTime();
-    const attachments = new Array<NamedBlob>();
-    for (const attach of formData.values()) {
-        if (typeof attach === 'string') continue;
-        context.log("Attachment Type: " + typeof(attach))
-
-        // Content Moderation        
-        // Silently skip if not permitted
-        context.log('Checking attachment')
-        if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
-            context.log(`Content Moderation flagged image named: ${attach.name}`)
-            continue
+    try {
+        let deviceKey: Uint8Array<ArrayBuffer>;
+        let deviceID: string;
+        try {
+            deviceKey = decodeKey(request.params.deviceKey);
+            deviceID = await calculateDeviceID(deviceKey);
+        } catch (error) {
+            return { status: 400, body: error.message };
         }
-        context.log('Image is permitted')
-        
-        attachments.push({ blob: attach, name: attach.name });
-    }
 
-    if (attachments.length > 0) {
-        const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT);
+        await containerClient.createIfNotExists();
+        const formData = await request.formData();
+        context.log(`postProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID, formData: formData });
 
-        if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
-            return { status: 304 };
+        // --- Guard Clauses --- //
+        if (!postProvenanceMiddleware(formData)) {return {status: 304 }; }  
+
+        const provenanceRecord = formData.get("provenanceRecord");
+        if (typeof provenanceRecord !== 'string') { return { status: 400 }; }
+
+        const record = JSON5.parse(provenanceRecord);
+
+        // TODO: we need to parse out whether we're using an entry or a record. 
+        let condition = "deviceName" in record && (!validateRecordJSON(record, context) && !validateEntryJSON(record, context))
+        if (condition) {
+            { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
         }
-    }
 
-    const body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments);
-    if (body.oversizedAttachments) {
-        context.error('postProv: returning 400')
-        return {
-            status: 400,
-            jsonBody: {
-                error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
-                oversizedAttachments: body.oversizedAttachments,
-                attachments: body.attachments
+        // -- Handle Attachments -- // 
+
+        // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
+        const timestamp = new Date().getTime();
+        const attachments = new Array<NamedBlob>();
+        for (const attach of formData.values()) {
+            if (typeof attach === 'string') continue;
+            context.log("Attachment Type: " + typeof(attach))
+
+            // Content Moderation        
+            // Silently skip if not permitted
+            context.log('Checking attachment')
+            if(await isImage(attach, context) && await imageIsNotPermitted(attach, context)) {
+                context.log(`Content Moderation flagged image named: ${attach.name}`)
+                continue
+            }
+            context.log('Image is permitted')
+            
+            attachments.push({ blob: attach, name: attach.name });
+        }
+
+        if (attachments.length > 0) {
+            const existingCount = await countExistingAttachments(containerClient, deviceID, deviceKey, MAX_ATTACHMENTS_LIMIT, context);
+
+            if (existingCount + attachments.length > MAX_ATTACHMENTS_LIMIT) {
+                return { status: 304 };
             }
         }
+
+        let body
+        try {
+            body = await uploadProvenance(containerClient, deviceKey, timestamp, record, attachments, context);
+        } catch(error) {
+            context.error('Returning with error from postProvenance(): ', error)
+            if(error.cause == 400) {
+                return { 
+                    status: 400,
+                    jsonBody: { error: error.message }
+                }
+            } else {
+                return {
+                    status: 500,
+                    jsonBody: { error: 'Internal Server Error' }
+                }
+            }
+
+        }
+        if (body.oversizedAttachments) {
+            context.error('postProv: returning 400')
+            return {
+                status: 400,
+                jsonBody: {
+                    error: `The following file(s) exceed the maximum allowed size of ${MAX_ATTACHMENT_SIZE / (1024 * 1024)}MB: ${body.oversizedAttachments.join(', ')}`,
+                    oversizedAttachments: body.oversizedAttachments,
+                    attachments: body.attachments
+                }
+            }
+        }
+
+        context.log('Returning successfully from postProvenance')
+        return { jsonBody: body ?? { converted: true}};
+
+    } catch(error) { 
+        console.error('Returning unsuccessfully from postProvenance')
+        if (error instanceof z.ZodError) {
+            context.error(`postProvenance: zodError: ${error.message}`)
+            context.error('createGroupHandler: returning 400')
+            return {
+                status: 400,
+                jsonBody: { data: error.message },
+                headers: { "Content-Type": "text/plain" }
+            }
+        }
+
+        return {
+            status: 500,
+            jsonBody: { data: error.message },
+            headers: { "Content-Type": "text/plain" }
+        }
     }
-  
-    return { jsonBody: body ?? { converted: true}};
 }
 
-export function validateRecordJSON(json: any) {
-    // Records/Groups require children_key, hasParent, deviceName, and description
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]),
-        children_name: z.array(z.string()).optional(),
-        description: z.string(),
-        deviceName: z.string(),
-        hasParent: z.boolean(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        console.error("Format of JSON provided was invalid.")
-        console.error(JSON.stringify(json))
-        console.error(e.cause)
-        console.error(e.message)
-        return false;
-    }
-}
-
-export function validateEntryJSON(json: any) {
-    // Record entries only have blobType, description, childrenkeys, and tags (none required)
-    const Valid = z.object({
-        blobType: z.string().optional(),
-        description: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-    try {
-        Valid.parse(json);
-        return true;
-    } catch (e) {
-        console.log("Format of JSON provided was invalid.")
-        return false;
-    }
-}
 
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /*
@@ -814,8 +977,16 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     */
     const baseUrl = process.env['backend_url'];
 
+    // Confirm that the device key is valid
+    const deviceKey = request.params.deviceKey;
     try {
-        const deviceKey = request.params.deviceKey;
+        decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
+
+    try {
+
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -881,6 +1052,14 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
     const baseUrl = process.env['backend_url'];
     const deviceKey = request.params.deviceKey;
+
+    // Confirm that the device key is valid
+    try {
+        decodeKey(request.params.deviceKey);
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
+
     context.log(deviceKey)
     context.error(deviceKey)
 
@@ -889,14 +1068,14 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     const records = await getRecords.json()
 
     for (let record of records) {
-		if (record.record.tags && (record.record.tags).includes("recall")) {
-			context.error(`Record has already been recalled`);
-            return {
-                status: 400,
-                body: "Record has already been recalled"
-            }
-		}
-	}
+      if (record.record.tags && (record.record.tags).includes("recall")) {
+        context.error(`Record has already been recalled`);
+              return {
+                  status: 400,
+                  body: "Record has already been recalled"
+              }
+      }
+      }
 
     const formData = await request.formData();
     const recordStr = formData.get("provenanceRecord"); 
@@ -966,7 +1145,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
             status: 200
         }
     } catch (error) {
-        console.error(`Error recalling children: ${error}`);
+        context.error(`Error recalling children: ${error}`);
         return {
             status: 500
         }
@@ -996,36 +1175,50 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         }
 
         const response = await tableClient.createEntity(entity);
-        console.log(response)
+        context.log(response)
 
-        console.log('postEmail: Added feedback volunteer contact info')
+        context.log('postEmail: Added feedback volunteer contact info')
         return {
             status: 200,
             body: "Created",
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
-        console.error('postEmail: Failed to add feedback volunteer contact info', error.message)
+        context.error('postEmail: Failed to add feedback volunteer contact info', error.message)
     }
 }
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('httpTrigger: entering postNotificationEmail')
+
+    // checks email format, recordKey is non-empty string, and tags is an array of strings
+    const notificationSignupSchema = z.object({
+        email: z.email(),
+        recordKey: z.string().min(1),
+        tags: z.array(z.string()).default([]),
+    });
+
     try {
         // parse email, recordKey and tags from body
-        const body = await request.json() as any;
+        const body = await request.json();
         context.log('body:', body);
-        const email = body.email;
-        const recordKey = body.recordKey;
-        // const tags = body.tags ?? [];
 
-        if (!email || !recordKey) {
-            context.error('postNotificationEmail: returning 400')
-            return {
-                jsonBody: {error: "Error: email and record key required"},
-                status: 400
+        let notificationSignupData;
+
+        try {
+            notificationSignupData = notificationSignupSchema.parse(body);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                context.error('postNotificationEmail: returning 400')
+                return {
+                    jsonBody: {error: error.issues},
+                    status: 400
+                }
             }
+            throw error;
         }
+
+        const { email, recordKey, tags } = notificationSignupData;
 
         context.log("Received signup for " + email)
 
@@ -1053,7 +1246,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
             verified: false,
             expiresAt: Date.now() + codeExpiration,
             recordKey: recordKey,
-            // tags: JSON.stringify(tags),
+            tags: JSON.stringify(tags),
         };
 
         await tableClient.upsertEntity(entity);
@@ -1094,7 +1287,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
         
     } catch(error) {
         context.error(error.message);
-        console.log(error)
+        context.log(error)
         if(Object.hasOwn(error, 'message') && Object.hasOwn(error.message, 'statusCode') && error.message.statusCode == 429) {
             return {
                 jsonBody: { message: "" }, // Deliberately blank
@@ -1166,7 +1359,7 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     }
 
     } catch(error) {
-        console.error(error.message);
+        context.error(error.message);
         return {
             jsonBody: { message: "Internal Error" },
             status: 500
@@ -1182,7 +1375,6 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
         const body = await request.json() as any;
         const token = body.token;
         const code = body.code;
-        const tags = []
 
         if (!token || !code) {
             context.error('postVerifyCode: returning 400')
@@ -1221,6 +1413,11 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             }
         }
 
+        // get tags as array of strings if entity exists and has tags. 
+        const tags = typeof entity.tags === 'string'
+            ? z.array(z.string()).parse(JSON.parse(entity.tags))
+            : [];
+
         await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
 
         // Proof of concept 
@@ -1234,7 +1431,14 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
             status: 200
         } 
     } catch(error) {
-        console.error(error.message);
+        if (error instanceof z.ZodError) {
+            context.error('postVerifyCode: returning 400')
+            return {
+                jsonBody: {error: error.issues},
+                status: 400
+            }
+        }     
+        context.error(error.message);
         return {
             jsonBody: {message: "Internal Error"},
             status: 500,
@@ -1300,7 +1504,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
             verified: false,
             expiresAt: Date.now() + codeExpiration,
             recordKey: entity.recordKey as string,
-            // tags: entity.tags as string ?? '[]'
+            tags: entity.tags as string ?? '[]'
         };
 
         await tableClient.createEntity(updatedEntity);
@@ -1340,7 +1544,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
         } 
         
     } catch(error) {
-        console.error(error.message);
+        context.error(error.message);
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
@@ -1385,9 +1589,13 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
 // --- GETs --- //
 
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    const deviceKey = decodeKey(request.params.deviceKey);
-    const body = await upgradeProvenance(containerClient, deviceKey);
-    return { jsonBody: body ?? { "already-converted": true} };
+    try {
+        const deviceKey = decodeKey(request.params.deviceKey);
+        const body = await upgradeProvenance(containerClient, deviceKey, context);
+        return { jsonBody: body ?? { "already-converted": true } };
+    } catch (error) {
+        return { status: 400, body: error.message };
+    }
 }
 
 
@@ -1553,6 +1761,8 @@ const GroupCreationOrderSchema = z.object({
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
+    context.log('Entering createGroupHandler')
+
     const GroupCreationOrderSchema = z.object({
         deviceName: z.string(),
         description: z.string(),
@@ -1566,11 +1776,13 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     });  
       
     try{
+        context.error(request.headers.get('content-type')) // dev
         const attachments: NamedBlob[] = [];
         const formData = await request.formData();
 
         const recordStr = formData.get("provenanceRecord"); 
         if (typeof recordStr !== "string") {
+            context.error('Throwing error from createGroupHandler')
             throw new SyntaxError(
                 "Missing provenanceRecord in form data"
             );
@@ -1592,12 +1804,14 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
         context.log(theGroupRecordPageUrl)
 
+        context.log('Returning successfully from createGroupHandler')
         return {
             status: 200,
             jsonBody: { groupUrl: theGroupRecordPageUrl },
             headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
+        context.error('Returning unsuccessfully from createGroupHandler')
         context.error('Failed to create group: ', error.message)
         let message;
 
@@ -1634,6 +1848,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
 }
 
 async function createRecord(context, name, description, tags, attachments) {
+    context.log('Entering createRecord')
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const deviceKey = await makeEncodedDeviceKey();
@@ -1653,7 +1868,7 @@ async function createRecord(context, name, description, tags, attachments) {
         // use uploadProvenance to post the record and any attachments
         await containerClient.createIfNotExists();
         const timestamp = new Date().getTime();
-        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments);
+        const body = await uploadProvenance(containerClient, decodedDeviceKey, timestamp, data, attachments, context);
         if (body.oversizedAttachments) {
             context.error('createRecord: returning 400')
             return {
@@ -1686,6 +1901,8 @@ const RecordCreationOrderSchema = z.object({
 });
 
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering createRecordHandler')
+
     const RecordCreationOrderSchema = z.object({
         blobType: z.string().optional(),
         deviceName: z.string(),
@@ -1719,12 +1936,14 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 
         let recordUrl = await createRecord(context, name, description, tags, attachments)
         context.log(recordUrl)
+        context.log('Returning successfully from createRecordHandler')
         return {
             status: 200,
             jsonBody: { recordUrl: recordUrl },
             headers: { "Content-Type": "text/plain" }
         }
     } catch(error) {
+        context.error('Returning unsuccessfully from createRecordHandler')
         context.error('createRecordHandler: Failed to create record: ', error.message)
         let message;
 
@@ -1761,6 +1980,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering addEntryHandler for /addEntry')
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const backendUrl = process.env['backend_url'];
@@ -1772,6 +1992,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
 
     // Check the first record entry in the provenance to see if the key is a group or not
     const provenance = await getProvenance(request, context);
+    if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
     const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
     if (!creationRecord) {
         context.error('addEntryHandler: returning 400')
@@ -1797,6 +2018,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         }
     }
 
+    // TODO: Always call directly if possible. 
     // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
     const response = await fetch(`${backendUrl}${deviceKey}`, {
         method: "POST",
@@ -1814,6 +2036,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
     if (isGroup && sendEntryToAllChildren) {
         const notifChildrenResponse = await notifyChildren(request, context);
         if (notifChildrenResponse.status !== 200) {
+            context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' + notifChildrenResponse.status)
             return {
                 status: notifChildrenResponse.status,
                 jsonBody: { error: "Record entry was unable to be sent to children." }
@@ -1821,6 +2044,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         }
     }
 
+    context.log('Returning successfully from addEntryHandler')
     return {
         jsonBody: postProvResponse,
         headers: { "Content-Type": "application/json" }
@@ -1972,3 +2196,4 @@ app.post("notifySubscribers", {
     route: 'notifySubscribers/{deviceKey}',
     handler: notifySubscribersHandler
 })
+
