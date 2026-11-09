@@ -1,7 +1,10 @@
 import * as z from 'zod';
+import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
 import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem } from '~/services/azureFuncs';
+import Index from '~/pages/index.vue';
+import CreateDevice from '~/components/Forms/CreateDevice.vue';
 
 async function createRequest (
   name: string,
@@ -29,6 +32,55 @@ function resetStashValues(): void {
   localStorage.setItem('gdt-stash-failed', '');
   localStorage.setItem('gdt-stash-fulfilled', '');
 }
+
+describe("Button Click Experiment", () => {
+  // Note: These test use the vue test utils to interact with page elements
+  it("Click Button and Detect Page Change", async () => {
+    // Mock and spy on the router's push function
+    const mockPush = vi.fn();
+
+    // Mount the component with the mocked router (wrapper lets us interact with the page)
+    const wrapper = mount(Index, {
+      global: {
+        stubs: ['RouterLink'], // Replaces RouterLink with a dummy so it doesn't attempt to load
+        mocks: {
+          $router: { push: mockPush },
+          $route: { path: '/' }
+        }
+      }
+    });
+
+    // Grab the 'view our pilot program' button and click it
+    await wrapper.find('#latest-news-button').trigger('click');
+
+    // Confirm the button attempted to navigate to the correct page
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/dmdm');
+  });
+
+  it("Click Checkbox and Detect Visual Change", async () => {
+    // Mock and spy on the router's push function
+    const mockPush = vi.fn();
+    const wrapper = mount(CreateDevice, {
+      global: {
+        stubs: ['RouterLink'],
+        mocks: {
+          $router: { push: mockPush },
+          $route: { path: '/gdt' }
+        }
+      }
+    });
+
+    // Confirm the email input section is hidden
+    expect(wrapper.find('#feedback-email-input').exists()).toBe(false);
+
+    // 'Click' on the checkbox
+    await wrapper.find('#notify-all').setValue(true);
+
+    // Confirm the email input section appears
+    expect(wrapper.find('#feedback-email-input').exists()).toBe(true);
+  });
+});
 
 // Mock global fetch so a real network request isn't made when fetch is called in functions to be tested
 const mockFetch = vi.fn();
