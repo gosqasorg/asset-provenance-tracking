@@ -23,15 +23,16 @@ describe("Group of tests", () => {
 
 */
 
-const baseUrl = process.env['backend_url'].split('/prov')[0] 
+
+const api_url = "https://gosqasbe.azurewebsites.net/api";
 
 describe("Group Creation Tests", () => {
 	// The most basic possible test
-	it("should create a group record with one child", async () => {
+	it("Create a group record with one child", async () => {
 		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
-			fetch(`${baseUrl}/getNewDeviceKey`),
-			fetch(`${baseUrl}/getNewDeviceKey`)
+			fetch(`${api_url}/getNewDeviceKey`),
+			fetch(`${api_url}/getNewDeviceKey`)
 		]);
 		const groupKey = await groupKeyRes.text();
 		const childKey = await childKeyRes.text();
@@ -60,27 +61,29 @@ describe("Group Creation Tests", () => {
 		}));
 		
 		const [childResponse, groupResponse] = await Promise.all([
-			fetch(`${baseUrl}/provenance/${childKey}`, {
+			fetch(`${api_url}/provenance/${childKey}`, {
 				method: "POST",
 				body: childFormData,
 			}),
-			fetch(`${baseUrl}/provenance/${groupKey}`, {
+			fetch(`${api_url}/provenance/${groupKey}`, {
 				method: "POST",
 				body: groupFormData,
 			})
 		]);
 		
+		expect(childResponse.status).toBe(200);
+		expect(groupResponse.status).toBe(200);
 		expect(childResponse.ok).toBe(true);
 		expect(groupResponse.ok).toBe(true);
 	}, 60000);
 
 
 	// Most basic + one feature
-	it("should create a group record with multiple children", async () => {
+	it("Create a group record with multiple children", async () => {
 		// Generate all device keys 
 		const keyPromises = [
-			fetch(`${baseUrl}/getNewDeviceKey`),
-			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+			fetch(`${api_url}/getNewDeviceKey`),
+			...Array.from({length: 3}, () => fetch(`${api_url}/getNewDeviceKey`))
 		];
 		const keyResponses = await Promise.all(keyPromises);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
@@ -100,7 +103,7 @@ describe("Group Creation Tests", () => {
 				isPublicKey: false
 			}));
 			
-			return fetch(`${baseUrl}/provenance/${key}`, {
+			return fetch(`${api_url}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -123,7 +126,7 @@ describe("Group Creation Tests", () => {
 			isPublicKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -132,8 +135,8 @@ describe("Group Creation Tests", () => {
 
 		// Verify records 
 		const verificationPromises = [
-			fetch(`${baseUrl}/provenance/${groupKey}`),
-			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+			fetch(`${api_url}/provenance/${groupKey}`),
+			...childKeys.map(key => fetch(`${api_url}/provenance/${key}`))
 		];
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -151,12 +154,12 @@ describe("Group Creation Tests", () => {
 
 
     // Test public key functionality
-    it("should create a group record with a public key", async () => {
+    it("Create a group record with a public key", async () => {
         // Generate all device keys 
 		const numChildKeys = 2;
 		const keyPromises = [
-			fetch(`${baseUrl}/getNewDeviceKey`),
-			...Array.from({length: numChildKeys}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+			fetch(`${api_url}/getNewDeviceKey`),
+			...Array.from({length: numChildKeys}, () => fetch(`${api_url}/getNewDeviceKey`))
 		];
 		const keyResponses = await Promise.all(keyPromises);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
@@ -201,15 +204,15 @@ describe("Group Creation Tests", () => {
 		}));
 		
 		const creationPromises = [
-			fetch(`${baseUrl}/provenance/${groupKey}`, {
+			fetch(`${api_url}/provenance/${groupKey}`, {
 				method: "POST",
 				body: groupFormData,
 			}),
-			fetch(`${baseUrl}/provenance/${childKey}`, {
+			fetch(`${api_url}/provenance/${childKey}`, {
 				method: "POST",
 				body: childFormData,
 			}),
-			fetch(`${baseUrl}/provenance/${publicKey}`, {
+			fetch(`${api_url}/provenance/${publicKey}`, {
 				method: "POST",
 				body: publicData,
 			}),
@@ -221,8 +224,8 @@ describe("Group Creation Tests", () => {
 		
 		// Verify all records 
 		const verificationPromises = [
-			fetch(`${baseUrl}/provenance/${groupKey}`),
-			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+			fetch(`${api_url}/provenance/${groupKey}`),
+			...childKeys.map(key => fetch(`${api_url}/provenance/${key}`))
 		];
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -258,7 +261,7 @@ describe("Group Creation Tests", () => {
 		const recallFormData = new FormData();
 		recallFormData.append("provenanceRecord", JSON.stringify(recallRecord));
 	
-		const recallResponse = await fetch(`${baseUrl}/recall/${groupKey}`, {
+		const recallResponse = await fetch(`${api_url}/recall/${groupKey}`, {
 			method: "POST",
 			body: recallFormData,
 		});
@@ -275,11 +278,11 @@ describe("Group Creation Tests", () => {
 		const sendToChildrenFormData = new FormData();
 		sendToChildrenFormData.append("provenanceRecord", JSON.stringify(recordToSend));
 	
-		const sendToChildrenUpdateResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const sendToChildrenUpdateResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: sendToChildrenFormData,
 		});
-		const sendToChildrenResponse = await fetch(`${baseUrl}/provenance/sendToChildren/${groupKey}`, {
+		const sendToChildrenResponse = await fetch(`${api_url}/provenance/sendToChildren/${groupKey}`, {
 			method: "POST",
 			body: sendToChildrenFormData,
 		});
@@ -289,7 +292,7 @@ describe("Group Creation Tests", () => {
 
 		// Make sure the child got the recalled/received record from the group and that the public key did not get them
 		const updatePromises = [
-			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+			...childKeys.map(key => fetch(`${api_url}/provenance/${key}`))
 		];
 		const updateResponses = await Promise.all(updatePromises);
 		const updateData = await Promise.all(
@@ -310,11 +313,11 @@ describe("Group Creation Tests", () => {
 
 
 	// Everything all at once
-	it("should create a group record with all features", async () => {
+	it("Create a group record with all features", async () => {
 		// Generate all device keys 
 		const keyPromises = [
-			fetch(`${baseUrl}/getNewDeviceKey`),
-			...Array.from({length: 3}, () => fetch(`${baseUrl}/getNewDeviceKey`))
+			fetch(`${api_url}/getNewDeviceKey`),
+			...Array.from({length: 3}, () => fetch(`${api_url}/getNewDeviceKey`))
 		];
 		const keyResponses = await Promise.all(keyPromises);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
@@ -335,7 +338,7 @@ describe("Group Creation Tests", () => {
 				isPublicKey: false
 			}));
 			
-			return fetch(`${baseUrl}/provenance/${key}`, {
+			return fetch(`${api_url}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -358,7 +361,7 @@ describe("Group Creation Tests", () => {
 			isPublicKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -367,8 +370,8 @@ describe("Group Creation Tests", () => {
 		
 		// Verify all records 
 		const verificationPromises = [
-			fetch(`${baseUrl}/provenance/${groupKey}`),
-			...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))
+			fetch(`${api_url}/provenance/${groupKey}`),
+			...childKeys.map(key => fetch(`${api_url}/provenance/${key}`))
 		];
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -401,12 +404,11 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 
-
-	it("should create a group record with tags", async () => {
+	it("Create a group record with tags", async () => {
 		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
-            fetch(`${baseUrl}/getNewDeviceKey`),
-            fetch(`${baseUrl}/getNewDeviceKey`)
+            fetch(`${api_url}/getNewDeviceKey`),
+            fetch(`${api_url}/getNewDeviceKey`)
         ]);
         const groupKey = await groupKeyRes.text();
         const childKey = await childKeyRes.text();
@@ -423,7 +425,7 @@ describe("Group Creation Tests", () => {
 			isPublicKey: false
 		}));
 			
-		const childResponse = await fetch(`${baseUrl}/provenance/${childKey}`, {
+		const childResponse = await fetch(`${api_url}/provenance/${childKey}`, {
 			method: "POST",
 			body: childFormData,
 		});
@@ -442,7 +444,7 @@ describe("Group Creation Tests", () => {
 			isPublicKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -451,8 +453,8 @@ describe("Group Creation Tests", () => {
 		
 		// Verify records
 		const verificationPromises = [
-			fetch(`${baseUrl}/provenance/${groupKey}`),
-			fetch(`${baseUrl}/provenance/${childKey}`)
+			fetch(`${api_url}/provenance/${groupKey}`),
+			fetch(`${api_url}/provenance/${childKey}`)
 		];
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -477,10 +479,11 @@ describe("Group Creation Tests", () => {
 		expect(retrievedChild[0].record.tags.length).toBe(2);
 	}, 60000);
 	
+
 	// Group Creation test with 2 child keys + send_to_all_children
 	it("Group Creation - Sending Record Entry to Child Records", async () => {
 		// Create new group and children keys
-		const keysCreation = [fetch(`${baseUrl}/getNewDeviceKey`),...Array.from({length: 2}, () => fetch(`${baseUrl}/getNewDeviceKey`))];
+		const keysCreation = [fetch(`${api_url}/getNewDeviceKey`),...Array.from({length: 2}, () => fetch(`${api_url}/getNewDeviceKey`))];
 		const keyResponses = await Promise.all(keysCreation);
 		const keys = await Promise.all(keyResponses.map(res => res.text()));
 
@@ -514,7 +517,7 @@ describe("Group Creation Tests", () => {
 				hasParent: true,
 				isPublicKey: false
 			}));
-			return fetch(`${baseUrl}/provenance/${key}`, {
+			return fetch(`${api_url}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -527,7 +530,7 @@ describe("Group Creation Tests", () => {
 		});
 
 		// CREATED THE GROUP RECORD 
-		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -544,14 +547,14 @@ describe("Group Creation Tests", () => {
         const formData = new FormData();
         formData.append("provenanceRecord", JSON.stringify(payload));
 
-        const response = await fetch(`${baseUrl}/addEntry/${groupKey}`, {
+        const response = await fetch(`${api_url}/addEntry/${groupKey}`, {
             method: "POST",
             body: formData,
         });
         expect(response.status).toBe(200);
 
 		// Verify tags are present in all child keys
-		const verificationPromises = [fetch(`${baseUrl}/provenance/${groupKey}`), ...childKeys.map(key => fetch(`${baseUrl}/provenance/${key}`))];
+		const verificationPromises = [fetch(`${api_url}/provenance/${groupKey}`), ...childKeys.map(key => fetch(`${api_url}/provenance/${key}`))];
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(verificationResponses.map(response => response.json()));
 		const [retrievedGroup, ...retrievedChildren] = verificationData;
@@ -560,9 +563,11 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain("Why hello, child");
 		});
 
-	}, 6000); 
+	}, 60000); 
+
+
 	// Test for custom titles
-	it("should create a group with two children having custom titles", async () => {
+	it("Create a group with two children having custom titles", async () => {
 		// Generate device keys 
 		const groupKey = await makeEncodedDeviceKey();
 		const childKey1 = await makeEncodedDeviceKey();
@@ -599,7 +604,7 @@ describe("Group Creation Tests", () => {
 				isPublicKey: false
 			}));
 			
-			return fetch(`${baseUrl}/provenance/${key}`, {
+			return fetch(`${api_url}/provenance/${key}`, {
 				method: "POST",
 				body: childFormData,
 			});
@@ -623,7 +628,7 @@ describe("Group Creation Tests", () => {
 			isPublicKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
@@ -632,7 +637,7 @@ describe("Group Creation Tests", () => {
 		
 		// Verify custom titles are present in all child keys
 		const verificationPromises = childKeys.map(key => 
-			fetch(`${baseUrl}/provenance/${key}`)
+			fetch(`${api_url}/provenance/${key}`)
 		);
 		const verificationResponses = await Promise.all(verificationPromises);
 		const verificationData = await Promise.all(
@@ -652,11 +657,11 @@ describe("Group Creation Tests", () => {
 //. read group record for attachmment and then read one child record for attachment.
 
 	//Group record with one attachment test
-	it("should create a group record with one attachment", async () => {
+	it("Create a group record with one attachment", async () => {
     	//Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
-        	fetch(`${baseUrl}/getNewDeviceKey`),
-        	fetch(`${baseUrl}/getNewDeviceKey`)
+        	fetch(`${api_url}/getNewDeviceKey`),
+        	fetch(`${api_url}/getNewDeviceKey`)
     	]);
     	const groupKey = await groupKeyRes.text();
     	const childKey = await childKeyRes.text();
@@ -672,7 +677,7 @@ describe("Group Creation Tests", () => {
         	hasParent: false,
         	isPublicKey: false
     	}));
-    	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+    	const childPost = await fetch(`${api_url}/provenance/${childKey}`, { method: "POST", body: childFormData })
     	expect(childPost.ok).toBe(true)
 
     	//create group record with one attachment (using a200.jpg from repo)
@@ -692,7 +697,7 @@ describe("Group Creation Tests", () => {
         	const blob = new Blob([buffer], { type: 'image/jpeg' })
         	groupFormData.append('attachment', blob) 
 
-        	const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+        	const postResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
             	method: "POST",
             	body: groupFormData,
         	});
@@ -705,7 +710,7 @@ describe("Group Creation Tests", () => {
     	// GET and verify the record has one attachment
     	try {
         	// GET the group and check attachment
-    		const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+    		const getResponse = await (await fetch(`${api_url}/provenance/${groupKey}`)).json()
 			expect(getResponse).toBeDefined()
 			expect(getResponse.length).toBeGreaterThan(0)
 			let responseString = JSON.parse(JSON.stringify(getResponse[0]))
@@ -727,7 +732,7 @@ describe("Group Creation Tests", () => {
 
     		// GET the child and assert it hasn't inherited the attachment 
 			//Returns false, however we expect it to return true? 
-			const childGet = await (await fetch(`${baseUrl}/provenance/${childKey}`)).json()
+			const childGet = await (await fetch(`${api_url}/provenance/${childKey}`)).json()
 			expect(childGet).toBeDefined()
 			expect(childGet.length).toBeGreaterThan(0)
     
@@ -739,12 +744,12 @@ describe("Group Creation Tests", () => {
     		expect(childEntry.attachments.includes(attHash)).toBe(false)
     
 			// Try to download the attachment using the child's key (should fail)
-			const downloadUrl = `${baseUrl}/attachment/${childKey}/${attHash}`
+			const downloadUrl = `${api_url}/attachment/${childKey}/${attHash}`
 			const downloadResponse = await fetch(downloadUrl)
     		expect(downloadResponse.ok).toBe(false)
 
 			// Try to download the attachment using the group's key (should succeed)
-			const downloadUrl2 = `${baseUrl}/attachment/${groupKey}/${attHash}`
+			const downloadUrl2 = `${api_url}/attachment/${groupKey}/${attHash}`
 			const downloadResponse2 = await fetch(downloadUrl2)
 			expect(downloadResponse2.ok).toBe(true)
 
@@ -758,11 +763,11 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 	//Group record with multiple attachments test
-	it("should create a group record with multiple attachments", async() => {
+	it("Create a group record with multiple attachments", async() => {
 		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
-        	fetch(`${baseUrl}/getNewDeviceKey`),
-        	fetch(`${baseUrl}/getNewDeviceKey`)
+        	fetch(`${api_url}/getNewDeviceKey`),
+        	fetch(`${api_url}/getNewDeviceKey`)
     	]);
     	const groupKey = await groupKeyRes.text()
     	const childKey = await childKeyRes.text()
@@ -778,7 +783,7 @@ describe("Group Creation Tests", () => {
         	hasParent: false,
         	isPublicKey: false
     	}));
-    	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+    	const childPost = await fetch(`${api_url}/provenance/${childKey}`, { method: "POST", body: childFormData })
     	expect(childPost.ok).toBe(true)
 
 		// create group record with multiple attachments (using a200.jpg and c200.jpg from repo)
@@ -803,7 +808,7 @@ describe("Group Creation Tests", () => {
 			const blob2 = new Blob([Uint8Array.from(buffer2)], { type: 'image/jpeg' })
 			groupFormData.append('attachment2', blob2, 'attachment2.bin')
 
-			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			const postResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 				method: "POST",
 				body: groupFormData,
 			});
@@ -816,7 +821,7 @@ describe("Group Creation Tests", () => {
 		// GET and verify the record has multiple attachments
 		//Not checking whether the children have inherited attachments here: also because you cannot add more than one attachment to a group on the web
 		try {
-			const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			const getResponse = await (await fetch(`${api_url}/provenance/${groupKey}`)).json()
 			expect(getResponse).toBeDefined()
 			expect(getResponse.length).toBeGreaterThan(0)
 
@@ -837,11 +842,11 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 	//Group attachment includes a PDF
-	it("should create a group record with a PDF", async() => {
+	it("Create a group record with a PDF", async() => {
 		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
-        	fetch(`${baseUrl}/getNewDeviceKey`),
-        	fetch(`${baseUrl}/getNewDeviceKey`)
+        	fetch(`${api_url}/getNewDeviceKey`),
+        	fetch(`${api_url}/getNewDeviceKey`)
     	]);
     	const groupKey = await groupKeyRes.text()
     	const childKey = await childKeyRes.text()
@@ -857,7 +862,7 @@ describe("Group Creation Tests", () => {
         	hasParent: false,
         	isPublicKey: false
     	}));
-    	const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+    	const childPost = await fetch(`${api_url}/provenance/${childKey}`, { method: "POST", body: childFormData })
     	expect(childPost.ok).toBe(true)
 
 		// create group record with multiple attachments (using a200.jpg and c200.jpg from repo)
@@ -877,7 +882,7 @@ describe("Group Creation Tests", () => {
 			const blob1 = new Blob([buffer], { type: 'application/pdf'})
 			groupFormData.append('document.pdf', blob1)
 
-			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			const postResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 				method: "POST",
 				body: groupFormData,
 			});
@@ -889,7 +894,7 @@ describe("Group Creation Tests", () => {
 		
 		// GET and verify 
 		try {
-			let getResponse = await fetch(`${baseUrl}/provenance/${groupKey}`)
+			let getResponse = await fetch(`${api_url}/provenance/${groupKey}`)
 			getResponse = await getResponse.json() 
 			expect(getResponse).toBeDefined()
 			expect(getResponse.length).toBeGreaterThan(0)
@@ -901,7 +906,7 @@ describe("Group Creation Tests", () => {
 			expect(groupEntry.attachments[0]).toBeDefined()
 
 			const attachmentHash = groupEntry.attachments[0]
-			const downloadUrl = `${baseUrl}/attachment/${groupKey}/${attachmentHash}`
+			const downloadUrl = `${api_url}/attachment/${groupKey}/${attachmentHash}`
 			const downloadResponse = await fetch(downloadUrl)
 			expect(downloadResponse.ok).toBe(true)
 	
@@ -916,10 +921,10 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 	
 	//Group: Large attachment (>2MB)
-	it("should create a group record with a large attachment and verify download", async () => {
+	it("Create a group record with a large attachment and verify download", async () => {
 		const [groupKeyRes, childKeyRes] = await Promise.all([
-			fetch(`${baseUrl}/getNewDeviceKey`),
-			fetch(`${baseUrl}/getNewDeviceKey`)
+			fetch(`${api_url}/getNewDeviceKey`),
+			fetch(`${api_url}/getNewDeviceKey`)
 		]);
 		const groupKey = await groupKeyRes.text()
 		const childKey = await childKeyRes.text()
@@ -935,7 +940,7 @@ describe("Group Creation Tests", () => {
 			hasParent: false,
 			isPublicKey: false
 		}));
-		const childPost = await fetch(`${baseUrl}/provenance/${childKey}`, { method: "POST", body: childFormData })
+		const childPost = await fetch(`${api_url}/provenance/${childKey}`, { method: "POST", body: childFormData })
 		expect(childPost.ok).toBe(true)
 
 		const groupFormData = new FormData()
@@ -958,7 +963,7 @@ describe("Group Creation Tests", () => {
 			console.log(`Group large file size: ${fileSizeInMB.toFixed(2)} MB`)
 			expect(fileSizeInMB).toBeLessThan(2.1)
 
-			const postResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+			const postResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 				method: "POST",
 				body: groupFormData,
 			});
@@ -969,7 +974,7 @@ describe("Group Creation Tests", () => {
 		}
 
 		try {
-			const getResponse = await (await fetch(`${baseUrl}/provenance/${groupKey}`)).json()
+			const getResponse = await (await fetch(`${api_url}/provenance/${groupKey}`)).json()
 			expect(getResponse).toBeDefined()
 			expect(getResponse.length).toBeGreaterThan(0)
 			
@@ -979,7 +984,7 @@ describe("Group Creation Tests", () => {
 			expect(groupEntry.attachments.length).toBe(1)
 
 			const attachmentHash = groupEntry.attachments[0]
-			const downloadUrl = `${baseUrl}/attachment/${groupKey}/${attachmentHash}`
+			const downloadUrl = `${api_url}/attachment/${groupKey}/${attachmentHash}`
 			const downloadResponse = await fetch(downloadUrl)
 			expect(downloadResponse.ok).toBe(true)
 
@@ -1008,21 +1013,21 @@ describe("Group Creation Tests", () => {
 			isPublicKey: false
 		}));
 		
-		const groupResponse = await fetch(`${baseUrl}/provenance/${invalidGroupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${invalidGroupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
 		
-		// Expect the response to indicate failure (e.g., 500 Internal Server Error)
+		// Expect the response to indicate failure on bad request
 		console.log("Response Status for Invalid Key Test: " + groupResponse.status);
 		expect(groupResponse.ok).toBe(false);
-		expect(groupResponse.status).toBe(500);
+		expect(groupResponse.status).toBe(400);
 	}, 60000);
 
 		// Group with zero children
-	it("should create a group record with zero children", async () => {
+	it("Create a group record with zero children", async () => {
 		// Generate device key
-		const groupKeyRes = await fetch(`${baseUrl}/getNewDeviceKey`);
+		const groupKeyRes = await fetch(`${api_url}/getNewDeviceKey`);
 		const groupKey = await groupKeyRes.text();
 		// Create group record
 		const groupFormData = new FormData();
@@ -1035,14 +1040,14 @@ describe("Group Creation Tests", () => {
 			hasParent: false,
 			isPublicKey: false
 		}));
-		const groupResponse = await fetch(`${baseUrl}/provenance/${groupKey}`, {
+		const groupResponse = await fetch(`${api_url}/provenance/${groupKey}`, {
 			method: "POST",
 			body: groupFormData,
 		});
 		expect(groupResponse.ok).toBe(true);
 
 		// Verify group record
-		const verificationResponse = await fetch(`${baseUrl}/provenance/${groupKey}`);
+		const verificationResponse = await fetch(`${api_url}/provenance/${groupKey}`);
 		const verificationData = await verificationResponse.json();
 		expect(verificationData).toBeDefined();
 		expect(verificationData.length).toBeGreaterThan(0);
@@ -1061,7 +1066,7 @@ describe("Record Creation Tests", () => {
 		// Create record key
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(1st Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
+		let fullUrl = `${api_url}/provenance/${deviceKey}`
 		console.log(fullUrl)
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
@@ -1126,7 +1131,7 @@ describe("Record Creation Tests", () => {
 	it("(Smoketest) Create a record with tags and attachments", async() => {
 		const deviceKey = await makeEncodedDeviceKey();
 		console.log("(3rd Test) Created Device Key: " + deviceKey);
-		let fullUrl = `${baseUrl}/provenance/${deviceKey}`
+		let fullUrl = `${api_url}/provenance/${deviceKey}`
 		expect(deviceKey.length).toBe(22);
 		expect(validateKey(deviceKey)).toBe(true);
 
