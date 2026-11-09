@@ -732,18 +732,6 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
     return { jsonBody: records };
 }
 
-const ProvenanceRecordSchema = z.object({
-        blobType: z.string().optional(),
-        children_key: z.union([z.string(), z.array(z.string())]).optional(),
-        children_name: z.array(z.string()).optional(),
-        description: z.string().optional(),
-        deviceName: z.string().optional(),
-        hasParent: z.boolean().optional(),
-        isPublicKey: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-    });
-
-
 const DeviceKeySchema = z.string().length(22).regex(/^[a-zA-Z0-9]+$/);
 const AttachmentIDSchema = z.string().regex(/^[0-9a-f]{64}$/);
 
@@ -862,6 +850,17 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const ProvenanceRecordSchema = z.object({
+        blobType: z.string().optional(),
+        children_key: z.union([z.string(), z.array(z.string())]).optional(),
+        children_name: z.array(z.string()).optional(),
+        description: z.string().optional(),
+        deviceName: z.string().optional(),
+        hasParent: z.boolean().optional(),
+        isPublicKey: z.boolean().optional(),
+        tags: z.array(z.string()).optional(),
+    });
+
     try {
         let deviceKey: Uint8Array<ArrayBuffer>;
         let deviceID: string;
@@ -1215,11 +1214,11 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('httpTrigger: entering postNotificationEmail')
     const NotificationSubscribeSchema = z.object({
         email: z.email(),
         recordKey: z.string().length(22).regex(/^[a-zA-Z0-9]+$/),
     });
+    context.log('httpTrigger: entering postNotificationEmail')
     try {
         // parse email, recordKey and tags from body
         const body = await request.json() as any;
@@ -1462,10 +1461,10 @@ export async function postVerifyCode(request: HttpRequest, context: InvocationCo
 // Additional helper function to resend code using the token instead of the email
 // keeping the email out of the url is better for privacy
 export async function postResendCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entering postResendCode')
     const ResendCodeSchema = z.object({
         token: z.string().length(32).regex(/^[A-Za-z0-9_-]+$/),
     });
+    context.log('Entering postResendCode')
     try {
         const body = await request.json() as any;
         ResendCodeSchema.parse(body);
@@ -1571,12 +1570,11 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
     }
 }
 
-const NotificationUnsubscribeSchema = z.object({
-    id: z.string().min(43).max(44).regex(/^[1-9A-HJ-NP-Za-km-z]+$/),
-    recordKey: z.string().length(22).regex(/^[a-zA-Z0-9]+$/),
-});
-
 export async function deleteNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const NotificationUnsubscribeSchema = z.object({
+        id: z.string().min(43).max(44).regex(/^[1-9A-HJ-NP-Za-km-z]+$/),
+        recordKey: z.string().length(22).regex(/^[a-zA-Z0-9]+$/),
+    });
     try {
         const body = await request.json() as any;
         NotificationUnsubscribeSchema.parse(body);
@@ -1783,17 +1781,6 @@ async function createGroup(context, name, description, n_children: number = 0, c
     return groupUrlRecordPage;
 }
 
-const GroupCreationOrderSchema = z.object({
-    deviceName: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()).optional(),
-    publicKey: z.string().optional(),
-    number_of_children: z.number().optional(),
-    hasPublicKey: z.boolean().optional(),
-    custom_record_titles: z.array(z.string()).optional(),
-    children_name: z.array(z.string()).optional(),
-    create_public_key: z.boolean().optional()
-});
 
 export async function createGroupHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
@@ -1925,17 +1912,6 @@ async function createRecord(context, name, description, tags, attachments) {
     }
 }
 
-const RecordCreationOrderSchema = z.object({
-    blobType: z.string().optional(),
-    deviceName: z.string(),
-    description: z.string(),
-    children_key: z.union([z.string(), z.array(z.string())]),
-    children_name: z.array(z.string()).optional(),
-    hasParent: z.boolean().optional(),
-    isPublicKey: z.boolean().optional(),
-    tags: z.array(z.string()).optional(),
-});
-
 export async function createRecordHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering createRecordHandler')
 
@@ -2015,31 +1991,55 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
     }
 }
 
-const ProvenanceEntrySchema = ProvenanceRecordSchema.extend({
-    send_to_all_children: z.boolean().optional(),
-}); // replaces AddEntrySchema and extends ProvenanceRecordSchema as an entry is record + send_to_all_children. postProvenance does not validate send_to_all_children
-
 
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering addEntryHandler for /addEntry')
     // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
     // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
     const backendUrl = process.env['backend_url'];
+    const recordSchema = z.object({
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        send_to_all_children: z.boolean().optional(),
+    }).strict();
+    const AddEntrySchema = z.object({
+        record: recordSchema,
+        attachments: z.array(z.instanceof(File)).optional(),
+    });
     try {
         DeviceKeySchema.parse(request.params.deviceKey);
         const requestClone = request.clone();
         const deviceKey = requestClone.params.deviceKey;
         let formData = await requestClone.formData();
-        const attachmentValues = formData.values();
-        const record = JSON.parse(formData.get("provenanceRecord") as string);
-        ProvenanceEntrySchema.parse(record); // this is necessary to check send_to_all_children
 
-    // Check the first record entry in the provenance to see if the key is a group or not
-    const provenance = await getProvenance(request, context);
-    if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
-    const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
-    if (!creationRecord) {
-        context.error('addEntryHandler: returning 400')
+        const recordStr = formData.get("provenanceRecord");
+
+        if (typeof recordStr !== 'string'){
+            return {
+                status: 400,
+                jsonBody: {
+                    message: "Missing provenance record"
+                }
+            }
+        }
+
+        const attachmentVals: unknown[] = [];
+
+        for (const [k,v] of formData.entries()) {
+            if (k == "provenanceRecord") continue;
+            attachmentVals.push(v);
+        }
+        
+        const { record, attachments } = AddEntrySchema.parse({
+            record: JSON.parse(recordStr),
+            attachments: attachmentVals,
+        }); // checks for record schema as well as attachments
+        // Check the first record entry in the provenance to see if the key is a group or not
+        const provenance = await getProvenance(request, context);
+        if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
+        const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
+        if (!creationRecord) {
+            context.error('addEntryHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { error: "Provenance needs to exist before adding entries." }
@@ -2059,9 +2059,9 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
             formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(record));
             
-            for (const attachment of attachmentValues) {
+            for (const attachment of attachments ?? []) {
                 if (typeof attachment === 'string') continue;
-                formData.append(attachment.name, attachment);
+                formData.append((attachment as File).name, attachment);
             }
         }
 
@@ -2070,8 +2070,8 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
             method: "POST",
             body: formData,
         });
-
-                // If users are subscribed to notifications email them
+        
+        // If users are subscribed to notifications email them
         let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
         if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
         
