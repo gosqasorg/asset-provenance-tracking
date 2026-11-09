@@ -454,14 +454,14 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
     return false
 }
 
-export async function postNotificationEmail(email:string, recordKey: string) {
+export async function postNotificationEmail(email:string, recordKey: string, tags: string[] = []) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetchUrlWithErrorHandling(
         `${baseUrl}/notificationSubscription`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, recordKey }),
+            body: JSON.stringify({ email, recordKey, tags }),
         },
         {
             429: "We are experiencing a high volume of requests. Please try again later.",
