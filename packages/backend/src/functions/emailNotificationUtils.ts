@@ -173,7 +173,7 @@ function signupIsLegacyFormat(parsed, context) {
             'emailNotificationUtils.ts:signupIsLegacyFormat: ' +
             'variable "parsed" evaluating as neither legacy nor modern format.' +
             'Called with: --- vvv ---\n' +
-            `${parsed}` + 
+            `${JSON.stringify(parsed)}` +
             '             --- ^^^ ---\n' 
         )
         context.error(message)
@@ -186,6 +186,7 @@ function signupIsLegacyFormat(parsed, context) {
 
 /* TODO: check before adding. This will add duplicates. Do not use a set type data structure, instead, check before adding */
 function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
+    console.log('Entering addTagSpecificSignupDataToBundle')
 
     if(!theTags.length) {
         the_bundle.no_tags.push({
@@ -193,6 +194,7 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
             id: theEmailId
         })
 
+        console.log('Returning with success from addTagSpecificSignupDataToBundle: no tag filtering')
         return the_bundle
     }
 
@@ -210,11 +212,12 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
         }
     }
 
+    console.log('Returning with success from addTagSpecificSignupDataToBundle: tag filtering applied')
     return the_bundle 
 }
 
-// Todo: this function needs context passed to it. 
-// Todo: exists should stay outside this function. 
+
+// Todo: this is being handed the blobclient for the db row containing the signup request. 
 async function getExistingEmails(
     exists: boolean, 
     blobClient: BlockBlobClient,
@@ -225,9 +228,22 @@ async function getExistingEmails(
     let theTagBundle = { no_tag: [] }
     if(!exists) { return theTagBundle }
 
-    const buffer = await blobClient.downloadToBuffer();
+    let buffer;
+    context.log('getExistingEmails: attempting to get blob')
+    try{
+        buffer = await blobClient.downloadToBuffer();
+    } catch(error) { 
+        context.error('downloadToBuffer failed in getExistingEmails')
+        context.error(error)
+        context.error(JSON.stringify(error))
+        throw error
+    }
+    context.log('getExistingEmails: blob accessed, if any')
     const text = buffer.toString("utf8");
-    if(!text) { return theTagBundle }
+    if(!text) { 
+        contex.log('getExistingEmails: blob is null, returning default signup tag bundle')
+        return theTagBundle 
+    }
     
     const parsed = JSON.parse(text)// as any;
 
@@ -418,7 +434,7 @@ export async function subscribeToNotifications(
         const exists = await blobClient.exists();
         context.log('subscribeToNotifications: yes.')
 
-        context.log('subscribeToNotifications: 1')
+        context.log('subscribeToNotifications: is email malformed?')
         // TODO: zod
         // Perform rough email validation 
         const normalizedEmail = (email ?? "").trim().toLowerCase();
@@ -428,28 +444,34 @@ export async function subscribeToNotifications(
                 status: 400
             }
         }
+        context.log('subscribeToNotifications: No.')
 
-context.log('subscribeToNotifications: 2')
         // Step 1/3: Get
         // Todo: Call conditional on exists. Do not pass exists. 
         // Converts legacy in background. Returns at least this: { no_tag: [] }
+        context.log('subscribeToNotifications: getting existing signup data')
         let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient, context); 
 
         // If email is already stored return success
         if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, normalizedEmail)) {
+            context.log('subscribeToNotifications: email is already signed up for this exact set of tags. Nothing to do. 304 success')
             return {
                 jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
                 status: 304,
             };
         }
-context.log('subscribeToNotifications: 3')
+        context.log('subscribeToNotifications: Existing data retrieved or default created.')
+
+        context.log('subscribeToNotifications: cleaning the slate of the present email signup, if any')
         // Step 2/3: Remove
         // Note: this call should be moved into addTagSpecificSignupDataToBundle()
-        // tagBundle = removeEmailFromTagBundle(tagBundleNoTagsOnly)
+        // tagBundle = removeEmailFromTagBundle(tagSpecificSignupBundle)
+        context.log('subscribeToNotifications: email removed from signup data')
         
         // Step 3/3: Add
+        context.log('subscribeToNotifications: preparing to add user to email signup tag bundle')
         const uniqueEmailString = await createNewEmailId()
-        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagBundle, normalizedEmail, uniqueEmailString, tags)
+        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagSpecificSignupBundle, normalizedEmail, uniqueEmailString, tags)
 context.log('subscribeToNotifications: 4')
         try {
             console.log('Attempting to store')
@@ -470,8 +492,9 @@ context.log('subscribeToNotifications: 4')
             }
         }
     } catch(error) {
+        context.error(error)
+        context.error(JSON.stringify(error))
         context.error('Returning with error from subscribeToNotifications 2')
-        context.error(error.message)
         //context.dir(error)
         return {
             jsonBody: { message: 'Failed to subscribe to email notifications' },
