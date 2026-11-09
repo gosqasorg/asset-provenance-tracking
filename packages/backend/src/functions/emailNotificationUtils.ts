@@ -221,7 +221,7 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
 async function getExistingEmails(
     exists: boolean, 
     blobClient: BlockBlobClient,
-    context
+    context: InvocationContext
 ) {
     context.log('Entering getExistingEmails')
     // Todo: This should happen in the caller
@@ -241,7 +241,7 @@ async function getExistingEmails(
     context.log('getExistingEmails: blob accessed, if any')
     const text = buffer.toString("utf8");
     if(!text) { 
-        contex.log('getExistingEmails: blob is null, returning default signup tag bundle')
+        context.log('getExistingEmails: blob is null, returning default signup tag bundle')
         return theTagBundle 
     }
     
@@ -530,7 +530,7 @@ export async function unsubscribeFromNotifications(
     // WORKING ON
     // Edit this, and what follows, to take the tagBundle ie { no_tag: [emails], tag1: [], ... }
     //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-    let bundle = await getExistingEmails(exists, blobClient); 
+    let bundle = await getExistingEmails(exists, blobClient, context); 
 
     // Confirm the emailID exists and convert it to an email
     //const emailIndex = Array.from(emailIDSet).indexOf(emailID);
@@ -582,7 +582,10 @@ export async function unsubscribeFromNotifications(
 export async function notifySubscribers(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
-    deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
+    deviceKey: string,
+    formData: any, 
+    context: InvocationContext
+): Promise<HttpResponseInit> {
     context.log('Entered notifySubscribers')
     const record = JSON.parse(formData.get('provenanceRecord'));
     const description = record ? record.description : "";
@@ -590,10 +593,11 @@ export async function notifySubscribers(
     //===  vvv Is this section not equivalent to getExistingEmails? vvv === //
     // Notify users who subscribed to this record.
     // 1. RetrieveNotifEmails hands back blob contents as string
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
+    //const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
     // 2. Parse the object and hand back a pair of lists of emails and email IDs
-    const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
-    const emailSignups = getExistingEmails() // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    //const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
+    const [blobName, blobClient] = setupBlobClient(containerClient, calculateDeviceID, deviceKey)
+    const emailSignups = getExistingEmails(exists, blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
     //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
     if (emailSet.size === 0) {

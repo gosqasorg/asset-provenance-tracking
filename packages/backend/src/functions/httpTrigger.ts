@@ -708,6 +708,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         };
     }
 
+    context.log('getProv: do we exist?')
     const provExists = await pathExists(containerClient, `prov/${deviceID}`);
     if (!provExists) {
         try {
@@ -727,7 +728,9 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
             }
         }
     }
+    context.log('getProv: yes.')
 
+    context.log('getProv: attempting to decrypt records')
     const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
     for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
         const blobClient = containerClient.getBlockBlobClient(blob.name);
@@ -756,6 +759,7 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         records.push({ ...provRecord, deviceID, timestamp });
     }
     records.sort((a, b) => b.timestamp - a.timestamp)
+    context.log('getProv: records decrypted')
 
     context.log("Returning successfully from getProvenance()")
     return { jsonBody: records };
@@ -1604,12 +1608,15 @@ async function upgradeProvenanceHandler(request: HttpRequest, context: Invocatio
 
 
 async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering notifySubscribersHandler')
     await containerClient.createIfNotExists();
     const formData = await request.formData();
 
     try {
-        return await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+        const result = await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+        console.log('Returning successfully from notifySubscribersHandler')
     } catch(error) {
+        console.error('Returning unsuccessfully from notifySubscribersHandler')
         return {
             status: error.statusCode || 500,
             jsonBody: {
