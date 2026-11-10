@@ -16,6 +16,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script setup lang="ts">
 import HeatmapVisualization from '~/pages/heatmap.vue'
 import UserAgentVisualization from '~/pages/dev/user-agents.vue'
+import ServerResponseTimes from './viz/server-response-times.vue'
 
 const environment = ((useRuntimeConfig().public.baseUrl).includes("prod")) ? 'prod' : 'dev'
 const visualizationsFeatureFlag = environment === 'dev'
@@ -39,6 +40,9 @@ const visualizationsFeatureFlag = environment === 'dev'
             </div>
             <div class="container py-4 user-agent-instance">
                 <UserAgentVisualization />
+            </div>
+            <div>
+                <ServerResponseTimes />
             </div>
         </section>
 
