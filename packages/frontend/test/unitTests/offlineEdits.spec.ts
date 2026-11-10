@@ -264,6 +264,43 @@ describe("Dismiss Published Edits Button", () => {
 });
 
 describe("Published/Fulfilled Edit", () => {
+    it("Click Button To Open Modal for dismissing a published/fulfilled edit and Click `Go Back`", async() => {
+      //seed fulfilled stash into localStorage
+      localStorage.setItem("gdt-stash-fulfilled","fulfilled-test");
+      // Mount the page directly
+      const wrapper = mount(OfflineEdits);
+
+      await flushPromises(); // wait for any executions to complete before asserting.
+
+      //get fulfilled stash from localStorage
+      expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+        "fulfilled-test"
+      );
+      
+      // testing the Dismiss edit button exists
+      expect(wrapper.find('.btn.key-buttons.bottom').exists()).toBe(true);
+      expect(wrapper.findAll('.btn.key-buttons.bottom')).toHaveLength(1); //should be one button
+
+      await wrapper.find('.btn.key-buttons.bottom').trigger('click');
+      expect(wrapper.find('#dismiss-published-edit-popup').exists()).toBe(true);
+
+      // assert that fulfilled stash is still in localStorage
+      expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+        "fulfilled-test"
+      );
+
+      await wrapper.find('#dismiss-published-edit-popup .popup-buttons').trigger('click'); // Go back button
+
+      expect(wrapper.find('#dismiss-published-edit-popup').exists()).toBe(false); // check that modal is closed
+
+      // assert that fulfilled stash is still in localStorage and unchanged
+      expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+        "fulfilled-test"
+      );
+
+      wrapper.unmount();
+      localStorage.clear();
+  });
   it("Click `Dismiss a published edit` and dismiss edit", async() => {
 
     //seed fulfilled stash into localStorage
