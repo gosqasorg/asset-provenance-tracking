@@ -129,7 +129,7 @@ describe("Stash and Remove Offline Requests", () => {
     expect(queuedRequest["data"]).toStrictEqual(provenanceRecord);
 
     // Remove the request and confirm it was successful
-    removeOfflineRequest(queuedKey, "gdt-stash-queued");
+    removeOfflineRequest(queuedRequest, "gdt-stash-queued");
 
     requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
     queuedRequest = requestFromStash[0];
@@ -164,7 +164,7 @@ describe("Stash and Remove Offline Requests", () => {
     expect(failedRequest2["data"]).toStrictEqual(provenanceRecord2);
 
     // Remove both failed requests and confirm they were successfully removed
-    removeOfflineRequest(failedKey, "gdt-stash-failed");
+    removeOfflineRequest(failedRequest, "gdt-stash-failed");
 
     requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
     failedRequest = requestFromStash[0];
@@ -173,7 +173,7 @@ describe("Stash and Remove Offline Requests", () => {
     expect(failedRequest["key"]).toEqual(failedKey2);
     expect(failedRequest["data"]).toStrictEqual(provenanceRecord2);
 
-    removeOfflineRequest(failedKey2, "gdt-stash-failed");
+    removeOfflineRequest(failedRequest2, "gdt-stash-failed");
 
     requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
     failedRequest = requestFromStash[0];
@@ -208,7 +208,7 @@ describe("Stash and Remove Offline Requests", () => {
     expect(fulfilledRequest["data"]).toStrictEqual(provenanceRecord);
 
     // Remove the request and confirm it was successful
-    removeOfflineRequest(fulfilledKey, "gdt-stash-fulfilled");
+    removeOfflineRequest(fulfilledRequest, "gdt-stash-fulfilled");
 
     requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '{}');
     fulfilledRequest = requestFromStash[0];

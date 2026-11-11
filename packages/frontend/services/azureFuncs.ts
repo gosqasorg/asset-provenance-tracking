@@ -369,7 +369,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, recor
     }
 }
 
-export function removeOfflineRequest(currentKey: string, stashName: string) {
+export function removeOfflineRequest(currentRequest: any, stashName: string) {
     // Function to remove an offline request from the stash (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
@@ -387,9 +387,11 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
         // Remove request from the stash
         for (let i = 0; i < existingRequests.length; i++) {
             let requestKey = existingRequests[i]["key"];
+            let requestData = existingRequests[i]["data"];
+            let requestTimestamp = existingRequests[i]["timestamp"];
 
-            // Add back all requests except the one we're removing 
-            if (requestKey != currentKey) {
+            // Add back all requests except the one we're removing
+            if (requestKey != currentRequest["key"] || JSON.stringify(requestData) != JSON.stringify(currentRequest["data"]) || requestTimestamp != currentRequest["timestamp"]) {
                 requests.push(existingRequests[i]);
             }
         }

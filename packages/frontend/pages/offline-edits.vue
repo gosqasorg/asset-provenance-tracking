@@ -73,7 +73,7 @@ while offline.
             <p style="grid-row: 1; font-size: 17px; margin-top: -5px; margin-bottom: -5px">{{ key }}</p>      
             <div class="status-bubble">Published</div>
             <button class="btn key-buttons" style="grid-row: 1;" @click="clearSessionStorage(); $router.push('/history/' + key)">Go to record</button>
-            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(key)">Dismiss edit</button>
+            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(index)">Dismiss edit</button>
         </div>
     </div>
 
@@ -96,7 +96,7 @@ import { postProvenance, stashOfflineRequest, removeOfflineRequest } from "~/ser
 export default {
 data() {
 	return {
-        dismissOneKey: '',
+        dismissOneKeyIndex: -1,
         dismissAllEditsPopUp: false,
         dismissPublishedEditsPopUp: false,
         dismissSingleEditPopUp: false,
@@ -146,8 +146,8 @@ methods: {
         localStorage.removeItem("gdt-stash-fulfilled")
         window.location.reload();  
     },
-    clearOneEditPrepare(key: string) {
-        this.dismissOneKey = key;
+    clearOneEditPrepare(index: number) {
+        this.dismissOneKeyIndex = index;
     },
     clearSessionStorage() {
         sessionStorage.removeItem("gdt-redirect-record");
@@ -155,12 +155,15 @@ methods: {
         sessionStorage.removeItem("gdt-redirect-key");
     },
     clearOneEdit() {
-        // Removes key from fulfilled array then removes it from fulfilled stash
-        const index = this.fulfilledKeys.indexOf(this.dismissOneKey);
-        if (index > -1) {
-            removeOfflineRequest(this.dismissOneKey, "gdt-stash-fulfilled");
-            this.fulfilledKeys.splice(index, 1);
-            this.dismissOneKey = '';
+        if (this.dismissOneKeyIndex > -1) {
+            // Get the fulfilled request to remove based on it's index
+            const fulfilledStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]');
+            const requestToRemove = fulfilledStash[this.dismissOneKeyIndex];
+
+            // Remove the request from the fulfilled stash
+            removeOfflineRequest(requestToRemove, "gdt-stash-fulfilled");
+            this.fulfilledKeys.splice(this.dismissOneKeyIndex, 1);
+            this.dismissOneKeyIndex = -1;
             this.dismissSingleEditPopUp = false;
         }
     },
@@ -180,14 +183,14 @@ methods: {
                 return;
             }
 
-            let stashedRecord = JSON.parse(stashedRequest["data"] || '{}');
+            let stashedRecord = stashedRequest["data"];
 
             // Try to post the record/group and display an error if it fails
             await postProvenance(key, stashedRecord, []);
 
             // If the request creates successfully move the key to the fulfilled stash
             stashOfflineRequest(key, "gdt-stash-fulfilled", stashedRecord);
-            removeOfflineRequest(key, "gdt-stash-failed");
+            removeOfflineRequest(stashedRequest, "gdt-stash-failed");
 
             // Reload the page
             window.location.reload();
@@ -242,20 +245,18 @@ methods: {
                 return;
             }
 
-            let stashedRecord = JSON.parse(stashedRequest["data"] || '{}');
             let isGroup = false;
-
-            if (stashedRecord.children_name) {
+            if (stashedRequest["data"].children_name) {
                 isGroup = true;
             }
 
-            // Store the record in sessionStorage so the create pages have access to it
-            sessionStorage.setItem("gdt-redirect-record", JSON.stringify(stashedRecord));
+            // Store the request in sessionStorage so the create pages have access to it
+            sessionStorage.setItem("gdt-redirect-record", JSON.stringify(stashedRequest));
             sessionStorage.setItem("gdt-redirect-isGroup", isGroup.toString());
             sessionStorage.setItem("gdt-redirect-key", key);
                                                              
             // Redirect to the specified creation page
-            if (!stashedRecord.deviceName) {
+            if (!stashedRequest["data"].deviceName) {
                 // If the request doesn't have a name then it is part of an existing record/group
                 this.$router.push({
                     path: `/history/offline`

@@ -163,11 +163,11 @@ export default {
 
         // Only fill in stashed information if we redirected from the offline edits page
         if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.isPublicKey = this.stashedRecord.isPublicKey
-            this.hasParent = this.stashedRecord.hasParent
+            this.isPublicKey = this.stashedRecord["data"].isPublicKey
+            this.hasParent = this.stashedRecord["data"].hasParent
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
-            this.name = this.stashedRecord.deviceName
-            this.description = this.stashedRecord.description
+            this.name = this.stashedRecord["data"].deviceName
+            this.description = this.stashedRecord["data"].description
         }
     },
     computed: {
@@ -268,7 +268,7 @@ export default {
 
                 if (isGroup == "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
                     stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled", record);
-                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
+                    removeOfflineRequest(this.stashedRecord, "gdt-stash-failed");
                 }
 
                 this.$snackbar.add({
