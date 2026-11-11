@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Azure Functions API
   version: 1.0.0
-  description: Auto-generated OpenAPI specification
+  description: OpenAPI specification for GDT APIv2
 servers:
   - url: http://localhost:7071/api
     description: Local development server
@@ -11,7 +11,6 @@ servers:
   - url: https://gdtprodbackend.azurewebsites.net/api
     description: Production server
 paths:
-
   /createGroup:
     post:
       tags:
@@ -19,6 +18,25 @@ paths:
       summary: Create a new group
       description: This endpoint creates a group (and specified number of children), then returns a unique group URL via multipart/form-data.
       operationId: createGroup
+      x-scalar-examples:
+        - lang: javascript
+          label: GDT-Example-Fetch
+          source: |
+            const payload = {
+              deviceName: "Case of Tourniquets",
+              description: "Example group",
+              tags: [],
+              number_of_children: 2
+            };
+            let formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(payload));
+            let response = await fetch(`http://localhost:7071/api/createGroup`, {
+              method: "POST",
+              body: formData,
+            });
+            console.log(response)
+            const data = await response.json()
+            console.dir(data.groupUrl)
       requestBody:
         description: Group creation parameters and attachments
         required: true
@@ -46,7 +64,9 @@ paths:
                       type: integer
                       example: 5
                     children_name: 
-                      type: string array
+                      type: array
+                      items:
+                        type: string
                       example: ["Child1", "Child2", "Child3", "Child4", "Child5"]
                     tags:
                       type: string array
@@ -60,19 +80,6 @@ paths:
                   items:
                     type: string
                     format: binary      
-            encoding:
-              provenanceRecord:
-                contentType: application/json
-            example:
-              provenanceRecord: >-
-                {
-                  "deviceName": "Group Title",
-                  "description": "Group Description",
-                  "number_of_children": 5,
-                  "children_name": ["Child1", "Child2", "Child3", "Child4", "Child5"],
-                  "tags": ["tag1", "tag2"],
-                  "hasPublicKey": true
-                }
                 
       responses:
         '200':

@@ -19,7 +19,7 @@ while offline.
 -->
 
 <template>
-<div class="container-md" id="donate-container">
+<div class="container-md" id="offline-edits-container">
     <h1>Your Offline Edits</h1>
     <div class="row">
         <div>
@@ -29,10 +29,10 @@ while offline.
 
     <button class="btn dismiss all" style="width: 19%; margin-right: 15px" @click="dismissAllEditsPopUp=true">Dismiss all edits</button>
     <button class="btn dismiss published" style="width: 28%; margin-right: 15px" @click="dismissPublishedEditsPopUp=true">Dismiss published edits</button>
-    <button class="btn dismiss all" style="width: 28%; white-space: nowrap" @click="downloadEntriesCSV">Download entries as CSV</button>
+    <button class="btn dismiss download csv" style="width: 28%; white-space: nowrap" @click="downloadEntriesCSV">Download entries as CSV</button>
 
     <!----------------Dismiss All Edits Popup-------------------->
-    <div class="popup" v-if="dismissAllEditsPopUp">
+    <div class="popup" id="dismiss-all-edits-popup" v-if="dismissAllEditsPopUp">
         <div class="popup-inner">
             <h3 style="font-weight: bold">You're dismissing all of your offline edits</h3>
             <p class="inner-p">Once you dismiss your offline edits, they will no longer be available for review.</p>
@@ -42,7 +42,7 @@ while offline.
     </div>
 
     <!----------------Dismiss Published Edits Popup-------------->
-    <div class="popup" v-if="dismissPublishedEditsPopUp">
+    <div class="popup" id="dismiss-published-edits-popup" v-if="dismissPublishedEditsPopUp">
         <div class="popup-inner">
             <h3 style="font-weight: bold">You're dismissing your published offline edits</h3>
             <p class="inner-p">Once you dismiss your published offline edits, they will no longer be available for review.</p>
@@ -51,7 +51,7 @@ while offline.
         </div>
     </div>
     <!----------------Dimiss an Offline Edit Popup--------------->
-    <div class="popup" v-if="dismissSingleEditPopUp">
+    <div class="popup" id="dismiss-published-edit-popup" v-if="dismissSingleEditPopUp">
         <div class="popup-inner">
             <h3 style="font-weight: bold">You're dismissing an offline edit</h3>
             <p class="inner-p">You're dismissing the below edit. Once dismissed, it will no longer be available for review.</p>
@@ -111,7 +111,6 @@ async mounted() {
         this.getKeysFromStash("gdt-stash-failed");
         this.getKeysFromStash("gdt-stash-queued");
         this.getFulfilledKeys();
-        this.clearOneEdit();
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({
