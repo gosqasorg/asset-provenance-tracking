@@ -1,9 +1,8 @@
-import * as z from 'zod';
 import { mount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline, updateOfflineFeatureFlag } from '~/services/azureFuncs';
-
+import { confirmRequestFulfilled, offlineQueueConsumerWorker, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline, updateOfflineFeatureFlag } from '~/services/azureFuncs';
+import OfflineEdits from '~/pages/offline-edits.vue';
 import Index from '~/pages/index.vue';
 import CreateDevice from '~/components/Forms/CreateDevice.vue';
 
@@ -97,7 +96,6 @@ describe("Offline Function Tests", () => {
       const record = {description : 'mockRecord'}
       const resultEntryAddition = await confirmRequestFulfilled('123456789101112asdfghi', record)
       const resultNewRecord = await confirmRequestFulfilled('123456789101112asdfghi')
-
       expect(resultEntryAddition).toBe(true)
       expect(resultNewRecord).toBe(true)
     })
@@ -359,3 +357,92 @@ describe("postProvenance, getProvenance, and getProvenanceOffline", () => {
     expect(stashedProvenance).toEqual([]);
   });
 });
+
+describe("Confirm offline edits page buttons do not interrupt the worker", async() => {
+  // Clear localStorage mock data before each test
+  beforeEach(() => {
+    localStorage.clear()
+  });
+
+  it("Dismiss all edits, Dismiss published edits, and Dismiss edit buttons", async() => {
+
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    // Mock fetch once to post the record after a delay (so we have time to click buttons before the record is done creating)
+    const mockRecord = [{record: {blobType: 'deviceInitializer'}}];
+    mockFetch.mockImplementationOnce(async () => {
+      await delay(3000);
+      return {
+        json: () => Promise.resolve(mockRecord)
+      }
+    })
+
+    // Mock fetch to get the mocked record without a delay
+    mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)});
+
+    // Put fulfilled, failed, and queued keys into localStorage for the wrapper to mount
+    localStorage.setItem("gdt-stash-fulfilled", "fulfilledKey1,fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
+
+    localStorage.setItem("gdt-stash-failed",
+      JSON.stringify([{
+        key: "failedKey1",
+        data:{
+          deviceName: "Test Failed Record",
+          description: "Failed record for testing offline edits buttons with worker"
+        }
+      }])
+    );
+
+    localStorage.setItem("gdt-stash-queued",
+      JSON.stringify([{
+        key: "queuedKey1",
+        data:{
+          deviceName: "Test Record",
+          description: "Record for testing offline edits buttons with worker"
+        }
+      }])
+    );
+
+    // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
+    const wrapper = mount(OfflineEdits);
+
+    // Calling worker without await so it can run in the background, the wait after is to make sure the worker has started running
+    offlineQueueConsumerWorker();
+    await delay(15000);
+
+    // Click on all the dismiss buttons while the worker is in the process of creating our queued record
+    // Click on 'Dismiss edit' button to clear that specific published edit
+    await wrapper.find('#offline-edits-container > div:nth-of-type(3) > .key-box > button:nth-of-type(2)').trigger('click');
+
+    // Click 'Dismiss edit' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
+
+    // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
+
+    // Click on the 'Dismiss published edits' button
+    await wrapper.find('button.dismiss:nth-child(4)').trigger('click');
+    // Click 'Dismiss published edits' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
+
+    // Test to see if published edits stash is empty after 'Dismiss published edits' button was clicked
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(null)
+
+    // Click on the 'Dismiss all edits' button, then the confirmation button afterwards to clear all stashes
+    await wrapper.find('button.dismiss:nth-child(3)').trigger('click');
+    // Click on the 'Dismiss all edits' button again to confirm
+    await wrapper.find('.confirm-dismiss').trigger('click');
+
+    // Test to check if 'Dismiss all edits' button clears all keys in queued stash
+    expect(localStorage.getItem('gdt-stash-queued')).toBe(null);
+
+    // Test to see if failed stash is cleared after 'Dismiss all edits' button was clicked
+    expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
+
+    // Wait for the worker to finish creating the queued record and confirm it wasn't lost
+    await delay(3000);
+    const fulfilledStash = localStorage.getItem('gdt-stash-fulfilled')?.split(',') || [];
+    expect(fulfilledStash.length).toBe(1);
+    expect(fulfilledStash[0]).toBe('queuedKey1');
+  });
+}, 40000);
