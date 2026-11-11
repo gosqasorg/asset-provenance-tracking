@@ -153,7 +153,7 @@ computed: {
 },
 async mounted() {
 	try {
-        // If we're redirecting from a banner get key from query params
+        // If we're redirecting from a differnet page get the key from query params
         const route = useRoute();
         this.recordKey = route.query.key as string;
 
