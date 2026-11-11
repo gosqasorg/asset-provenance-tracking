@@ -23,13 +23,12 @@ describe("Group of tests", () => {
 
 */
 
-//const api_url = process.env['backend_url'].split('/prov')[0] 
 
-const api_url = process.env['api_url']
+const api_url = "https://gosqasbe.azurewebsites.net/api";
 
 describe("Group Creation Tests", () => {
 	// The most basic possible test
-	it("should create a group record with one child", async () => {
+	it("Create a group record with one child", async () => {
 		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
 			fetch(`${api_url}/getNewDeviceKey`),
@@ -72,88 +71,6 @@ describe("Group Creation Tests", () => {
 			})
 		]);
 		
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
-		console.log(api_url)
 		expect(childResponse.status).toBe(200);
 		expect(groupResponse.status).toBe(200);
 		expect(childResponse.ok).toBe(true);
@@ -162,7 +79,7 @@ describe("Group Creation Tests", () => {
 
 
 	// Most basic + one feature
-	it("should create a group record with multiple children", async () => {
+	it("Create a group record with multiple children", async () => {
 		// Generate all device keys 
 		const keyPromises = [
 			fetch(`${api_url}/getNewDeviceKey`),
@@ -237,7 +154,7 @@ describe("Group Creation Tests", () => {
 
 
     // Test public key functionality
-    it("should create a group record with a public key", async () => {
+    it("Create a group record with a public key", async () => {
         // Generate all device keys 
 		const numChildKeys = 2;
 		const keyPromises = [
@@ -396,7 +313,7 @@ describe("Group Creation Tests", () => {
 
 
 	// Everything all at once
-	it("should create a group record with all features", async () => {
+	it("Create a group record with all features", async () => {
 		// Generate all device keys 
 		const keyPromises = [
 			fetch(`${api_url}/getNewDeviceKey`),
@@ -487,8 +404,7 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 
-
-	it("should create a group record with tags", async () => {
+	it("Create a group record with tags", async () => {
 		// Generate device keys
 		const [groupKeyRes, childKeyRes] = await Promise.all([
             fetch(`${api_url}/getNewDeviceKey`),
@@ -563,6 +479,7 @@ describe("Group Creation Tests", () => {
 		expect(retrievedChild[0].record.tags.length).toBe(2);
 	}, 60000);
 	
+
 	// Group Creation test with 2 child keys + send_to_all_children
 	it("Group Creation - Sending Record Entry to Child Records", async () => {
 		// Create new group and children keys
@@ -646,9 +563,11 @@ describe("Group Creation Tests", () => {
 			expect(child[0].record.tags).toContain("Why hello, child");
 		});
 
-	}, 6000); 
+	}, 60000); 
+
+
 	// Test for custom titles
-	it("should create a group with two children having custom titles", async () => {
+	it("Create a group with two children having custom titles", async () => {
 		// Generate device keys 
 		const groupKey = await makeEncodedDeviceKey();
 		const childKey1 = await makeEncodedDeviceKey();
@@ -738,7 +657,7 @@ describe("Group Creation Tests", () => {
 //. read group record for attachmment and then read one child record for attachment.
 
 	//Group record with one attachment test
-	it("should create a group record with one attachment", async () => {
+	it("Create a group record with one attachment", async () => {
     	//Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${api_url}/getNewDeviceKey`),
@@ -844,7 +763,7 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 	//Group record with multiple attachments test
-	it("should create a group record with multiple attachments", async() => {
+	it("Create a group record with multiple attachments", async() => {
 		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${api_url}/getNewDeviceKey`),
@@ -923,7 +842,7 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 
 	//Group attachment includes a PDF
-	it("should create a group record with a PDF", async() => {
+	it("Create a group record with a PDF", async() => {
 		// Generate device keys 
     	const [groupKeyRes, childKeyRes] = await Promise.all([
         	fetch(`${api_url}/getNewDeviceKey`),
@@ -1002,7 +921,7 @@ describe("Group Creation Tests", () => {
 	}, 60000);
 	
 	//Group: Large attachment (>2MB)
-	it("should create a group record with a large attachment and verify download", async () => {
+	it("Create a group record with a large attachment and verify download", async () => {
 		const [groupKeyRes, childKeyRes] = await Promise.all([
 			fetch(`${api_url}/getNewDeviceKey`),
 			fetch(`${api_url}/getNewDeviceKey`)
@@ -1099,14 +1018,14 @@ describe("Group Creation Tests", () => {
 			body: groupFormData,
 		});
 		
-		// Expect the response to indicate failure (e.g., 500 Internal Server Error)
+		// Expect the response to indicate failure on bad request
 		console.log("Response Status for Invalid Key Test: " + groupResponse.status);
 		expect(groupResponse.ok).toBe(false);
-		expect(groupResponse.status).toBe(500);
+		expect(groupResponse.status).toBe(400);
 	}, 60000);
 
 		// Group with zero children
-	it("should create a group record with zero children", async () => {
+	it("Create a group record with zero children", async () => {
 		// Generate device key
 		const groupKeyRes = await fetch(`${api_url}/getNewDeviceKey`);
 		const groupKey = await groupKeyRes.text();

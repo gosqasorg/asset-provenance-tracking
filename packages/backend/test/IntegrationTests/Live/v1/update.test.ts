@@ -20,15 +20,18 @@ describe("Group of tests", () => {
 
 	// More tests
 })
-
 */
+
 let timeout= 30000;
-const baseUrl = process.env['backend_url'] 
-const apiUrl = baseUrl.split('/prov')[0] 
+let api_url = "https://gosqasbe.azurewebsites.net/api";
+let baseUrl = api_url + '/provenance/'
+//api_url = "http://localhost:7071/api"
+//baseUrl = api_url + '/provenance/'
 
 // question for Vincent why put create a variable, is it to clean code?
 // from Vincent: the question is unclear, rephrase?
 let baseTestName;
+
 describe(baseTestName = 'Group + Record History Update Tests', () => {
 	let testName;
 
@@ -56,6 +59,7 @@ describe(baseTestName = 'Group + Record History Update Tests', () => {
 	});
 
 });
+
 
 async function addRecordWithTags(baseUrl, deviceKey, tags) {
     let theUrl = `${baseUrl}${deviceKey}`;
@@ -102,6 +106,8 @@ describe("Record Update Tests", () => {
       method: "POST",
       body: setupFormData,
     });
+
+    console.log(fullUrl)
     expect(createResponse.ok).toBe(true);
 
     // Update description of record
@@ -129,6 +135,7 @@ describe("Record Update Tests", () => {
     
     expect(record.record.description).toBe("Updated description");
   });
+
 
   // Update with tags
   it("Update record tags", async () => {
@@ -230,6 +237,7 @@ describe("Record Update Tests", () => {
     expect(record.attachments.length).toBeGreaterThan(0); 
   });
 
+
   // Update with recall
   it("Update with recall", async () => {
     // Create a group with one child
@@ -293,7 +301,7 @@ describe("Record Update Tests", () => {
     // Call the recall function to send recalled record to all the children and grandchildren
     const updateFormData = new FormData();
     updateFormData.append("provenanceRecord", JSON.stringify({deviceKey: groupKey}))
-    const recallResponse = await fetch(`${apiUrl}/recall/${groupKey}`, {
+    const recallResponse = await fetch(`${api_url}/recall/${groupKey}`, {
       method: "POST",
       body: updateFormData,
     });   
@@ -382,7 +390,7 @@ describe("Record Update Tests", () => {
           body: grandchildFormData,
         })
       ]);
-  
+      
       expect(groupResponse.ok).toBe(true);
       expect(childResponse.ok).toBe(true);
       expect(grandchildResponse.ok).toBe(true);

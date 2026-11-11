@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as httpTrigger from '../../src/functions/httpTrigger';
 import { TableClient } from '@azure/data-tables';
 import { sendEmail } from '../../src/functions/sendEmail.js';
+import { subscribeToNotifications } from '../../src/functions/emailNotificationUtils.js';
+import * as emailNotificationUtils from '../../src/functions/emailNotificationUtils.js';
 
 
 // Minimal Azure SDK mocks
@@ -78,6 +80,7 @@ vi.mock('@azure/data-tables', () => ({
     TableClient: vi.fn().mockImplementation(() => ({
         createTable: vi.fn().mockResolvedValue(undefined),
         upsertEntity: vi.fn().mockResolvedValue(undefined),
+        createEntity: vi.fn().mockResolvedValue(undefined),
         listEntities: vi.fn().mockReturnValue((async function* () {})()),
         deleteEntity: vi.fn().mockResolvedValue(undefined),
     })),
@@ -108,6 +111,19 @@ vi.mock('../../src/functions/sendEmail.js', () => ({
     sendEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
+// replaces the real email subscription logic with fake functions during the test
+vi.mock('../../src/functions/emailNotificationUtils.js', async (importOriginal) => {
+	const actual: object = await importOriginal();
+
+	return {
+		...actual,
+		notifySubscribers: vi.fn(),
+		retrieveNotifEmails: vi.fn(),
+		subscribeToNotifications: vi.fn().mockResolvedValue({ status: 200 }),
+		unsubscribeFromNotifications: vi.fn(),
+	}
+});
+
 
 // minimal Azure Functions HttpRequest shape
 function makeHttpRequest(overrides: any = {}) {
@@ -130,14 +146,8 @@ function makeHttpRequest(overrides: any = {}) {
 
 // smoke tests
 describe('httpTrigger endpoints (shallow mocks)', () => {
-  const context = {
-    invocationId: 'test-invocation-id',
-    functionName: 'test-function',
-    extraInputs: { get: vi.fn(), set: vi.fn() },
-    extraOutputs: { get: vi.fn(), set: vi.fn() },
-    log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), fatal: vi.fn(),
-    options: { trigger: { type: 'http', name: 'req' }, extraInputs: [], extraOutputs: [] },
-  };
+  const context = console
+
   const deviceKey = '5LAtuNjm3iuAR3ohpjTMy7';
   const attachmentID = 'testattachid';
 
@@ -190,29 +200,29 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
   it('validateRecordJSON correctly validates record', async () => {
     const validRecord = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "","tags": [],
       "hasParent": false,"isPublicKey": false};
-    let valid = await httpTrigger.validateRecordJSON(validRecord);
+    let valid = await httpTrigger.validateRecordJSON(validRecord, context);
     expect(valid).toBe(true);
 
     const recordWithTags = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
       "tags": ["peaches", "pears"],"hasParent": false,"isPublicKey": false};
-    valid = await httpTrigger.validateRecordJSON(recordWithTags);
+    valid = await httpTrigger.validateRecordJSON(recordWithTags, context);
     expect(valid).toBe(true);
 
     const recordWithoutOptional = {"blobType": "deviceInitializer","deviceName": "Name","description": "Description","children_key": "",
       "tags": ["apples", "plums"],"hasParent": false};
-    valid = await httpTrigger.validateRecordJSON(recordWithoutOptional);
+    valid = await httpTrigger.validateRecordJSON(recordWithoutOptional, context);
     expect(valid).toBe(true);
   });
 
   it('validateRecordJSON correctly validates group', async () => {
     const validGroup = {"blobType": "deviceInitializer","deviceName": "Group w/ no children","description": "Description",
       "children_key":[],"children_name":[],"tags": [],"hasParent": false,"isPublicKey": false};
-    let valid = await httpTrigger.validateRecordJSON(validGroup);
+    let valid = await httpTrigger.validateRecordJSON(validGroup, context);
     expect(valid).toBe(true);
 
     const groupWithChildren = {"blobType": "deviceInitializer","deviceName": "Group w/ children","description": "Description",
       "children_key":["4YAfNMTra2VMvXhFQvpQZw"],"children_name":["Child 1"],"tags": ["hasChild"],"hasParent": false,"isPublicKey": false,};
-    valid = await httpTrigger.validateRecordJSON(groupWithChildren);
+    valid = await httpTrigger.validateRecordJSON(groupWithChildren, context);
     expect(valid).toBe(true);
   });
 
@@ -220,42 +230,42 @@ describe('httpTrigger endpoints (shallow mocks)', () => {
     // Name is of the wrong type, which should cause validateRecordJSON to flag this group as invalid
     let invalidName = {"blobType":"deviceInitializer","deviceName":["Name is list", "instead of string"],"description": "Description",
       "tags":["group"],"children_key":[],"children_name":[],"hasParent":false,"isPublicKey":false};
-    let valid = await httpTrigger.validateRecordJSON(invalidName);
+    let valid = await httpTrigger.validateRecordJSON(invalidName, context);
     expect(valid).toBe(false);
 
     // Description is missing, which should cause validateRecordJSON to flag this record as invalid
     const invalidDescription = {"blobType":"deviceInitializer","deviceName":"No Description",
       "tags":["record"],"children_key":"","hasParent":false,"isPublicKey":false};
-    valid = await httpTrigger.validateRecordJSON(invalidDescription);
+    valid = await httpTrigger.validateRecordJSON(invalidDescription, context);
     expect(valid).toBe(false);
 
     // hasParent is of the wrong type, which should cause validateRecordJSON to flag this group as invalid
     const invalidParent = {"blobType":"deviceInitializer","deviceName":"Invalid hasParent","description": "Description",
       "tags":[],"children_key":[],"children_name":[],"hasParent":"false","isPublicKey":false};
-    valid = await httpTrigger.validateRecordJSON(invalidParent);
+    valid = await httpTrigger.validateRecordJSON(invalidParent, context);
     expect(valid).toBe(false);
 
     // children_key is missing, which should cause validateRecordJSON to flag this group as invalid
     const invalidChildren = {"blobType":"deviceInitializer","deviceName":"No children_key","description": "Description",
       "tags":[],"children_name":[],"hasParent":false,"isPublicKey":false};
-    valid = await httpTrigger.validateRecordJSON(invalidChildren);
+    valid = await httpTrigger.validateRecordJSON(invalidChildren, context);
     expect(valid).toBe(false);
   });
 
   it('validateEntryJSON correctly validates entries', async () => {
     // Entries are allowed to be empty
     const emptyEntry = {};
-    let valid = await httpTrigger.validateEntryJSON(emptyEntry);
+    let valid = await httpTrigger.validateEntryJSON(emptyEntry, context);
     expect(valid).toBe(true);
 
     // Valid entries are accepted
     const validEntry = {"blobType":"deviceInitializer","description":"Valid entry","tags":["group"],"children_key":[]};
-    valid = await httpTrigger.validateEntryJSON(validEntry);
+    valid = await httpTrigger.validateEntryJSON(validEntry, context);
     expect(valid).toBe(true);
 
     // If the type is wrong the entry is reject (ex. invalid description)
     let invalidDescription = {"blobType":"deviceInitializer","description":["Description is list", "instead of string"],"tags":["group"],"children_key":[]};
-    valid = await httpTrigger.validateEntryJSON(invalidDescription);
+    valid = await httpTrigger.validateEntryJSON(invalidDescription, context);
     expect(valid).toBe(false);
   });
  
@@ -267,6 +277,9 @@ function makeMockTableInstance() {
     return {
         createTable: vi.fn().mockResolvedValue(undefined),
         upsertEntity: vi.fn().mockResolvedValue(undefined),
+        createEntity: vi.fn().mockResolvedValue(undefined),
+        getEntity: vi.fn().mockRejectedValue(new Error('not found')),
+        updateEntity: vi.fn().mockResolvedValue(undefined),
         listEntities: vi.fn().mockReturnValue((async function* () {})()),
         deleteEntity: vi.fn().mockResolvedValue(undefined),
     };
@@ -281,6 +294,7 @@ function makeValidEntity(overrides: Record<string, unknown> = {}) {
         token: 'validtoken',
         expiresAt: Date.now() + 600_000, // 10 min in the future
         recordKey: 'fakerecordkey',
+        email: 'test@example.com',
         tags: '[]',
         ...overrides,
     };
@@ -329,6 +343,31 @@ describe('postNotificationEmail - validation', () => {
         const res = await httpTrigger.postNotificationEmail(req, ctx);
         expect(res.status).toBe(200);
     });
+
+    // valid request with tags, verify tags will be stored
+    it('should pass if tags are stored in the pending verification table', async () => {
+        const email = 'user@example.com';
+        const recordKey = 'key123';
+        const tags = ['tag1'];
+        const req = { json: async () => ({ email, recordKey, tags }) } as any;
+        await httpTrigger.postNotificationEmail(req, ctx);
+
+        // checks that upsertEntity() was called with an object containing the expected tags serialized as a JSON string.
+        expect(mockTable.upsertEntity).toHaveBeenCalledWith(expect.objectContaining({
+            tags: JSON.stringify(tags),
+        }));
+    });
+
+    it('returns 400 when tags are not a list of strings', async () => {
+        const email = 'user@example.com';
+        const recordKey = 'key123';
+        const tags = ['valid', 123];
+        const req = { json: async () => ({ email, recordKey, tags }) } as any;
+        const res = await httpTrigger.postNotificationEmail(req, ctx);
+
+        expect(res.status).toBe(400);
+        expect(mockTable.upsertEntity).not.toHaveBeenCalled();
+    });
 });
 
 // postVerifyCode tests
@@ -340,6 +379,7 @@ describe('postVerifyCode', () => {
     beforeEach(() => {
         mockTable = makeMockTableInstance();
         vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(subscribeToNotifications).mockClear();
     });
 
     // no token or code
@@ -376,6 +416,23 @@ describe('postVerifyCode', () => {
         const res = await httpTrigger.postVerifyCode(req, ctx);
         
         expect(res.status).toBe(400);
+    });
+
+    it('returns 200 when tags are valid and passed to subscribeToNotifications', async () => {
+        const tags = ['tag1', 'tag2'];
+        const entity = makeValidEntity({ tags: JSON.stringify(tags) });
+        mockTable.getEntity.mockResolvedValue(entity);
+        const req = { json: async () => ({ token: entity.token, code: entity.code }) } as any;
+
+        const res = await httpTrigger.postVerifyCode(req, ctx);
+
+        expect(res.status).toBe(200);
+        expect(subscribeToNotifications).toHaveBeenCalledWith(
+            expect.anything(),
+            entity.recordKey,
+            entity.email,
+            tags,
+        );
     });
 });
 
@@ -452,5 +509,70 @@ describe('postResendCode', () => {
         expect(res.status).toBe(404);
     });
 
+    it('preserves stored tags when resending the verification code', async () => {
+        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
+        const tags = JSON.stringify(['tag1', 'tag2']);
+        const entity = makeValidEntity({
+            partitionKey: 'validtoken',
+            rowKey: '123456',
+            email: 'user@example.com',
+            tags,
+        });
+        mockTable.listEntities.mockReturnValue((async function* () { yield entity; })());
+        const req = { json: async () => ({ token: entity.token }) } as any;
+
+        const res = await httpTrigger.postResendCode(req, ctx);
+
+        expect(res.status).toBe(200);
+        expect(mockTable.deleteEntity).toHaveBeenCalledWith(entity.token, entity.rowKey);
+        expect(mockTable.createEntity).toHaveBeenCalledWith(expect.objectContaining({ tags }));
+    });
 }); 
 
+describe('subscribeGroupToChildren', () => {
+	let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
+    });
+
+	// missing group/child key
+	it('returns 400 when group key is missing', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+	});
+
+	it('returns 400 when child key is missing', async () => {
+		const req = { json: async () => ({ groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+		expect(res.status).toBe(400);
+    });
+
+	// invalid group/child key
+	it('returns 400 when group key is invalid', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "badKey" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+	it('returns 400 when child key is invalid', async () => {
+		// mock child key validation failure in subscribeToNotifications (setupBlobClient)
+		vi.spyOn(emailNotificationUtils, 'subscribeToNotifications').mockResolvedValueOnce(
+			{jsonBody: {message: "subscribeToNotifications setup failed: Invalid Key Length"}, status: 400}
+		);
+		const req = { json: async () => ({ childKey: "badKey", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+	// valid request
+	it('returns 200 when all required fields are present and valid', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+		expect(res.status).toBe(200);
+	});
+});
