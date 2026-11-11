@@ -105,19 +105,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         </div>
         
         <!-- Offline Banner Bottom-->
-        <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+        <Banner v-if="displayBanner" class="banner offline-banner">
             <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px; color: #fe9c9e;">&#9888;
             </div>
             <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
+                <br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
             </div> 
-        </Banner>
-
-        <!-- Back Online Banner -->
-        <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
-            <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
-            <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-            <RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
-            </div>
         </Banner>
 
         <div class="d-grid mt-3" id="submit-button">
@@ -138,12 +131,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     <div class="popup" v-if="recallPopUp">
         <div class="popup-inner recall-popup">
-            <h2 class="text-iris">Recall all children</h2>
+            <h2>Recall all children</h2>
             <p>You've selected "Recall all children” for this record entry. If you proceed, this message will be recalled.</p>
 
             <div>
                 <!-- Cancels the record creation (close pop up) -->
-                <button-component @click="closePopUpR()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
+                <button-component @click="closePopUpR()" class="learn-more confirmBtn popup-buttons" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
                     borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
 
                 <!-- Continues the record creation (call submit function) -->
@@ -154,12 +147,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
     <div class="popup" v-if="sendToAllChildrenPopUp">
         <div class="popup-inner">
-            <h2 class="text-iris">Send to all Children</h2>
+            <h2>Send to all Children</h2>
             <p>You've selected “Send to all Children” for this record entry. If you proceed, this message will be posted to all child records.</p>
 
             <div>
                 <!-- Cancels the record creation (close pop up) -->
-                <button-component @click="closePopUpA()" class="learn-more confirmBtn" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
+                <button-component @click="closePopUpA()" class="learn-more confirmBtn popup-buttons" id="goBackBtn" buttonText="Go back" backgroundColor="#ffffff00"
                     borderColor="#4E3681" color="#322253" margin="0px 15px 0px 0px"></button-component>
 
                 <!-- Continues the record creation (call submit function) -->

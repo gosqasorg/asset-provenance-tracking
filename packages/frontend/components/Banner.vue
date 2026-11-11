@@ -11,7 +11,7 @@
     border-radius: 10px;
     padding: 10px 20px;
     margin: 0px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .offline-banner {

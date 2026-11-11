@@ -83,6 +83,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
                 <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
+                    <br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
                 </div> 
             </Banner>
 
@@ -98,7 +99,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
                 <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
+				    <br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
 				</div>
             </Banner>
         </div>
@@ -371,6 +372,17 @@ export default {
         margin-left: 2px;
     }
 
+    .banner-link {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+@media (min-width: 768px) {
+    .banner-link {
+        font-size: 18px;
+    }
+}
+
 /* Dark mode version*/
 @media (prefers-color-scheme: dark) {
     #record-form {
@@ -399,7 +411,7 @@ export default {
         background-color: #e6f6ff !important;
     }
     .banner-link {
-        color: #CCECFD;
+        color: white;
     }
 }
 /* Light mode version*/

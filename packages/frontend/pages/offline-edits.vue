@@ -62,28 +62,28 @@ while offline.
     <!----------------Queued Keys Banner-------------------->
     <div v-for="(key, index) in queuedKeys">
         <div class="key-box">
-            <p style="font-size: 17px;">{{ key }}</p>
+            <p style="font-size: 17px; margin-bottom: 44px;">{{ key }}</p>
             <div style="background-color: #91bdf5; border-radius: 20px; width: 105px; color: black; text-align: center; height:40px; display:flex; justify-content: center; align-items: center;">Queued</div>
-        </div>
-    </div>
-
-    <!----------------Published Keys Banner------------------>
-    <div v-for="(key, index) in fulfilledKeys">
-        <div class="key-box" style="border: none; overflow:auto; display:grid; gap:10px; margin-bottom: 10px; margin-top: 0px">
-            <p style="grid-row: 1; font-size: 17px; margin-top: -5px; margin-bottom: -5px">{{ key }}</p>      
-            <div class="status-bubble">Published</div>
-            <button class="btn key-buttons" style="grid-row: 1;" @click="clearSessionStorage(); $router.push('/history/' + key)">Go to record</button>
-            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(key)">Dismiss edit</button>
         </div>
     </div>
 
     <!------------------Failed Keys Banner------------------->
     <div v-for="(key, index) in failedKeys">
-        <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 10px; margin-bottom: 10px; margin-top: 0px; border-color: #ebb9b6;">
+        <div class="key-box failed" style="border: solid; border-width: 2px; overflow: auto; display: grid; gap: 15px; border-color: #ebb9b6;">
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>
             <div class="status-bubble" style="background-color: #e08a82;">Failed</div>
             <button class="btn key-buttons" style="grid-row: 1;" @click="retrySyncing(key, index)">Retry syncing</button>
             <button class="btn key-buttons bottom" @click="editSubmission(key, index)">Edit submission</button>
+        </div>
+    </div>
+
+    <!----------------Published Keys Banner------------------>
+    <div v-for="(key, index) in fulfilledKeys">
+        <div class="key-box" style="border: none; overflow: auto; display: grid; gap: 15px;">
+            <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>      
+            <div class="status-bubble">Published</div>
+            <button class="btn key-buttons" style="grid-row: 1;" @click="clearSessionStorage(); $router.push('/history/' + key)">Go to record</button>
+            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(key)">Dismiss edit</button>
         </div>
     </div>
 
