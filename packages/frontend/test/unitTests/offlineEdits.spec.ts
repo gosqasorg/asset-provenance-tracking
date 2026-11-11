@@ -29,7 +29,15 @@ describe("Dismiss All Edits Button", () => {
     );
 
     //seed fulfilled/published stash into localStorage
-    localStorage.setItem("gdt-stash-fulfilled", "fulfilled-test");
+    localStorage.setItem(
+      "gdt-stash-fulfilled", JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
     // Mount the page directly
     const wrapper = mount(OfflineEdits);
 
@@ -46,13 +54,29 @@ describe("Dismiss All Edits Button", () => {
       ));
 
     // checks that fulfilled stash has not changed
-    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe("fulfilled-test");
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     await wrapper.find('.btn.dismiss.all').trigger('click');
     expect(wrapper.find('#dismiss-all-edits-popup').exists()).toBe(true);
 
     // checks that fulfilled stash has not changed while modal is opened
-    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe("fulfilled-test");
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     await wrapper.find('#dismiss-all-edits-popup .popup-buttons').trigger('click'); // Go back button
 
@@ -70,15 +94,21 @@ describe("Dismiss All Edits Button", () => {
     );
 
     //get fulfilled stash from localStorage to check that it still exists
-    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe("fulfilled-test");
-
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     wrapper.unmount();
     localStorage.clear();
   });
 
   it("Click `Dismiss All` clears all edits", async() => {
-
     //seed queued stash into localStorage
     localStorage.setItem(
       "gdt-stash-queued", JSON.stringify([
@@ -101,7 +131,16 @@ describe("Dismiss All Edits Button", () => {
       ])
     );
 
-    localStorage.setItem("gdt-stash-fulfilled", "fulfilled-test");
+    //seed fulfilled stash into localStorage
+    localStorage.setItem(
+      "gdt-stash-fulfilled", JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     // checks that queued stash + failed stash is not null
     expect(localStorage.getItem("gdt-stash-queued")).not.toBeNull();
@@ -133,7 +172,15 @@ describe("Dismiss All Edits Button", () => {
       ])
     );
 
-    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe("fulfilled-test");
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     //open Dismiss All modal
     await wrapper.find('.btn.dismiss.all').trigger('click');
@@ -155,13 +202,27 @@ describe("Dismiss All Edits Button", () => {
 describe("Dismiss Published Edits Button", () => {
   it("Click Button To Open Modal for dismissing published edits and Click `Go Back`", async() => {
     //seed fulfilled stash into localStorage
-    localStorage.setItem("gdt-stash-fulfilled","fulfilled-test");
+    localStorage.setItem(
+      "gdt-stash-fulfilled", JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
     // Mount the page directly
     const wrapper = mount(OfflineEdits);
 
     //get fulfilled stash from localStorage
     expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-      "fulfilled-test"
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
     );
 
     await wrapper.find('.btn.dismiss.published').trigger('click');
@@ -169,7 +230,13 @@ describe("Dismiss Published Edits Button", () => {
 
     // assert that fulfilled stash is still in localStorage
     expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-      "fulfilled-test"
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
     );
 
     await wrapper.find('#dismiss-published-edits-popup .popup-buttons').trigger('click'); // Go back button
@@ -178,7 +245,13 @@ describe("Dismiss Published Edits Button", () => {
 
     // assert that fulfilled stash is still in localStorage and unchanged
     expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-      "fulfilled-test"
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
     );
 
     wrapper.unmount();
@@ -186,8 +259,6 @@ describe("Dismiss Published Edits Button", () => {
   });
   
   it("Click `Dismiss all published edits` clears published edits", async() => {
-
-    
     //seed queued stash into localStorage
     localStorage.setItem(
       "gdt-stash-queued", JSON.stringify([
@@ -211,7 +282,15 @@ describe("Dismiss Published Edits Button", () => {
     );
 
     //seed fulfilled stash into localStorage
-    localStorage.setItem("gdt-stash-fulfilled","fulfilled-test");
+    localStorage.setItem(
+      "gdt-stash-fulfilled", JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     // checks that queued stash + failed stash is not null
     expect(localStorage.getItem("gdt-stash-queued")).not.toBeNull();
@@ -245,7 +324,13 @@ describe("Dismiss Published Edits Button", () => {
     
     //get fulfilled stash from localStorage
     expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-      "fulfilled-test"
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
     );
 
     //open Dismiss Published edits modal
@@ -264,47 +349,81 @@ describe("Dismiss Published Edits Button", () => {
 });
 
 describe("Published/Fulfilled Edit", () => {
-    it("Click Button To Open Modal for dismissing a published/fulfilled edit and Click `Go Back`", async() => {
-      //seed fulfilled stash into localStorage
-      localStorage.setItem("gdt-stash-fulfilled","fulfilled-test");
-      // Mount the page directly
-      const wrapper = mount(OfflineEdits);
+  it("Click Button To Open Modal for dismissing a published/fulfilled edit and Click `Go Back`", async() => {
+    //seed fulfilled stash into localStorage
+    localStorage.setItem(
+      "gdt-stash-fulfilled", JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
+    // Mount the page directly
+    const wrapper = mount(OfflineEdits);
 
-      await flushPromises(); // wait for any executions to complete before asserting.
+    await flushPromises(); // wait for any executions to complete before asserting.
 
-      //get fulfilled stash from localStorage
-      expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-        "fulfilled-test"
-      );
-      
-      // testing the Dismiss edit button exists
-      expect(wrapper.find('.btn.key-buttons.bottom').exists()).toBe(true);
-      expect(wrapper.findAll('.btn.key-buttons.bottom')).toHaveLength(1); //should be one button
+    //get fulfilled stash from localStorage
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
+    
+    // testing the Dismiss edit button exists
+    expect(wrapper.find('.btn.key-buttons.bottom').exists()).toBe(true);
+    expect(wrapper.findAll('.btn.key-buttons.bottom')).toHaveLength(1); //should be one button
 
-      await wrapper.find('.btn.key-buttons.bottom').trigger('click');
-      expect(wrapper.find('#dismiss-published-edit-popup').exists()).toBe(true);
+    await wrapper.find('.btn.key-buttons.bottom').trigger('click');
+    expect(wrapper.find('#dismiss-published-edit-popup').exists()).toBe(true);
 
-      // assert that fulfilled stash is still in localStorage
-      expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-        "fulfilled-test"
-      );
+    // assert that fulfilled stash is still in localStorage
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
-      await wrapper.find('#dismiss-published-edit-popup .popup-buttons').trigger('click'); // Go back button
+    await wrapper.find('#dismiss-published-edit-popup .popup-buttons').trigger('click'); // Go back button
 
-      expect(wrapper.find('#dismiss-published-edit-popup').exists()).toBe(false); // check that modal is closed
+    expect(wrapper.find('#dismiss-published-edit-popup').exists()).toBe(false); // check that modal is closed
 
-      // assert that fulfilled stash is still in localStorage and unchanged
-      expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-        "fulfilled-test"
-      );
+    // assert that fulfilled stash is still in localStorage and unchanged
+    expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
-      wrapper.unmount();
-      localStorage.clear();
+    wrapper.unmount();
+    localStorage.clear();
   });
   it("Click `Dismiss a published edit` and dismiss edit", async() => {
 
     //seed fulfilled stash into localStorage
-    localStorage.setItem("gdt-stash-fulfilled","fulfilled-test");
+    localStorage.setItem(
+      "gdt-stash-fulfilled", JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
+    );
 
     // checks that fulfilled stash is not null
     expect(localStorage.getItem("gdt-stash-fulfilled")).not.toBeNull();
@@ -315,7 +434,13 @@ describe("Published/Fulfilled Edit", () => {
     
     //get fulfilled stash from localStorage
     expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-      "fulfilled-test"
+      JSON.stringify([
+        {key: "fulfilled-test",
+        data:{
+          deviceName: "Fulfilled Test Device",
+          description: "successful test for offline"
+        }}
+      ])
     );
 
     // testing that button exists
@@ -329,7 +454,7 @@ describe("Published/Fulfilled Edit", () => {
     await wrapper.find('#dismiss-published-edit-popup .btn.confirm-dismiss').trigger('click'); // Dismiss published edit button clicked
 
     expect(localStorage.getItem("gdt-stash-fulfilled")).toBe(
-      ""
+      "[]"
     );
 
     wrapper.unmount();

@@ -113,7 +113,7 @@ describe("Stash and Remove Offline Requests", () => {
     // Stash the request and confirm it was successful
     stashOfflineRequest(queuedKey, "gdt-stash-queued", provenanceRecord);
 
-    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
     let queuedRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(1);
     expect(queuedRequest["key"]).toEqual(queuedKey);
@@ -122,7 +122,7 @@ describe("Stash and Remove Offline Requests", () => {
     // Try to add the same record twice and confirm it wasn't added
     stashOfflineRequest(queuedKey, "gdt-stash-queued", provenanceRecord);
 
-    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
     queuedRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(1);
     expect(queuedRequest["key"]).toEqual(queuedKey);
@@ -154,7 +154,7 @@ describe("Stash and Remove Offline Requests", () => {
     stashOfflineRequest(failedKey, "gdt-stash-failed", provenanceRecord);
     stashOfflineRequest(failedKey2, "gdt-stash-failed", provenanceRecord2);
 
-    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
     let failedRequest = requestFromStash[0];
     let failedRequest2 = requestFromStash[1];
     expect(requestFromStash.length).toEqual(2);
@@ -166,7 +166,7 @@ describe("Stash and Remove Offline Requests", () => {
     // Remove both failed requests and confirm they were successfully removed
     removeOfflineRequest(failedKey, "gdt-stash-failed");
 
-    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
     failedRequest = requestFromStash[0];
     // First request was removed, so the new first request should be failedKey2/failedData2
     expect(requestFromStash.length).toEqual(1);
@@ -192,7 +192,7 @@ describe("Stash and Remove Offline Requests", () => {
     // Stash the request and confirm it was successful
     stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled", provenanceRecord);
 
-    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '{}');
+    let requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]');
     let fulfilledRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(1);
     expect(fulfilledRequest["key"]).toEqual(fulfilledKey);
@@ -201,7 +201,7 @@ describe("Stash and Remove Offline Requests", () => {
     // Try to add the same record twice and confirm it wasn't added
     stashOfflineRequest(fulfilledKey, "gdt-stash-fulfilled", provenanceRecord);
 
-    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]');
     fulfilledRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(1);
     expect(fulfilledRequest["key"]).toEqual(fulfilledKey);
@@ -270,7 +270,7 @@ describe("postProvenance, getProvenance, and getProvenanceOffline", () => {
 
     // Confirm that the record was stashed and can be retreived by our other functions
     let provenance = (await getProvenance(key))[0] || {record: ""};
-    let requestsFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    let requestsFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
     let stashedProvenance = requestsFromStash[0];
     expect(requestsFromStash.length).toEqual(1);
     expect(stashedProvenance["key"]).toEqual(key);
@@ -304,7 +304,7 @@ describe("postProvenance, getProvenance, and getProvenanceOffline", () => {
     stashOfflineRequest(key, "gdt-stash-queued", provenanceRecord);
 
     let provenance = (await getProvenance(key))[0] || {record: ""};
-    let requestsFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    let requestsFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
     let stashedProvenance = requestsFromStash[0];
     expect(requestsFromStash.length).toEqual(1);
     expect(stashedProvenance["key"]).toEqual(key);
@@ -381,7 +381,20 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(mockRecord)});
 
     // Put fulfilled, failed, and queued keys into localStorage for the wrapper to mount
-    localStorage.setItem("gdt-stash-fulfilled", "fulfilledKey1,fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
+    localStorage.setItem("gdt-stash-fulfilled",
+      JSON.stringify([
+        {key: "fulfilledKey1",
+        data:{
+          deviceName: "Test Fulfilled Record",
+          description: "Fulfilled record for testing offline edits buttons with worker"
+        }},
+        {key: "fulfilledKey2",
+        data:{
+          deviceName: "Test Fulfilled Record 2",
+          description: "2nd fulfilled record for testing offline edits buttons with worker"
+        }}
+      ])
+    );
 
     localStorage.setItem("gdt-stash-failed",
       JSON.stringify([{
@@ -418,7 +431,13 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     await wrapper.find('.confirm-dismiss').trigger('click');
 
     // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
-    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe("fulfilledKey2,fulfilledKey3,fulfilledKey4,fulfilledKey5");
+    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(JSON.stringify([
+      {key: "fulfilledKey2",
+      data:{
+        deviceName: "Test Fulfilled Record 2",
+        description: "2nd fulfilled record for testing offline edits buttons with worker"
+      }}
+    ]));
 
     // Click on the 'Dismiss published edits' button
     await wrapper.find('button.dismiss:nth-child(4)').trigger('click');
@@ -441,8 +460,12 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     // Wait for the worker to finish creating the queued record and confirm it wasn't lost
     await delay(3000);
-    const fulfilledStash = localStorage.getItem('gdt-stash-fulfilled')?.split(',') || [];
+    const fulfilledStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]');
     expect(fulfilledStash.length).toBe(1);
-    expect(fulfilledStash[0]).toBe('queuedKey1');
+    expect(fulfilledStash[0]["key"]).toBe('queuedKey1');
+    expect(fulfilledStash[0]["data"]).toEqual({
+      deviceName: "Test Record",
+      description: "Record for testing offline edits buttons with worker"
+    });
   });
 }, 40000);
