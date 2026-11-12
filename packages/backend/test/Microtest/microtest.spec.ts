@@ -158,7 +158,7 @@ describe('MicroTestLand', () => {
   })
 
   // This will be a unit test
-  it("Develop", async () => {
+  it("Develop 404", async () => {
     const returned = errorHandler('foobar', new Error('404 test', { cause: 404 }))
     console.dir(returned)
     expect(returned).toEqual({
