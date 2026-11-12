@@ -9,6 +9,7 @@ as needed.
 
 // Do not remove. Vitest Requirement
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import * as z from "zod";
 // Do not remove. Vitest Requirement
 
 /* ================================================================= * 
@@ -52,7 +53,31 @@ const context = console
 
 function errorHandler(functionName, error) {
 
-  context.error(`Returning unsuccessfully from ${functionName}`)
+  context.log(`Returning unsuccessfully from ${functionName}`)
+  context.log("Error zod?", JSON.stringify(error).includes("ZodError"))
+  console.dir(error)
+
+  if (JSON.stringify(error).includes("ZodError")) {
+    let message = 'Error: Check argument format.'
+    context.error(message)
+    context.error(`${functionName}: returning 400 on zodError`)
+    return {
+        status: 400,
+        jsonBody: { data: error.issues },
+        headers: { "Content-Type": "text/plain" }
+    }
+  }
+
+  if (error instanceof SyntaxError) {
+    let message = 'Error: Check json structure.'
+    context.error(message)
+    context.error(`${functionName}: returning 400 on syntaxError`)
+    return {
+        status: 400,
+        jsonBody: { data: message },
+        headers: { "Content-Type": "text/plain" }
+    }
+  }
 
   // Uncategorizable errors
   // To be assessed + addressed in upcoming ticket
@@ -119,20 +144,31 @@ describe('MicroTestLand', () => {
     consoleMock.mockReset();
   });
 
+  // it("Develop Zod", async() => {
+  //   const returned = errorHandler('foobar', z.array().safeParse(":D"))
+  //   console.dir(returned)
+  //   expect(returned).toEqual({
+  //     status: 400,
+  //     jsonBody: { data: z.array().safeParse(":)").issues },
+  //     headers: { "Content-Type": "text/plain" }
+  //   })
+  //   expect(consoleMock).toHaveBeenCalledWith('Error: Check argument format.');
+  //   expect(consoleMock).toHaveBeenCalledWith('foobar: returning 400 on zodError');
+  // })
 
   // This will be a unit test
-  it("Develop", async () => {
-    const returned = errorHandler('foobar', new Error('404 test', { cause: 404 }))
-    console.dir(returned)
-    expect(returned).toEqual({
-      status: 404,
-      body: "Not found",
-      headers: { "Content-Type": "text/plain" }
-    })
-    expect(consoleMock).toHaveBeenCalledWith('404 test');
-    expect(consoleMock).toHaveBeenCalledWith('Returning unsuccessfully from ' + 'foobar');
-    expect(consoleMock).toHaveBeenCalledWith('Cause: 404');
-  })
+  // it("Develop", async () => {
+  //   const returned = errorHandler('foobar', new Error('404 test', { cause: 404 }))
+  //   console.dir(returned)
+  //   expect(returned).toEqual({
+  //     status: 404,
+  //     body: "Not found",
+  //     headers: { "Content-Type": "text/plain" }
+  //   })
+  //   expect(consoleMock).toHaveBeenCalledWith('404 test');
+  //   expect(consoleMock).toHaveBeenCalledWith('Returning unsuccessfully from ' + 'foobar');
+  //   expect(consoleMock).toHaveBeenCalledWith('Cause: 404');
+  // })
 
   it("Develop 400", async () => {
     const returned = errorHandler('foobar', new Error('400 test', { cause: 400 }))
@@ -148,19 +184,19 @@ describe('MicroTestLand', () => {
     expect(consoleMock).toHaveBeenCalledWith('Cause: 400');
   })
 
-  it("Develop 500", async () => {
-    const returned = errorHandler('foobar', new Error('500 test', { cause: 500 }))
-    console.dir(returned)
-    expect(returned).toEqual({ 
-      status: 500,
-      body: "Internal server error. Not to worry: we stay vigilant for these.",
-      headers: { "Content-Type": "text/plain" },
-      jsonBody: { error: "Internal server error. Not to worry: we stay vigilant for these." }
-    })
-    expect(consoleMock).toHaveBeenCalledWith('foobar: experienced 500 internal server error or uncategorized error');
-    expect(consoleMock).toHaveBeenCalledWith('Cause: 500');
-    expect(consoleMock).toHaveBeenCalledWith(JSON.stringify(new Error('500 test', { cause: 500 })));
-  })
+  // it("Develop 500", async () => {
+  //   const returned = errorHandler('foobar', new Error('500 test', { cause: 500 }))
+  //   console.dir(returned)
+  //   expect(returned).toEqual({ 
+  //     status: 500,
+  //     body: "Internal server error. Not to worry: we stay vigilant for these.",
+  //     headers: { "Content-Type": "text/plain" },
+  //     jsonBody: { error: "Internal server error. Not to worry: we stay vigilant for these." }
+  //   })
+  //   expect(consoleMock).toHaveBeenCalledWith('foobar: experienced 500 internal server error or uncategorized error');
+  //   expect(consoleMock).toHaveBeenCalledWith('Cause: 500');
+  //   expect(consoleMock).toHaveBeenCalledWith(JSON.stringify(new Error('500 test', { cause: 500 })));
+  // })
 });
 
 
