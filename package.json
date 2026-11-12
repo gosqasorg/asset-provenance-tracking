@@ -17,6 +17,7 @@
   "dependencies": {
     "@azure/communication-email": "^1.0.0",
     "chart.js": "^4.5.1",
+    "i18n-iso-countries": "^7.14.0",
     "mapbox-gl": "^3.32.0",
     "vitest": "^4.1.9"
   },

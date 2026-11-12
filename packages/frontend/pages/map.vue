@@ -9,7 +9,7 @@
           <div class="range-buttons">
             <button v-for="d in [30, 90, 365]" :key="d"
             :class="{ active: rangeDays === d }"
-            @click="console.log('clicked', d); rangeDays = d">
+            @click="rangeDays = d">
               {{ d === 365 ? '1 yr' : `${d}d` }}
             </button>
           </div>
@@ -86,6 +86,7 @@ import mapboxgl, { type LngLatBoundsLike } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCityStats, getCountryStats, getStateStats } from '~/services/azureFuncs'
 import countryBounds from '../data_viz/files/country-bounds.json';
+import cityCoords from '../data_viz/files/city-coords.json';
 
 let map: mapboxgl.Map | null = null
 let resize: ResizeObserver | null = null
@@ -94,9 +95,9 @@ type LocationStat = Record<string, { name: string; requests: number; failed: num
 type SelectionType = {level: 'world'} | {level: 'country' | 'state'; key: string; name: string}
 type CountryProps = {NAME: string, ISO_A2_EH: string}
 type StateProps = {name: string, gn_name: string | null, iso_a2: string, iso_3166_2: string, latitude: number, longitude: number}
-type CountryBounds = Record<string, { name: string; bounds: number[][] }>;
 
-const BOUNDS = countryBounds as CountryBounds
+const BOUNDS = countryBounds as Record<string, { name: string; bounds: number[][] }>;
+const COORDS = cityCoords as Record<string, any>;
 
 // Map ColorPalette
 const mapColors = {
@@ -297,6 +298,19 @@ export default {
           
       });
 
+      m.on('mousemove', 'cities-dot', (e)=> {
+
+        if (e.features && e.features.length > 0) {
+
+          const data = e.features[0]?.properties
+          console.log(data)
+
+          popup.setLngLat(e.lngLat)
+          .setHTML(`${data}`)
+          .addTo(m);
+        }
+      })
+
       m.on('mouseleave', 'countries-fill', () => {
           m.getCanvas().style.cursor = '';
           m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], '']);
@@ -447,6 +461,29 @@ export default {
         p.noData,
       ]
     },
+    radiusByStats(featKey, stats){
+      const keys = Object.keys(stats);
+      if (!keys.length) return 0;
+
+      const logs = keys.map((k) => Math.log10(stats[k]!.requests + 1));
+      const minLog = Math.min(...logs);
+      const maxLog = Math.max(...logs);
+      const range = maxLog - minLog;
+
+      const minRadius = 10;
+      const maxRadius = 20;
+
+      const radiusPairs = keys.flatMap((k, i) => {
+        const t = range > 0 ? (logs[i]! - minLog) / range : 0;
+        const radius = minRadius + t * (maxRadius - minRadius);
+        console.log(k, i)
+        return [k, radius];
+      });
+
+      return ['match', ['to-string', featKey], ...radiusPairs, 0];
+
+    }
+    ,
     stateNameOf(props) {
       if (props.iso_a2 === 'IN') return props.name
       return props.gn_name ?? props.name
@@ -502,7 +539,7 @@ export default {
         },
       }, roadLayerId);
 
-      // CITY-LEVEL'
+      // STATE-LEVEL'
       // use geojson to draw states
       m.addSource('states', {
         type: 'geojson',
@@ -578,6 +615,43 @@ export default {
           'line-width': 2, 
           'line-opacity': 0.8 } 
       })
+
+      //CITY_LEVEL
+
+      const citygeojson = {
+        type: 'FeatureCollection',
+        features: Object.entries(COORDS).map(([key, coords]) => ({
+          type: 'Feature',
+          properties: {
+            id: key, 
+            coords: coords
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: coords
+          }
+        }))
+      };
+
+      m.addSource('cities-source', {
+        type: 'geojson',
+        data: citygeojson
+      })
+
+      m.addLayer({
+        id: 'cities-dot',
+        type: 'circle',
+        source: 'cities-source',
+        minzoom: 2.5,
+        paint: {
+          'circle-radius': this.radiusByStats(['get', 'id'], this.filteredCity),
+          'circle-color': '#ffffff',
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff'
+        }
+      })
+
+
     },
     filterByRange(data: Record<string, any>){
       const out: Record<string, any> = {}
@@ -588,7 +662,6 @@ export default {
       const endDate = date.toISOString().slice(0, 10)
 
       for (const [key, stats] of Object.entries(data ?? {})){
-        // console.log(stat)
         let requests = 0, failed = 0, responseTime = 0
         // iterate over each week, adding the data for the weeks that fall into range
         for (const [week, w] of Object.entries(stats.weeks ?? {})) {
@@ -604,8 +677,6 @@ export default {
           responseTime += w.responseTime
         }
         const summed = {...stats, requests, failed, responseTime}
-
-        // console.log(key, summed)
 
         if (summed.requests > 0) {
           out[key] = summed
@@ -957,6 +1028,12 @@ export default {
       padding: 10px 15px;
       width: 100%;
       margin: 52px 30px;
+    }
+
+    .map-page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 30px;
     }
 
     h1 {

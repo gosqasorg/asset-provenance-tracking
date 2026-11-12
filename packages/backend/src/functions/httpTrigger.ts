@@ -2017,12 +2017,6 @@ app.post("notifySubscribers", {
     handler: notifySubscribersHandler
 })
 
-app.get("getRequestStats", {
-    authLevel: 'anonymous',
-    route: 'stats/requests',
-    handler: getRequestStats
-})
-
 app.get("getCountryStats", {
     authLevel: 'anonymous',
     route: 'stats/country',

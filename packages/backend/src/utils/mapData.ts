@@ -4,7 +4,7 @@
 
 import { app, InvocationContext } from '@azure/functions';
 import { ClientSecretCredential } from "@azure/identity";
-import { countryToAlpha2 } from "country-to-iso";
+import countries from "i18n-iso-countries";
 
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
@@ -112,7 +112,7 @@ class MapData {
             if (!country) continue;
             
             // covert country name to iso, so mapbox can query it
-            const iso = countryToAlpha2(country);
+            const iso = countries.getAlpha2Code(country, "en");
             
             // if not there must add manually
             if (!iso) { 
@@ -161,7 +161,7 @@ class MapData {
         for (const [day, country, state, city, requests, failed,] of this.requestStats) {
             if (!country || !state) continue;
             
-            const iso = countryToAlpha2(country);
+            const iso = countries.getAlpha2Code(country, "en");
             
             // incase not there
             if (!iso) { 
