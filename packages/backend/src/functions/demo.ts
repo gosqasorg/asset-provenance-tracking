@@ -18,8 +18,7 @@ let buzz = ['a', 'b', 'c']
 let baz = convertEmailSetsToTagBundle(fizz, buzz)
 console.dir(baz)
 
-function addTagSpecificSignupDataToBundle(
-    the_bundle, theEmail, theEmailId, theTags) {
+function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
 
     if(!theTags.length) {
         the_bundle.no_tags.push({
@@ -66,7 +65,12 @@ let bundle = addTagSpecificSignupDataToBundle(
     '12345',
     ['bamboo', 'observer', 'wizard']
 )
-
+console.log("intial bundle:\n", bundle)
+console.log("bundle type: ", typeof bundle)
+console.log("bamboo type: ", typeof bundle.bamboo, bundle.bamboo, Array.isArray(bundle.bamboo))
+console.log("pair type: ", typeof bundle.bamboo[0], bundle.bamboo[0], Array.isArray(bundle.bamboo[0]))
+console.log("email type: ", typeof bundle.bamboo[0].email, bundle.bamboo[0].email)
+console.log("id type: ", typeof bundle.bamboo[0].id, bundle.bamboo[0].id)
 
 bundle = addTagSpecificSignupDataToBundle(
     baz,
@@ -101,6 +105,7 @@ function getTagsFromSignupBundle(email, bundle) {
 
 console.dir(getTagsFromSignupBundle(1, bundle))
 console.dir(getTagsFromSignupBundle('foo@bar.com', bundle))
+console.dir(getTagsFromSignupBundle("X", bundle))
 
 
 function emailIsSignedUp(email, bundle) {
@@ -158,3 +163,56 @@ function getEmailGivenEmailID(id, bundle) {
 
 console.log("is the email for id 12345 foo@bar.com?")
 console.log(getEmailGivenEmailID(12345, bundle))
+
+function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
+    if(!theEmail || !theTags.length) {
+        console.dir("No email or tags provided.")
+        // console.dir("This record does not contain any tag-specific data.")
+        return the_bundle
+    }
+
+    // let subscribedTags = getTagsFromSignupBundle(theEmail, the_bundle)
+    // if(!subscribedTags) {
+    //     console.dir("This user has not subscribed to any tags.")
+    // }
+
+    // for(let tag in theTags) {
+    //     if(!(tag in subscribedTags)){
+    //         console.dir("This user has not requested notifications from this tag")
+    //         continue
+    //     }
+
+    //     for() {}
+    // }
+
+    for(let i = 0; i < theTags.length; i ++) {
+        let currTag = theTags[i]
+        
+        // try Object.hasOwn(the_bundle, currTag) as property check
+        if(!(currTag in the_bundle)) {
+            console.log("This tag has not received any subscriptions.")
+            continue
+        }
+
+        // if(email ){}
+        // !!! .filter() for duplicates !!!
+        for(let n in the_bundle[currTag]){
+            let emailPair = the_bundle[currTag][n]
+            console.log(emailPair)
+
+            let x = []
+            if(theEmail == emailPair.email) {
+                x.push(n)
+                // (tags.indexOf(tag) < 0)
+                // toSpliced() could possibly be used for deep copies
+                console.log("hit:", theEmail, emailPair.email)
+            } else {
+                console.log("This user has not requested notifications from this tag")
+                continue
+            }
+        }
+    }
+    return the_bundle
+}
+
+removeTagSpecificDataFromBundle(bundle, "2", ["no_tag"])
