@@ -4,10 +4,6 @@ info:
   version: 1.0.0
   description: OpenAPI specification for GDT APIv2
 servers:
-  - url: http://localhost:7071/api
-    description: Local development server
-  - url: https://gosqasbe.azurewebsites.net/api
-    description: Staging server
   - url: https://gdtprodbackend.azurewebsites.net/api
     description: Production server
 paths:
@@ -30,7 +26,7 @@ paths:
             };
             let formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(payload));
-            let response = await fetch(`http://localhost:7071/api/createGroup`, {
+            let response = await fetch(`https://gdtprodbackend.azurewebsites.net/api/createGroup`, {
               method: "POST",
               body: formData,
             });
