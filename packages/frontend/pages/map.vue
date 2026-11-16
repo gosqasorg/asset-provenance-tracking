@@ -78,13 +78,6 @@
             </div>
           </div>
         </div>  
-
-        <div >
-          <p>{{ selectedCity }}</p>
-          <p>{{cityData[selectedCity]}}</p>
-          <p>{{ selectedPlace }}</p>
-          <p>{{stateData[selectedPlace.key]}}</p>
-        </div>
         
     </div>
 </template>
@@ -94,18 +87,15 @@ import { markRaw } from 'vue'
 import mapboxgl, { type LngLatBoundsLike } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCityStats, getCountryStats, getStateStats } from '~/services/azureFuncs'
-import countryBounds from '../data_viz/files/country-bounds.json';
-import cityCoords from '../data_viz/files/city-coords.json';
+import rawBounds from '~/data_viz/geo/country-bounds.json';
+import rawCoords from '~/data_viz/geo/city-coords.json';
 
-let map: mapboxgl.Map | null = null
-let resize: ResizeObserver | null = null
 
 type LocationStat = Record<string, { name: string; requests: number; failed: number }>;
 type SelectionType = {level: 'world'} | {level: 'country' | 'state' | 'city'; key: string; name: string}
 type CountryProps = {NAME: string, ISO_A2_EH: string}
 type StateProps = {name: string, gn_name: string | null, iso_a2: string, iso_3166_2: string, latitude: number, longitude: number}
 
-const BOUNDS = countryBounds as Record<string, { name: string; bounds: number[][] }>;
 
 // Map ColorPalette
 const mapColors = {
@@ -126,6 +116,12 @@ const mapColors = {
     dot: '#BFE4F3'
   }
 }
+const countryBounds = rawBounds as Record<string, { name: string; bounds: number[][] }>;
+const cityCoords = rawCoords as Record<string, number[]>;
+
+
+let map: mapboxgl.Map | null = null
+let resize: ResizeObserver | null = null
 
 export default {
 
@@ -144,11 +140,7 @@ export default {
       darkQuery: null as MediaQueryList | null,
       onModeChange: null as ((e: MediaQueryListEvent) => void) | null,
       dataPromise: null as Promise<void> | null,
-      geoPromise: null as Promise<any> | null,
-      rangeDays : 365 as 30 | 90 | 365,
-      COORDS: cityCoords as Record<string, any>,
-      selectedCity: null as string | null,
-    }
+      rangeDays : 365 as 30 | 90 | 365    }
   },
   computed: {
     selectedStats(): {name: string, requests: number; failed: number, responseTime: number} | null {
@@ -243,7 +235,6 @@ export default {
 
     // fetch data - statistics, countryGEOJSON, stateGEOJSON
     this.dataPromise =  this.fetchData()
-    this.geoPromise = this.loadGeo()
   
     mapboxgl.accessToken = this.$config.public.mapboxToken
     const m = markRaw(new mapboxgl.Map({
@@ -360,7 +351,7 @@ export default {
           const country = e.features[0]?.properties as CountryProps
           const isoCode = country.ISO_A2_EH as string
           
-          const result = BOUNDS[isoCode]
+          const result = countryBounds[isoCode]
 
           // check if area has a state-fill
           const state = m.getLayer('states-fill') 
@@ -416,7 +407,7 @@ export default {
           m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
           m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
 
-          let [lon, lat] = this.COORDS[cityKey]
+          let [lon, lat] = cityCoords[cityKey]
           m.flyTo({
             center: [lon, lat],
             duration: 1500
@@ -547,29 +538,6 @@ export default {
       return props.gn_name ?? props.name
     },
 
-    async fetchGeo(url: string) {
-      const res = await fetch(url)
-      if (!res.ok) throw new Error (`${res.status} from ${url}`)
-      return res.json()
-    },
-
-    async loadGeo() {
-      const NE = "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@ca96624/geojson"
-      try {
-        const [countriesGeo, statesGeo] = await Promise.all([
-          this.fetchGeo(`${NE}/ne_50m_admin_0_countries.geojson`),
-          this.fetchGeo(`${NE}/ne_50m_admin_1_states_provinces.geojson`),
-        ])
-        return {countriesGeo, statesGeo}
-      } catch (err) {
-        this.error = String(err)
-        this.$snackbar.add({
-            type: 'error',
-            text: 'Failed to load map data: ' + err
-        });
-        return null
-      }
-    },
     async addMapLayers(m: mapboxgl.Map) {
       // drawing the choropleth under the roads and labels, so that they're visible
       const labelLayersId = m.getStyle().layers.find(l => l.type === 'symbol')?.id;
@@ -577,12 +545,10 @@ export default {
 
       
       await this.dataPromise;
-      const geo = await this.geoPromise;
-      if (!geo) return
-  
+
       m.addSource('country-boundaries', {
         type: 'geojson',
-        data: geo.countriesGeo
+        data: '/geo/50m_countries.json'
       });
 
       // COUNTRY-LEVEL
@@ -601,7 +567,7 @@ export default {
       // use geojson to draw states
       m.addSource('states', {
         type: 'geojson',
-        data: geo.statesGeo
+        data: '/geo/50m_states_provinces.json'
       });
 
       const validName = ['case', 
@@ -678,7 +644,7 @@ export default {
 
       const citygeojson = {
         type: 'FeatureCollection',
-        features: Object.entries(this.COORDS).map(([key, coords]) => ({
+        features: Object.entries(cityCoords).map(([key, coords]) => ({
           type: 'Feature',
           properties: {
             id: key, 
@@ -702,9 +668,9 @@ export default {
         source: 'cities-source',
         minzoom: 2.5,
         paint: {
-          'circle-radius': this.radiusByStats(false),
+          'circle-radius': this.radiusByStats(false) as any,
           'circle-color': this.palette.dot,
-          'circle-stroke-width': this.strokeByStats(),
+          'circle-stroke-width': this.strokeByStats() as any,
           'circle-stroke-color': '#ffffff',
         }
       })
@@ -716,7 +682,7 @@ export default {
         minzoom: 2.5,
         filter: ['==', ['get', 'id'], ''],
         paint: {
-          'circle-radius': this.radiusByStats(true),
+          'circle-radius': this.radiusByStats(true) as any,
           'circle-color': 'rgba(255, 255, 255, 0)',
           'circle-stroke-width': 4,
           'circle-stroke-color': '#ffffff',
@@ -730,7 +696,7 @@ export default {
         minzoom: 2.5,
         filter: ['==', ['get', 'id'], ''],
         paint: {
-          'circle-radius': this.radiusByStats(true),
+          'circle-radius': this.radiusByStats(true) as any,
           'circle-color': 'rgba(255, 255, 255, 0)',
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
@@ -788,8 +754,8 @@ export default {
       if (!map?.getLayer('countries-fill')) return
       map.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry))
       map.setPaintProperty('states-fill', 'fill-color', this.fillByStats(this.palette, stateKey, this.filteredStates))
-      map.setPaintProperty('cities-dot', 'circle-radius', this.radiusByStats())
-      map.setPaintProperty('cities-dot', 'circle-stroke-width', this.strokeByStats())
+      map.setPaintProperty('cities-dot', 'circle-radius', this.radiusByStats(false) as any)
+      map.setPaintProperty('cities-dot', 'circle-stroke-width', this.strokeByStats() as any)
     }
   }
 };
