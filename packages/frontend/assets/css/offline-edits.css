@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 }
 
 /* For screens smaller than 768px */
-#donate-container{
+#offline-edits-container{
     padding: 50px 20px 40px 20px;
 }
 
