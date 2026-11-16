@@ -238,7 +238,7 @@ export const usageStatsCache = new StatsCache();
 
 // TODO: Time triggers go in httpTrigger. We can't have them all over the place.
 // Timer trigger to refresh usage stats every hour, and on startup.
-if(process.env['backend_url'].includes('prod')) {
+if(!process.env['backend_url'].includes('local')) {
     app.timer('refreshUsageStats', {
         schedule: '0 0 * * * *',
         runOnStartup: true,
