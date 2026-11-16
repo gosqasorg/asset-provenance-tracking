@@ -104,12 +104,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>
         </div>
         
-        <!-- Offline Banner Bottom-->
+        <!-- Offline Banner Bottom
         <Banner v-if="displayBanner" class="banner offline-banner">
             <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px; color: #fe9c9e;">&#9888;
             </div>
             <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
                 <br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
+            </div> 
+        </Banner>
+        -->
+
+        <!-- Offline Banner: Bottom -->
+        <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+            <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
+            </div>
+            <div style="margin-left: 10px;">
+                <strong>
+                    You're offline:
+                </strong>
+                You can continue to use the site as normal. To post your changes once online, visit any page on our site. Confirm their status on the 
+                <RouterLink to="/offline-edits" class="banner-link">Offline Edits</RouterLink> page. 
+                Don't clear your cookies, or your changes will be lost.
+                <div>
+                    To add to existing records while offline, visit our <RouterLink to="/history/offline" class="banner-link">Offline Updates page</RouterLink>. 
+                </div>
             </div> 
         </Banner>
 

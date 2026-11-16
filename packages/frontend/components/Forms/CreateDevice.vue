@@ -82,24 +82,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
                 <div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
                 </div>
-                <div style="margin-left: 10px;"><strong>You're offline:</strong> You can continue to use the site as normal. To post your changes, reopen this window when you're online again. Don't clear your cookies or close your browser, or your changes will be lost.
-                    <br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
+                <div style="margin-left: 10px;">
+                    <strong>
+                        You're offline:
+                    </strong>
+                    You can continue to use the site as normal. To post your changes once online, visit any page on our site. Confirm their status on the 
+                    <RouterLink to="/offline-edits" class="banner-link">Offline Edits</RouterLink> page. 
+                    Don't clear your cookies, or your changes will be lost. To add to existing records while offline, visit our <RouterLink to="/history/offline" class="banner-link">Offline Updates page</RouterLink>. 
                 </div> 
             </Banner>
 
-            <!-- Banner to Offline History Create Page -->
+
+            <!-- Banner to Offline History Create Page 
             <Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
 				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
 				</div>
 				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" class="banner-link">offline creation page</RouterLink>.
 				</div>
 			</Banner>
+            -->
 
             <!-- Back Online Banner -->
             <Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
                 <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				    <br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
+			    <RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
 				</div>
             </Banner>
         </div>

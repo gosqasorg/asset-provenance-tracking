@@ -83,24 +83,26 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 			<Banner v-if="displayBanner" class="banner offline-banner history-banner" style="align-items: center; display: flex">
 				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
 				</div>
-				<div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
-				will not be posted until you revisit this page while online.
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> 
+					Connect to the internet to view the most recent version of this page. To post your changes once online, visit any page on our site. To add to existing provenance records while offline, visit our 
+					<RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">Offline Updates page</RouterLink>.
 				</div> 
 			</Banner>
 
-			<!-- Banner to Offline History Create Page -->
+			<!-- Banner to Offline History Create Page
 			<Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
 				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
 				</div>
-				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">offline creation page</RouterLink>.
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> 
 				</div>
 			</Banner>
+			-->
 
 			<!-- Back Online Banner -->
 			<Banner v-if="onlineBannerToggle" class="banner online-banner history-banner" style="align-items: center; display: flex">
                 <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
                 <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon.
-					<br><RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
 				</div>
             </Banner>
 
