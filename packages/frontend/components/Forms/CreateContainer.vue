@@ -435,7 +435,7 @@ export default {
                 //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();
-                    await postNotificationEmail(this.deviceKey, email);
+                    await postNotificationEmail(email, this.deviceKey, this.emailTags);
                 } else if (!response && this.notify && this.emailInput) {
                     this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
