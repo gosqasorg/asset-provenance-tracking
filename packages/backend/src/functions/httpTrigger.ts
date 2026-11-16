@@ -1088,8 +1088,8 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
         if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
 
 
-        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
-        const records = await getRecords.json()
+        getRecords = await fetch(`${baseUrl}${deviceKey}`)
+        records = await getRecords.json()
 
 
         if (records[0].record.tags.includes("recall")) {
@@ -2080,7 +2080,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         context.error('addEntryHandler: Error. Returning unsuccessfully. Error is:')
         context.error(e)
         context.error(e.message)
-        context.error(JSON.stringify(e)
+        context.error(JSON.stringify(e))
 
         return {
             status: 500,
