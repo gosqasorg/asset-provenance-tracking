@@ -16,7 +16,7 @@ import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
 import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications } from './emailNotificationUtils.js';
+import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -847,6 +847,11 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
+async function getConnectionStatus(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    // This is a simple function that will return undefined if we're offline and 200 otherwise
+    return { status: 200 };
+}
+
 
 // --- POSTS --- //
 
@@ -937,7 +942,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
                 }
             }
         }
-
+  
         context.log('Returning successfully from postProvenance')
         return { jsonBody: body ?? { converted: true}};
 
@@ -1013,10 +1018,6 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
-
-                    // If users are subscribed to child records notify them
-                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1125,10 +1126,6 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                         method: "POST",
                         body: keyFormData,
                     })
-
-                    // If users are subscribed to child records notify them
-                    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, key, keyFormData, context);
-                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1258,7 +1255,7 @@ export async function postNotificationEmail(request: HttpRequest, context: Invoc
                 process.env['SENDER_EMAIL'],
                 email,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                `<div>Dear GDT User,<br><br>Your verification code is: ${code}<br><br>Or click this link to verify automatically:<br>${verifyLink}<br><br>The code expires in 10 minutes. If you didn't request this, ignore this email.<br><br>Best regards,<br>The GDT Team</div>`,
                 "GOSQAS Notification",
                 context
             )
@@ -1528,7 +1525,7 @@ export async function postResendCode(request: HttpRequest, context: InvocationCo
                 process.env['SENDER_EMAIL'],
                 entity.email as string,
                 "GOSQAS Verification Code",
-                `Your verification code is: ${code} \n\nOr click this link to verify automatically:${verifyLink} \n\nExpires in 10 minutes.\nIf you didn't request this, ignore this email.`,
+                `<div>Dear GDT User,<br><br>Your verification code is: ${code}<br><br>Or click this link to verify automatically:<br>${verifyLink}<br><br>The code expires in 10 minutes. If you didn't request this, ignore this email.<br><br>Best regards,<br>The GDT Team</div>`,
                 "GOSQAS Notification",
                 context
             ) 
@@ -1590,6 +1587,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         
     } catch(error) {
         context.error(error.message);
+
         return {
             jsonBody: {message: "Internal Server Error"},
             status: 500,
@@ -1612,7 +1610,6 @@ async function upgradeProvenanceHandler(request: HttpRequest, context: Invocatio
 }
 
 // --- POSTs --- //
-
 
 async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Entering notifySubscribersHandler')
@@ -1869,6 +1866,71 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
             jsonBody: { data: message },
             headers: { "Content-Type": "text/plain" }
         }
+    }
+}
+
+export async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+
+    context.log("Entering subscribeGroupToChildren")
+
+    // parse email, recordKey, and tags from body
+    const body = await request.json() as any;
+    const groupKey = body.groupKey;
+    const childKey = body.childKey;
+    const tags = body.tags ?? [];
+
+    if (!groupKey || !childKey) {
+        return {
+            jsonBody: {error: "Error: group and child keys required"},
+            status: 400
+        }
+    }
+
+    context.log(`Subscribing emails from ${groupKey} to ${childKey}`);
+
+    await containerClient.createIfNotExists();
+
+    try {
+        // 1. Setup the blobClient and get emails subscribed to the groupKey
+        let blobName: string;
+        let blobClient: BlockBlobClient;
+        try {
+            [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
+        } catch (error) {
+            context.error(`Error: subscribeGroupToChildren setup failed: ${error.message}`)
+            return {
+                jsonBody: {message: `Error: subscribeGroupToChildren setup failed: ${error.message}`},
+                status: 400
+            }
+        }
+        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
+
+        // 2. Subscribe all emails from the groupKey to the childKey
+        for (let email of emailSet) {
+            let response = await subscribeToNotifications(containerClient, childKey, email, tags);
+            if (response.status !== 200) {
+                context.error("Error: subscribeGroupToChildren failed to subscribe email to child")
+                return {
+                    jsonBody: {error: "Error: subscribeGroupToChildren failed to subscribe email to child"},
+                    status: response.status || 500
+                }
+            }
+        }
+    } catch (error) {
+        context.error('Error: subscribeGroupToChildren failed to subscribe', error.message)
+
+        return {
+            jsonBody: {message: 'Error: subscribeGroupToChildren failed to subscribe group to children'},
+            status: 500
+        }
+    }
+
+    context.log("Returning successfully from subscribeGroupToChildren")
+    
+    // 3. If all emails are succesfully subscribed return success
+    return {
+        jsonBody: { message: "Successfully subscribed group to children email notifications" },
+        status: 200
     }
 }
 
@@ -2143,6 +2205,12 @@ app.get("getVersion", {
     handler: getVersion
 })
 
+app.get("getConnectionStatus", {
+    authLevel: 'anonymous',
+    route: 'connectionStatus',
+    handler: getConnectionStatus
+})
+
 
 // --- POSTs --- //
 
@@ -2228,4 +2296,10 @@ app.post("notifySubscribers", {
     authLevel: 'anonymous',
     route: 'notifySubscribers/{deviceKey}',
     handler: notifySubscribersHandler
+})
+
+app.post("subscribeGroupToChildren", {
+    authLevel: 'anonymous',
+    route: 'subscribeGroupToChildren',
+    handler: subscribeGroupToChildren
 })

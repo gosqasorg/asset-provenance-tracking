@@ -3,6 +3,7 @@ import * as httpTrigger from '../../src/functions/httpTrigger';
 import { TableClient } from '@azure/data-tables';
 import { sendEmail } from '../../src/functions/sendEmail.js';
 import { subscribeToNotifications } from '../../src/functions/emailNotificationUtils.js';
+import * as emailNotificationUtils from '../../src/functions/emailNotificationUtils.js';
 
 
 // Minimal Azure SDK mocks
@@ -111,6 +112,8 @@ vi.mock('../../src/functions/sendEmail.js', () => ({
 }));
 
 // replaces the real email subscription logic with fake functions during the test
+
+/*
 vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
     notifySubscribers: vi.fn(),
     retrieveNotifEmails: vi.fn(),
@@ -120,6 +123,19 @@ vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
     }),
     unsubscribeFromNotifications: vi.fn(),
 }));
+*/
+vi.mock('../../src/functions/emailNotificationUtils.js', async (importOriginal) => {
+	const actual: object = await importOriginal();
+
+	return {
+		...actual,
+		notifySubscribers: vi.fn(),
+		retrieveNotifEmails: vi.fn(),
+		subscribeToNotifications: vi.fn().mockResolvedValue({ status: 200 }),
+		unsubscribeFromNotifications: vi.fn(),
+	}
+});
+
 
 
 // minimal Azure Functions HttpRequest shape
@@ -422,7 +438,6 @@ describe('postVerifyCode', () => {
         expect(res.status).toBe(400);
     });
 
-    
     it('returns 200 when tags are valid and passed to subscribeToNotifications', async () => {
         const tags = ['tag1', 'tag2'];
         const entity = makeValidEntity({ tags: JSON.stringify(tags) });
@@ -434,7 +449,6 @@ describe('postVerifyCode', () => {
 
         expect(subscribeToNotifications).toHaveBeenCalledWith(
             expect.anything(),
-            httpTrigger.calculateDeviceID,
             entity.recordKey,
             entity.email,
             tags,
@@ -535,7 +549,52 @@ describe('postResendCode', () => {
         expect(mockTable.deleteEntity).toHaveBeenCalledWith(entity.token, entity.rowKey);
         expect(mockTable.createEntity).toHaveBeenCalledWith(expect.objectContaining({ tags }));
     });
+}); 
 
+describe('subscribeGroupToChildren', () => {
+	let mockTable: ReturnType<typeof makeMockTableInstance>;
+    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+
+    beforeEach(() => {
+        mockTable = makeMockTableInstance();
+        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
+    });
+
+	// missing group/child key
+	it('returns 400 when group key is missing', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+	});
+
+	it('returns 400 when child key is missing', async () => {
+		const req = { json: async () => ({ groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+		expect(res.status).toBe(400);
+    });
+
+	// invalid group/child key
+	it('returns 400 when group key is invalid', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "badKey" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+	it('returns 400 when child key is invalid', async () => {
+		// mock child key validation failure in subscribeToNotifications (setupBlobClient)
+		vi.spyOn(emailNotificationUtils, 'subscribeToNotifications').mockResolvedValueOnce(
+			{jsonBody: {message: "subscribeToNotifications setup failed: Invalid Key Length"}, status: 400}
+		);
+		const req = { json: async () => ({ childKey: "badKey", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+        expect(res.status).toBe(400);
+    });
+
+	// valid request
+	it('returns 200 when all required fields are present and valid', async () => {
+		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+		expect(res.status).toBe(200);
+	});
 });
-
-
