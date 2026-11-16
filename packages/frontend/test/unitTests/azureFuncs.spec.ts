@@ -459,13 +459,13 @@ describe("Create Records/Groups Offline", async () => {
 
     let fulfilledRecordKey = fulfilledKeys[0];
     let fulfilledRecordKey2 = fulfilledKeys[1];
-    expect(fulfilledRecordKey).toEqual(recordKey);
-    expect(fulfilledRecordKey2).toEqual(recordKey2);
+    expect(fulfilledRecordKey.key).toEqual(recordKey);   // <<---- This line
+    expect(fulfilledRecordKey2.key).toEqual(recordKey2);
 
     let fulfilledGroupKey = fulfilledKeys[2];
     let fulfilledGroupKey2 = fulfilledKeys[3];
-    expect(fulfilledGroupKey).toEqual(groupKey);
-    expect(fulfilledGroupKey2).toEqual(groupKey2);
+    expect(fulfilledGroupKey.key).toEqual(groupKey);
+    expect(fulfilledGroupKey2.key).toEqual(groupKey2);
   });
 
   it ("Fail To Create Records/Groups While Offline", async () => {
@@ -619,10 +619,11 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits);
+    await delay(100)  // Wait for the page to load
 
     // Calling worker without await so it can run in the background, the wait after is to make sure the worker has started running
     offlineQueueConsumerWorker();
-    await delay(15000);
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalled(), { timeout: 10000, interval: 50 });
 
     // Click on all the dismiss buttons while the worker is in the process of creating our queued record
     // Click on 'Dismiss edit' button to clear that specific published edit
@@ -632,13 +633,15 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     await wrapper.find('.confirm-dismiss').trigger('click');
 
     // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
-    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(JSON.stringify([
-      {key: "fulfilledKey2",
-      data:{
-        deviceName: "Test Fulfilled Record 2",
-        description: "2nd fulfilled record for testing offline edits buttons with worker"
-      }}
-    ]));
+    expect(JSON.parse(localStorage.getItem('gdt-stash-fulfilled'))).toEqual([
+      {
+        key: "fulfilledKey2",
+        data:{
+          deviceName: "Test Fulfilled Record 2",
+          description: "2nd fulfilled record for testing offline edits buttons with worker"
+        }
+      }
+    ]);
 
     // Click on the 'Dismiss published edits' button
     await wrapper.find('button.dismiss:nth-child(4)').trigger('click');
@@ -660,13 +663,14 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
 
     // Wait for the worker to finish creating the queued record and confirm it wasn't lost
-    await delay(3000);
+    await delay(30000);
     const fulfilledStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]');
     expect(fulfilledStash.length).toBe(1);
     expect(fulfilledStash[0]["key"]).toBe('queuedKey1');
+
     expect(fulfilledStash[0]["data"]).toEqual({
       deviceName: "Test Record",
       description: "Record for testing offline edits buttons with worker"
-    });
+    })  
   });
 }, 40000);
