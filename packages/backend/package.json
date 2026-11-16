@@ -5,6 +5,7 @@
   "main": "dist/src/functions/httpTrigger.js",
   "type": "module",
   "scripts": {
+    "prepare": "git config core.hookspath .githooks",
     "build": "esbuild src/functions/httpTrigger.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/src/functions/httpTrigger.js --external:@azure/functions-core --external:net --external:http --external:https --external:tls --external:util --external:os --external:fs --external:path --external:crypto --external:sharp --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "watch": "tsc -w",
     "clean": "rimraf dist",
@@ -16,7 +17,7 @@
     "test-noninteractive": "vitest run",
     "microtest": "vitest run test/Microtest",
     "unittest": "npx vitest run test/UnitTests",
-    "api_integration_tests": "npx vitest run test/IntegrationTests",
+    "integration": "npx vitest run test/IntegrationTests",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
