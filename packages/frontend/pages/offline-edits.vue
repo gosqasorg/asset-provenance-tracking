@@ -83,7 +83,7 @@ while offline.
             <p style="grid-row: 1; font-size: 17px;">{{ key }}</p>      
             <div class="status-bubble">Published</div>
             <button class="btn key-buttons" style="grid-row: 1;" @click="clearSessionStorage(); $router.push('/history/' + key)">Go to record</button>
-            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(key)">Dismiss edit</button>
+            <button class="btn key-buttons bottom" @click="dismissSingleEditPopUp=true; clearOneEditPrepare(index)">Dismiss edit</button>
         </div>
     </div>
 
@@ -110,7 +110,7 @@ async mounted() {
     try {
         this.getKeysFromStash("gdt-stash-failed");
         this.getKeysFromStash("gdt-stash-queued");
-        this.getFulfilledKeys();
+        this.getKeysFromStash("gdt-stash-fulfilled");
     } catch (error) {
         console.log("There was an error displaying your offline edits: " + error);
         this.$snackbar.add({
