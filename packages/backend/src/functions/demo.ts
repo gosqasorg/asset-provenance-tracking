@@ -21,7 +21,7 @@ console.dir(baz)
 function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
 
     if(!theTags.length) {
-        the_bundle.no_tags.push({
+        the_bundle.no_tag.push({
             email: theEmail,
             id: theEmailId
         })
@@ -165,32 +165,24 @@ console.log("is the email for id 12345 foo@bar.com?")
 console.log(getEmailGivenEmailID(12345, bundle))
 
 function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
+    // Note: this is an error case, so best to throw an error. We don't want to say successfully unsubscribed and be wrong. 
     if(!theEmail || !theTags.length) {
         console.dir("No email or tags provided.")
         // console.dir("This record does not contain any tag-specific data.")
         return the_bundle
     }
 
-    // let subscribedTags = getTagsFromSignupBundle(theEmail, the_bundle)
-    // if(!subscribedTags) {
-    //     console.dir("This user has not subscribed to any tags.")
-    // }
 
-    // for(let tag in theTags) {
-    //     if(!(tag in subscribedTags)){
-    //         console.dir("This user has not requested notifications from this tag")
-    //         continue
-    //     }
-
-    //     for() {}
-    // }
-
+    // Going for something like:
+    //for(tag of Object.keys(the_bundle)) { 
+    //  the_bundle.tag = the_bundle.tag.filter(...)
+    //}
     for(let i = 0; i < theTags.length; i ++) {
         let currTag = theTags[i]
         
         // try Object.hasOwn(the_bundle, currTag) as property check
         if(!(currTag in the_bundle)) {
-            console.log("This tag has not received any subscriptions.")
+            //console.log("This tag has not received any subscriptions.")
             continue
         }
 
@@ -207,7 +199,7 @@ function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
                 // toSpliced() could possibly be used for deep copies
                 console.log("hit:", theEmail, emailPair.email)
             } else {
-                console.log("This user has not requested notifications from this tag")
+                //console.log("This user has not requested notifications from this tag")
                 continue
             }
         }
@@ -216,3 +208,27 @@ function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
 }
 
 removeTagSpecificDataFromBundle(bundle, "2", ["no_tag"])
+
+
+function getEmailsForTheseTags(the_bundle, tags) {
+    let pairs = [...the_bundle.no_tag]  // They start as [{ email: ..., id: ... } ...], ie, pairs
+
+    for(let tag in the_bundle) {
+        if( ! tags.includes(tag)) { continue }
+        pairs = [...pairs, ...the_bundle[tag]]
+    }
+
+    let sendTo = []
+    for(let pair of pairs) {
+        console.log(pair)
+        sendTo.push(pair.email)
+    }
+
+    return [...(new Set(sendTo))]
+}
+
+console.log()
+console.log('\n\n--- getEmailsForTheseTags test ---\n')
+console.log(bundle)
+let these_emails = getEmailsForTheseTags(bundle, ['wizard', 'bamboo', 'foobar'])
+console.log(these_emails)
