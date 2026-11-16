@@ -330,10 +330,13 @@ async function setServerResponseTimeSeries(context: InvocationContext): Promise<
 app.timer('setServerResponseStats', {
     schedule: '0 0 * * * *',
     runOnStartup: true,
-    handler: async (_myTimer, context) => {
-        await setServerResponseStats(context);
-        await setServerResponseTimeSeries(context);
-    },
+    handler: (_myTimer, context) => setServerResponseStats(context)
+});
+
+app.timer('setServerResponseTimeSeries', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: (_myTimer, context) => setServerResponseTimeSeries(context)
 });
 
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
