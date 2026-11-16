@@ -14,6 +14,7 @@
 
 
 export default defineNuxtConfig({
+  experimental: { appManifest: false },
   devtools: { enabled: true },
   css: ['~/assets/styles/main.scss'],
   vite: {
@@ -105,9 +106,17 @@ export default defineNuxtConfig({
     workbox: {
       skipWaiting: true,
       clientsClaim: true,
-      globPatterns: ['**/*.{js,css,html,png,svg,ico,vue,mjs}'],
+      navigateFallback: '/',
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,vue,mjs,json}'],
       maximumFileSizeToCacheInBytes: 5 * 1024 ** 2,
-      navigateFallbackDenylist: [/\/[^/?]+\.[^/]+$/]
+      navigateFallbackDenylist: [
+        /\/[^/?]+\.[^/]+$/,
+        /^\/heatmap(\/.*)?$/
+      ],
+      globIgnores: [
+        '**/heatmap/**',
+        '**/ne_10m_admin_1_states_provinces*.json'
+      ]
     },
     devOptions: {
       enabled: false
