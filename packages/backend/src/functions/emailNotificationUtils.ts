@@ -25,18 +25,23 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 async function setupBlobClient(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
-    deviceKey: string) 
+    deviceKey: string,
+    context: InvocationContext) 
 {
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
 
+    context.log('Entering setupBlobClient')
     // 0: Setup id         // Transitively throws error originating in decodeKey
     const deviceID = await calculateDeviceID(deviceKey);
 
     // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
+    context.log('setupBlobClient: attempting to get BlockBlobClient')
     const blobClient = containerClient.getBlockBlobClient(blobName);
+    context.log('setupBlobClient: got BlockBlobClient')
 
     // 2: Return blob content (so we can read existing content, merge email list, write back)
+    context.log('Returning successfully from setupBlobClient')
     return [blobName, blobClient] as const;
 }
 
@@ -223,8 +228,8 @@ async function getExistingEmails(
     blobClient: BlockBlobClient,
     context: InvocationContext
 ) {
-    context.log('Entering getExistingEmails')
-    // Todo: This should happen in the caller
+
+    context.error('Entering getExistingEmails')
     let theTagBundle = { no_tag: [] }
     if(!exists) { return theTagBundle }
 
@@ -305,7 +310,7 @@ export async function retrieveNotifEmails(
     context.log('Entering retrieveNotifEmails')
 
     try {                                  // Transitively throws
-        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+        let [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context);
         const downloadResponse = await blobClient.download();
         const downloaded = await streamToString(downloadResponse.readableStreamBody); // Possibly does not return a string?
         context.log('Downloaded blob content:', downloaded.toString());  // Alternatively: surely already a string?
@@ -386,12 +391,12 @@ function emailIDIsNotSignedUp(id, bundle) {
 }
 
 
-
 // ---^^^--- Utiities Functions Section: End ---^^^--- //
 
 
 // -------vvv------- Core operations -------vvv------- //    
 
+// Status: working
 // Todo: once done, move to httpTrigger. This is a core function that belongs there. 
 // Status: Ready for removeEmailFromTagBundle.
 // Status: Not done. Need to edit call to uploadBlob, and then uploadBlob itself. 
@@ -422,7 +427,7 @@ export async function subscribeToNotifications(
         let blobName: string;
         let blobClient: BlockBlobClient;
         try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+            [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context);
         } catch (error) {
             let message = `subscribeToNotifications setup failed: ${error.message}`
             context.error(message)
@@ -503,6 +508,7 @@ context.log('subscribeToNotifications: 4')
     }
 }
 
+
 // Todo: update call to uploadBlob, and edit uploadBlob itself. 
 // Todo: Convert to new return type of getExistingEmails
 export async function unsubscribeFromNotifications(
@@ -518,7 +524,7 @@ export async function unsubscribeFromNotifications(
     let blobName: string;
     let blobClient: BlockBlobClient;
     try {
-        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey);
+        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context);
     } catch (error) {
         return {
             jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
@@ -596,12 +602,27 @@ export async function notifySubscribers(
     //const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, calculateDeviceID, deviceKey, context);
     // 2. Parse the object and hand back a pair of lists of emails and email IDs
     //const [ emailSet, emailIDArray ] = extractEmailsFromResponse(retrieveNotifEmailResponse, context);
-    const [blobName, blobClient] = setupBlobClient(containerClient, calculateDeviceID, deviceKey)
-    const emailSignups = getExistingEmails(exists, blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    context.log('notifySubscribers: Attempting to setup blob client')
+    const [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context)
+    context.log('notifySubscribers: Blob client set up')
+
+    context.log('notifySubscribers: Attempting to get existing signup data.')
+    const exists = await blobClient.exists();
+    try {
+        const emailSignups = await getExistingEmails(exists, blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    } catch(e) {
+        context.error('wtf')
+        context.error(JSON.stringify(e))
+        context.error(e)
+        context.error(Object.keys(e))
+        throw new Error('wtffffff', {cause: 500})
+    }
+    const emailSignups = await getExistingEmails(exists, blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    context.log('notifySubscribers: Got existing signup data.')
     //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
     if (emailSet.size === 0) {
-        context.log("No subscribers found for this record.");
+        context.log("notifySubscribers: No subscribers found for this record.");
         return { status: 204 };
     }
 
@@ -613,6 +634,8 @@ export async function notifySubscribers(
     const displayName: string = FROM_ADDRESS;
     let index = 0;
     try {
+
+        context.log('notifySubscribers: Attempting to send email.')
         const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
         for (const to_email of emailSet) {
             const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
@@ -625,6 +648,8 @@ export async function notifySubscribers(
                 email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
             }
             index++
+
+            context.log('notifySubscribers: calling sendEmail')
             let result = await sendEmail(
                 FROM_ADDRESS, 
                 to_email, 
@@ -633,11 +658,16 @@ export async function notifySubscribers(
                 displayName, 
                 context
             );
+            context.log('notifySubscribers: returned from sendEmail')
 
             if (result.status !== "Succeeded") {
-                throw result.message
+                context.error(`notifySubscribers: result.status is not success, rather it is: ${result.status}`)
+                context.error(JSON.stringify(result))
+                throw new Error(result.message, { cause: 500 })
             }
         }
+
+        context.log('notifySubscribers: Returning successfully')
         return { status: 200 };
     } catch (error) {
         context.error("Error sending email: ", error.statusCode, error);
