@@ -113,7 +113,7 @@ vi.mock('../../src/functions/sendEmail.js', () => ({
 
 // replaces the real email subscription logic with fake functions during the test
 
-/*
+
 vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
     notifySubscribers: vi.fn(),
     retrieveNotifEmails: vi.fn(),
@@ -123,7 +123,7 @@ vi.mock('../../src/functions/emailNotificationUtils.js', () => ({
     }),
     unsubscribeFromNotifications: vi.fn(),
 }));
-*/
+/*
 vi.mock('../../src/functions/emailNotificationUtils.js', async (importOriginal) => {
 	const actual: object = await importOriginal();
 
@@ -135,6 +135,7 @@ vi.mock('../../src/functions/emailNotificationUtils.js', async (importOriginal) 
 		unsubscribeFromNotifications: vi.fn(),
 	}
 });
+*/
 
 
 
