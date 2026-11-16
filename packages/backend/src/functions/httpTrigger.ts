@@ -1627,6 +1627,9 @@ async function notifySubscribersHandler(request: HttpRequest, context: Invocatio
         console.log('Returning successfully from notifySubscribersHandler')
     } catch(error) {
         console.error('Returning unsuccessfully from notifySubscribersHandler')
+        console.error(error)
+        console.error(error.message)
+        console.error(JSON.stringify(error))
         return {
             status: error.statusCode || 500,
             jsonBody: {
