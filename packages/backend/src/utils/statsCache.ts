@@ -8,21 +8,6 @@ const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
 const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
-interface ServerResponseTime {
-    points: Array<{
-        x: number;
-        y: number;
-        requestCount?: number;
-    }>;
-    updatedAt: string | null;
-}
-
-// This store contains data for the server response time chart only.
-const serverResponseTimeStore: ServerResponseTime = {
-    points: [],
-    updatedAt: null,
-};
-
 // Helper Function 
 async function getToken(): Promise<string> {
     const credential = new ClientSecretCredential(directoryId, appRegistrationId, secretValue);
@@ -57,45 +42,6 @@ export function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
     // where the id is that last part (before the last slash)
     return blobName.split("/", 4)[1];
-}
-
-export function getServerResponseTimeData(): ServerResponseTime {
-    return serverResponseTimeStore;
-}
-
-// Runs the query, transforms the rows for Chart.js, and updates the chart store.
-async function prepareServerResponseTimeDataForChart(context: InvocationContext): Promise<void> {
-    context.log('Entering prepareServerResponseTimeDataForChart');
-
-    try {
-        const rows = await runQuery(`
-            AppRequests
-            | where TimeGenerated > ago(365d)
-            | summarize avgRequestDuration=avg(DurationMs), requestCount=count() by bin(TimeGenerated, 10m)
-            | project TimeGenerated, avgRequestDuration, requestCount
-        `, context) as [string, number, number?][];
-
-        if (!rows) {
-            throw new Error('Server response time query returned no result');
-        }
-
-        const points = rows
-            .map(([timeGenerated, avgRequestDuration, requestCount]) => ({
-                x: Date.parse(timeGenerated),
-                y: Number(avgRequestDuration),
-                requestCount: requestCount == null ? undefined : Number(requestCount),
-            }))
-            .filter(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
-            .filter(({ requestCount }) => requestCount === undefined || (Number.isFinite(requestCount) && requestCount >= 0))
-            .sort((a, b) => a.x - b.x);
-
-        serverResponseTimeStore.points = points;
-        serverResponseTimeStore.updatedAt = new Date().toISOString();
-
-        context.log(`Updated server response time data with ${points.length} points`);
-    } catch (error) {
-        context.error(`Leaving prepareServerResponseTimeDataForChart, error occurred: ${error}`);
-    }
 }
 
 class StatsCache {
@@ -334,10 +280,60 @@ async function setServerResponseStats(context: InvocationContext): Promise<void>
     }
 }
 
+interface ServerResponseTime {
+    points: Array<{
+        x: number;
+        y: number;
+        requestCount?: number;
+    }>;
+    updatedAt: string | null;
+}
+
+const serverResponseTimeStore: ServerResponseTime = {
+    points: [],
+    updatedAt: null,
+};
+
+// Cache average response times and request counts by time interval.
+async function setServerResponseTimeSeries(context: InvocationContext): Promise<void> {
+    try {
+        const rows = await runQuery(`
+            AppRequests
+            | where TimeGenerated > ago(365d)
+            | summarize avgRequestDuration=avg(DurationMs), requestCount=count() by bin(TimeGenerated, 10m)
+            | project TimeGenerated, avgRequestDuration, requestCount
+        `, context) as [string, number, number?][];
+
+        if (!rows) {
+            throw new Error('Server response time query returned no result');
+        }
+
+        const points = rows
+            .map(([timeGenerated, avgRequestDuration, requestCount]) => ({
+                x: Date.parse(timeGenerated),
+                y: Number(avgRequestDuration),
+                requestCount: requestCount == null ? undefined : Number(requestCount),
+            }))
+            .filter(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
+            .filter(({ requestCount }) => requestCount === undefined || (Number.isFinite(requestCount) && requestCount >= 0))
+            .sort((a, b) => a.x - b.x);
+
+        serverResponseTimeStore.points = points;
+        serverResponseTimeStore.updatedAt = new Date().toISOString();
+
+        context.log(`Updated server response time data with ${points.length} points`);
+    } catch (error) {
+        context.error("setServerResponseTimeSeries error:", error);
+    }
+}
+
 app.timer('setServerResponseStats', {
     schedule: '0 0 * * * *',
     runOnStartup: true,
-    handler: (_myTimer, context) => setServerResponseStats(context)
+    handler: async (_myTimer, context) => {
+        await setServerResponseStats(context);
+        await setServerResponseTimeSeries(context);
+    },
 });
 
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -350,9 +346,19 @@ app.get("getServerResponse", {
     handler: getServerResponseStats
 })
 
-app.timer('prepareServerResponseTimeDataForChartHourly', {
-    schedule: '0 0 * * * *',
-    handler: async (_timer, context) => {
-        await prepareServerResponseTimeDataForChart(context);
-    },
-});
+async function getServerResponseTime(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    if (!serverResponseTimeStore.updatedAt) {
+        return {
+            status: 503,
+            jsonBody: { error: 'Server response time data is not available yet' },
+        };
+    }
+
+    return { status: 200, jsonBody: serverResponseTimeStore };
+}
+
+app.get('getServerResponseTime', {
+    authLevel: 'anonymous',
+    route: 'stats/serverResponseTime',
+    handler: getServerResponseTime,
+})

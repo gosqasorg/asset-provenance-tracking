@@ -14,7 +14,7 @@ import { RestError, BlockBlobClient, ContainerClient, StorageSharedKeyCredential
 // Local
 import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
-import { getServerResponseTimeData, usageStatsCache } from '../utils/statsCache.js';
+import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
 
@@ -829,23 +829,6 @@ async function getBrowserStats(request: HttpRequest, context: InvocationContext)
         context.log("getBrowserStats error:", error);
         return { body: "Error fetching browser stats", status: 500 }
     }
-}
-
-async function getServerResponseTime(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entering getServerResponseTime');
-    const serverResponseTime = getServerResponseTimeData();
-
-    if (!serverResponseTime.updatedAt) {
-        return {
-            status: 503,
-            jsonBody: { error: 'Server response time data is not available yet' },
-        };
-    }
-
-    return {
-        status: 200,
-        jsonBody: serverResponseTime,
-    };
 }
 
 export async function getVersion(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -2217,12 +2200,6 @@ app.get("getBrowserStats", {
     handler: getBrowserStats
 })
 
-app.get('getServerResponseTime', {
-    authLevel: 'anonymous',
-    route: 'stats/server-response-time',
-    handler: getServerResponseTime,
-})
-
 app.post('postEmail', {
     authLevel: 'anonymous',
     route: 'feedbackVolunteer',
@@ -2276,4 +2253,3 @@ app.post("subscribeGroupToChildren", {
     route: 'subscribeGroupToChildren',
     handler: subscribeGroupToChildren
 })
-

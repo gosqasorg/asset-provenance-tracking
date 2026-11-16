@@ -57,6 +57,7 @@ Implemented with assistance from OpenAI Codex. -->
 <script lang="ts">
 import { defineComponent, useId } from 'vue';
 import Chart from 'chart.js/auto';
+import { getServerResponseTimeSeries } from '~/services/azureFuncs';
 
 interface ResponseTimePoint {
     x: number
@@ -101,18 +102,7 @@ export default defineComponent({
     methods: {
         async fetchData(): Promise<void> {
             try {
-                const baseUrl = this.$config.public.baseUrl
-                const response = await fetch(`${baseUrl}/stats/server-response-time`)
-                if (!response.ok) {
-                    throw new Error(response.status === 503
-                        ? 'Server response time data is not available yet. Try again shortly.'
-                        : `Unable to load server response time data (HTTP ${response.status}).`)
-                }
-
-                const data = await response.json()
-                if (!data || !Array.isArray(data.points)) {
-                    throw new Error('Server response time data is in an unexpected format.')
-                }
+                const data = await getServerResponseTimeSeries()
                 this.points = data.points
                 this.updatedAt = data.updatedAt ?? null
             } catch (error) {
