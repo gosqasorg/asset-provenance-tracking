@@ -1,3 +1,5 @@
+<!-- TODO: type error coming from radius and stroke functions -->
+
 <template>
     <div class="map-page">
         <div class="map-page-header">
@@ -72,10 +74,17 @@
                     <p>{{ p.requests }}</p>
                   </li>
                 </ul>
-                <p v-else style="font-weight: 300;">No city-level data for this country yet</p>
+                <p v-else style="font-weight: 300;">No city-level data {{ selectedPlace.level === 'country' ? 'for this country yet' : ''}}</p>
             </div>
           </div>
         </div>  
+
+        <div >
+          <p>{{ selectedCity }}</p>
+          <p>{{cityData[selectedCity]}}</p>
+          <p>{{ selectedPlace }}</p>
+          <p>{{stateData[selectedPlace.key]}}</p>
+        </div>
         
     </div>
 </template>
@@ -92,12 +101,11 @@ let map: mapboxgl.Map | null = null
 let resize: ResizeObserver | null = null
 
 type LocationStat = Record<string, { name: string; requests: number; failed: number }>;
-type SelectionType = {level: 'world'} | {level: 'country' | 'state'; key: string; name: string}
+type SelectionType = {level: 'world'} | {level: 'country' | 'state' | 'city'; key: string; name: string}
 type CountryProps = {NAME: string, ISO_A2_EH: string}
 type StateProps = {name: string, gn_name: string | null, iso_a2: string, iso_3166_2: string, latitude: number, longitude: number}
 
 const BOUNDS = countryBounds as Record<string, { name: string; bounds: number[][] }>;
-const COORDS = cityCoords as Record<string, any>;
 
 // Map ColorPalette
 const mapColors = {
@@ -107,6 +115,7 @@ const mapColors = {
     background: '#1C1C19',
     selected: '#ffffff',
     noData: 'rgba(0, 0, 0, 0)',
+    dot: '#4E3681'
   }, 
   light : {
     low: '#B9B1CA',
@@ -114,6 +123,7 @@ const mapColors = {
     background: '#FFFFFF',
     selected: '#1C1C19',
     noData: 'rgba(0, 0, 0, 0)',
+    dot: '#BFE4F3'
   }
 }
 
@@ -135,8 +145,9 @@ export default {
       onModeChange: null as ((e: MediaQueryListEvent) => void) | null,
       dataPromise: null as Promise<void> | null,
       geoPromise: null as Promise<any> | null,
-      rangeDays : 365 as 30 | 90 | 365
-
+      rangeDays : 365 as 30 | 90 | 365,
+      COORDS: cityCoords as Record<string, any>,
+      selectedCity: null as string | null,
     }
   },
   computed: {
@@ -145,11 +156,15 @@ export default {
       const s = this.selectedPlace
 
       if (s.level === 'state') {
-        return this.filteredCity[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
+        return this.filteredStates[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
       }
 
       if (s.level === 'country') {
         return this.filteredCountry[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
+      }
+
+      if (s.level === 'city') {
+        return this.filteredCity[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
       }
 
       return this.worldStats
@@ -184,6 +199,10 @@ export default {
         return list.filter(c => c.stateKey === s.key)
         .sort((a, b) => b.requests - a.requests)
         .slice(0, 5)
+      }
+
+      if (s.level === 'city') {
+        return {}
       }
 
       // if neither country or state return top places as countries
@@ -298,24 +317,37 @@ export default {
           
       });
 
-      m.on('mousemove', 'cities-dot', (e)=> {
-
+      m.on('mousemove', 'cities-dot', (e) => {
         if (e.features && e.features.length > 0) {
+          const cityKey = e.features[0].properties.id
+          const value = this.filteredCity[cityKey].requests
+          const name = this.filteredCity[cityKey].name
 
-          const data = e.features[0]?.properties
-          console.log(data)
+          m.setFilter('cities-hover', ['==', ['get', 'id'], cityKey]);
 
-          popup.setLngLat(e.lngLat)
-          .setHTML(`${data}`)
-          .addTo(m);
+          if (popup.isOpen()) {
+            popup.setLngLat(e.lngLat)
+          } else {
+            popup.setLngLat(e.lngLat).addTo(m)
+          }
+
+          popup
+          .setHTML(`<div class="map-popup-name">${name}</div><div class="map-popup-val">${value} requests</div>`);
         }
-      })
+      });
 
       m.on('mouseleave', 'countries-fill', () => {
           m.getCanvas().style.cursor = '';
           m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], '']);
           if (m.getLayer('state-hover')) m.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], '']);
+          m.setFilter('cities-hover', ['==', ['get', 'id'], '']);
+
           popup.remove();
+      });
+
+      m.on('mouseleave', 'cities-dot', () => {
+        m.getCanvas().style.cursor = '';
+        popup.remove();
       });
 
       // Zoom Functionality 
@@ -374,6 +406,24 @@ export default {
         if (hit.length === 0) this.resetView();    
       })
 
+      m.on('click', 'cities-dot', (e) => {
+        if (e.features && e.features.length > 0) {
+          const cityKey = e.features[0].properties.id
+          this.selectedCity = cityKey
+          this.selectedPlace = { level: 'city', key: cityKey, name: ''}
+          m.setFilter('cities-selected', ['==', ['get', 'id'], cityKey]);
+
+          m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
+          m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+
+          let [lon, lat] = this.COORDS[cityKey]
+          m.flyTo({
+            center: [lon, lat],
+            duration: 1500
+          })
+        }
+      })
+
       // Fullscreen Functionality
       m.addControl(new mapboxgl.FullscreenControl());
 
@@ -417,6 +467,7 @@ export default {
     resetView() {
       map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
       map?.setFilter('state-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+      map?.setFilter('cities-selected', ['==', ['get', 'id'], '']);
       map?.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
       this.selectedPlace = { level: 'world'}
     },
@@ -461,27 +512,34 @@ export default {
         p.noData,
       ]
     },
-    radiusByStats(featKey, stats){
-      const keys = Object.keys(stats);
+    radiusByStats(selected: boolean){
+      const keys = Object.keys(this.filteredCity);
+      const featKey = ['get', 'id']
       if (!keys.length) return 0;
 
-      const logs = keys.map((k) => Math.log10(stats[k]!.requests + 1));
+      const logs = keys.map((k) => Math.log10(this.filteredCity[k]!.requests + 1));
       const minLog = Math.min(...logs);
       const maxLog = Math.max(...logs);
       const range = maxLog - minLog;
 
       const minRadius = 10;
       const maxRadius = 20;
+      const selectedRadius = 5;
 
       const radiusPairs = keys.flatMap((k, i) => {
         const t = range > 0 ? (logs[i]! - minLog) / range : 0;
         const radius = minRadius + t * (maxRadius - minRadius);
-        console.log(k, i)
-        return [k, radius];
+        return [k, radius + (selected ? selectedRadius : 0)];
       });
 
       return ['match', ['to-string', featKey], ...radiusPairs, 0];
-
+    },
+    strokeByStats() {
+      const keys = Object.keys(this.filteredCity);
+      const featKey = ['get', 'id']
+      if (!keys.length) return 0;
+      const strokePairs = keys.flatMap((k) => [k, 1]);
+      return ['match', ['to-string', featKey], ...strokePairs, 0]
     }
     ,
     stateNameOf(props) {
@@ -620,7 +678,7 @@ export default {
 
       const citygeojson = {
         type: 'FeatureCollection',
-        features: Object.entries(COORDS).map(([key, coords]) => ({
+        features: Object.entries(this.COORDS).map(([key, coords]) => ({
           type: 'Feature',
           properties: {
             id: key, 
@@ -644,10 +702,38 @@ export default {
         source: 'cities-source',
         minzoom: 2.5,
         paint: {
-          'circle-radius': this.radiusByStats(['get', 'id'], this.filteredCity),
-          'circle-color': '#ffffff',
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#ffffff'
+          'circle-radius': this.radiusByStats(false),
+          'circle-color': this.palette.dot,
+          'circle-stroke-width': this.strokeByStats(),
+          'circle-stroke-color': '#ffffff',
+        }
+      })
+
+      m.addLayer({
+        id: 'cities-selected',
+        type: 'circle',
+        source: 'cities-source',
+        minzoom: 2.5,
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'circle-radius': this.radiusByStats(true),
+          'circle-color': 'rgba(255, 255, 255, 0)',
+          'circle-stroke-width': 4,
+          'circle-stroke-color': '#ffffff',
+        }
+      })
+
+      m.addLayer({
+        id: 'cities-hover',
+        type: 'circle',
+        source: 'cities-source',
+        minzoom: 2.5,
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'circle-radius': this.radiusByStats(true),
+          'circle-color': 'rgba(255, 255, 255, 0)',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
         }
       })
 
@@ -702,6 +788,8 @@ export default {
       if (!map?.getLayer('countries-fill')) return
       map.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry))
       map.setPaintProperty('states-fill', 'fill-color', this.fillByStats(this.palette, stateKey, this.filteredStates))
+      map.setPaintProperty('cities-dot', 'circle-radius', this.radiusByStats())
+      map.setPaintProperty('cities-dot', 'circle-stroke-width', this.strokeByStats())
     }
   }
 };

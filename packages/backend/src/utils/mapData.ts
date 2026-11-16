@@ -105,7 +105,11 @@ class MapData {
         this.stateStats = this.sumBy(context, "state");
     }
 
-    sumBy(context: InvocationContext, level: "country" | "state"){
+    sumByCity(context: InvocationContext) {
+        this.cityStats = this.sumBy(context, "city")
+    }
+
+    sumBy(context: InvocationContext, level: "country" | "state" | "city"){
         const stats = {};
         
         for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
@@ -128,6 +132,13 @@ class MapData {
                 key = `${iso}|${state.toLowerCase()}`
                 if (stats[key] === null || stats[key] === undefined) {
                     stats[key] = { name: state, iso, requests: 0, failed: 0, responseTime: 0, weeks: {} }
+                }
+            } else if (level === "city") {
+                if (!state) continue;
+                const stateKey = `${iso}|${state.toLowerCase()}`;
+                key = `${stateKey}|${city.toLowerCase()}`
+                if (stats[key] === null || stats[key] === undefined) {
+                    stats[key] = { name: city, iso, stateKey, requests: 0, failed: 0, responseTime: 0, weeks: {} }
                 }
             } else {
                 key = iso
@@ -155,42 +166,43 @@ class MapData {
     }
 
     // Group requests by city 
-    sumByCity(context: InvocationContext) {
-        const stats = {};
+    // sumByCity(context: InvocationContext) {
+    //     const stats = {};
         
-        for (const [day, country, state, city, requests, failed,] of this.requestStats) {
-            if (!country || !state) continue;
+    //     for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
+    //         if (!country || !state) continue;
             
-            const iso = countries.getAlpha2Code(country, "en");
+    //         const iso = countries.getAlpha2Code(country, "en");
             
-            // incase not there
-            if (!iso) { 
-                context.log(`No ISO code for "${country}"`); 
-                continue; 
-            }
+    //         // incase not there
+    //         if (!iso) { 
+    //             context.log(`No ISO code for "${country}"`); 
+    //             continue; 
+    //         }
             
-            // using iso|state as key because duplicates
-            const stateKey = `${iso}|${state.toLowerCase()}`;
-            const key = `${stateKey}|${city.toLowerCase()}`;
-            const weekKey = String(day).slice(0, 10)
+    //         // using iso|state as key because duplicates
+    //         const stateKey = `${iso}|${state.toLowerCase()}`;
+    //         const key = `${stateKey}|${city.toLowerCase()}`;
+    //         const weekKey = String(day).slice(0, 10)
 
-            if (stats[key] === null || stats[key] === undefined) {
-                stats[key] = { name: city, iso, stateKey, requests: 0, weeks: {} }
-            }
+    //         if (stats[key] === null || stats[key] === undefined) {
+    //             stats[key] = { name: city, iso, stateKey, requests: 0, failed: 0, responseTime: 0, weeks: {} }
+    //         }
 
-            const cityStat = stats[key]
-            cityStat.requests += requests;
+    //         const cityStat = stats[key]
+    //         cityStat.requests += requests;
+    //         cityStat.
 
-            if (cityStat.weeks[weekKey] === null || cityStat.weeks[weekKey] === undefined) {
-                cityStat.weeks[weekKey] = requests
-            } 
+    //         if (cityStat.weeks[weekKey] === null || cityStat.weeks[weekKey] === undefined) {
+    //             cityStat.weeks[weekKey] = requests
+    //         } 
 
-            cityStat.weeks[weekKey] += requests
+    //         cityStat.weeks[weekKey] += requests
 
-        }
+    //     }
         
-        this.cityStats = stats;
-    }
+    //     this.cityStats = stats;
+    // }
 
     // Refresh Function
     async mapRefresh(context: InvocationContext) {
