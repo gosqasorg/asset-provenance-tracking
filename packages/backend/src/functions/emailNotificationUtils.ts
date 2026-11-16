@@ -79,7 +79,7 @@ export async function getExisitingEmails(exists: boolean, blobClient: BlockBlobC
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
-    const exists = await blobClient.exists();
+    exists = await blobClient.exists();
 
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
