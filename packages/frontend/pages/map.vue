@@ -1,5 +1,3 @@
-<!-- TODO: type error coming from radius and stroke functions -->
-
 <template>
     <div class="map-page">
         <div class="map-page-header">
@@ -78,6 +76,10 @@
             </div>
           </div>
         </div>  
+
+        <div>
+          <p>{{ countryData }}</p>
+          </div>
         
     </div>
 </template>
@@ -513,8 +515,8 @@ export default {
       const maxLog = Math.max(...logs);
       const range = maxLog - minLog;
 
-      const minRadius = 10;
-      const maxRadius = 20;
+      const minRadius = 5;
+      const maxRadius = 15;
       const selectedRadius = 5;
 
       const radiusPairs = keys.flatMap((k, i) => {

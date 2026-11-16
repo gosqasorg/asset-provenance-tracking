@@ -1,10 +1,14 @@
 // To be folded into statsCache.ts
-// TODO: Add zod-validation
-// TODO: user consistency in requestStats (shuouldnt be requestsStats)
 
 import { app, InvocationContext } from '@azure/functions';
 import { ClientSecretCredential } from "@azure/identity";
 import countries from "i18n-iso-countries";
+import * as z from "zod";
+
+// 
+const queryResponse = z.object({
+    tables: z.array(z.object({ rows: z.array(z.unknown()) })).min(1)
+})
 
 const directoryId = process.env["AZURE_TENANT_ID"];
 const appRegistrationId = process.env["AZURE_CLIENT_ID"];
@@ -19,8 +23,9 @@ async function getToken(): Promise<string> {
     return tokenResponse.token;
 }
 
-export async function runQuery(query: string, context: InvocationContext): Promise<[string, number][]> {
+export async function runQuery(query: string, context?: InvocationContext): Promise<[string, number][]> {
     const token = await getToken();
+    const log = context ?? console;
 
     try {
         const result = await fetch(
@@ -36,45 +41,66 @@ export async function runQuery(query: string, context: InvocationContext): Promi
         );
 
         if (!result.ok) {
-            context.error(`Query failed: ${result.status} ${await result.text()}`);   // shows KQL errors
+            log.error(`Query failed: ${result.status} ${await result.text()}`);   // shows KQL errors
             return [];
         }
 
         const data = await result.json();
-        context.log(data);
+        log.log(data);
         return data.tables[0].rows
     } catch(error) {
-        context.error(`Leaving runQuery: error occurred: ${error}`)
+        log.error(`Leaving runQuery: error occurred: ${error}`)
     }
 }
 
+interface LocationStat {
+    requests,
+    failed,
+    responseTime,
+    weeks
+}
+
 class MapData {
+    // Type
+    
+
     // Variables
     private requestStats = null;
     private countryStats = {};
     private stateStats = {};
     private cityStats = {};
 
+    // The running update for each cache
+    private rquestsUpdate = null 
+
+
 
     // Getter
-    getRequestStats() {
+    async getRequestStats(context?: InvocationContext) {
+        if (this.requestStats === null) {
+            // wait for update, and if its null call the updater function as backup
+            await (this.rquestsUpdate ??= this.updateRequests(context));
+        }
+
         return this.requestStats;
     }
 
-    getCountryStats() {
+    getCountryStats(): Record<string, LocationStat> {
         return this.countryStats;
+        
     }
 
-    getStateStats() {
+    getStateStats(): Record<string, LocationStat> {
         return this.stateStats;
     }
 
-    getCityStats() {
+    getCityStats(): Record<string, LocationStat & {stateKey}> {
         return this.cityStats;
     }
 
     // Updater Function
-    async updateRequests(context: InvocationContext): Promise <void> {
+    async updateRequests(context?: InvocationContext): Promise <void> {
+        const log = context ?? console;
         const rows = await runQuery(`
             AppRequests
             | where TimeGenerated > ago(365d)
@@ -96,23 +122,24 @@ class MapData {
 
 
     // Group requests by country 
-    sumByCountry(context: InvocationContext) {
-        this.countryStats = this.stateStats = this.sumBy(context, "country");
+    async sumByCountry(context?: InvocationContext) {
+        this.countryStats = await this.sumBy("country", context);
     }
 
     // Group requests by state 
-    sumByState(context: InvocationContext) {
-        this.stateStats = this.sumBy(context, "state");
+    async sumByState(context?: InvocationContext) {
+        this.stateStats = await this.sumBy("state", context);
     }
 
-    sumByCity(context: InvocationContext) {
-        this.cityStats = this.sumBy(context, "city")
+    async sumByCity(context?: InvocationContext) {
+        this.cityStats = await this.sumBy("city", context)
     }
 
-    sumBy(context: InvocationContext, level: "country" | "state" | "city"){
+    async sumBy(level: "country" | "state" | "city", context?: InvocationContext){
         const stats = {};
+        const log = context ?? console;
         
-        for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
+        for (const [day, country, state, city, requests, failed, responseTime] of await this.getRequestStats(context)) {
             if (!country) continue;
             
             // covert country name to iso, so mapbox can query it
@@ -120,7 +147,7 @@ class MapData {
             
             // if not there must add manually
             if (!iso) { 
-                context.log(`No ISO code for "${country}"`); 
+                log.log(`No ISO code for "${country}"`); 
                 continue; 
             }
 
@@ -165,54 +192,19 @@ class MapData {
         return stats;  
     }
 
-    // Group requests by city 
-    // sumByCity(context: InvocationContext) {
-    //     const stats = {};
-        
-    //     for (const [day, country, state, city, requests, failed, responseTime] of this.requestStats) {
-    //         if (!country || !state) continue;
-            
-    //         const iso = countries.getAlpha2Code(country, "en");
-            
-    //         // incase not there
-    //         if (!iso) { 
-    //             context.log(`No ISO code for "${country}"`); 
-    //             continue; 
-    //         }
-            
-    //         // using iso|state as key because duplicates
-    //         const stateKey = `${iso}|${state.toLowerCase()}`;
-    //         const key = `${stateKey}|${city.toLowerCase()}`;
-    //         const weekKey = String(day).slice(0, 10)
-
-    //         if (stats[key] === null || stats[key] === undefined) {
-    //             stats[key] = { name: city, iso, stateKey, requests: 0, failed: 0, responseTime: 0, weeks: {} }
-    //         }
-
-    //         const cityStat = stats[key]
-    //         cityStat.requests += requests;
-    //         cityStat.
-
-    //         if (cityStat.weeks[weekKey] === null || cityStat.weeks[weekKey] === undefined) {
-    //             cityStat.weeks[weekKey] = requests
-    //         } 
-
-    //         cityStat.weeks[weekKey] += requests
-
-    //     }
-        
-    //     this.cityStats = stats;
-    // }
 
     // Refresh Function
-    async mapRefresh(context: InvocationContext) {
-        context.log('Refreshing map data...');
-        await this.updateRequests(context);
-        this.sumByCountry(context);
-        this.sumByState(context);
-        this.sumByCity(context);
+    async mapRefresh(context?: InvocationContext) {
+        const log = context ?? console;
+        log.log('Refreshing map data...');
+        await this.updateRequests(context); // update the requests FIRST
+         await Promise.allSettled([
+            this.sumByCountry(context),
+            this.sumByState(context),
+            this.sumByCity(context),
+         ])
 
-        context.log('Map data refreshed :D');
+        log.log('Map data refreshed :D');
     }
 
 }
@@ -220,8 +212,19 @@ class MapData {
 export const mapData = new MapData();
 
 // Timer trigger
-app.timer('refreshMapData', {
+app.hook.appStart(() => {
+    mapData.mapRefresh()
+});
+
+// Timer trigger to refresh usage stats every hour
+app.timer('refreshUsageStats', {
     schedule: '0 0 * * * *',
-    runOnStartup: true,
-    handler: (_myTimer, context) => mapData.mapRefresh(context),
-})
+    handler: async (_myTimer, context) => {
+        try {
+            context.log('Refreshing usage stats cache');
+            await mapData.mapRefresh(context);
+        } catch (error) {
+            context.error('Error occured while refreshing usage stats cache: ', error)
+        }
+    },
+}); 
