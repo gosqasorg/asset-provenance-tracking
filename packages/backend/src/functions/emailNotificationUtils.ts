@@ -27,7 +27,8 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
-async function setupBlobClient(
+// TODO: move this into generalUtils.ts, import here and httpTrigger.
+export async function setupBlobClient(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
     deviceKey: string,
@@ -183,7 +184,7 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
     return the_bundle 
 }
 
-async function getExistingEmails(
+export async function getExistingEmails(
     blobClient: BlockBlobClient,
     context: InvocationContext
 ) {

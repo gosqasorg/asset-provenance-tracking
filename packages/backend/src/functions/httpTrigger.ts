@@ -16,7 +16,7 @@ import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
 import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
+import { notifySubscribers, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -1060,7 +1060,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
         // Prevent the record from being recalled more than once
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
-        const records = await getRecords.json()
+        let records = await getRecords.json()
 
         for (let record of records) {
           if (record.record.tags && (record.record.tags).includes("recall")) {
@@ -1869,6 +1869,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+// TODO: Update to new format
 export async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     context.log("Entering subscribeGroupToChildren")
@@ -1895,7 +1896,7 @@ export async function subscribeGroupToChildren(request: HttpRequest, context: In
         let blobName: string;
         let blobClient: BlockBlobClient;
         try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
+            [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, groupKey, context);
         } catch (error) {
             context.error(`Error: subscribeGroupToChildren setup failed: ${error.message}`)
             return {
