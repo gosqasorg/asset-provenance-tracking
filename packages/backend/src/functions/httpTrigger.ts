@@ -870,7 +870,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
         const record = JSON5.parse(provenanceRecord);
 
-        // TODO: we need to parse out whether we're using an entry or a record. 
         let condition = "deviceName" in record && (!validateRecordJSON(record, context) && !validateEntryJSON(record, context))
         if (condition) {
             { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }

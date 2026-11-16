@@ -22,23 +22,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <form @submit.prevent="submit">
         <input type="text" id="input" v-model="deviceKey" placeholder="Record key" style="width: inputWidth;" required/>
         <button
-                
-                id="viewRecordButton"
-                class="baseButton view-record-button"
-                style="
-                  border-width: 2px;
-                  border-style: solid;
-                  padding: 12px;
-                  margin: 0px;
-                  font-size: 16px;
-                "
-              >
-                View Record
-              </button>
+            id="viewRecordButton"
+            class="baseButton view-record-button"
+            style="
+                border-width: 2px;
+                border-style: solid;
+                padding: 12px;
+                margin: 0px;
+                font-size: 16px;
+            "
+        >
+            View Record
+        </button>
     </form>
 </template>
 
 <script lang="ts">
+import { offlineModeFeatureFlag } from '~/services/azureFuncs';
 
 export default {
     props: {
@@ -57,7 +57,23 @@ export default {
         async submit() {
             // Get the record/device key from the end of an entered URL, or just use the entered key
             var extractedDeviceKey = this.deviceKey.split("/").pop();
-            this.$router.push({ path: `/history/${extractedDeviceKey}` });
+
+            if (!offlineModeFeatureFlag) {
+                // Navigate to the history page of the extracted device key
+                await this.$router.push({ path: `/history/${extractedDeviceKey}` });
+            } else {
+                // If we're online, navigate to the regular history page
+                // If we're offline, navigate to the offline version of the history page
+                try {
+                    const baseUrl = useRuntimeConfig().public.baseUrl;
+                    await fetch(`${baseUrl}/connectionStatus`, {
+                        method: "GET"
+                    });
+                    await this.$router.push({ path: `/history/${extractedDeviceKey}` });
+                } catch (error) {
+                    await this.$router.push({ path: `/history/offline`, query: { key: extractedDeviceKey } });
+                }
+            }
         }
     }
 }
