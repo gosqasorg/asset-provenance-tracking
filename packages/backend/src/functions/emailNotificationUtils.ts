@@ -224,14 +224,13 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
 
 // Todo: this is being handed the blobclient for the db row containing the signup request. 
 async function getExistingEmails(
-    exists: boolean, 
     blobClient: BlockBlobClient,
     context: InvocationContext
 ) {
 
     context.error('Entering getExistingEmails')
     let theTagBundle = { no_tag: [] }
-    if(!exists) { return theTagBundle }
+    if(!(await blobClient.exists())) { return theTagBundle }
 
     let buffer;
     context.log('getExistingEmails: attempting to get blob')
@@ -455,7 +454,7 @@ export async function subscribeToNotifications(
         // Todo: Call conditional on exists. Do not pass exists. 
         // Converts legacy in background. Returns at least this: { no_tag: [] }
         context.log('subscribeToNotifications: getting existing signup data')
-        let tagSpecificSignupBundle = await getExistingEmails(exists, blobClient, context); 
+        let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
 
         // If email is already stored return success
         if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, normalizedEmail)) {
@@ -536,7 +535,7 @@ export async function unsubscribeFromNotifications(
     // WORKING ON
     // Edit this, and what follows, to take the tagBundle ie { no_tag: [emails], tag1: [], ... }
     //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
-    let bundle = await getExistingEmails(exists, blobClient, context); 
+    let bundle = await getExistingEmails(blobClient, context); 
 
     // Confirm the emailID exists and convert it to an email
     //const emailIndex = Array.from(emailIDSet).indexOf(emailID);
@@ -607,17 +606,16 @@ export async function notifySubscribers(
     context.log('notifySubscribers: Blob client set up')
 
     context.log('notifySubscribers: Attempting to get existing signup data.')
-    const exists = await blobClient.exists();
-    try {
-        const emailSignups = await getExistingEmails(exists, blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    /*try {
+        const emailSignups = await getExistingEmails(blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
     } catch(e) {
         context.error('wtf')
         context.error(JSON.stringify(e))
         context.error(e)
         context.error(Object.keys(e))
         throw new Error('wtffffff', {cause: 500})
-    }
-    const emailSignups = await getExistingEmails(exists, blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    }*/
+    const emailSignups = await getExistingEmails(blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
     context.log('notifySubscribers: Got existing signup data.')
     //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
