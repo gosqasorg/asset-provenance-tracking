@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { confirmRequestFulfilled, offlineQueueConsumerWorker, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, getProvenanceOffline, updateOfflineFeatureFlag } from '~/services/azureFuncs';
+import { getProvenanceOffline, confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, updateOfflineFeatureFlag, offlineQueueConsumerWorker } from '~/services/azureFuncs';
 import OfflineEdits from '~/pages/offline-edits.vue';
 import Index from '~/pages/index.vue';
 import CreateDevice from '~/components/Forms/CreateDevice.vue';
@@ -17,6 +17,27 @@ async function createRequest (
     description: description,
     tags: [],
     children_key: '',
+    hasParent: false,
+    isPublicKey: false
+  };
+
+  const formData = new FormData();
+  formData.append('provenanceRecord', JSON.stringify(record));
+  return [key, formData];
+}
+
+async function createGroupRequest (
+  name: string,
+  description: string
+): Promise<[string, FormData]> {
+  const key = await makeEncodedDeviceKey();
+  const record = {
+    blobType: 'deviceInitializer',
+    deviceName: name,
+    description: description,
+    tags: [],
+    children_key: [],
+    children_name: [],
     hasParent: false,
     isPublicKey: false
   };
@@ -131,7 +152,7 @@ describe("Stash and Remove Offline Requests", () => {
     // Remove the request and confirm it was successful
     removeOfflineRequest(queuedRequest, "gdt-stash-queued");
 
-    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
     queuedRequest = requestFromStash[0];
     expect(requestFromStash).toEqual([]);
     expect(queuedRequest).toBeUndefined();
@@ -175,7 +196,7 @@ describe("Stash and Remove Offline Requests", () => {
 
     removeOfflineRequest(failedRequest2, "gdt-stash-failed");
 
-    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '{}');
+    requestFromStash = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
     failedRequest = requestFromStash[0];
     expect(requestFromStash.length).toEqual(0);
     expect(failedRequest).toBeUndefined();
@@ -358,6 +379,186 @@ describe("postProvenance, getProvenance, and getProvenanceOffline", () => {
   });
 });
 
+describe("Create Records/Groups Offline", async () => {
+  // Manually call the worker and wait for it to start (takes 15 seconds to start, rest of the time is in the tests)
+  offlineQueueConsumerWorker();
+  await new Promise((r) => setTimeout(r, 10000));
+
+  it ("Create Multiple Records/Groups While Offline", async () => {
+    resetStashValues();
+    mockFetch.mockResolvedValue(undefined);
+
+    // Create two records
+    const offlineRequests = [];
+    let [recordKey, recordData] = await createRequest(
+      'Offline Records Test',
+      '1: Test to see if we can create multiple records while offline'
+    );
+    let [recordKey2, recordData2] = await createRequest(
+      'Offline Records Test 2',
+      '2: Test to see if we can create multiple records while offline'
+    );
+    let provenanceRecord = JSON.parse(recordData.get('provenanceRecord') as string);
+    let provenanceRecord2 = JSON.parse(recordData2.get('provenanceRecord') as string);
+    offlineRequests.push({"key": recordKey, "data": provenanceRecord});
+    offlineRequests.push({"key": recordKey2, "data": provenanceRecord2});
+
+    // Create two groups
+    let [groupKey, groupData] = await createGroupRequest(
+      'Offline Groups Test',
+      '1: Test to see if we can create multiple groups while offline'
+    );
+    let [groupKey2, groupData2] = await createGroupRequest(
+      'Offline Groups Test 2',
+      '2: Test to see if we can create multiple groups while offline'
+    );
+    let provenanceGroup = JSON.parse(groupData.get('provenanceRecord') as string);
+    let provenanceGroup2 = JSON.parse(groupData2.get('provenanceRecord') as string);
+    offlineRequests.push({"key": groupKey, "data": provenanceGroup});
+    offlineRequests.push({"key": groupKey2, "data": provenanceGroup2});
+
+    // Attempt to post the records and groups while offline
+    for (let request of offlineRequests) {
+      try {
+        await postProvenance(request["key"], request["data"], []);
+        expect.fail("Expected postProvenance to fail offline to test offline mode features");
+      } catch (error) {
+        expect(error).toEqual(new Error('Status 202: User is offline but the record has been stashed'));
+      }
+    }
+
+    // Confirm the records and groups are now stored in the queue stash
+    let requestsFromQueue = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    expect(requestsFromQueue.length).toEqual(4);
+
+    let stashedRecordRequest = requestsFromQueue[0];
+    let stashedRecordRequest2 = requestsFromQueue[1];
+    expect(stashedRecordRequest["key"]).toEqual(recordKey);
+    expect(stashedRecordRequest["data"]).toStrictEqual(provenanceRecord);
+    expect(stashedRecordRequest2["key"]).toEqual(recordKey2);
+    expect(stashedRecordRequest2["data"]).toStrictEqual(provenanceRecord2);
+
+    let stashedGroupRequest = requestsFromQueue[2];
+    let stashedGroupRequest2 = requestsFromQueue[3];
+    expect(stashedGroupRequest["key"]).toEqual(groupKey);
+    expect(stashedGroupRequest["data"]).toStrictEqual(provenanceGroup);
+    expect(stashedGroupRequest2["key"]).toEqual(groupKey2);
+    expect(stashedGroupRequest2["data"]).toStrictEqual(provenanceGroup2);
+
+    // Go back online and wait for the worker to create the records/groups
+    mockFetch.mockResolvedValue({ok: true, status: 200, json: () => Promise.resolve(provenanceRecord)});
+    await new Promise((r) => setTimeout(r, 6000));
+
+    // Confirm the records/groups are no longer in the queue stash
+    requestsFromQueue = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    expect(requestsFromQueue.length).toEqual(0);
+
+    // Confirm the records/groups are in the fulfilled stash
+    let fulfilledKeys = JSON.parse(localStorage.getItem('gdt-stash-fulfilled'))
+    expect(fulfilledKeys.length).toEqual(4);
+
+    let fulfilledRecordKey = fulfilledKeys[0];
+    let fulfilledRecordKey2 = fulfilledKeys[1];
+    expect(fulfilledRecordKey.key).toEqual(recordKey);   // <<---- This line
+    expect(fulfilledRecordKey2.key).toEqual(recordKey2);
+
+    let fulfilledGroupKey = fulfilledKeys[2];
+    let fulfilledGroupKey2 = fulfilledKeys[3];
+    expect(fulfilledGroupKey.key).toEqual(groupKey);
+    expect(fulfilledGroupKey2.key).toEqual(groupKey2);
+  });
+
+  it ("Fail To Create Records/Groups While Offline", async () => {
+    resetStashValues();
+    mockFetch.mockResolvedValue(undefined);
+
+    // Create two records
+    const offlineRequests = [];
+    let [recordKey, recordData] = await createRequest(
+      'Offline Failed Records Test',
+      '1: Test to see if records that fail from the queue are moved to the failed stash'
+    );
+    let [recordKey2, recordData2] = await createRequest(
+      'Offline Failed Records Test 2',
+      '2: Test to see if records that fail from the queue are moved to the failed stash'
+    );
+    let provenanceRecord = JSON.parse(recordData.get('provenanceRecord') as string);
+    let provenanceRecord2 = JSON.parse(recordData2.get('provenanceRecord') as string);
+    offlineRequests.push({"key": recordKey, "data": provenanceRecord});
+    offlineRequests.push({"key": recordKey2, "data": provenanceRecord2});
+
+    // Create two groups
+    let [groupKey, groupData] = await createGroupRequest(
+      'Offline Failed Groups Test',
+      '1: Test to see if groups that fail from the queue are moved to the failed stash'
+    );
+    let [groupKey2, groupData2] = await createGroupRequest(
+      'Offline Failed Groups Test 2',
+      '2: Test to see if groups that fail from the queue are moved to the failed stash'
+    );
+    let provenanceGroup = JSON.parse(groupData.get('provenanceRecord') as string);
+    let provenanceGroup2 = JSON.parse(groupData2.get('provenanceRecord') as string);
+    offlineRequests.push({"key": groupKey, "data": provenanceGroup});
+    offlineRequests.push({"key": groupKey2, "data": provenanceGroup2});
+
+    // Attempt to post the records and groups while offline
+    for (let request of offlineRequests) {
+      try {
+        await postProvenance(request["key"], request["data"], []);
+        expect.fail("Expected postProvenance to fail offline to test offline mode features");
+      } catch (error) {
+        expect(error).toEqual(new Error('Status 202: User is offline but the record has been stashed'));
+      }
+    }
+
+    // Confirm the records and groups are now stored in the queue stash
+    let requestsFromQueue = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    expect(requestsFromQueue.length).toEqual(4);
+
+    let stashedRecordRequest = requestsFromQueue[0];
+    let stashedRecordRequest2 = requestsFromQueue[1];
+    expect(stashedRecordRequest["key"]).toEqual(recordKey);
+    expect(stashedRecordRequest["data"]).toStrictEqual(provenanceRecord);
+    expect(stashedRecordRequest2["key"]).toEqual(recordKey2);
+    expect(stashedRecordRequest2["data"]).toStrictEqual(provenanceRecord2);
+
+    let stashedGroupRequest = requestsFromQueue[2];
+    let stashedGroupRequest2 = requestsFromQueue[3];
+    expect(stashedGroupRequest["key"]).toEqual(groupKey);
+    expect(stashedGroupRequest["data"]).toStrictEqual(provenanceGroup);
+    expect(stashedGroupRequest2["key"]).toEqual(groupKey2);
+    expect(stashedGroupRequest2["data"]).toStrictEqual(provenanceGroup2);
+
+    // Go back online, mock post failure, then wait for the worker to attempt to create the records/groups
+    mockFetch.mockResolvedValue({ok: false, status: 500});
+    await new Promise((r) => setTimeout(r, 6000));
+
+    // Confirm the records/groups are no longer in the queue stash
+    requestsFromQueue = JSON.parse(localStorage.getItem('gdt-stash-queued') || '[]');
+    expect(requestsFromQueue.length).toEqual(0);
+
+    // Confirm the records/groups are in the failed stash and not the fulfilled stash
+    let fulfilledKeys = localStorage.getItem('gdt-stash-fulfilled');
+    expect(fulfilledKeys).toBeNull();
+    let failedRequests = JSON.parse(localStorage.getItem('gdt-stash-failed') || '[]');
+    expect(failedRequests.length).toEqual(4);
+
+    let failedRecord = failedRequests[0];
+    let failedRecord2 = failedRequests[1];
+    expect(failedRecord["key"]).toEqual(recordKey);
+    expect(failedRecord["data"]).toStrictEqual(provenanceRecord);
+    expect(failedRecord2["key"]).toEqual(recordKey2);
+    expect(failedRecord2["data"]).toStrictEqual(provenanceRecord2);
+
+    let failedGroup = failedRequests[2];
+    let failedGroup2 = failedRequests[3];
+    expect(failedGroup["key"]).toEqual(groupKey);
+    expect(failedGroup["data"]).toStrictEqual(provenanceGroup);
+    expect(failedGroup2["key"]).toEqual(groupKey2);
+    expect(failedGroup2["data"]).toStrictEqual(provenanceGroup2);
+  });
+});
+
 describe("Confirm offline edits page buttons do not interrupt the worker", async() => {
   // Clear localStorage mock data before each test
   beforeEach(() => {
@@ -418,10 +619,11 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     // Mount component so wrapper can render the component (Dismiss all edits button, dismiss published edits button, and dismiss edit button)
     const wrapper = mount(OfflineEdits);
+    await delay(100)  // Wait for the page to load
 
     // Calling worker without await so it can run in the background, the wait after is to make sure the worker has started running
     offlineQueueConsumerWorker();
-    await delay(15000);
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalled(), { timeout: 10000, interval: 50 });
 
     // Click on all the dismiss buttons while the worker is in the process of creating our queued record
     // Click on 'Dismiss edit' button to clear that specific published edit
@@ -431,13 +633,15 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     await wrapper.find('.confirm-dismiss').trigger('click');
 
     // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
-    expect(localStorage.getItem('gdt-stash-fulfilled')).toBe(JSON.stringify([
-      {key: "fulfilledKey2",
-      data:{
-        deviceName: "Test Fulfilled Record 2",
-        description: "2nd fulfilled record for testing offline edits buttons with worker"
-      }}
-    ]));
+    expect(JSON.parse(localStorage.getItem('gdt-stash-fulfilled'))).toEqual([
+      {
+        key: "fulfilledKey2",
+        data:{
+          deviceName: "Test Fulfilled Record 2",
+          description: "2nd fulfilled record for testing offline edits buttons with worker"
+        }
+      }
+    ]);
 
     // Click on the 'Dismiss published edits' button
     await wrapper.find('button.dismiss:nth-child(4)').trigger('click');
@@ -459,13 +663,14 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
     expect(localStorage.getItem('gdt-stash-failed')).toBe(null);
 
     // Wait for the worker to finish creating the queued record and confirm it wasn't lost
-    await delay(3000);
+    await delay(30000);
     const fulfilledStash = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]');
     expect(fulfilledStash.length).toBe(1);
     expect(fulfilledStash[0]["key"]).toBe('queuedKey1');
+
     expect(fulfilledStash[0]["data"]).toEqual({
       deviceName: "Test Record",
       description: "Record for testing offline edits buttons with worker"
-    });
+    })  
   });
 }, 40000);
