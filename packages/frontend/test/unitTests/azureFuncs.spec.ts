@@ -454,7 +454,7 @@ describe("Create Records/Groups Offline", async () => {
     expect(requestsFromQueue.length).toEqual(0);
 
     // Confirm the records/groups are in the fulfilled stash
-    let fulfilledKeys = (localStorage.getItem('gdt-stash-fulfilled') || '').split(',');
+    let fulfilledKeys = JSON.parse(localStorage.getItem('gdt-stash-fulfilled'))
     expect(fulfilledKeys.length).toEqual(4);
 
     let fulfilledRecordKey = fulfilledKeys[0];
