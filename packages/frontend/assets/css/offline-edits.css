@@ -18,6 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. */
     margin-top:32px;
 }
 
+/* For screens smaller than 768px */
 #offline-edits-container{
     padding: 50px 20px 40px 20px;
 }

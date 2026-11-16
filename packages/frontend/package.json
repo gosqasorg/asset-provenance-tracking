@@ -10,6 +10,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest",
+    "serve": "rm -rf .nuxt .output && npx nuxt generate && npx serve .output/public -s -p 3000",
+    "unittest": "vitest run test/unitTests",
     "test-noninteractive": "vitest run",
     "coverage": "vitest run --coverage",
     "update-version": "tsx ./scripts/updateVersion.ts",

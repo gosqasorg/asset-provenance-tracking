@@ -170,7 +170,7 @@ export default {
             fieldSet: [{id: '', customName:''}],
             deviceKey: '',
             onDev: config.public.baseUrl.includes('gosqasbe') || config.public.baseUrl.includes('local'),
-            stashedRecord: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
+            stashedGroup: JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}')
         }
     },
     mounted() {
@@ -179,13 +179,13 @@ export default {
         const previousUrl = window.history.state.back;
 
         // Only fill in stashed information if we redirected from the offline edits page
-        if (isGroup === "true" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.childrenKey = this.stashedRecord.children_key
-            this.childrenName = this.stashedRecord.children_name
-            this.publicKey = this.stashedRecord.publicKey
+        if (isGroup === "true" && JSON.stringify(this.stashedGroup) !== '{}' && previousUrl === "/offline-edits") {
+            this.childrenKey = this.stashedGroup["data"].children_key
+            this.childrenName = this.stashedGroup["data"].children_name
+            this.publicKey = this.stashedGroup["data"].publicKey
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
-            this.name = this.stashedRecord.deviceName
-            this.description = this.stashedRecord.description
+            this.name = this.stashedGroup["data"].deviceName
+            this.description = this.stashedGroup["data"].description
         }
     },
     computed: {
@@ -393,15 +393,12 @@ export default {
                 };
             }
 
-            // Get stashed group if we're creating a group from the stash
-            let stashedGroup = JSON.parse(sessionStorage.getItem("gdt-redirect-record") || '{}');
-
             try {
                 // Create a new deviceKey if we didn't get one from a stashed group
                 if (!validateKey(this.deviceKey)) {
                     this.deviceKey = await makeEncodedDeviceKey();
                 }
-                const response = await postProvenance(this.deviceKey, {
+                const record = {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -411,7 +408,8 @@ export default {
                     children_name: this.childrenName,
                     hasParent: false,
                     isPublicKey: false
-                }, this.pictures || [])
+                }
+                const response = await postProvenance(this.deviceKey, record, this.pictures || [])
 
                 // If the group is being created from the offline edits page move it to the fulfilled stash
                 const previousUrl = window.history.state.back;
@@ -419,9 +417,9 @@ export default {
                 // Only update the stash if the stashed request is a group
                 let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
 
-                if (JSON.stringify(stashedGroup) !== '{}' && isGroup == "true" && previousUrl === "/offline-edits") {
-                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
-                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
+                if (JSON.stringify(this.stashedGroup) !== '{}' && isGroup == "true" && previousUrl === "/offline-edits") {
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled", record);
+                    removeOfflineRequest(this.stashedGroup, "gdt-stash-failed");
                 }
                 
                 this.$snackbar.add({
@@ -436,7 +434,7 @@ export default {
                 //Repeated logic from lines 171-177 in CreateDevice.vue
                 if (response && this.notify && this.emailInput) {
                     const email = this.emailInput.trim();
-                    await postNotificationEmail(this.deviceKey, email);
+                    await postNotificationEmail(email, this.deviceKey, this.emailTags);
                 } else if (!response && this.notify && this.emailInput) {
                     this.$snackbar.add({ type: 'error', text: 'Failed to create record, so could not subscribe to notifications' });
                 }
@@ -483,12 +481,17 @@ export default {
                     text: errorMessage
                 });
 
-                // If we're online return to the /gdt page
-                EventBus.emit('isLoading')
+                if (errorMessage.includes("Status 202")) {
+                    // If we're offline go the history page in offline mode
+                    await this.$router.push({ path: `/record/${this.deviceKey}` });
+                } else {
+                    // If we're online return to the /gdt page
+                    EventBus.emit('isLoading');
+                }
             }
 
             // If we were redirected to this page then remove the stashed record
-            if (JSON.stringify(stashedGroup) !== '{}') {
+            if (JSON.stringify(this.stashedGroup) !== '{}') {
                 sessionStorage.removeItem("gdt-redirect-record");
                 sessionStorage.removeItem("gdt-redirect-isGroup");
                 sessionStorage.removeItem("gdt-redirect-key");

@@ -1,4 +1,4 @@
-import { app, InvocationContext } from '@azure/functions';
+import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ContainerClient } from "@azure/storage-blob";
 import { ClientSecretCredential } from "@azure/identity";
 import { containerClient } from '../functions/httpTrigger.js';
@@ -242,3 +242,56 @@ app.timer('refreshUsageStats', {
     runOnStartup: true,
     handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
 });
+
+// Timer trigger and endpoint to get and return server response statistics
+let serverResponseTimes = {
+    oneDay: [],
+    oneWeek: [],
+    oneMonth: [],
+    threeMonths: [],
+    sixMonths: [],
+    oneYear: []
+}
+
+async function setServerResponseStats(context: InvocationContext): Promise<void> {
+    try {
+        const timesToCheck = ['ago(1d)', 'ago(7d)', 'ago(30d)', 'ago(90d)', 'ago(180d)','ago(365d)']
+        const indexes = ['oneDay', 'oneWeek', 'oneMonth', 'threeMonths', 'sixMonths', 'oneYear'];
+
+        for (let v in timesToCheck) {
+            const rows = await runQuery(`
+                AppRequests
+                | where TimeGenerated > ${timesToCheck[v]}
+                | summarize requestCount=sum(ItemCount), avgDuration=avg(DurationMs) by PerformanceBucket
+                | order by avgDuration asc
+                | project-away avgDuration
+            `, context)
+
+            // Filter the data to the correct format to graph
+            let filteredCounts = [];
+            for (let rowIndex in rows) {
+                filteredCounts[rowIndex] = { time: rows[rowIndex][0], count: rows[rowIndex][1]};
+            }
+
+            serverResponseTimes[indexes[v]] = filteredCounts;
+        }
+    } catch (error) {
+        context.error("setServerResponseStats error:", error);
+    }
+}
+
+app.timer('setServerResponseStats', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: (_myTimer, context) => setServerResponseStats(context)
+});
+
+async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    return { body: JSON.stringify(serverResponseTimes), status: 200 };
+}
+
+app.get("getServerResponse", {
+    authLevel: 'anonymous',
+    route: 'stats/serverResponse',
+    handler: getServerResponseStats
+})
