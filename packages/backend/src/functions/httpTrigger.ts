@@ -410,15 +410,19 @@ async function setStatisticsTotals() {
 /* ----- Time Triggers ----- */
 
 // Once per day update the total record, record entry, and attachment counts
-app.timer('updateRecordCounts', {
-    schedule: `0 0 * * *`,
-    handler: setStatisticsTotals
-})
+// Only on prod
 
-app.timer('livenessChecker', {
-    schedule: '0 0 * * * *', 
-    handler: livenessChecker,
-})
+if(!process.env['backend_url'].includes('local')) {
+    app.timer('updateRecordCounts', {
+        schedule: `0 0 * * *`,
+        handler: setStatisticsTotals
+    })
+
+    app.timer('livenessChecker', {
+        schedule: '0 0 * * * *', 
+        handler: livenessChecker,
+    })
+}
 
 
 /* ===============================================================
@@ -1613,7 +1617,13 @@ async function notifySubscribersHandler(request: HttpRequest, context: Invocatio
     const formData = await request.formData();
 
     try {
-        const result = await notifySubscribers(containerClient, calculateDeviceID, request.params.deviceKey, formData, context);
+        const result = await notifySubscribers(
+            containerClient, 
+            calculateDeviceID, 
+            request.params.deviceKey, 
+            formData, 
+            context
+        );
         console.log('Returning successfully from notifySubscribersHandler')
     } catch(error) {
         console.error('Returning unsuccessfully from notifySubscribersHandler')
