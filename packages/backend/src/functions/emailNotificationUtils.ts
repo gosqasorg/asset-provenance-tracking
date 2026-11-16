@@ -619,12 +619,14 @@ export async function notifySubscribers(
     context.log('notifySubscribers: Got existing signup data.')
     //=== ^^^ is this section not equivalent to getExistingEmails? ^^^ === //
 
-    if (emailSet.size === 0) {
+    if(Object.keys(emailSignups).length == 1 && emailsignups['no_tag'].length == 0) {
         context.log("notifySubscribers: No subscribers found for this record.");
         return { status: 204 };
     }
+    // TODO: Left off here. Next: need util function to go tagBundle --> list of recipients
+    // This may require further pre-editing: how does this function know the tags to send with respect to?ß
 
-    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'] && !process.env['backend_url'].includes('local')) {
         context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
         return;
     }
