@@ -10,7 +10,7 @@ const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 
-/* Vincent's todo
+/* Notes + Status
 
     Status:
     * Subscribe: working
@@ -26,7 +26,6 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
 // ---vvv--- Utiities Functions Section: Begin ---vvv--- //
 
-// Todo: ensure throw handled in endpoint
 async function setupBlobClient(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
@@ -112,7 +111,6 @@ async function createNewEmailId() {
     return uniqueEmailString
 }
 
-// Todo: Ensure 500 is handled by all callers. 
 function signupIsLegacyFormat(parsed, context) {
     context.log(`signupIsLegacyFormat: called with: ${parsed}`)
     let result: boolean = false
@@ -152,7 +150,6 @@ function signupIsLegacyFormat(parsed, context) {
     context.log('Returning without error from signupIsLegacyFormat')
     return condition
 }
-
 
 function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
     console.log('AddTagSpecificSignupDataToBundle: Called')
@@ -367,7 +364,7 @@ export async function subscribeToNotifications(
                 status: 400
             }
         }
-        const exists = await blobClient.exists();
+        //const exists = await blobClient.exists();  // No longer needed, fyi. 
         context.log('subscribeToNotifications: yes.')
 
         context.log('subscribeToNotifications: is email malformed?')
@@ -445,7 +442,7 @@ export async function subscribeToNotifications(
 }
 
 
-// Todo: update call to uploadBlob, and edit uploadBlob itself. 
+// Todo: update call to uploadBlob, follow example in subscribe
 // Todo: Convert to new return type of getExistingEmails
 export async function unsubscribeFromNotifications(
     containerClient: ContainerClient, 
@@ -455,8 +452,8 @@ export async function unsubscribeFromNotifications(
     tags: string[] = [],
     context
 ) {
+
     // Step 1: Ensure we're being called correctly
-    // Setup the blobClient
     let blobName: string;
     let blobClient: BlockBlobClient;
     try {
@@ -518,7 +515,6 @@ export async function unsubscribeFromNotifications(
 }
 
 
-// Todo: calculateDeviceId should be moved to a generalUtils file and imported here and in httpTrigger
 export async function notifySubscribers(
     containerClient: ContainerClient, 
     calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 

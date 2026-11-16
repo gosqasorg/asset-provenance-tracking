@@ -964,8 +964,8 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /*
-    // Send to All Children: Send new record's tags and description to all children
-    */
+     * Send to All Children: Send new record's tags and description to all children
+     */
     const baseUrl = process.env['backend_url'];
 
     // Confirm that the device key is valid
@@ -1027,9 +1027,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        context.error(`Error sending record entry to all children: ${error}`);
+        context.error(`notifyChildren: Returning with error: : ${error}`);
         return {
-            status: 500
+            status: 500,
+            jsonBody: { message: 'Internal Server Error' }
         }
     }
 }
@@ -1041,50 +1042,52 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     // Recall: Pin and send new record entry to all children
     */
 
-    const baseUrl = process.env['backend_url'];
-    const deviceKey = request.params.deviceKey;
-
-    // Confirm that the device key is valid
     try {
-        decodeKey(request.params.deviceKey);
-    } catch (error) {
-        return { status: 400, body: error.message };
-    }
 
-    context.log(deviceKey)
-    context.error(deviceKey)
+        const baseUrl = process.env['backend_url'];
+        const deviceKey = request.params.deviceKey;
 
-    // Prevent the record from being recalled more than once
-    let getRecords = await fetch(`${baseUrl}${deviceKey}`)
-    const records = await getRecords.json()
+        // Confirm that the device key is valid
+        try {
+            decodeKey(request.params.deviceKey);
+        } catch (error) {
+            return { status: 400, body: error.message };
+        }
 
-    for (let record of records) {
-      if (record.record.tags && (record.record.tags).includes("recall")) {
-        context.error(`Record has already been recalled`);
-              return {
-                  status: 400,
-                  body: "Record has already been recalled"
-              }
-      }
-      }
+        context.log(deviceKey)
+        context.error(deviceKey)
 
-    const formData = await request.formData();
-    const recordStr = formData.get("provenanceRecord"); 
-    const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
+        // Prevent the record from being recalled more than once
+        let getRecords = await fetch(`${baseUrl}${deviceKey}`)
+        const records = await getRecords.json()
 
-    record.tags ??= [];
-    if (!record.tags.includes("recall")) record.tags.push("recall");
-    const tags = record.tags
-    
-    const description = record.description || "";
+        for (let record of records) {
+          if (record.record.tags && (record.record.tags).includes("recall")) {
+            context.error(`Record has already been recalled`);
+                  return {
+                      status: 400,
+                      body: "Record has already been recalled"
+                  }
+          }
+          }
 
-    await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
+        const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord"); 
+        const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
 
-    // Email users if they are subscribed to the group
-    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
-    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+        record.tags ??= [];
+        if (!record.tags.includes("recall")) record.tags.push("recall");
+        const tags = record.tags
+        
+        const description = record.description || "";
 
-    try {
+        await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
+
+        // Email users if they are subscribed to the group
+        let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+        if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
+
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
 
@@ -2002,74 +2005,88 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entering addEntryHandler for /addEntry')
-    // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
-    // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
-    const backendUrl = process.env['backend_url'];
-    const requestClone = request.clone();
-    const deviceKey = requestClone.params.deviceKey;
-    let formData = await requestClone.formData();
-    const attachmentValues = formData.values();
-    const record = JSON.parse(formData.get("provenanceRecord") as string);
+    try {
 
-    // Check the first record entry in the provenance to see if the key is a group or not
-    const provenance = await getProvenance(request, context);
-    if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
-    const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
-    if (!creationRecord) {
-        context.error('addEntryHandler: returning 400')
-        return {
-            status: 400,
-            jsonBody: { error: "Provenance needs to exist before adding entries." }
-        }
-    }
-    const isGroup = Array.isArray(creationRecord.record.children_key);
+        context.log('Entering addEntryHandler for /addEntry')
+        // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
+        // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+        const backendUrl = process.env['backend_url'];
+        const requestClone = request.clone();
+        const deviceKey = requestClone.params.deviceKey;
+        let formData = await requestClone.formData();
+        const attachmentValues = formData.values();
+        const record = JSON.parse(formData.get("provenanceRecord") as string);
 
-    // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
-    const sendEntryToAllChildren = record.send_to_all_children;
-    if (isGroup && sendEntryToAllChildren) {
-        record.tags.push("sent_to_all_children");
-
-        // Rebuild our formData to include the new tag
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(record));
-        
-        for (const attachment of attachmentValues) {
-            if (typeof attachment === 'string') continue;
-            formData.append(attachment.name, attachment);
-        }
-    }
-
-    // TODO: Always call directly if possible. 
-    // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
-    const response = await fetch(`${backendUrl}${deviceKey}`, {
-        method: "POST",
-        body: formData,
-    });
-
-    // If users are subscribed to notifications email them
-    let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
-    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
-
-    if (response.status !== 200) { return { status: response.status }; }
-    let postProvResponse = await response.json();
-
-    // If we're sending the record to all children call notifyChildren
-    if (isGroup && sendEntryToAllChildren) {
-        const notifChildrenResponse = await notifyChildren(request, context);
-        if (notifChildrenResponse.status !== 200) {
-            context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' + notifChildrenResponse.status)
+        // Check the first record entry in the provenance to see if the key is a group or not
+        const provenance = await getProvenance(request, context);
+        if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
+        const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
+        if (!creationRecord) {
+            context.error('addEntryHandler: returning 400')
             return {
-                status: notifChildrenResponse.status,
-                jsonBody: { error: "Record entry was unable to be sent to children." }
+                status: 400,
+                jsonBody: { error: "Provenance needs to exist before adding entries." }
             }
         }
-    }
+        const isGroup = Array.isArray(creationRecord.record.children_key);
 
-    context.log('Returning successfully from addEntryHandler')
-    return {
-        jsonBody: postProvResponse,
-        headers: { "Content-Type": "application/json" }
+        // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
+        const sendEntryToAllChildren = record.send_to_all_children;
+        if (isGroup && sendEntryToAllChildren) {
+            record.tags.push("sent_to_all_children");
+
+            // Rebuild our formData to include the new tag
+            formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(record));
+            
+            for (const attachment of attachmentValues) {
+                if (typeof attachment === 'string') continue;
+                formData.append(attachment.name, attachment);
+            }
+        }
+
+        // TODO: Always call directly if possible. 
+        // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
+        const response = await fetch(`${backendUrl}${deviceKey}`, {
+            method: "POST",
+            body: formData,
+        });
+
+        // If users are subscribed to notifications email them
+        let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+        if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
+        if (response.status !== 200) { return { status: response.status }; }
+        let postProvResponse = await response.json();
+
+        // If we're sending the record to all children call notifyChildren
+        if (isGroup && sendEntryToAllChildren) {
+            const notifChildrenResponse = await notifyChildren(request, context);
+            if (notifChildrenResponse.status !== 200) {
+                context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' + notifChildrenResponse.status)
+                return {
+                    status: notifChildrenResponse.status,
+                    jsonBody: { error: "Record entry was unable to be sent to children." }
+                }
+            }
+        }
+
+        context.log('Returning successfully from addEntryHandler')
+        return {
+            jsonBody: postProvResponse,
+            headers: { "Content-Type": "application/json" }
+        }
+    } catch(e) {
+        context.error('addEntryHandler: Error. Returning unsuccessfully. Error is:')
+        context.error(e)
+        context.error(e.message)
+        context.error(JSON.stringify(e)
+
+        return {
+            status: 500,
+            jsonBody: { message: 'Internal Server Error'},
+            headers: { "Content-Type": "application/json" }
+        }
     }
 }
 
