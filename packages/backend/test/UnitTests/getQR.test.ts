@@ -5,13 +5,18 @@ import jsQR from 'jsqr';
 
 describe('getQR', () => {
     it('Create a GDT QR code with a deviceKey from a created record', async () => {
-        // Create a fake request with param
+        // Create a fake request with param 
         const req = {
             params: { deviceKey: 'GEkQuAcRzfueE8Z4gckTzc'}
         }
+
+        // Create mock context
+        const mockContext = {
+            log: vi.fn(),
+        };
     
     // Generate GDT QR code
-    const qrData = await getQR(req);
+    const qrData = await getQR(req, mockContext);
 
     // Extract the MIME Type from QR code data
     const [header, base64Data] = qrData.body.split(',');
