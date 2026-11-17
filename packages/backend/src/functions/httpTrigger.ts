@@ -865,11 +865,11 @@ export async function getQR(request: HttpRequest, context: InvocationContext): P
         context.error('Returning with error from getQR: ', error)
     }
 }
+
 async function getConnectionStatus(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     // This is a simple function that will return undefined if we're offline and 200 otherwise
     return { status: 200 };
 }
-
 
 // --- POSTS --- //
 
