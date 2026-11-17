@@ -3,6 +3,7 @@ import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
+import QRCode from 'qrcode';
 
 // Azure
 import { ClientSecretCredential } from "@azure/identity";
@@ -839,6 +840,31 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
     };
 }
 
+export async function getQR(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering getQR');
+    const deviceKey = request.params.deviceKey;
+    const baseUrl = process.env['frontend_url']
+    const qrUrl = `${baseUrl}/`+`${deviceKey}`
+
+    try {
+        const QRData = await QRCode.toDataURL(qrUrl, {
+            width: 300,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF',
+            },
+        });
+
+        context.log("Returning successfully from getQR")
+        return {
+            body: QRData,
+            headers: { "Content-Type": "image/png"}
+        }
+    } catch (error) {
+        context.error('Returning with error from getQR: ', error)
+    }
+}
 
 // --- POSTS --- //
 
@@ -2048,6 +2074,12 @@ app.get('getPendingVerification', {
     authLevel: 'anonymous',
     route: 'pendingVerification',
     handler: getPendingVerification,
+})
+
+app.get('getQR', {
+    authLevel: 'anonymous',
+    route: 'getQR/{deviceKey}',
+    handler: getQR
 })
 
 app.get("upgradeProvenance", {
