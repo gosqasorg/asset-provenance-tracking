@@ -448,7 +448,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
             
             responses.push({"endpoint":"postNotificationEmail", "status": response.status});
         } catch (error) {
-            responses.push({"endpoint":"createRecord", "status": error.cause ? error.cause.status || 500 : 500});
+            responses.push({"endpoint":"postNotificationEmail", "status": error.cause ? error.cause.status || 500 : 500});
             throw new Error("postNotificationEmail Error:", error);
         }
 
@@ -489,7 +489,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
 
             responses.push({"endpoint":"postVerifyCode", "status": response.status});
         } catch (error) {
-            responses.push({"endpoint":"createRecord", "status": error.cause ? error.cause.status || 500 : 500});
+            responses.push({"endpoint":"postVerifyCode", "status": error.cause ? error.cause.status || 500 : 500});
             throw new Error("postVerifyCode Error:", error);
         }
         
