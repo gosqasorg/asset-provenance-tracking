@@ -238,7 +238,7 @@ app.hook.appStart(() => {
 });
 
 // Timer trigger to refresh usage stats every hour
-app.timer('refreshUsageStats', {
+app.timer('refreshMapStats', {
     schedule: '0 0 * * * *',
     handler: async (_myTimer, context) => {
         try {
