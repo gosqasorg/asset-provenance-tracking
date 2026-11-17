@@ -6,7 +6,7 @@ import countries from "i18n-iso-countries";
 import * as z from "zod";
 
 // 
-const queryResponse = z.object({
+const QueryResponse = z.object({
     tables: z.array(z.object({ rows: z.array(z.unknown()) })).min(1)
 })
 
@@ -23,7 +23,7 @@ async function getToken(): Promise<string> {
     return tokenResponse.token;
 }
 
-export async function runQuery(query: string, context?: InvocationContext): Promise<[string, number][]> {
+export async function runQuery<T extends z.ZodTypeAny>(query: string, rowSchema: T, context?: InvocationContext): Promise<z.infer<T>[]> {
     const token = await getToken();
     const log = context ?? console;
 
@@ -45,14 +45,25 @@ export async function runQuery(query: string, context?: InvocationContext): Prom
             return [];
         }
 
-        const data = await result.json();
-        log.log(data);
-        return data.tables[0].rows
+        const parsedResponse = QueryResponse.safeParse(await result.json())
+        if (!parsedResponse.success) {
+            log.error(`Unexpected Log Analytics repsonse: ${parsedResponse.error.message}`)
+            return []
+        }
+
+        const rows = z.array(rowSchema).safeParse(parsedResponse.data.tables[0].rows);
+        if (!rows.success) {
+            log.error(`Rows dont match schema: ${rows.error.message}`)
+            return []
+        }
+        return rows.data
     } catch(error) {
         log.error(`Leaving runQuery: error occurred: ${error}`)
+        return []
     }
 }
 
+// Return Types
 interface LocationStat {
     requests,
     failed,
@@ -60,9 +71,10 @@ interface LocationStat {
     weeks
 }
 
+// Zod Schema
+// day, country, state, city, req, failed, rresponseTime
+
 class MapData {
-    // Type
-    
 
     // Variables
     private requestStats = null;
@@ -100,7 +112,16 @@ class MapData {
 
     // Updater Function
     async updateRequests(context?: InvocationContext): Promise <void> {
-        const log = context ?? console;
+        const RequestRow = z.tuple([
+            z.string(), 
+            z.string(),
+            z.string(),
+            z.string(),
+            z.number(),
+            z.number(),
+            z.number(),
+        ]);
+
         const rows = await runQuery(`
             AppRequests
             | where TimeGenerated > ago(365d)
@@ -115,7 +136,7 @@ class MapData {
                 responseTime = sum(DurationMs)
                 by day, country, state, city
             | order by country asc, state asc, city asc, day asc
-        `, context);
+        `, RequestRow, context);
         
         this.requestStats = rows
     }

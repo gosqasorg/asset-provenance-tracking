@@ -1,3 +1,5 @@
+<!-- TODO: add pop up for error when data comes back empty -->
+<!-- TODO: move util functions to a separate file -->
 <template>
     <div class="map-page">
         <div class="map-page-header">
@@ -15,7 +17,6 @@
           </div>
         </div>
         
-        <!-- TODO: Map Section -->
         <div class="map-info">
 
           <div id="map-section">
@@ -38,7 +39,6 @@
           </div>
 
           <div v-if="loading">Loading stats...</div>
-          <!-- TODO: Stats Section -->
           <div v-else id="stat-section"> 
             <h2>{{ selectedStats?.name === "World" ? "Whole World" : selectedStats?.name }}</h2>
             <!-- Row for  # of requests, avg response, succeeded %-->
@@ -76,10 +76,6 @@
             </div>
           </div>
         </div>  
-
-        <div>
-          <p>{{ countryData }}</p>
-          </div>
         
     </div>
 </template>
@@ -91,6 +87,8 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCityStats, getCountryStats, getStateStats } from '~/services/azureFuncs'
 import rawBounds from '~/data_viz/geo/country-bounds.json';
 import rawCoords from '~/data_viz/geo/city-coords.json';
+
+import {fillByStats, radiusByStats, strokeByStats, stateNameOf, filterByRange} from '~/utils/mapUtils'
 
 
 type LocationStat = Record<string, { name: string; requests: number; failed: number }>;
@@ -121,9 +119,16 @@ const mapColors = {
 const countryBounds = rawBounds as Record<string, { name: string; bounds: number[][] }>;
 const cityCoords = rawCoords as Record<string, number[]>;
 
+// mapBox query expressions
+const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['case', 
+  ['==', ['get', 'iso_a2'], 'IN'], 
+  ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
+]]]
+
 
 let map: mapboxgl.Map | null = null
 let resize: ResizeObserver | null = null
+let currentStyleUrl = ''
 
 export default {
 
@@ -135,14 +140,14 @@ export default {
       selectedPlace: { level: 'world'} as SelectionType ,
       loading: true ,
       error: null as string | null,
-      stats:  { countries: null, states:  null} as {countries: LocationStat | null, states: LocationStat | null},
 
       // for switching colors in the map
       isDark: false,
       darkQuery: null as MediaQueryList | null,
       onModeChange: null as ((e: MediaQueryListEvent) => void) | null,
       dataPromise: null as Promise<void> | null,
-      rangeDays : 365 as 30 | 90 | 365    }
+      rangeDays : 365 as 30 | 90 | 365  ,
+    }
   },
   computed: {
     selectedStats(): {name: string, requests: number; failed: number, responseTime: number} | null {
@@ -164,6 +169,7 @@ export default {
       return this.worldStats
     },
 
+    // get the world stats by summing up all the country stats
     worldStats() {
       const worldData = { name: 'World', count: 0, requests: 0, failed: 0, responseTime: 0}
       for (const country of Object.values(this.filteredCountry ?? {})){
@@ -172,10 +178,10 @@ export default {
         worldData.failed += country.failed
         worldData.responseTime += country.responseTime
       }
-
       return worldData
     },
 
+    // get the top 5 places based on the selected place level
     topPlaces() {
       const s = this.selectedPlace
 
@@ -196,7 +202,7 @@ export default {
       }
 
       if (s.level === 'city') {
-        return {}
+        return []
       }
 
       // if neither country or state return top places as countries
@@ -214,18 +220,19 @@ export default {
       return mapColors[this.isDark ? "dark" : "light"]
     },
     filteredCountry() {
-      return this.filterByRange(this.countryData)
+      return filterByRange(this.countryData, this.rangeDays)
     },
     filteredStates() {
-      return this.filterByRange(this.stateData)
+      return filterByRange(this.stateData, this.rangeDays)
     },
     filteredCity() {
-      return this.filterByRange(this.cityData)
+      return filterByRange(this.cityData, this.rangeDays)
     }
   },
 
   async mounted() {
-
+    currentStyleUrl = `mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`
+    
     // Check if dark mode or light mode
     this.darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     this.isDark = this.darkQuery.matches
@@ -253,6 +260,8 @@ export default {
     }));
 
     map = m;
+    if (!map) return
+    
     resize = new ResizeObserver(() => m.resize())
     resize.observe(el)
 
@@ -263,10 +272,17 @@ export default {
       offset: [0, -20],      
     })
 
-    m.on('style.load', async () => {
-      ////////////////
+    const loadLayers = async() => {
       await this.addMapLayers(m)
-    });
+    }
+
+    if(m.isStyleLoaded()) {
+      await loadLayers()
+    } else {
+      m.on('style.load', async () => {
+        await loadLayers();
+      });
+    }
 
     m.on('load', async () => {
       const STATE_VISIBLE_ZOOM = 3
@@ -294,10 +310,10 @@ export default {
             
             const countryKey = country.ISO_A2_EH;
             const stateKey = showState 
-            ? `${state.iso_a2}|${String(this.stateNameOf(state)).toLowerCase()}`
+            ? `${state.iso_a2}|${String(stateNameOf(state)).toLowerCase()}`
             : '';
 
-            const name = showState ? this.stateNameOf(state) : country.NAME
+            const name = showState ? stateNameOf(state) : country.NAME
             const stats = showState ? this.filteredStates[stateKey] : this.filteredCountry[countryKey]
             const value = stats ? `${stats!.requests} requests`  : 'No requests yet'
 
@@ -313,8 +329,11 @@ export default {
       m.on('mousemove', 'cities-dot', (e) => {
         if (e.features && e.features.length > 0) {
           const cityKey = e.features[0].properties.id
-          const value = this.filteredCity[cityKey].requests
-          const name = this.filteredCity[cityKey].name
+          const city = this.filteredCity[cityKey]
+          if (!city) return
+
+          const value = city.requests
+          const name = city.name
 
           m.setFilter('cities-hover', ['==', ['get', 'id'], cityKey]);
 
@@ -340,6 +359,7 @@ export default {
 
       m.on('mouseleave', 'cities-dot', () => {
         m.getCanvas().style.cursor = '';
+        m.setFilter('cities-hover', ['==', ['get', 'id'], '']);
         popup.remove();
       });
 
@@ -358,7 +378,7 @@ export default {
           // check if area has a state-fill
           const state = m.getLayer('states-fill') 
           ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]?.properties as StateProps
-          : undefined;
+          : null;
 
           // check if at statelevel zoom and if a state is available
           const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
@@ -368,7 +388,7 @@ export default {
               padding: 50,      
               duration: 2000   
             });
-          } else {
+          } else if (state) {
             let long = (state!.longitude)
             let lat = (state!.latitude)
             m.flyTo({
@@ -379,7 +399,7 @@ export default {
 
           // if states are visible and available, the selectedPlace is a state
           if (showState) {
-            const name = this.stateNameOf(state)
+            const name = stateNameOf(state)
             this.selectedPlace = { level: 'state', key: `${state.iso_a2}|${String(name).toLowerCase()}`,name}
             m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], showState ? state.iso_3166_2 : '']);
             m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
@@ -402,8 +422,7 @@ export default {
       m.on('click', 'cities-dot', (e) => {
         if (e.features && e.features.length > 0) {
           const cityKey = e.features[0].properties.id
-          this.selectedCity = cityKey
-          this.selectedPlace = { level: 'city', key: cityKey, name: ''}
+          this.selectedPlace = { level: 'city', key: cityKey, name: cityKey.split('|')[2] }
           m.setFilter('cities-selected', ['==', ['get', 'id'], cityKey]);
 
           m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
@@ -420,8 +439,8 @@ export default {
       // Fullscreen Functionality
       m.addControl(new mapboxgl.FullscreenControl());
 
+      
     });
-
   },
 
   beforeUnmount() {
@@ -445,12 +464,18 @@ export default {
         this.cityData = cities ?? {}
 
         // return {countries: this.countryData, states: this.stateData}
+        if (!Object.keys(this.countryData).length && !Object.keys(this.stateData).length && !Object.keys(this.cityData).length) {
+          this.$snackbar.add({
+              type: 'error',
+              text: 'No data available for the selected range. Please try a different range or check back later.'
+          });
+        }
 
       } catch (err) {
         this.error = String(err)
         this.$snackbar.add({
             type: 'error',
-            text: 'Failed to fetch data error: ' + err
+            text: 'Failed to fetch data. Please try again later.'
         });
         // return {countries: {}, states: {}}
       } finally {
@@ -459,305 +484,209 @@ export default {
     },
     resetView() {
       map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
-      map?.setFilter('state-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+      map?.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
       map?.setFilter('cities-selected', ['==', ['get', 'id'], '']);
       map?.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
       this.selectedPlace = { level: 'world'}
     },
-    updateMapColors(){
-      if (!map || !map.isStyleLoaded()) return;
-      const p = this.palette;
-      // map?.setPaintProperty('background', 'background-color', p.background)
-      map?.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(p, ['get', 'ISO_A2_EH'], this.filteredCountry))
-      
-      const validName = ['case', 
-      ['==', ['get', 'iso_a2'], 'IN'], 
-      ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
-      ]
-
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
-      map?.setPaintProperty('states-fill', 'fill-color', this.fillByStats(p, stateKey, this.filteredStates))
-
-      map.setPaintProperty('state-hover', 'line-color', p.selected)
-      map.setPaintProperty('country-hover', 'line-color', p.selected)
-      map.setPaintProperty('state-selected', 'line-color', p.selected)
-      map.setPaintProperty('country-selected', 'line-color', p.selected)
-    },
-    fillByStats(p, featKey, stats){
-      const keys = Object.keys(stats);
-      if (!keys.length) return p.noData
-
-      const logOf = (k: string) => Math.log10(stats[k]!.requests + 1);
-      const logs = keys.map(logOf);
-      const minLog = Math.min(...logs);
-      const maxLog = Math.max(...logs);
-
-      // map country to to its log val
-      const logValues = keys.flatMap((k, i) => [k, logs[i]!]);
-
-      return [
-        'match', featKey,
-        keys,
-        ['interpolate', ['linear'],
-          ['match', featKey, ...logValues, minLog],
-          minLog, p.low,
-          maxLog > minLog ? maxLog : minLog + 1, p.high],
-        p.noData,
-      ]
-    },
-    radiusByStats(selected: boolean){
-      const keys = Object.keys(this.filteredCity);
-      const featKey = ['get', 'id']
-      if (!keys.length) return 0;
-
-      const logs = keys.map((k) => Math.log10(this.filteredCity[k]!.requests + 1));
-      const minLog = Math.min(...logs);
-      const maxLog = Math.max(...logs);
-      const range = maxLog - minLog;
-
-      const minRadius = 5;
-      const maxRadius = 15;
-      const selectedRadius = 5;
-
-      const radiusPairs = keys.flatMap((k, i) => {
-        const t = range > 0 ? (logs[i]! - minLog) / range : 0;
-        const radius = minRadius + t * (maxRadius - minRadius);
-        return [k, radius + (selected ? selectedRadius : 0)];
-      });
-
-      return ['match', ['to-string', featKey], ...radiusPairs, 0];
-    },
-    strokeByStats() {
-      const keys = Object.keys(this.filteredCity);
-      const featKey = ['get', 'id']
-      if (!keys.length) return 0;
-      const strokePairs = keys.flatMap((k) => [k, 1]);
-      return ['match', ['to-string', featKey], ...strokePairs, 0]
-    }
-    ,
-    stateNameOf(props) {
-      if (props.iso_a2 === 'IN') return props.name
-      return props.gn_name ?? props.name
-    },
 
     async addMapLayers(m: mapboxgl.Map) {
-      // drawing the choropleth under the roads and labels, so that they're visible
-      const labelLayersId = m.getStyle().layers.find(l => l.type === 'symbol')?.id;
-      const roadLayerId = m.getStyle().layers.find(l => l.id.startsWith('road'))?.id ?? labelLayersId
+      try {
+        // drawing the choropleth under the roads and labels, so that they're visible
+        const labelLayersId = m.getStyle().layers.find(l => l.type === 'symbol')?.id;
+        const roadLayerId = m.getStyle().layers.find(l => l.id.startsWith('road'))?.id ?? labelLayersId
 
-      
-      await this.dataPromise;
+        
+        await this.dataPromise;
 
-      m.addSource('country-boundaries', {
-        type: 'geojson',
-        data: '/geo/50m_countries.json'
-      });
+        m.addSource('country-boundaries', {
+          type: 'geojson',
+          data: await $fetch('/geo/50m_countries.json')
+        });
 
-      // COUNTRY-LEVEL
-      // fill each country based on the number of requests using the minLog and maxlog as the range
-      m.addLayer({
-        id: 'countries-fill',
-        type: 'fill',
-        source: 'country-boundaries',
-        paint: {
-          'fill-color': this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry),
-          'fill-opacity': ['interpolate', ['linear'], ['zoom'], 0, 1, 3.5, 0],
-        },
-      }, roadLayerId);
-
-      // STATE-LEVEL'
-      // use geojson to draw states
-      m.addSource('states', {
-        type: 'geojson',
-        data: '/geo/50m_states_provinces.json'
-      });
-
-      const validName = ['case', 
-        ['==', ['get', 'iso_a2'], 'IN'], 
-        ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
-      ]
-
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
-    
-      // fill in state based on requests amount- if no requests color state blank to cover up country-fill
+        // COUNTRY-LEVEL
+        // fill each country based on the number of requests using the minLog and maxlog as the range
         m.addLayer({
-        id: 'states-fill',
-        type: 'fill',
-        source: 'states',
-        minzoom: 2.5,
-        paint: {
-          'fill-color': this.fillByStats(this.palette, stateKey, this.filteredStates),
-          'fill-opacity': [
-            'interpolate', ['linear'], ['zoom'],
-            4, 1,
-            8, 1,
-            12, 0
-          ],
-        },
-      }, roadLayerId);
-      
+          id: 'countries-fill',
+          type: 'fill',
+          source: 'country-boundaries',
+          paint: {
+            'fill-color': fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry),
+            'fill-opacity': ['interpolate', ['linear'], ['zoom'], 0, 1, 3.5, 0],
+          },
+        }, roadLayerId);
 
-      // hover outline layers
-      // idea is to filter show for matching countries/states using iso code of hovered area
-      m.addLayer({ 
-        id: 'country-hover', 
-        type: 'line', 
-        source: 'country-boundaries', 
-        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
-        paint: { 
-          'line-color': this.palette.selected, 
-          'line-width': 2, 
-          'line-opacity': 0.8 } 
+        // STATE-LEVEL'
+        // use geojson to draw states
+        m.addSource('states', {
+          type: 'geojson',
+          data: await $fetch('/geo/50m_states_provinces.json')
+        });
+
+        // fill in state based on requests amount- if no requests color state blank to cover up country-fill
+          m.addLayer({
+          id: 'states-fill',
+          type: 'fill',
+          source: 'states',
+          minzoom: 2.5,
+          paint: {
+            'fill-color': fillByStats(this.palette, stateKey, this.filteredStates),
+            'fill-opacity': [
+              'interpolate', ['linear'], ['zoom'],
+              4, 1,
+              8, 1,
+              12, 0
+            ],
+          },
+        }, roadLayerId);
+        
+
+        // hover outline layers
+        // idea is to filter show for matching countries/states using iso code of hovered area
+        m.addLayer({ 
+          id: 'country-hover', 
+          type: 'line', 
+          source: 'country-boundaries', 
+          filter: ['==', ['get', 'ISO_A2_EH'], ''],  
+          paint: { 
+            'line-color': this.palette.selected, 
+            'line-width': 2, 
+            'line-opacity': 0.8 } 
+          })
+
+        m.addLayer({ 
+          id: 'country-selected', 
+          type: 'line', 
+          source: 'country-boundaries', 
+          filter: ['==', ['get', 'ISO_A2_EH'], ''],  
+          paint: { 
+            'line-color': this.palette.selected, 
+            'line-width': 2, 
+            'line-opacity': 0.8 } 
         })
 
-      m.addLayer({ 
-        id: 'country-selected', 
-        type: 'line', 
-        source: 'country-boundaries', 
-        filter: ['==', ['get', 'ISO_A2_EH'], ''],  
-        paint: { 
-          'line-color': this.palette.selected, 
-          'line-width': 2, 
-          'line-opacity': 0.8 } 
-      })
+        m.addLayer({
+          id: 'state-hover',
+          type: 'line',
+          source: 'states',
+          filter: ['==', ['get', 'iso_3166_2'], ''],
+          paint: {
+            'line-color': this.palette.selected,
+            'line-width': 1.5 }
+        })
 
-      m.addLayer({
-        id: 'state-hover',
-        type: 'line',
-        source: 'states',
-        filter: ['==', ['get', 'iso_3166_2'], ''],
-        paint: {
-          'line-color': this.palette.selected,
-          'line-width': 1.5 }
-      })
+        m.addLayer({ 
+          id: 'state-selected', 
+          type: 'line', 
+          source: 'states', 
+          filter: ['==', ['get', 'iso_3166_2'], ''],  
+          paint: { 
+            'line-color': this.palette.selected, 
+            'line-width': 2, 
+            'line-opacity': 0.8 } 
+        })
 
-      m.addLayer({ 
-        id: 'state-selected', 
-        type: 'line', 
-        source: 'states', 
-        filter: ['==', ['get', 'iso_3166_2'], ''],  
-        paint: { 
-          'line-color': this.palette.selected, 
-          'line-width': 2, 
-          'line-opacity': 0.8 } 
-      })
+        //CITY_LEVEL
+        const citygeojson = {
+          type: 'FeatureCollection',
+          features: Object.entries(cityCoords).map(([key, coords]) => ({
+            type: 'Feature',
+            properties: {
+              id: key, 
+              coords: coords
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: coords
+            }
+          }))
+        };
 
-      //CITY_LEVEL
+        m.addSource('cities-source', {
+          type: 'geojson',
+          data: citygeojson
+        })
 
-      const citygeojson = {
-        type: 'FeatureCollection',
-        features: Object.entries(cityCoords).map(([key, coords]) => ({
-          type: 'Feature',
-          properties: {
-            id: key, 
-            coords: coords
-          },
-          geometry: {
-            type: 'Point',
-            coordinates: coords
+        m.addLayer({
+          id: 'cities-dot',
+          type: 'circle',
+          source: 'cities-source',
+          minzoom: 2.5,
+          paint: {
+            'circle-radius': radiusByStats(false, this.filteredCity) as any,
+            'circle-color': this.palette.dot,
+            'circle-stroke-width': strokeByStats(this.filteredCity) as any,
+            'circle-stroke-color': this.palette.selected,
           }
-        }))
-      };
+        })
 
-      m.addSource('cities-source', {
-        type: 'geojson',
-        data: citygeojson
-      })
-
-      m.addLayer({
-        id: 'cities-dot',
-        type: 'circle',
-        source: 'cities-source',
-        minzoom: 2.5,
-        paint: {
-          'circle-radius': this.radiusByStats(false) as any,
-          'circle-color': this.palette.dot,
-          'circle-stroke-width': this.strokeByStats() as any,
-          'circle-stroke-color': '#ffffff',
-        }
-      })
-
-      m.addLayer({
-        id: 'cities-selected',
-        type: 'circle',
-        source: 'cities-source',
-        minzoom: 2.5,
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'circle-radius': this.radiusByStats(true) as any,
-          'circle-color': 'rgba(255, 255, 255, 0)',
-          'circle-stroke-width': 4,
-          'circle-stroke-color': '#ffffff',
-        }
-      })
-
-      m.addLayer({
-        id: 'cities-hover',
-        type: 'circle',
-        source: 'cities-source',
-        minzoom: 2.5,
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'circle-radius': this.radiusByStats(true) as any,
-          'circle-color': 'rgba(255, 255, 255, 0)',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-        }
-      })
-
-
-    },
-    filterByRange(data: Record<string, any>){
-      const out: Record<string, any> = {}
-
-      // Get the end date of the range
-      const date = new Date()
-      date.setDate(date.getDate() - this.rangeDays)
-      const endDate = date.toISOString().slice(0, 10)
-
-      for (const [key, stats] of Object.entries(data ?? {})){
-        let requests = 0, failed = 0, responseTime = 0
-        // iterate over each week, adding the data for the weeks that fall into range
-        for (const [week, w] of Object.entries(stats.weeks ?? {})) {
-          if (week < endDate) continue
-
-          if (typeof w === 'number') {
-            requests += w;
-            continue;
-          
+        m.addLayer({
+          id: 'cities-selected',
+          type: 'circle',
+          source: 'cities-source',
+          minzoom: 2.5,
+          filter: ['==', ['get', 'id'], ''],
+          paint: {
+            'circle-radius': radiusByStats(true, this.filteredCity) as any,
+            'circle-color': 'rgba(255, 255, 255, 0)',
+            'circle-stroke-width': 4,
+            'circle-stroke-color': this.palette.selected,
           }
-          requests += w.requests
-          failed += w.failed
-          responseTime += w.responseTime
-        }
-        const summed = {...stats, requests, failed, responseTime}
+        })
 
-        if (summed.requests > 0) {
-          out[key] = summed
-        }
+        m.addLayer({
+          id: 'cities-hover',
+          type: 'circle',
+          source: 'cities-source',
+          minzoom: 2.5,
+          filter: ['==', ['get', 'id'], ''],
+          paint: {
+            'circle-radius': radiusByStats(true, this.filteredCity) as any,
+            'circle-color': 'rgba(255, 255, 255, 0)',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': this.palette.selected,
+          }
+        })
+      } catch (err) { 
+        console.error('Error adding map layers:', err);
+        this.$snackbar.add({
+          type: 'error',
+          text: 'Failed to load map layers. Please try again later.'
+        });
       }
-      return out
+    },
+
+    // TODO: add a clearselection util
+    clearSelection() {
+        map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
+        map?.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
+        map?.setFilter('cities-selected', ['==', ['get', 'id'], '']);
+
+        map?.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], '']);
+        map?.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], '']);
+        map?.setFilter('cities-hover', ['==', ['get', 'id'], '']);
     }
   },
   watch: {
+    // watch for darkmode changes and update the map style accordingly
     palette() {
-      map?.setStyle(`mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`)
-      this.updateMapColors()
+      if (!map) return
+      const url = `mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`
+      if (url === currentStyleUrl) return   
+      currentStyleUrl = url
+      map.setStyle(url)
     },
+    // watch for changes in the rangeDays and update the map layers accordingly
     rangeDays() {
-      const validName = ['case', 
-      ['==', ['get', 'iso_a2'], 'IN'], 
-      ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
-      ]
-
-      const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', validName]]
-
-
       if (!map?.getLayer('countries-fill')) return
-      map.setPaintProperty('countries-fill', 'fill-color', this.fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry))
-      map.setPaintProperty('states-fill', 'fill-color', this.fillByStats(this.palette, stateKey, this.filteredStates))
-      map.setPaintProperty('cities-dot', 'circle-radius', this.radiusByStats(false) as any)
-      map.setPaintProperty('cities-dot', 'circle-stroke-width', this.strokeByStats() as any)
+      map.setPaintProperty('countries-fill', 'fill-color', fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry))
+      map.setPaintProperty('states-fill', 'fill-color', fillByStats(this.palette, stateKey, this.filteredStates))
+     
+      map.setPaintProperty('cities-dot', 'circle-radius', radiusByStats(false, this.filteredCity) as any)
+      map.setPaintProperty('cities-dot', 'circle-stroke-width', strokeByStats(this.filteredCity) as any)
+      
+      map.setPaintProperty('cities-selected', 'circle-radius', radiusByStats(false, this.filteredCity) as any)
+      map.setPaintProperty('cities-selected', 'circle-stroke-width', strokeByStats(this.filteredCity) as any)
     }
   }
 };
@@ -919,7 +848,7 @@ export default {
     width: 150px;
     height: 8px;
     border-radius: 4px;
-    background: linear-gradient(to right, #D8D8D8, #4E3681);
+    background: linear-gradient(to right, #B9B1CA, #4E3681);
   }
 
   /* Stat Section */
@@ -1092,17 +1021,17 @@ export default {
       gap: 30px;
     }
 
-    h1 {
+    .map-page h1 {
       font-size: 32px;
       font-weight: 600;
     }
 
-    h2 {
+    .map-page h2 {
       font-size: 20px;
       line-height: 20px;
     }
 
-    p {
+    .map-page p {
       font-size: 18px;
       line-height: 27px;
     }
