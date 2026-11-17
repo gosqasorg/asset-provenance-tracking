@@ -16,10 +16,10 @@
 import { validateKey } from "~/utils/keyFuncs";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
-// If we're not on prod turn offline features on
 export var offlineModeFeatureFlag = false;
-if (!(useRuntimeConfig().public.baseUrl).includes("gdtprodbackend")) {
-    offlineModeFeatureFlag = true;
+export function updateOfflineFeatureFlag(featuresEnabled: boolean) {
+    // Set the offline feature flag from other files
+    offlineModeFeatureFlag = featuresEnabled;
 }
 
 // Global variable used to control the display of offline banner on create pages
@@ -45,6 +45,14 @@ export async function getProvenance(deviceKey: string) {
             throw error;
         }
     } catch (error) {
+        // If we're offline and the provenance is stashed then return the stashed provenance
+        if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+            let offlineProvenance = getProvenanceOffline(deviceKey);
+            if (offlineProvenance.length > 0) {
+                return offlineProvenance;
+            }
+        }
+
         console.log(`Key not found: ${deviceKey}.`);
         console.log(error);
         throw error;
@@ -97,6 +105,11 @@ export async function postProvenance(deviceKey: string, record: any, attachments
         let response = await fetchUrl(fullUrl, formData);
         return await response.json() as { record: string, attachments?: string[] };
     } catch (error) {
+        // If we're offline stash the record to create later
+        if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+            stashOfflineRequest(deviceKey, "gdt-stash-queued", record);
+            throw new Error('Status 202: User is offline but the record has been stashed');
+        }
         throw error;
     }
 }
@@ -190,6 +203,15 @@ export async function getStatistics() {
     };
 }
 
+export async function getServerResponseStats() {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/stats/serverResponse`, {
+        method: "GET",
+    });
+    
+    return await response.json();
+}
+
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
     const MAX_RETRIES = 3;
@@ -261,25 +283,75 @@ export async function fetchUrlWithErrorHandling(
     throw new Error(errorMessage);
 }
 
-export function stashOfflineRequest(currentKey: string, stashName: string, request?: any) {
+export async function offlineQueueConsumerWorker() {
+    // Wait for other instances of the worker to close
+    await new Promise((r) => setTimeout(r, 15000));
+
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    let deviceKey;
+    let record;
+    let workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
+
+    if (workerIsActive == 'true') {
+        return;
+    } else {
+        localStorage.setItem('gdt-offline-worker-active', 'true');
+        workerIsActive = 'true';
+    }
+
+    while (workerIsActive == 'true') {
+        // If a new instance of the worker was opened close this one
+        workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
+
+        try {
+            let queuedRequest = getFirstQueueItem();
+            if (!queuedRequest) {
+                await new Promise((r) => setTimeout(r, 5000));
+                continue;
+            }
+
+            // Attempt to post the queued request
+            deviceKey = queuedRequest["key"];
+            record = queuedRequest["data"];
+            const fullUrl = baseUrl + "/provenance/" + deviceKey;
+            const formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(record));
+            await fetchUrl(fullUrl, formData)
+
+            // Attempt to get the new request to confirm it posted successfully
+            await fetchUrl(fullUrl)
+
+            stashOfflineRequest(deviceKey, "gdt-stash-fulfilled", record);
+            removeFirstQueueItem();
+
+        } catch (error) {
+            if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
+                await new Promise((r) => setTimeout(r, 5000));
+            } else {
+                stashOfflineRequest(deviceKey, "gdt-stash-failed", record);
+                removeFirstQueueItem();
+            }
+        }
+    }
+}
+
+export function stashOfflineRequest(currentKey: string, stashName: string, record: object) {
     // Function to stash an offline request (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
         let stash = localStorage.getItem(stashName) || "[]";
         let existingRequests;
+        const timestamp = new Date().getTime();
 
         // Get the previous requests from the stash
-        if (stashName.includes("fulfilled")) {
-            existingRequests = stash.split(",");
-        } else {
-            existingRequests = JSON.parse(stash);
-        }
+        existingRequests = JSON.parse(stash);
 
         // Get the existing stashed requests, skip the loop if there are none
         if (JSON.stringify(existingRequests) !== "[]" && JSON.stringify(existingRequests) !== '["[]"]') {
-            for (const storedRequest of existingRequests) {
-                // If new request == existing request, exit without updating the stash
-                if ((request && storedRequest["data"] == request) || storedRequest == currentKey) {
+            for (let storedRequest of existingRequests) {
+                // If both the data and the key are the same as an existing record in the stash, exit without updating the stash
+                if (record && (JSON.stringify(storedRequest["data"]) == JSON.stringify(record) 
+                    && storedRequest["key"] == currentKey)) {
                     return;
                 }
 
@@ -288,13 +360,8 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
         }
 
         // Add the new request and set the new stash value
-        if (stashName.includes("fulfilled")) {
-            requests.push(currentKey);
-            localStorage.setItem(stashName, requests.toString());
-        } else {
-            requests.push({"key": currentKey, "data": request});
-            localStorage.setItem(stashName, JSON.stringify(requests));
-        }
+        requests.push({"key": currentKey, "data": record, "timestamp": timestamp});
+        localStorage.setItem(stashName, JSON.stringify(requests));
 
     } catch (error) {
         console.log("Failed to Stash: " + error);
@@ -302,7 +369,7 @@ export function stashOfflineRequest(currentKey: string, stashName: string, reque
     }
 }
 
-export function removeOfflineRequest(currentKey: string, stashName: string) {
+export function removeOfflineRequest(currentRequest: any, stashName: string) {
     // Function to remove an offline request from the stash (works for queued, failed, and fulfilled stashes)
     try {
         let requests = [];
@@ -310,37 +377,25 @@ export function removeOfflineRequest(currentKey: string, stashName: string) {
         let existingRequests;
 
         // Get the previous requests from the stash
-        if (stashName.includes("fulfilled")) {
-            existingRequests = stash.split(",");
-        } else {
-            existingRequests = JSON.parse(stash);
-        }
+        existingRequests = JSON.parse(stash);
 
         // If there are no previous requests exit the function (nothing to remove)
         if (JSON.stringify(existingRequests) == "[]" || JSON.stringify(existingRequests) == '["[]"]') {
             return;
         }
 
-        if (stashName.includes("fulfilled")) {
-            // Remove key from the fulfilled stash
-            const index = existingRequests.indexOf(currentKey);
-            if (index >= 0) {
-                existingRequests.splice(index, 1);
-            }
-            localStorage.setItem(stashName, existingRequests.toString())
-            
-        } else {
-            // Remove request from the queue/failed stash
-            for (let i = 0; i < existingRequests.length; i++) {
-                let requestKey = existingRequests[i]["key"];
+        // Remove request from the stash
+        for (let i = 0; i < existingRequests.length; i++) {
+            let requestKey = existingRequests[i]["key"];
+            let requestData = existingRequests[i]["data"];
+            let requestTimestamp = existingRequests[i]["timestamp"];
 
-                // Add back all requests except the one we're removing 
-                if (requestKey != currentKey) {
-                    requests.push(existingRequests[i]);
-                }
+            // Add back all requests except the one we're removing
+            if (requestKey != currentRequest["key"] || JSON.stringify(requestData) != JSON.stringify(currentRequest["data"]) || requestTimestamp != currentRequest["timestamp"]) {
+                requests.push(existingRequests[i]);
             }
-            localStorage.setItem(stashName, JSON.stringify(requests))
         }
+        localStorage.setItem(stashName, JSON.stringify(requests))
 
     } catch (error) {
         console.log("Failed to Remove from Stash: " + error);
@@ -400,14 +455,40 @@ export async function confirmRequestFulfilled(recordKey: string, record?: any): 
     return false
 }
 
-export async function postNotificationEmail(email:string, recordKey: string) {
+export function getProvenanceOffline(deviceKey: string) {
+    // Check all stashes and see if provenance records of the given key are stored
+    const stashes = ["gdt-stash-queued", "gdt-stash-fulfilled", "gdt-stash-failed"];
+    let records = new Array<{record: any} & { attachments: string[], timestamp: number }>();
+
+    try {
+        for (let stash of stashes) {
+            let stashedProvenances = JSON.parse(localStorage.getItem(stash) || '[]');
+
+            for (let i = 0; i < stashedProvenances.length; i++) {
+                // If a provenance record we're looking for is stashed then add it to our records to return
+                if (stashedProvenances[i]["key"] == deviceKey) {
+                    records.push({ "record": stashedProvenances[i]["data"], "attachments": [], "timestamp": stashedProvenances[i]["timestamp"] })
+                }
+            }
+        }
+
+        records.sort((a, b) => b["timestamp"] - a["timestamp"])
+        return records;
+
+    } catch (error) {
+        console.log("Failed to Retrieve Provenance History from Stash: " + error);
+        throw error;
+    }
+}
+
+export async function postNotificationEmail(email:string, recordKey: string, tags: string[] = []) {
     const baseUrl = useRuntimeConfig().public.baseUrl;
     const response = await fetchUrlWithErrorHandling(
         `${baseUrl}/notificationSubscription`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, recordKey }),
+            body: JSON.stringify({ email, recordKey, tags }),
         },
         {
             429: "We are experiencing a high volume of requests. Please try again later.",
@@ -461,6 +542,7 @@ export async function postResendCode(token: string) {
         throw new Error('postResendCode: Failed to resend code')
     }
 }
+
 export async function getBrowserStats() {
     
         const baseUrl = useRuntimeConfig().public.baseUrl;
@@ -475,6 +557,34 @@ export async function getBrowserStats() {
         return JSON.parse(stats);
     } catch (error) {
         throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}
+
+export async function subscribeGroupToChildren(groupKey: string, childKey: string, tags: string[]) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/subscribeGroupToChildren`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupKey, childKey, tags }),
+    });
+    
+    if (response.status != 200) {
+        console.log("subscribeGroupToChildren Error:", response)
+        throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
+    }
+}
+
+export async function subscribeGroupToChildren(groupKey: string, childKey: string, tags: string[]) {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/subscribeGroupToChildren`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupKey, childKey, tags }),
+    });
+    
+    if (response.status != 200) {
+        console.log("subscribeGroupToChildren Error:", response)
+        throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
     }
 }
 

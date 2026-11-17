@@ -1,0 +1,19 @@
+{
+  "name": "azurecontentsafetyapi",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@types/sharp": "^0.31.1"
+  }
+}

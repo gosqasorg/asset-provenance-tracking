@@ -31,10 +31,10 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 <!-- This link is for the icon in mobile dropdown menu -->
 <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
 <div v-if="isLoading">
-	<p class="text-center pb-5 pt-5">Loading record(s)...</p>
+	<p class="text-center pb-5 pt-5 lightDarkResponsiveText">Loading record(s)...</p>
 </div>
 <div v-else-if="isCreating">
-	<p class="text-center pb-5 pt-5">Creating record(s)...</p>
+	<p class="text-center pb-5 pt-5 lightDarkResponsiveText">Creating record(s)...</p>
 </div>
 <div v-else-if="recordKeyFound">
 	<div class="deviceKey-history">
@@ -746,6 +746,10 @@ a:visited {
 }
 
 /* Dark mode version*/
+lightDarkResponsiveText {
+	color: #FFFFFF;
+}
+
 @media (prefers-color-scheme: dark) {
 body {
 	background-color: #1E2019 !important;
@@ -861,6 +865,10 @@ h1 {
 }
 
 /* Light mode version*/
+lightDarkResponsiveText {
+	color: #4E3681;
+}
+
 @media (prefers-color-scheme: light) {
 .deviceKey-history {
 	background-color: #FFFFFF;
