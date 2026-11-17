@@ -1,5 +1,3 @@
-<!-- TODO: add pop up for error when data comes back empty -->
-<!-- TODO: move util functions to a separate file -->
 <template>
     <div class="map-page">
         <div class="map-page-header">
@@ -72,7 +70,10 @@
                     <p>{{ p.requests }}</p>
                   </li>
                 </ul>
-                <p v-else style="font-weight: 300;">No city-level data {{ selectedPlace.level === 'country' ? 'for this country yet' : ''}}</p>
+                <p v-else style="font-weight: 300;">No {{ selectedPlace.level === 'world' 
+                ? 'country' 
+                : selectedPlace.level === 'country' 
+                ? 'states/provinces' : 'city' }}-level data yet</p>
             </div>
           </div>
         </div>  
@@ -89,13 +90,11 @@ import rawBounds from '~/data_viz/geo/country-bounds.json';
 import rawCoords from '~/data_viz/geo/city-coords.json';
 
 import {fillByStats, radiusByStats, strokeByStats, stateNameOf, filterByRange} from '~/utils/mapUtils'
+import type { LocationStats } from '~/utils/mapUtils'
 
-
-type LocationStat = Record<string, { name: string; requests: number; failed: number }>;
 type SelectionType = {level: 'world'} | {level: 'country' | 'state' | 'city'; key: string; name: string}
 type CountryProps = {NAME: string, ISO_A2_EH: string}
 type StateProps = {name: string, gn_name: string | null, iso_a2: string, iso_3166_2: string, latitude: number, longitude: number}
-
 
 // Map ColorPalette
 const mapColors = {
@@ -120,10 +119,12 @@ const countryBounds = rawBounds as Record<string, { name: string; bounds: number
 const cityCoords = rawCoords as Record<string, number[]>;
 
 // mapBox query expressions
-const stateKey = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['case', 
+const stateKeyExpression = ['concat', ['get', 'iso_a2'], '|', ['downcase', ['case', 
   ['==', ['get', 'iso_a2'], 'IN'], 
   ['get', 'name'], ['coalesce', ['get', 'gn_name'], ['get', 'name']],
 ]]]
+
+const STATE_VISIBLE_ZOOM = 3
 
 
 let map: mapboxgl.Map | null = null
@@ -134,12 +135,11 @@ export default {
 
   data() {
     return {
-      countryData: {} as Record<string, any>,
-      stateData: {} as Record<string, any>,
-      cityData: {} as Record<string, any>,
+      countryData: {} as Record<string, LocationStats>,
+      stateData: {} as Record<string, LocationStats & {iso: string}>,
+      cityData: {} as Record<string, LocationStats & {iso: string, stateKey: string}>,
       selectedPlace: { level: 'world'} as SelectionType ,
       loading: true ,
-      error: null as string | null,
 
       // for switching colors in the map
       isDark: false,
@@ -153,20 +153,18 @@ export default {
     selectedStats(): {name: string, requests: number; failed: number, responseTime: number} | null {
       // for each selected place return the data that matches its key
       const s = this.selectedPlace
-
-      if (s.level === 'state') {
-        return this.filteredStates[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
+      const locationStats = 
+      {
+        state: this.filteredStates, 
+        country: this.filteredCountry, 
+        city: this.filteredCity
       }
 
-      if (s.level === 'country') {
-        return this.filteredCountry[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
-      }
+      if (s.level === 'world'){
+        return this.worldStats
+      } 
 
-      if (s.level === 'city') {
-        return this.filteredCity[s.key] ?? { name: s.name, requests: 0, failed: 0, responseTime: 0 }
-      }
-
-      return this.worldStats
+      return locationStats[s.level]?.[s.key] ??  { name: s.name, requests: 0, failed: 0, responseTime: 0 }
     },
 
     // get the world stats by summing up all the country stats
@@ -220,24 +218,24 @@ export default {
       return mapColors[this.isDark ? "dark" : "light"]
     },
     filteredCountry() {
-      return filterByRange(this.countryData, this.rangeDays)
+      return filterByRange(this.countryData, this.rangeDays) as Record<string, LocationStats>
     },
     filteredStates() {
-      return filterByRange(this.stateData, this.rangeDays)
+      return filterByRange(this.stateData, this.rangeDays) as Record<string, LocationStats & {iso: string}>
     },
     filteredCity() {
-      return filterByRange(this.cityData, this.rangeDays)
+      return filterByRange(this.cityData, this.rangeDays) as Record<string, LocationStats & {iso: string, stateKey: string}>
     }
   },
 
   async mounted() {
-    currentStyleUrl = `mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`
-    
     // Check if dark mode or light mode
     this.darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     this.isDark = this.darkQuery.matches
     this.onModeChange = (e: MediaQueryListEvent) => { this.isDark = e.matches }
     this.darkQuery.addEventListener('change', this.onModeChange)
+
+    currentStyleUrl = `mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`
 
     const el = this.$refs.mapEl as HTMLDivElement | undefined
     if (!el) return
@@ -249,8 +247,8 @@ export default {
     const m = markRaw(new mapboxgl.Map({
       container: el,
       projection: 'mercator',
-      style: `mapbox://styles/mapbox/${this.isDark ? 'dark' : 'light'}-v11`,
-      center: [0, 0],
+      style: currentStyleUrl,
+      center: [0, 20],
       zoom: 0.75,
       dragRotate: false,
       pitchWithRotate: false,
@@ -285,8 +283,13 @@ export default {
     }
 
     m.on('load', async () => {
-      const STATE_VISIBLE_ZOOM = 3
       m.on('mousemove', 'countries-fill', (e) => {
+
+          // if 
+          // if (m.queryRenderedFeatures(e.point, {layers:['cities-dot']})){
+          //   return
+          // }
+
           m.getCanvas().style.cursor = 'pointer';
 
           // enable popup on hover over country, name and number of requests
@@ -301,8 +304,17 @@ export default {
             ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]?.properties as StateProps
             : undefined;
 
+            const city = m.getLayer('cities-dot') ?
+            m.queryRenderedFeatures(e.point, {layers:['cities-dot']})[0]?.properties
+            : undefined
+
+
+            if (city) {
+              return
+            }
+
             // check if at statelevel zoom and if a state is available
-            const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
+            const showState = state && m.getZoom() >= STATE_VISIBLE_ZOOM;
 
             // enable highlight on countries
             m.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], showState ? '' : country.ISO_A2_EH]);
@@ -380,8 +392,16 @@ export default {
           ? m.queryRenderedFeatures(e.point, { layers: ['states-fill']})[0]?.properties as StateProps
           : null;
 
+          const city = m.getLayer('cities-dot') ?
+          m.queryRenderedFeatures(e.point, {layers:['cities-dot']})[0]?.properties
+          : undefined
+
+          if (city) {
+            return
+          }
+
           // check if at statelevel zoom and if a state is available
-          const showState = !!state && m.getZoom() >= STATE_VISIBLE_ZOOM;
+          const showState = state && m.getZoom() >= STATE_VISIBLE_ZOOM;
 
           if (result && !showState) {
             m.fitBounds(result.bounds as LngLatBoundsLike, {
@@ -389,8 +409,8 @@ export default {
               duration: 2000   
             });
           } else if (state) {
-            let long = (state!.longitude)
-            let lat = (state!.latitude)
+            const long = (state.longitude)
+            const lat = (state.latitude)
             m.flyTo({
               center: [long, lat],
               duration: 1500
@@ -401,15 +421,13 @@ export default {
           if (showState) {
             const name = stateNameOf(state)
             this.selectedPlace = { level: 'state', key: `${state.iso_a2}|${String(name).toLowerCase()}`,name}
+            this.clearSelection();
             m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], showState ? state.iso_3166_2 : '']);
-            m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
           } else {
+            this.clearSelection();
             m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], country.ISO_A2_EH]);
-            this.selectedPlace = { level: 'country', key: country.ISO_A2_EH, name: country.NAME}
-            m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
+            this.selectedPlace = { level: 'country', key: country.ISO_A2_EH, name: country.NAME}          
           }
-
-          
         }
       })
 
@@ -422,17 +440,27 @@ export default {
       m.on('click', 'cities-dot', (e) => {
         if (e.features && e.features.length > 0) {
           const cityKey = e.features[0].properties.id
-          this.selectedPlace = { level: 'city', key: cityKey, name: cityKey.split('|')[2] }
+
+          this.selectedPlace = { 
+            level: 'city', 
+            key: cityKey,
+            name: this.filteredCity[cityKey]["name"] ?? cityKey.split('|')[2] 
+          }
+
+          this.clearSelection();
           m.setFilter('cities-selected', ['==', ['get', 'id'], cityKey]);
 
-          m.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
-          m.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
-
-          let [lon, lat] = cityCoords[cityKey]
-          m.flyTo({
-            center: [lon, lat],
-            duration: 1500
-          })
+          const coords = cityCoords[cityKey]!
+          if (coords){
+            // default val is center, if coords returns undefined
+            // shouldn't occur since cityDots are placed using cityCoords
+            const [lon = 0, lat = 0] = coords
+            m.flyTo({
+              center: [lon, lat],
+              duration: 1500
+            })
+          }
+          
         }
       })
 
@@ -455,7 +483,6 @@ export default {
   methods: {
     async fetchData() {
       this.loading = true
-      this.error = null
 
       try {
         const [countries, states, cities] = await Promise.all([getCountryStats(), getStateStats(), getCityStats()])
@@ -463,7 +490,6 @@ export default {
         this.stateData = states ?? {}
         this.cityData = cities ?? {}
 
-        // return {countries: this.countryData, states: this.stateData}
         if (!Object.keys(this.countryData).length && !Object.keys(this.stateData).length && !Object.keys(this.cityData).length) {
           this.$snackbar.add({
               type: 'error',
@@ -472,20 +498,16 @@ export default {
         }
 
       } catch (err) {
-        this.error = String(err)
         this.$snackbar.add({
             type: 'error',
             text: 'Failed to fetch data. Please try again later.'
         });
-        // return {countries: {}, states: {}}
       } finally {
         this.loading = false
       }
     },
     resetView() {
-      map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
-      map?.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
-      map?.setFilter('cities-selected', ['==', ['get', 'id'], '']);
+      this.clearSelection();
       map?.flyTo({ center: [0, 20], zoom: 0.75, duration: 1000});
       this.selectedPlace = { level: 'world'}
     },
@@ -530,7 +552,7 @@ export default {
           source: 'states',
           minzoom: 2.5,
           paint: {
-            'fill-color': fillByStats(this.palette, stateKey, this.filteredStates),
+            'fill-color': fillByStats(this.palette, stateKeyExpression, this.filteredStates),
             'fill-opacity': [
               'interpolate', ['linear'], ['zoom'],
               4, 1,
@@ -655,16 +677,10 @@ export default {
         });
       }
     },
-
-    // TODO: add a clearselection util
     clearSelection() {
         map?.setFilter('country-selected', ['==', ['get', 'ISO_A2_EH'], '']);
         map?.setFilter('state-selected', ['==', ['get', 'iso_3166_2'], '']);
         map?.setFilter('cities-selected', ['==', ['get', 'id'], '']);
-
-        map?.setFilter('country-hover', ['==', ['get', 'ISO_A2_EH'], '']);
-        map?.setFilter('state-hover', ['==', ['get', 'iso_3166_2'], '']);
-        map?.setFilter('cities-hover', ['==', ['get', 'id'], '']);
     }
   },
   watch: {
@@ -680,12 +696,12 @@ export default {
     rangeDays() {
       if (!map?.getLayer('countries-fill')) return
       map.setPaintProperty('countries-fill', 'fill-color', fillByStats(this.palette, ['get', 'ISO_A2_EH'], this.filteredCountry))
-      map.setPaintProperty('states-fill', 'fill-color', fillByStats(this.palette, stateKey, this.filteredStates))
+      map.setPaintProperty('states-fill', 'fill-color', fillByStats(this.palette, stateKeyExpression, this.filteredStates))
      
       map.setPaintProperty('cities-dot', 'circle-radius', radiusByStats(false, this.filteredCity) as any)
       map.setPaintProperty('cities-dot', 'circle-stroke-width', strokeByStats(this.filteredCity) as any)
       
-      map.setPaintProperty('cities-selected', 'circle-radius', radiusByStats(false, this.filteredCity) as any)
+      map.setPaintProperty('cities-selected', 'circle-radius', radiusByStats(true, this.filteredCity) as any)
       map.setPaintProperty('cities-selected', 'circle-stroke-width', strokeByStats(this.filteredCity) as any)
     }
   }
@@ -944,10 +960,10 @@ export default {
 
   @media (prefers-color-scheme: dark) {
     /* styling for dashboard */
-    .map-page {
-      /* background-color: #262820;
-      border: #353535 solid 1px; */
-    }
+    /* .map-page {
+      background-color: #262820;
+      border: #353535 solid 1px;
+    } */
 
     .map-page p {
       color: #FFFFFF

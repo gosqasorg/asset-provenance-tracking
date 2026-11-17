@@ -65,10 +65,10 @@ export async function runQuery<T extends z.ZodTypeAny>(query: string, rowSchema:
 
 // Return Types
 interface LocationStat {
-    requests,
-    failed,
-    responseTime,
-    weeks
+    requests: number;
+    failed: number;
+    responseTime: number;
+    weeks: Object;
 }
 
 // Zod Schema
@@ -102,11 +102,11 @@ class MapData {
         
     }
 
-    getStateStats(): Record<string, LocationStat> {
+    getStateStats(): Record<string, LocationStat & {iso: string}> {
         return this.stateStats;
     }
 
-    getCityStats(): Record<string, LocationStat & {stateKey}> {
+    getCityStats(): Record<string, LocationStat & {iso: string, stateKey: string}> {
         return this.cityStats;
     }
 
