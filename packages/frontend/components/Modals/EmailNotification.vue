@@ -286,7 +286,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         emails.map(async email => ({
                             email,
                             // The backend returns the token needed to verify this address.
-                            token: await postNotificationEmail(email, deviceKey)
+                            token: await postNotificationEmail(email, deviceKey, this.tags)
                         }))
                     );
                     this.email = emails.join(', ');
