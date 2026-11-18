@@ -164,10 +164,10 @@ function getEmailGivenEmailID(id, bundle) {
 console.log("is the email for id 12345 foo@bar.com?")
 console.log(getEmailGivenEmailID(12345, bundle))
 
-function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
+function removeTagSpecificDataFromBundle(the_bundle, theEmail) {
     // Note: this is an error case, so best to throw an error. We don't want to say successfully unsubscribed and be wrong. 
-    if(!theEmail || !theTags.length) {
-        console.dir("No email or tags provided.")
+    if(!theEmail) {
+        console.dir("No email provided.")
         // console.dir("This record does not contain any tag-specific data.")
         return the_bundle
     }
@@ -177,6 +177,8 @@ function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
     //for(tag of Object.keys(the_bundle)) { 
     //  the_bundle.tag = the_bundle.tag.filter(...)
     //}
+
+    /*
     for(let i = 0; i < theTags.length; i ++) {
         let currTag = theTags[i]
         
@@ -204,10 +206,23 @@ function removeTagSpecificDataFromBundle(the_bundle, theEmail, theTags) {
             }
         }
     }
+    */
+
+
+    for(let tag in the_bundle) {
+        let currTag = the_bundle[tag]
+
+        // console.log("before", currTag)
+        currTag = currTag.filter((pair) => pair.email !== theEmail)
+        // console.log("after", currTag)
+        the_bundle[tag] = currTag
+    }
     return the_bundle
 }
 
-removeTagSpecificDataFromBundle(bundle, "2", ["no_tag"])
+// removeTagSpecificDataFromBundle(bundle, "foo@bar.com")
+console.log(removeTagSpecificDataFromBundle(bundle, "foo@bar.com"))
+
 
 
 function getEmailsForTheseTags(the_bundle, tags) {
