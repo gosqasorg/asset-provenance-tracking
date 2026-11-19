@@ -524,7 +524,7 @@ async function endpointLivenessChecker(livenessTimer: any, context: InvocationCo
     }
 
     if (failedResponses.length > 0 || responses.length < totalEndpoints) {
-        const message = `Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures, see all statuses below.\n\n${allResponses.join('\n')}`;
+        const message = `<div>Endpoints ${failedResponses.join(', ')} are down on ${environment}. Note: Some endpoint tests might not have run due to earlier endpoint failures, see all statuses below.<br><br>${allResponses.join('<br>')}</div>`;
         await livenessCheckEmailer(`Important: Some Endpoints Are Down on ${environment}`, message, context);
     }
 }
