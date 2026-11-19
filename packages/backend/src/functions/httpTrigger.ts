@@ -688,9 +688,20 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 
 // --- GETs --- //
 
-function errorHandler(functionName, error, context) {
+export function errorHandler(functionName, error, context) {
 
   context.error(`Returning unsuccessfully from ${functionName}`)
+
+  if (JSON.stringify(error).includes("ZodError")) {
+    let message = 'Error: Check argument format.'
+    context.error(message)
+    context.error(`${functionName}: returning 400 on zodError`)
+    return {
+        status: 400,
+        jsonBody: { data: error.issues },
+        headers: { "Content-Type": "text/plain" }
+    }
+  }
 
   // Uncategorizable errors
   // To be assessed + addressed in upcoming ticket

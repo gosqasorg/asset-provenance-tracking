@@ -51,7 +51,7 @@ import * as z from "zod";
 
 const context = console
 
-function errorHandler(functionName, error) {
+function errorHandler(functionName, error, context) {
 
   context.error(`Returning unsuccessfully from ${functionName}`)
   context.error("Error zod?", JSON.stringify(error).includes("ZodError"))
