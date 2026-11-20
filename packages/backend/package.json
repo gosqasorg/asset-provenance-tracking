@@ -29,7 +29,9 @@
     "@types/js-yaml": "^4.0.9",
     "@urlpack/base58": "^2.0.1",
     "bs58": "^5.0.0",
+    "country-to-iso": "^1.6.3",
     "dotenv": "^16.4.5",
+    "i18n-iso-countries": "^7.14.0",
     "json5": "^2.2.3",
     "sharp": "^0.35.3",
     "zod": "^4.1.12"

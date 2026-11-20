@@ -53,6 +53,24 @@ await runQuery(
 );
 
 await runQuery(
+    "Requests Summary",
+    `AppRequests
+    | where TimeGenerated > ago(60d)
+    | extend 
+        day = bin(TimeGenerated, 1d), 
+        country = ClientCountryOrRegion, 
+        state = ClientStateOrProvince, 
+        city = ClientCity
+    | summarize 
+        requests = count(),
+        failed = countif(Success == false),
+        avgDuration = avg(DurationMs)
+        by day, country, state, city
+    | order by day asc
+    `
+)
+
+await runQuery(
     "Requests by IP",
     "AppRequests | where TimeGenerated > ago(14d) | summarize request_count = count() by ClientIP | order by request_count desc"
 );
