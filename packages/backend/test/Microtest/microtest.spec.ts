@@ -66,9 +66,9 @@ describe('MicroTestLand', () => {
 
     // containerClient, deviceKey, email, tags, context
     let testCases = [
-      //[400, ['0OIL',                   'invalid email', []]],     // Invalid email
-//      [400, ['0OIL',                   'foo@bar.com', []]],      // Non-base58 chars
-  //    [400, ['1',                      'foo@bar.com', []]],     // Invalid key length 
+      [400, ['0OIL',                   'invalid email', []]],     // Invalid email
+      [400, ['0OIL',                   'foo@bar.com', []]],      // Non-base58 chars
+      [400, ['1',                      'foo@bar.com', []]],     // Invalid key length 
       [404, ['1234567891123456789112', 'foo@bar.com', []]],    // 404: No record for this key
     ]
 
