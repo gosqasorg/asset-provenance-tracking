@@ -23,11 +23,12 @@ describe('Tests for Azure Content Moderation API', () => {
   
   // Note: Cannot run locally. Can run on GitHub workflow runners
   it('AzureContentSafetyAPITest: Oversize image', async () => {
-    // Implicitly tests that image resizing succeeds
+    if(!process.env['backend_url'].includes('local')) {
+      // Implicitly tests that image resizing succeeds
 
-    let fileObject = await setup()
-    let response = await htUtils.imageIsNotPermitted(fileObject, console)
-    expect(response).toBe(false)
-
+      let fileObject = await setup()
+      let response = await htUtils.imageIsNotPermitted(fileObject, console)
+      expect(response).toBe(false)
+    }
   })
 })
