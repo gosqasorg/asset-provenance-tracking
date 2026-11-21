@@ -71,7 +71,7 @@ interface NamedBlob {
 /*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts)  ============*/
 
 
-import { decodeKey, calculateDeviceID } from './httpTriggerUtils'
+import { decodeKey, calculateDeviceID, sha256, toHex } from './httpTriggerUtils'
 
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
@@ -81,15 +81,6 @@ function findDeviceIdFromName(blobName: string): string {
 
 function isEmpty(str) {
     return (!str || str.length === 0 );
-}
-
-async function sha256(data: NodeJS.BufferSource) {
-    const buffer = await crypto.subtle.digest("SHA-256", data);
-    return new Uint8Array(buffer);
-}
-
-export function toHex(data: Uint8Array<ArrayBuffer>): string {
-    return Buffer.from(data).toString("hex");
 }
 
 export function fromHex(hex: string): Uint8Array {
@@ -831,11 +822,13 @@ export function encodeAttachmentFilename(filename: string) : {fallback: string; 
 
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const headers = new Headers();
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    if (!decryptedBlob) { 
+        return { status: 404, body: "Not Found", headers} 
+    }
 
     const { data, contentType, filename } = decryptedBlob;
-    const headers = new Headers();
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
     try {
         if (contentType) { headers.append("Content-Type", contentType); }
