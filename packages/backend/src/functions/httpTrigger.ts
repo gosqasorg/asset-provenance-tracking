@@ -1433,83 +1433,86 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     }
 }
 
+export async function postVerifyCode(request, context) {
+    // get email and code
+    const body = await request.json() as any;
+    const token = body.token;
+    const code = body.code;
+
+    context.log('postVerifyCode: Do we have token and code?')
+
+    if (!token || !code) {
+        context.error('postVerifyCode: No.')
+        context.error('postVerifyCode: returning 400')
+        return {
+            jsonBody: { error: "Token and code required" },
+            status: 400
+        }
+    }
+    context.log('postVerifyCode: Yes.')
+
+    // get the PendingVerifications table
+    const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;
+
+    // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
+    let table = 'PendingEmailVerifications'
+    const credential = new AzureNamedKeyCredential(accountName, accountKey);
+    const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+    await tableClient.createTable();  // Create if not exist, no error if it does
+
+    // look up directly by partitionKey (token) and rowKey (code)
+    let entity = null;
+    try {
+        entity = await tableClient.getEntity(token, code);
+    } catch {
+        // not found
+    }
+
+    // not found, expired - same generic msg
+    if (!entity || Date.now() > entity.expiresAt) {
+        context.error('postVerifyCode: returning 400')
+        return {
+            jsonBody: { error: "Invalid or expired code" },
+            status: 400
+        }
+    }
+
+    // get tags as array of strings if entity exists and has tags. 
+    const tags = typeof entity.tags === 'string'
+        ? z.array(z.string()).parse(JSON.parse(entity.tags))
+        : [];
+
+    await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
+
+    // Proof of concept 
+    // on success, delete pending entity and call signupForNotifications
+    await containerClient.createIfNotExists();
+    context.log('postVerifyCode: Attempting to call subscribeToNotifications')
+    const result = await subscribeToNotifications(
+        containerClient, 
+        calculateDeviceID, 
+        entity.recordKey as string, 
+        entity.email as string, 
+        tags, 
+        context
+    );
+    context.log('postVerifyCode: Returned from subscribeToNotifications to postVerifyCode')
+    context.log(result)
+    return result
+}
+
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfied
-export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entering postVerifyCode')
+export async function postVerifyCodeHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering postVerifyCodeHandler')
     try {
-        // get email and code
-        const body = await request.json() as any;
-        const token = body.token;
-        const code = body.code;
-
-        context.log('postVerifyCode: Do we have token and code?')
-
-        if (!token || !code) {
-            context.error('postVerifyCode: No.')
-            context.error('postVerifyCode: returning 400')
-            return {
-                jsonBody: { error: "Token and code required" },
-                status: 400
-            }
-        }
-        context.log('postVerifyCode: Yes.')
-
-        // get the PendingVerifications table
-        const tableUrl = accountName === "devstoreaccount1"
-            ? `http://127.0.0.1:10002/devstoreaccount1`
-            : `https://${accountName}.table.core.windows.net`;
-
-        // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
-        let table = 'PendingEmailVerifications'
-        const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
-        await tableClient.createTable();  // Create if not exist, no error if it does
-
-        // look up directly by partitionKey (token) and rowKey (code)
-        let entity = null;
-        try {
-            entity = await tableClient.getEntity(token, code);
-        } catch {
-            // not found
-        }
-
-        // not found, expired - same generic msg
-        if (!entity || Date.now() > entity.expiresAt) {
-            context.error('postVerifyCode: returning 400')
-            return {
-                jsonBody: { error: "Invalid or expired code" },
-                status: 400
-            }
-        }
-
-        // get tags as array of strings if entity exists and has tags. 
-        const tags = typeof entity.tags === 'string'
-            ? z.array(z.string()).parse(JSON.parse(entity.tags))
-            : [];
-
-        await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
-
-        // Proof of concept 
-        // on success, delete pending entity and call signupForNotifications
-        await containerClient.createIfNotExists();
-        context.log('postVerifyCode: Attempting to call subscribeToNotifications')
-        const result = await subscribeToNotifications(
-            containerClient, 
-            calculateDeviceID, 
-            entity.recordKey as string, 
-            entity.email as string, 
-            tags, 
-            context
-        );
-        context.log('postVerifyCode: Returned from subscribeToNotifications to postVerifyCode')
-        context.log(result)
-        return result
-
+        return postVerifyCode(request, context)
     } catch(error) {
-        context.error('Returning with error from postVerifyCode')
+        context.error('Returning with error from postVerifyCodeHandler')
         if (error instanceof z.ZodError) {
-            context.error('postVerifyCode: returning 400')
+            context.error('postVerifyCodeHandler: returning 400')
             context.error(error.issues)
             return {
                 jsonBody: {error: error.issues},
@@ -2362,7 +2365,7 @@ app.post("postNotificationEmail", {
 app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
-    handler: postVerifyCode
+    handler: postVerifyCodeHandler
 })
 
 app.post("notifySubscribers", {
