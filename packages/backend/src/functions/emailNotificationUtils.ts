@@ -20,6 +20,7 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
     Next:
     * Remove
     * Unsubscribe
+    * Tests: integration test for postVerifyCode
 
     Todo:
     * Create ticket: Move calculateDeviceID into its own file, generalUtils.ts, import it here, change the signatures, and also import it in httpTrigger and all others that use it (if any)
@@ -366,8 +367,8 @@ export async function subscribeToNotifications(
                 status: 400
             }
         }
-        //const exists = await blobClient.exists();  // No longer needed, fyi. 
         context.log('subscribeToNotifications: yes.')
+
 
         context.log('subscribeToNotifications: is email malformed?')
         // TODO: zod
@@ -381,12 +382,15 @@ export async function subscribeToNotifications(
         }
         context.log('subscribeToNotifications: No.')
 
+
         // Step 1/3: Get. Converts legacy in background. Returns at least this: { no_tag: [] }
         context.log('subscribeToNotifications: getting existing signup data')
         let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
+        context.log('subscribeToNotifications: got existing signup data')
+
 
         // If email is already stored return success
-        if (exists && tags.concat(['no_tag']) == getTagsFromSignupBundle(bundle, normalizedEmail)) {
+        if( (await blobClient.exists()) && tags.concat(['no_tag']) == getTagsFromSignupBundle(tagSpecificSignupBundle, normalizedEmail)) {
             context.log('subscribeToNotifications: email is already signed up for this exact set of tags. Nothing to do. 304 success')
             return {
                 jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
