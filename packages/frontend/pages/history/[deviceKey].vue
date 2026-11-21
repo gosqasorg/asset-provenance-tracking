@@ -54,8 +54,9 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 		</div>
 
 		<!-- When the screen size is less than md (< 768px ) -->
-		<div class="dropdown d-md-none nav-line">
-		<button class="btn text-left rounded-0 jump-sec" type="button" id="jump-to-mobile" data-bs-toggle="dropdown"
+		<div class="dropdown d-md-none">
+		<button class="btn text-left rounded-0 jump-sec nav-line" type="button" id="jump-to-mobile" data-bs-toggle="collapse"
+			data-bs-target="#jump-to-section-menu"
 			aria-controls="toggle" aria-expanded="false"
 			style="border: none; font-size: 18px; text-align: left; border-bottom: 3px; padding-left: 0px;">
 			<i id="toggle-right" class="fa fa-angle-right"></i>
@@ -63,7 +64,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 			Jump to section
 		</button>
 
-		<ul class="dropdown-menu rounded-0 border-0" style="width:95%; padding: 7px 34px;"
+		<ul id="jump-to-section-menu" class="collapse collapse-menu rounded-0 border-0" style="width:100%; padding: 7px 34px; margin-bottom: 0px;"
 			aria-labelledby="dropdownMenuButton">
 			<li id="dropdown-item" style="padding: 7px" v-for="header in headers" :key="header">
 			<a :href="'#' + header.id" class="py-2 h-mobile" id="item-link">{{ header.name }}</a>
@@ -79,27 +80,29 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 			class="left-col">
 
 			<!-- Offline Banner Top-->
-			<Banner v-if="displayBanner" class="banner offline-banner" style="align-items: center; display: flex">
+			<Banner v-if="displayBanner" class="banner offline-banner history-banner" style="align-items: center; display: flex">
 				<div class="danger-symbol" style="justify-content: left; font-size: 27px; margin-left: -10px;color: #fe9c9e;">&#9888;
 				</div>
-				<div style="margin-left: 10px;"><strong>You're offline:</strong> Connect to the internet to view the most recent version of this page. Your changes
-				will not be posted until you revisit this page while online.
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> 
+					Connect to the internet to view the most recent version of this page. To post your changes once online, visit any page on our site. To add to existing provenance records while offline, visit our 
+					<RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">Offline Updates page</RouterLink>.
 				</div> 
 			</Banner>
 
-			<!-- Banner to Offline History Create Page -->
+			<!-- Banner to Offline History Create Page
 			<Banner v-if="displayBanner" class="banner offline-banner" style="margin-top: 10px; align-items: center; display: flex">
 				<div class="danger-symbol" style="font-size: 27px; margin-left: -10px; color: #fe9c9e; justify-content: center;">&#9888;
 				</div>
-				<div style="margin-left: 10px;"><strong>You're offline:</strong> To add to existing provenance records while offline go to our <RouterLink to="/history/offline" @click.prevent="sendRecordKey" class="banner-link">offline creation page</RouterLink>.
+				<div style="margin-left: 10px;"><strong>You're offline:</strong> 
 				</div>
 			</Banner>
+			-->
 
 			<!-- Back Online Banner -->
-			<Banner v-if="onlineBannerToggle" class="banner online-banner" style="align-items: center; display: flex">
+			<Banner v-if="onlineBannerToggle" class="banner online-banner history-banner" style="align-items: center; display: flex">
                 <img src="../../assets/images/online-check-icon.svg" style="margin-left: -6px;">
-                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon. 
-				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>.
+                <div style="margin-left: 10px;"><strong>You're online:</strong>  Your offline changes are syncing and will be published soon.
+				<RouterLink to="/offline-edits" class="banner-link">View my offline edits</RouterLink>
 				</div>
             </Banner>
 
@@ -745,6 +748,39 @@ a:visited {
   border: none;
 }
 
+.banner-link {
+  font-size: 16px;
+  line-height: 1.5;
+  text-decoration: underline !important;
+}
+
+.history-banner {
+	margin-top: 24px;
+}
+
+.collapse-menu {
+	list-style-type: none;
+}
+
+.nav-line {
+	width: 100%;
+}
+
+#item-link:active,
+#item-link:hover {
+	font-weight: bold;
+}
+
+@media (min-width: 768px) {
+    .banner-link {
+        font-size: 18px;
+    }
+
+	.history-banner {
+		margin-top: 36px;
+	}
+}
+
 /* Dark mode version*/
 lightDarkResponsiveText {
 	color: #FFFFFF;
@@ -793,12 +829,12 @@ h1 {
 	color: #FFFFFF;
 }
 
-.dropdown-menu {
+.collapse-menu {
 	background-color: #1E2019;
 }
 
 .nav-line {
-	border-bottom: 2px solid #CCECFD;
+	border-bottom: 2px solid #CCECFD !important;
 }
 
 .scroll {
@@ -860,7 +896,7 @@ h1 {
 }
 
 .banner-link {
-	color: #CCECFD;
+	color: white;
 }
 }
 
@@ -888,12 +924,12 @@ h1 {
 	color: #1E2019;
 }
 
-.dropdown-menu {
+.collapse-menu {
 	background-color: #F1F5F9;
 }
 
 .nav-line {
-	border-bottom: 2px solid #4E3681;
+	border-bottom: 2px solid #4E3681 !important;
 }
 
 .scroll {
@@ -940,7 +976,7 @@ h1 {
 }
 
 .banner-link {
-	color: #4E3681;
+	color: black;
 }
 }
 </style>

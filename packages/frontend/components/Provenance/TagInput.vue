@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
 
     <div v-if="showSuggested">
-      <h5 class="mt-3 mb-1">Suggested Tags</h5>
+      <h5 class="mt-3">Suggested Tags</h5>
       <div class="tag-container mb-2">
         <button class="tag" type="button" v-for="tag in TagName" v-bind:style="'color: '+textColorForTag(tag)+'; background-color: '+getColorForTag(tag)+';'" 
         @click="moveTagToForm(tag)">{{ tag }}</button>
@@ -250,6 +250,11 @@ export default {
     flex: 1;
     border: none;
     outline: none;
+  }
+
+  h5 {
+    font-weight: 400;
+    margin-bottom: 16px;
   }
 
 @media (prefers-color-scheme: dark) {

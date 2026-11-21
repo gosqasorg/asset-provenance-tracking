@@ -472,7 +472,7 @@ describe("Create Records/Groups Offline", async () => {
     expect(requestsFromQueue.length).toEqual(0);
 
     // Confirm the records/groups are in the fulfilled stash
-    let fulfilledKeys = JSON.parse(localStorage.getItem('gdt-stash-fulfilled'))
+    let fulfilledKeys = JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]')
     expect(fulfilledKeys.length).toEqual(4);
 
     let fulfilledRecordKey = fulfilledKeys[0];
@@ -645,13 +645,13 @@ describe("Confirm offline edits page buttons do not interrupt the worker", async
 
     // Click on all the dismiss buttons while the worker is in the process of creating our queued record
     // Click on 'Dismiss edit' button to clear that specific published edit
-    await wrapper.find('#offline-edits-container > div:nth-of-type(3) > .key-box > button:nth-of-type(2)').trigger('click');
+    await wrapper.find('#offline-edits-container > div:nth-of-type(4) > .key-box > button:nth-of-type(2)').trigger('click');
 
     // Click 'Dismiss edit' button again to confirm
     await wrapper.find('.confirm-dismiss').trigger('click');
 
     // Test to check if 'Dismiss one edit' button is working along with confirmation button after worker started
-    expect(JSON.parse(localStorage.getItem('gdt-stash-fulfilled'))).toEqual([
+    expect(JSON.parse(localStorage.getItem('gdt-stash-fulfilled') || '[]')).toEqual([
       {
         key: "fulfilledKey2",
         data:{
