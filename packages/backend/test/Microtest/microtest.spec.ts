@@ -63,18 +63,21 @@ describe('MicroTestLand', () => {
   it("400 invalid key - non-base58 character", async () => {
 
     // containerClient, deviceKey, email, tags, context
-    let testCases = [['invalid key', 'foo@bar.com', []]]
+    let testCases = [
+      [400, ['invalid key', 'foo@bar.com', []]],
 
-    let response;
-    for(let testCase of testCases) { 
-      console.log(testCase)
+    ]
+
+    let response, testCase, testResult
+    for(let [testResult, testCase] of testCases) { 
+      console.log(testResult, testCase)
       response = await subscribeToNotifications(containerClient, ...testCase, console)
-      expect(response.status).toBe(400)
+      expect(response.status).toBe(testResult)
     }
 
-  })
+  })  // End of it()
 
-});
+});   // End of describe()
 
 
 
