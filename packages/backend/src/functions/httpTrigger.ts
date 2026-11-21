@@ -1084,6 +1084,11 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // NOTE: Once we re-implement subscribing groups to children in v4 we need to remove the call to notifySubscribers below
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -1189,6 +1194,11 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
                         method: "POST",
                         body: keyFormData,
                     })
+
+                    // NOTE: Once we re-implement subscribing groups to children we need to remove the call to notifySubscribers below
+                    // If users are subscribed to child records notify them
+                    let emailResponse = await notifySubscribers(containerClient, key, keyFormData, context);
+                    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
                 }
 
                 keysToCheck.shift();
@@ -2319,8 +2329,8 @@ app.post("notifySubscribers", {
     handler: notifySubscribersHandler
 })
 
-app.post("subscribeGroupToChildren", {
-    authLevel: 'anonymous',
-    route: 'subscribeGroupToChildren',
-    handler: subscribeGroupToChildren
-})
+// app.post("subscribeGroupToChildren", {
+//     authLevel: 'anonymous',
+//     route: 'subscribeGroupToChildren',
+//     handler: subscribeGroupToChildren
+// })
