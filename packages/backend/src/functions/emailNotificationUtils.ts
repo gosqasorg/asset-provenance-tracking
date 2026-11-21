@@ -31,7 +31,6 @@ const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 // TODO: move this into generalUtils.ts, import here and httpTrigger.
 export async function setupBlobClient(
     containerClient: ContainerClient, 
-    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
     deviceKey: string,
     context: InvocationContext) 
 {
@@ -325,7 +324,6 @@ function detectAndConvertLegacyEmailSignup(parsed, context) {
 // Status: Ready for removeEmailFromTagBundle. Working otherwise.
 export async function subscribeToNotifications(
     containerClient: ContainerClient, 
-    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
     deviceKey: string, 
     email: string, 
     tags: string[] = [],
@@ -350,7 +348,7 @@ export async function subscribeToNotifications(
         let blobName: string;
         let blobClient: BlockBlobClient;
         try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context);
+            [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context);
         } catch (error) {
             let message = `subscribeToNotifications setup failed: ${error.message}`
             context.error(message)
@@ -444,7 +442,6 @@ export async function subscribeToNotifications(
 // Todo: Convert to new return type of getExistingEmails
 export async function unsubscribeFromNotifications(
     containerClient: ContainerClient, 
-    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
     deviceKey: string, 
     emailID: string, 
     tags: string[] = [],
@@ -455,7 +452,7 @@ export async function unsubscribeFromNotifications(
     let blobName: string;
     let blobClient: BlockBlobClient;
     try {
-        [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context);
+        [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context);
     } catch (error) {
         return {
             jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
@@ -515,7 +512,6 @@ export async function unsubscribeFromNotifications(
 
 export async function notifySubscribers(
     containerClient: ContainerClient, 
-    calculateDeviceID: (key: string | Uint8Array) => Promise<string>, 
     deviceKey: string,
     formData: any, 
     context: InvocationContext
@@ -528,7 +524,7 @@ export async function notifySubscribers(
     const description = record ? record.description : "";
 
     context.log('notifySubscribers: Attempting to setup blob client')
-    const [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, deviceKey, context)
+    const [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context)
     context.log('notifySubscribers: Blob client set up')
 
     context.log('notifySubscribers: Attempting to get existing signup data.')
