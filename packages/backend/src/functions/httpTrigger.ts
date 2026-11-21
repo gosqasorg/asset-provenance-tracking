@@ -684,14 +684,6 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
     return JSON.stringify(body).length <= sizeLimit
 }
 
-
-
-/*=================  Endpoints + Endpoint handlers  =====================*/
-
-/* ----- Pseudo handlers (to be split into handler/operator) ----- */
-
-// --- GETs --- //
-
 export function errorHandler(functionName, error, context) {
 
   context.error(`Returning unsuccessfully from ${functionName}`)
@@ -761,6 +753,13 @@ export function errorHandler(functionName, error, context) {
   }
 }
 
+
+/*=================  Endpoints + Endpoint handlers  =====================*/
+
+/* ----- Pseudo handlers (to be split into handler/operator) ----- */
+
+// --- GETs --- //
+
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         context.log("Entering getProvenance()")
@@ -802,12 +801,16 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
                 ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
             } catch (error) {
                 context.error('Returning with error from getProvenance(): ', error)
-                if (error.cause == 500) {
+                if (error.cause == 500) { // 500 specifically
                     return { 
                         status: 500,
                         jsonBody: { error: 'Internal Server Error' }
                     }
-                } else {
+                } else { // Arbitrary other 500s
+                    context.error('getProvenance(): error was: ')
+                    context.error(JSON.stringify(error))
+                    context.error(error.cause)
+                    context.error(error.message)
                     // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
                     return {
                         status: 500,
