@@ -3,7 +3,21 @@
 import bs58 from 'bs58';
 
 export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
-    const theKey = bs58.decode(key);
+    // Can throw 'Non-base58 character'
+    let theKey;
+    try {
+        theKey = bs58.decode(key);
+    } catch(error) {
+        console.error('decodeKey: encountered error')
+        console.error(error)
+        if(error.message.includes('Non-base58 character')) {
+            throw new Error('Non-base58 character passed as deviceKey', {cause: 400})
+        } else {
+            console.error('decodeKey: unidentified error occurred')
+            console.error(error)
+            throw new Error('Internal Server Error', {cause: 500})
+        }
+    }
 
     switch (theKey.length) {
         case 16:

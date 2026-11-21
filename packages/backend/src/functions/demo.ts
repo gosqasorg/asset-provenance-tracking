@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 
 import { start } from 'node:repl';
+import fs from 'node:fs';
+
+function writeBundle(theObj) {
+    fs.writeFileSync('./tagBundle.json', JSON.stringify(theObj, null, 2));
+}
+
+function readBundle() {
+    return JSON.parse(fs.readFileSync('./tagBundle.json', 'utf8'))
+}
+
 
 function convertEmailSetsToTagBundle(theEmailSet, theEmailIdSet) {
     let theTagBundle = { no_tag: [] }
@@ -45,17 +55,6 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
 
     return the_bundle
     
-}
-
-
-
-import fs from 'node:fs';
-function writeBundle(theObj) {
-    fs.writeFileSync('./tagBundle.json', JSON.stringify(theObj, null, 2));
-}
-
-function readBundle() {
-    return JSON.parse(fs.readFileSync('./tagBundle.json', 'utf8'))
 }
 
 

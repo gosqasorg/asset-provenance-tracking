@@ -393,7 +393,7 @@ export async function subscribeToNotifications(
         context.log('subscribeToNotifications: cleaning the slate of the present email signup, if any')
         // Step 2/3: Remove
         // Note: this call should be moved into addTagSpecificSignupDataToBundle()
-        // tagBundle = removeEmailFromTagBundle(tagSpecificSignupBundle)
+        // tagBundle = removeEmailFromTagBundle(tagSpecificSignupBundle, email)
         context.log('subscribeToNotifications: email removed from signup data')
         
 
