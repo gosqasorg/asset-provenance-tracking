@@ -751,8 +751,9 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
             deviceKey = decodeKey(request.params.deviceKey);
             deviceID = await calculateDeviceID(deviceKey);
         } catch (error) {
-            context.error("Returning from getProvenance(): bad request")
-            return { status: 400, body: error.message };
+            context.error("Returning from getProvenance(): invalid deviceKey")
+            context.error(error.message)
+            return { status: 400, jsonBody: "Invalid deviceKey" };
         }
    
         context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
@@ -921,7 +922,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             deviceKey = decodeKey(request.params.deviceKey);
             deviceID = await calculateDeviceID(deviceKey);
         } catch (error) {
-            return { status: 400, body: error.message };
+            return { status: 400, jsonBody: "Invalid deviceKey" };
         }
 
         await containerClient.createIfNotExists();
