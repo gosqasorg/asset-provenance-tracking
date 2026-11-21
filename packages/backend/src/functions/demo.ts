@@ -210,6 +210,23 @@ console.log('\n\n--- removeEmail test ---\n')
 console.log('Removing email foo@bar.com from: \n')
 console.log(bundle)
 console.log('\n\nResult:\n')
-console.log(removeTagSpecificDataFromBundle(bundle, "foo@bar.com"))
+bundle = removeTagSpecificDataFromBundle(bundle, "foo@bar.com")
+console.log(bundle)
 
+function cleanupEmptyTagsFromSignupData(signups) {
+    for(let tag in signups) {
+        if(tag != 'no_tag' && !signups[tag].length) {
+            // Do not permit the signup data to be polluted with chaff
+            delete signups[tag]
+        }
+    }
 
+    return signups
+} 
+
+console.log('\n\n--- cleanupEmptyTags test ---\n')
+console.log('Cleaning up empty tags from: \n')
+console.log(bundle)
+console.log('\n\nResult:\n')
+bundle = cleanupEmptyTagsFromSignupData(bundle)
+console.log(bundle)
