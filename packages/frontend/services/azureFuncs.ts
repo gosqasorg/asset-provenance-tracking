@@ -220,6 +220,27 @@ export async function getServerResponseStats() {
     return await response.json();
 }
 
+export async function getServerResponseTimeSeries(): Promise<{
+    points: { x: number; y: number; requestCount?: number }[];
+    updatedAt: string | null;
+}> {
+    const baseUrl = useRuntimeConfig().public.baseUrl;
+    const response = await fetch(`${baseUrl}/stats/serverResponseTime`, {
+        method: "GET",
+    });
+
+    if (!response.ok) {
+        throw new Error('Unable to load server response time data', { cause: response.status });
+    }
+
+    const data = await response.json();
+    if (!data || !Array.isArray(data.points)) {
+        throw new Error('Unexpected server response time data format', { cause: 500 });
+    }
+
+    return { points: data.points, updatedAt: data.updatedAt ?? null };
+}
+
 async function fetchUrl(url: string, formData?: FormData) {
     let response = undefined;
     const MAX_RETRIES = 3;

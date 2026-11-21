@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 import HeatmapVisualization from '~/pages/heatmap.vue'
 import UserAgentVisualization from '~/pages/dev/user-agents.vue'
 import ServerResponseTimes from './viz/server-response-times.vue'
+import ServerResponseTimeVisualization from '~/pages/viz/server-response-times-line-chart.vue'
 
 const environment = ((useRuntimeConfig().public.baseUrl).includes("prod")) ? 'prod' : 'dev'
 const visualizationsFeatureFlag = environment === 'dev'
@@ -43,6 +44,9 @@ const visualizationsFeatureFlag = environment === 'dev'
             </div>
             <div>
                 <ServerResponseTimes />
+            </div>
+            <div class="container py-4">
+                <ServerResponseTimeVisualization embedded />
             </div>
         </section>
 

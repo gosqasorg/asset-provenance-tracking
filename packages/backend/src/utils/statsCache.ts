@@ -280,10 +280,63 @@ async function setServerResponseStats(context: InvocationContext): Promise<void>
     }
 }
 
+interface ServerResponseTime {
+    points: Array<{
+        x: number;
+        y: number;
+        requestCount?: number;
+    }>;
+    updatedAt: string | null;
+}
+
+const serverResponseTimeStore: ServerResponseTime = {
+    points: [],
+    updatedAt: null,
+};
+
+// Cache average response times and request counts by time interval.
+async function setServerResponseTimeSeries(context: InvocationContext): Promise<void> {
+    try {
+        const rows = await runQuery(`
+            AppRequests
+            | where TimeGenerated > ago(365d)
+            | summarize avgRequestDuration=avg(DurationMs), requestCount=count() by bin(TimeGenerated, 10m)
+            | project TimeGenerated, avgRequestDuration, requestCount
+        `, context) as [string, number, number?][];
+
+        if (!rows) {
+            throw new Error('Server response time query returned no result');
+        }
+
+        const points = rows
+            .map(([timeGenerated, avgRequestDuration, requestCount]) => ({
+                x: Date.parse(timeGenerated),
+                y: Number(avgRequestDuration),
+                requestCount: requestCount == null ? undefined : Number(requestCount),
+            }))
+            .filter(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
+            .filter(({ requestCount }) => requestCount === undefined || (Number.isFinite(requestCount) && requestCount >= 0))
+            .sort((a, b) => a.x - b.x);
+
+        serverResponseTimeStore.points = points;
+        serverResponseTimeStore.updatedAt = new Date().toISOString();
+
+        context.log(`Updated server response time data with ${points.length} points`);
+    } catch (error) {
+        context.error("setServerResponseTimeSeries error:", error);
+    }
+}
+
 app.timer('setServerResponseStats', {
     schedule: '0 0 * * * *',
     runOnStartup: true,
     handler: (_myTimer, context) => setServerResponseStats(context)
+});
+
+app.timer('setServerResponseTimeSeries', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: (_myTimer, context) => setServerResponseTimeSeries(context)
 });
 
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -294,4 +347,21 @@ app.get("getServerResponse", {
     authLevel: 'anonymous',
     route: 'stats/serverResponse',
     handler: getServerResponseStats
+})
+
+async function getServerResponseTime(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    if (!serverResponseTimeStore.updatedAt) {
+        return {
+            status: 503,
+            jsonBody: { error: 'Server response time data is not available yet' },
+        };
+    }
+
+    return { status: 200, jsonBody: serverResponseTimeStore };
+}
+
+app.get('getServerResponseTime', {
+    authLevel: 'anonymous',
+    route: 'stats/serverResponseTime',
+    handler: getServerResponseTime,
 })
