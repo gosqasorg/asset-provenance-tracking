@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeEncodedDeviceKey } from '../../../backend/src/utils/keyFuncs';
-import { getProvenanceOffline, confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, updateOfflineFeatureFlag, offlineQueueConsumerWorker } from '~/services/azureFuncs';
+import { getAttachment, getProvenanceOffline, confirmRequestFulfilled, stashOfflineRequest, removeOfflineRequest, getFirstQueueItem, removeFirstQueueItem, postProvenance, getProvenance, updateOfflineFeatureFlag, offlineQueueConsumerWorker } from '~/services/azureFuncs';
 import OfflineEdits from '~/pages/offline-edits.vue';
 import Index from '~/pages/index.vue';
 import CreateDevice from '~/components/Forms/CreateDevice.vue';
@@ -121,6 +121,24 @@ describe("Offline Function Tests", () => {
       expect(resultNewRecord).toBe(true)
     })
 });
+
+// test for the getAttachment function
+describe("getAttachment decoding", () => {
+    it('decodes encoded attachment header correctly', async () => {
+    const originalName = '🎲.png';
+    mockFetch.mockResolvedValue({
+      headers: new Headers({'Attachment-Name': encodeURIComponent(originalName)}),
+      blob: () => Promise.resolve(new Blob(['data'], { type: 'image/png' }))
+    });
+
+    const key = await makeEncodedDeviceKey();
+    const result = await getAttachment('http://test', key, 'testid');
+
+    expect(result.fileName).toBe(originalName);
+    
+  });
+
+})
 
 describe("Stash and Remove Offline Requests", () => {
   it("Stash and Remove from Queue Stash", async () => {
