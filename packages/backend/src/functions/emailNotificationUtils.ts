@@ -2,6 +2,7 @@ import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
 import { calculateDeviceID } from "./httpTriggerUtils";
+import * as z from 'zod'
 
 const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
 
@@ -38,7 +39,7 @@ export async function setupBlobClient(
 
     context.log('setupBlobClient: Called')
     // 0: Setup id         // Transitively throws error originating in decodeKey
-    const deviceID = await calculateDeviceID(deviceKey);
+    const deviceID = await calculateDeviceID(deviceKey, context);
 
     // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
@@ -343,6 +344,17 @@ export async function subscribeToNotifications(
     context.log('SubscribeToNotifications: Called')
 
     try {
+        context.log('subscribeToNotifications: is email malformed?')
+        const emailValidationResult = z.email().safeParse(email)
+        if(!emailValidationResult.success) {
+            context.error('subscribeToNotifications: got invalid email')
+            return {
+                jsonBody: { message: emailValidationResult.error.issues },
+                status: 400
+            }
+        }
+        context.log('subscribeToNotifications: No.')
+
         context.log('subscribeToNotifications: can we get the blob client?')
         // Step 1: Setup the blobClient, return API response
         let blobName: string;
@@ -350,27 +362,25 @@ export async function subscribeToNotifications(
         try {
             [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context);
         } catch (error) {
+            context.error('subscribeToNotifications: returning with error')
             let message = `subscribeToNotifications setup failed: ${error.message}`
             context.error(message)
+
+            if('cause' in error && error.cause == 400) {
+                return {
+                    jsonBody: { message: error.message },
+                    status: 400
+                }
+            }
+
+            context.error('subscribeToNotifications: unidentified error detected')
+            context.error(error)
             return {
-                jsonBody: { message: message },
-                status: 400
+                jsonBody: { message: 'Internal Server Error'},
+                status: 500
             }
         }
         context.log('subscribeToNotifications: yes.')
-
-
-        context.log('subscribeToNotifications: is email malformed?')
-        // TODO: zod
-        // Perform rough email validation 
-        const normalizedEmail = (email ?? "").trim().toLowerCase();
-        if (!normalizedEmail) {
-            return { 
-                jsonBody: { message: "Email not provided or email malformed" }, 
-                status: 400
-            }
-        }
-        context.log('subscribeToNotifications: No.')
 
 
         // Step 1/3: Get. Converts legacy in background. Returns at least this: { no_tag: [] }
@@ -380,7 +390,7 @@ export async function subscribeToNotifications(
 
 
         // If email is already stored return success
-        if( (await blobClient.exists()) && tags.concat(['no_tag']) == getTagsFromSignupBundle(tagSpecificSignupBundle, normalizedEmail)) {
+        if( (await blobClient.exists()) && tags.concat(['no_tag']) == getTagsFromSignupBundle(tagSpecificSignupBundle, email)) {
             context.log('subscribeToNotifications: email is already signed up for this exact set of tags. Nothing to do. 304 success')
             return {
                 jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
