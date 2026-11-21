@@ -54,17 +54,38 @@ import { subscribeToNotifications } from '../../src/functions/emailNotificationU
 
 /* ========================= The Test ============================ */
 
+// TODO: Test for nonexistent key, ie, getprov before
+
 // Note: no need to delete the enclosing describe block
 // Note: it("", async () => {})
 describe('MicroTestLand', () => {
 
   const context = console
 
-  it("400 invalid key - non-base58 character", async () => {
+  it("400 invalid key + malformed email", async () => {
 
     // containerClient, deviceKey, email, tags, context
     let testCases = [
-      [400, ['invalid key', 'foo@bar.com', []]],
+      [400, ['0OIL',                   'invalid email', []]],  // Invalid email
+      [400, ['0OIL',                   'foo@bar.com', []]],  // Non-base58 chars
+      [400, ['1',                      'foo@bar.com', []]],  // Invalid key length 
+      //[400, ['1234567891123456789112', 'foo@bar.com', []]],  // Invalid email 
+    ]
+
+    let response, testCase, testResult
+    for(let [testResult, testCase] of testCases) { 
+      console.log(testResult, testCase)
+      response = await subscribeToNotifications(containerClient, ...testCase, console)
+      expect(response.status).toBe(testResult)
+    }
+
+  })  // End of it()
+
+  it("400 invalid key", async () => {
+
+    // containerClient, deviceKey, email, tags, context
+    let testCases = [
+      //[200, ['1234567891123456789112', 'foo@bar.com', []]],       
 
     ]
 
