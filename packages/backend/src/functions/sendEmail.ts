@@ -34,6 +34,12 @@ export async function sendEmail(
     throw "Missing required parameter(s).";
   }
 
+  context.log(from_address)
+  context.log(to_address)
+  context.log(subject)
+  context.log(htmlMessage)
+  context.log(displayName)
+
   const POLLER_WAIT_TIME = 10
   try {
     const message = {

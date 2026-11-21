@@ -236,12 +236,17 @@ class StatsCache {
 
 export const usageStatsCache = new StatsCache();
 
+// TODO: Time triggers go in httpTrigger. We can't have them all over the place.
 // Timer trigger to refresh usage stats every hour, and on startup.
-app.timer('refreshUsageStats', {
-    schedule: '0 0 * * * *',
-    runOnStartup: true,
-    handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
-});
+
+if(!process.env['backend_url'].includes('local')) {
+    app.timer('refreshUsageStats', {
+        schedule: '0 0 * * * *',
+        runOnStartup: true,
+        handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
+    });
+}
+
 
 // Timer trigger and endpoint to get and return server response statistics
 let serverResponseTimes = {
@@ -280,18 +285,23 @@ async function setServerResponseStats(context: InvocationContext): Promise<void>
     }
 }
 
-app.timer('setServerResponseStats', {
-    schedule: '0 0 * * * *',
-    runOnStartup: true,
-    handler: (_myTimer, context) => setServerResponseStats(context)
-});
+// TODO: Timer registrations go in httpTrigger. Export from here, import there, and move this into there.
+if(!process.env['backend_url'].includes('local')) {
+    app.timer('setServerResponseStats', {
+        schedule: '0 0 * * * *',
+        runOnStartup: true,
+        handler: (_myTimer, context) => setServerResponseStats(context)
+    });
+}
 
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     return { body: JSON.stringify(serverResponseTimes), status: 200 };
 }
 
+// TODO: Endpoint registrations go in httpTrigger. Export from here, import there, and move this into there.
 app.get("getServerResponse", {
     authLevel: 'anonymous',
     route: 'stats/serverResponse',
     handler: getServerResponseStats
 })
+

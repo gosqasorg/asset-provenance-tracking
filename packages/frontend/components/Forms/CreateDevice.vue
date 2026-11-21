@@ -36,30 +36,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
             <ProvenanceTagInput v-model="tags" @keydown.enter.prevent @updateTags="handleUpdateTags"/>
 
-            <!-- Subscribe to tag notifications -->
-            <div v-if="onDev">
-                <div class="my-3">
-                    <h4>
-                        <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
-                    </h4>
-
-                    <div v-if="notifyTags">
-                        <input
-                            type="email"
-                            class="form-control"
-                            v-model="tagsEmailInput"
-                            required placeholder="Email"
-                            @keyup.enter=""
-                    />
-                    </div>
-
-                    <ProvenanceTagInput v-if="notifyTags" v-model="emailTags" @keydown.enter.prevent @updateTags="handleUpdateEmailTags" 
-                        tagListID="emailTagsList" inputID="emailInputField" :showSuggested="false" placeholder="Tag(s) for Notifications"/>
-
-                    <div class="mt-2 tags-note" v-if="notifyTags">You'll be notified if the above tag(s) are added to this record.</div>
-                </div>
-            </div>
-
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
                 <h4>
