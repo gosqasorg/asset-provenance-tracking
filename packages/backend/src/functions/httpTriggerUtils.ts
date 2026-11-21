@@ -1,5 +1,9 @@
 // Todo: rename this "general utils"
 
+/*
+ * This file is for functions that are imported in at least two files
+ */
+
 import bs58 from 'bs58';
 
 export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>, context): Promise<string> {
@@ -41,7 +45,7 @@ export function decodeKey(key: string, context): Uint8Array<ArrayBuffer> {
     }
 }
 
-async function sha256(data: NodeJS.BufferSource, context) {
+export async function sha256(data: NodeJS.BufferSource, context) {
     context.log('sha256: Called.')
     const buffer = await crypto.subtle.digest("SHA-256", data);
     return new Uint8Array(buffer);
