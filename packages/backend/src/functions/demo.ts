@@ -164,67 +164,6 @@ function getEmailGivenEmailID(id, bundle) {
 console.log("is the email for id 12345 foo@bar.com?")
 console.log(getEmailGivenEmailID(12345, bundle))
 
-function removeTagSpecificDataFromBundle(the_bundle, theEmail) {
-    // Note: this is an error case, so best to throw an error. We don't want to say successfully unsubscribed and be wrong. 
-    if(!theEmail) {
-        console.dir("No email provided.")
-        // console.dir("This record does not contain any tag-specific data.")
-        return the_bundle
-    }
-
-
-    // Going for something like:
-    //for(tag of Object.keys(the_bundle)) { 
-    //  the_bundle.tag = the_bundle.tag.filter(...)
-    //}
-
-    /*
-    for(let i = 0; i < theTags.length; i ++) {
-        let currTag = theTags[i]
-        
-        // try Object.hasOwn(the_bundle, currTag) as property check
-        if(!(currTag in the_bundle)) {
-            //console.log("This tag has not received any subscriptions.")
-            continue
-        }
-
-        // if(email ){}
-        // !!! .filter() for duplicates !!!
-        for(let n in the_bundle[currTag]){
-            let emailPair = the_bundle[currTag][n]
-            console.log(emailPair)
-
-            let x = []
-            if(theEmail == emailPair.email) {
-                x.push(n)
-                // (tags.indexOf(tag) < 0)
-                // toSpliced() could possibly be used for deep copies
-                console.log("hit:", theEmail, emailPair.email)
-            } else {
-                //console.log("This user has not requested notifications from this tag")
-                continue
-            }
-        }
-    }
-    */
-
-
-    for(let tag in the_bundle) {
-        let currTag = the_bundle[tag]
-
-        // console.log("before", currTag)
-        currTag = currTag.filter((pair) => pair.email !== theEmail)
-        // console.log("after", currTag)
-        the_bundle[tag] = currTag
-    }
-    return the_bundle
-}
-
-// removeTagSpecificDataFromBundle(bundle, "foo@bar.com")
-console.log(removeTagSpecificDataFromBundle(bundle, "foo@bar.com"))
-
-
-
 function getEmailsForTheseTags(the_bundle, tags) {
     let pairs = [...the_bundle.no_tag]  // They start as [{ email: ..., id: ... } ...], ie, pairs
 
@@ -247,3 +186,30 @@ console.log('\n\n--- getEmailsForTheseTags test ---\n')
 console.log(bundle)
 let these_emails = getEmailsForTheseTags(bundle, ['wizard', 'bamboo', 'foobar'])
 console.log(these_emails)
+
+function removeTagSpecificDataFromBundle(the_bundle, theEmail) {
+
+    // We may want to remove this, depending on the context.
+    if(!theEmail) {
+        console.dir("No email provided.")
+        // console.dir("This record does not contain any tag-specific data.")
+        return the_bundle
+        throw new Error('removeTagSpecificDataFromBundle: received no email', {cause: 500})
+    }
+
+    for(let tag in the_bundle) {
+        let currTag = the_bundle[tag]
+        currTag = currTag.filter((pair) => pair.email !== theEmail)
+        the_bundle[tag] = currTag
+    }
+
+    return the_bundle
+}
+
+console.log('\n\n--- removeEmail test ---\n')
+console.log('Removing email foo@bar.com from: \n')
+console.log(bundle)
+console.log('\n\nResult:\n')
+console.log(removeTagSpecificDataFromBundle(bundle, "foo@bar.com"))
+
+
