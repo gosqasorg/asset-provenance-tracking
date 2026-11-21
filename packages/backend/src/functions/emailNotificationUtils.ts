@@ -63,7 +63,7 @@ export async function notifySubscribers(containerClient: ContainerClient, device
     }
 }
 
-export async function setupBlobClient(containerClient: ContainerClient, deviceKey: string) {
+export async function setupBlobClient(containerClient: ContainerClient, calculateDeviceID: (key: string | Uint8Array) => Promise<string>, deviceKey: string, context) {
     // 0: Setup id
     const deviceID = await calculateDeviceID(deviceKey);
 
@@ -75,11 +75,11 @@ export async function setupBlobClient(containerClient: ContainerClient, deviceKe
     return [blobName, blobClient] as const;
 }
 
-export async function getExistingEmails(blobClient: BlockBlobClient) {
+export async function getExisitingEmails(exists: boolean, blobClient: BlockBlobClient) {
     // Get all the emails and ids currently stored in the blob
     let existingEmails: string[] = [];
     let existingEmailIDs: string[] = [];
-    const exists = await blobClient.exists();
+    exists = await blobClient.exists();
 
     if (exists) {
         const buffer = await blobClient.downloadToBuffer();
