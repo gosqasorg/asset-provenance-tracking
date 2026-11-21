@@ -1,7 +1,7 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
-import { calculateDeviceID } from "./httpTrigger.js";
+import { calculateDeviceID } from "./httpTriggerUtils";
 
 const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
 
@@ -289,14 +289,6 @@ function getSubscribedEmailsForTheseTags(the_bundle, tags) {
         pairs = [...pairs, ...the_bundle[tag]]
     }
 
-/*
-    let sendTo = []
-    for(let pair of pairs) {
-        console.log(pair)
-        sendTo.push(pair.email)
-    }
-*/
-    //return [...(new Set(sendTo))]
     return [...(new Set(pairs))]
 }
 

@@ -1,5 +1,4 @@
  // Working
-import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
@@ -71,6 +70,9 @@ interface NamedBlob {
 
 /*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts)  ============*/
 
+
+import { decodeKey, calculateDeviceID } from './httpTriggerUtils'
+
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
     // where the id is that last part (before the last slash)
@@ -92,26 +94,6 @@ export function toHex(data: Uint8Array<ArrayBuffer>): string {
 
 export function fromHex(hex: string): Uint8Array {
     return new Uint8Array(Buffer.from(hex, 'hex'));
-}
-
-export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
-    const theKey = bs58.decode(key);
-
-    switch (theKey.length) {
-        case 16:
-        case 24:
-        case 32:
-            return theKey as Uint8Array<ArrayBuffer>
-        default:
-            throw new Error(`Invalid Key Length ${theKey.length}`, { cause: 400 });
-    }
-}
-
-export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>): Promise<string> {
-    // if key is a string, convert it to a buffer
-    key = typeof key === 'string' ? decodeKey(key) : key;
-    const hash = await sha256(key);
-    return toHex(hash);
 }
 
 function fnv1(input: Uint8Array): bigint {
@@ -1434,13 +1416,18 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
 }
 
 export async function postVerifyCode(request, context) {
+    /*
+     * Setup for, and call, subscribeToNotifications
+     */ 
+
+    context.log('postVerifyCode: Called.')
+
     // get email and code
     const body = await request.json() as any;
     const token = body.token;
     const code = body.code;
 
     context.log('postVerifyCode: Do we have token and code?')
-
     if (!token || !code) {
         context.error('postVerifyCode: No.')
         context.error('postVerifyCode: returning 400')
@@ -1472,6 +1459,7 @@ export async function postVerifyCode(request, context) {
 
     // not found, expired - same generic msg
     if (!entity || Date.now() > entity.expiresAt) {
+        // Todo: delete row
         context.error('postVerifyCode: returning 400')
         return {
             jsonBody: { error: "Invalid or expired code" },
@@ -1486,8 +1474,6 @@ export async function postVerifyCode(request, context) {
 
     await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
 
-    // Proof of concept 
-    // on success, delete pending entity and call signupForNotifications
     await containerClient.createIfNotExists();
     context.log('postVerifyCode: Attempting to call subscribeToNotifications')
     const result = await subscribeToNotifications(
@@ -1500,6 +1486,9 @@ export async function postVerifyCode(request, context) {
     );
     context.log('postVerifyCode: Returned from subscribeToNotifications to postVerifyCode')
     context.log(result)
+
+    // Todo: delete row from signup table
+
     return result
 }
 
