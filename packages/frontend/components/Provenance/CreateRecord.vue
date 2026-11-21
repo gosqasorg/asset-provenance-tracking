@@ -398,7 +398,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     try {
                         console.log("Adding to group...", this.groupKey);
                         await addToGroup(this.recordKey, this.groupKey, records, this.pictures || []);
-                        await subscribeGroupToChildren(this.groupKey, this.recordKey, this.tags);
+                        // await subscribeGroupToChildren(this.groupKey, this.recordKey, this.tags);
                     } catch (error) {
                         console.error('Error adding to group:', error);
                         this.$snackbar.add({
@@ -431,9 +431,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     if (this.newChildKeys.length > 0) {
                         await addChildKeys(this.recordKey, records, this.newChildKeys, []);
 
-                        for (const childKey of this.newChildKeys) {
-                            await subscribeGroupToChildren(this.recordKey, childKey, []);
-                        }
+                        // for (const childKey of this.newChildKeys) {
+                        //     await subscribeGroupToChildren(this.recordKey, childKey, []);
+                        // }
                     } else {
                         this.$snackbar.add({
                             type: 'warning',

@@ -568,16 +568,17 @@ export async function getBrowserStats() {
     }
 }
 
-export async function subscribeGroupToChildren(groupKey: string, childKey: string, tags: string[]) {
-    const baseUrl = useRuntimeConfig().public.baseUrl;
-    const response = await fetch(`${baseUrl}/subscribeGroupToChildren`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupKey, childKey, tags }),
-    });
+// NOTE: Temporarily commented out until v4
+// export async function subscribeGroupToChildren(groupKey: string, childKey: string, tags: string[]) {
+//     const baseUrl = useRuntimeConfig().public.baseUrl;
+//     const response = await fetch(`${baseUrl}/subscribeGroupToChildren`, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ groupKey, childKey, tags }),
+//     });
     
-    if (response.status != 200) {
-        console.log("subscribeGroupToChildren Error:", response)
-        throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
-    }
-}
+//     if (response.status != 200) {
+//         console.log("subscribeGroupToChildren Error:", response)
+//         throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
+//     }
+// }

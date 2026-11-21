@@ -529,50 +529,50 @@ describe('postResendCode', () => {
     });
 }); 
 
-describe('subscribeGroupToChildren', () => {
-	let mockTable: ReturnType<typeof makeMockTableInstance>;
-    const ctx = { log: vi.fn(), error: vi.fn() } as any;
+// describe('subscribeGroupToChildren', () => {
+// 	let mockTable: ReturnType<typeof makeMockTableInstance>;
+//     const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
-    beforeEach(() => {
-        mockTable = makeMockTableInstance();
-        vi.mocked(TableClient).mockImplementation(() => mockTable as any);
-        vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
-    });
+//     beforeEach(() => {
+//         mockTable = makeMockTableInstance();
+//         vi.mocked(TableClient).mockImplementation(() => mockTable as any);
+//         vi.mocked(sendEmail).mockResolvedValue({ status: 'Succeeded' });
+//     });
 
-	// missing group/child key
-	it('returns 400 when group key is missing', async () => {
-		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM" }) } as any;
-        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
-        expect(res.status).toBe(400);
-	});
+// 	// missing group/child key
+// 	it('returns 400 when group key is missing', async () => {
+// 		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM" }) } as any;
+//         const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+//         expect(res.status).toBe(400);
+// 	});
 
-	it('returns 400 when child key is missing', async () => {
-		const req = { json: async () => ({ groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
-		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
-		expect(res.status).toBe(400);
-    });
+// 	it('returns 400 when child key is missing', async () => {
+// 		const req = { json: async () => ({ groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+// 		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+// 		expect(res.status).toBe(400);
+//     });
 
-	// invalid group/child key
-	it('returns 400 when group key is invalid', async () => {
-		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "badKey" }) } as any;
-        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
-        expect(res.status).toBe(400);
-    });
+// 	// invalid group/child key
+// 	it('returns 400 when group key is invalid', async () => {
+// 		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "badKey" }) } as any;
+//         const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+//         expect(res.status).toBe(400);
+//     });
 
-	it('returns 400 when child key is invalid', async () => {
-		// mock child key validation failure in subscribeToNotifications (setupBlobClient)
-		vi.spyOn(emailNotificationUtils, 'subscribeToNotifications').mockResolvedValueOnce(
-			{jsonBody: {message: "subscribeToNotifications setup failed: Invalid Key Length"}, status: 400}
-		);
-		const req = { json: async () => ({ childKey: "badKey", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
-        const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
-        expect(res.status).toBe(400);
-    });
+// 	it('returns 400 when child key is invalid', async () => {
+// 		// mock child key validation failure in subscribeToNotifications (setupBlobClient)
+// 		vi.spyOn(emailNotificationUtils, 'subscribeToNotifications').mockResolvedValueOnce(
+// 			{jsonBody: {message: "subscribeToNotifications setup failed: Invalid Key Length"}, status: 400}
+// 		);
+// 		const req = { json: async () => ({ childKey: "badKey", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+//         const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+//         expect(res.status).toBe(400);
+//     });
 
-	// valid request
-	it('returns 200 when all required fields are present and valid', async () => {
-		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
-		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
-		expect(res.status).toBe(200);
-	});
-});
+// 	// valid request
+// 	it('returns 200 when all required fields are present and valid', async () => {
+// 		const req = { json: async () => ({ childKey: "BsXYML2pKp7kLTbNPPs2VM", groupKey: "L9Ln52Gs5XEgBePEhoGvb7" }) } as any;
+// 		const res = await httpTrigger.subscribeGroupToChildren(req, ctx);
+// 		expect(res.status).toBe(200);
+// 	});
+// });

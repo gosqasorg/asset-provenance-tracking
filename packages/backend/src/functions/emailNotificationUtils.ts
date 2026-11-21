@@ -163,7 +163,10 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
          - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */
 
-    let keysToCheck = [deviceKey];
+    // NOTE: The below line of code is temporary until we implement subscribe group to children in v4
+    const key = deviceKey;
+
+    // let keysToCheck = [deviceKey];
 
     // Confirm the email exists
     const normalizedEmail = (email ?? "").trim().toLowerCase();
@@ -172,19 +175,19 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
     }
 
     // Loop through record/children keys and subscribe to all of them
-    while (keysToCheck.length != 0) {
+    // while (keysToCheck.length != 0) {
         // Add any children of the current key to the list to subscribe to
-        let key = keysToCheck[0];
-        let uniqueChildKeys: string[];
-        try {
-            uniqueChildKeys = await getChildKeys(key, deviceKey);
-        } catch (error) {
-            return {
-                jsonBody: { message: `subscribeToNotifications failed to get child keys: ${error.message}` },
-                status: 400
-            }
-        }
-        keysToCheck = keysToCheck.concat(uniqueChildKeys);
+        // let key = keysToCheck[0];
+        // let uniqueChildKeys: string[];
+        // try {
+        //     uniqueChildKeys = await getChildKeys(key, deviceKey);
+        // } catch (error) {
+        //     return {
+        //         jsonBody: { message: `subscribeToNotifications failed to get child keys: ${error.message}` },
+        //         status: 400
+        //     }
+        // }
+        // keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
         let blobName: string;
@@ -202,8 +205,14 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
 
         // Add the specified email to the set, if the email was already stored then move on to the next key to check
         if (emailSet.has(normalizedEmail)) {
-            keysToCheck.shift();
-            continue;
+            // keysToCheck.shift();
+            // continue;
+
+            // NOTE: The below return is temporary until we implement subscribe group to children in v4
+            return {
+                jsonBody: { message: "Success", name: blobName },
+                status: 200
+            };
         }
 
         emailSet.add(normalizedEmail);
@@ -232,8 +241,8 @@ export async function subscribeToNotifications(containerClient: ContainerClient,
             }
         }
 
-        keysToCheck.shift();
-    }
+        // keysToCheck.shift();
+    // }
 
     return {
         jsonBody: { message: "Success" },
@@ -255,7 +264,7 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     }
     
     // Get the email that corresponds to the given email id
-    let keysToCheck = [deviceKey];
+    // let keysToCheck = [deviceKey];
     const [emailSet, emailIDSet] = await getExistingEmails(blobClient);
 
     // Confirm the emailID/email exists
@@ -268,36 +277,42 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
     const normalizedEmail = (email ?? "").trim().toLowerCase();
 
     // Loop through record/children keys and unsubscribe from all of them
-    while (keysToCheck.length != 0) {
+    // while (keysToCheck.length != 0) {
         // Add any children of the current key to the list to unsubscribe from
-        let key = keysToCheck[0];
-        let uniqueChildKeys = await getChildKeys(key, deviceKey);
-        keysToCheck = keysToCheck.concat(uniqueChildKeys);
+        // let key = keysToCheck[0];
+        // let uniqueChildKeys = await getChildKeys(key, deviceKey);
+        // keysToCheck = keysToCheck.concat(uniqueChildKeys);
 
         // Setup the blobClient and get emails subscribed to the record
-        let blobName: string;
-        let blobClient: BlockBlobClient;
-        try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, key);
-        } catch (error) {
-            return {
-                jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
-                status: 400
-            }
-        }
+        // let blobName: string;
+        // let blobClient: BlockBlobClient;
+        // try {
+        //     [blobName, blobClient] = await setupBlobClient(containerClient, key);
+        // } catch (error) {
+        //     return {
+        //         jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
+        //         status: 400
+        //     }
+        // }
 
-        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
+        // let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
 
         // Check if the email is subscribed to the child record
-        const emailIndex = Array.from(emailSet).indexOf(email);
+        // const emailIndex = Array.from(emailSet).indexOf(email);
         if (emailIndex < 0) {
-            keysToCheck.shift();
-            continue
+            // keysToCheck.shift();
+            // continue;
+
+            // NOTE: The below return is temporary until we implement subscribe group to children in v4
+            return {
+                jsonBody: { message: "Success", name: blobName },
+                status: 200
+            };
         }
 
         // Get the child record's id
-        const existingEmailIDs = Array.from(emailIDSet);
-        const emailID = existingEmailIDs[emailIndex];
+        // const existingEmailIDs = Array.from(emailIDSet);
+        // const emailID = existingEmailIDs[emailIndex];
 
         // Remove the specified email and id from the set
         emailSet.delete(normalizedEmail);
@@ -313,8 +328,8 @@ export async function unsubscribeFromNotifications(containerClient: ContainerCli
             }
         }
 
-        keysToCheck.shift();
-    }
+        // keysToCheck.shift();
+    // }
 
     return {
         jsonBody: { message: "Success",
