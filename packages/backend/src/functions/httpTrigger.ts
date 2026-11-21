@@ -846,10 +846,10 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
 
 export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    if (!decryptedBlob) { return { status: 404, body: "Not Found"} }
 
     const { filename } = decryptedBlob;
-    return { body: filename };
+    return { status: 200, body: filename };
 };
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
