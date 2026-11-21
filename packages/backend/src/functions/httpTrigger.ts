@@ -408,7 +408,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
     const dataHash = toHex(await sha256(data));
     let deviceID: string;
     try {
-        deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+        deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>, context);
     } catch (error) {
         context.error('Throwing error from upload()')
         throw new Error(`Invalid key provided: ${error.message}`, {cause: 400});
@@ -591,8 +591,8 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 /*=================  Core functions invoked by endpoint handlers (endpoint operators)  =====================*/
 
 async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>, context) {
-    key = typeof key === 'string' ? decodeKey(key) : key;
-    const deviceID = await calculateDeviceID(key);
+    key = typeof key === 'string' ? decodeKey(key, context) : key;
+    const deviceID = await calculateDeviceID(key, context);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
         return undefined; // already converted
     }
@@ -739,8 +739,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         let deviceKey: Uint8Array<ArrayBuffer>;
         let deviceID: string;
         try {
-            deviceKey = decodeKey(request.params.deviceKey);
-            deviceID = await calculateDeviceID(deviceKey);
+            deviceKey = decodeKey(request.params.deviceKey, context);
+            deviceID = await calculateDeviceID(deviceKey, context);
         } catch (error) {
             context.error("Returning from getProvenance(): invalid deviceKey")
             context.error(error.message)
@@ -751,9 +751,9 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
 
         const containerExists = await containerClient.exists();
         if (!containerExists) { 
-            context.error("Returning from getProvenance(): bad request");
+            context.error("getProvenance: detected disconnection from blob storage. Cannot get record. 500.");
             return { 
-                status: 404,
+                status: 500,
                 jsonBody: []
             };
         }
@@ -796,6 +796,13 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
             const parsed_json = JSON.parse(json);
             const provRecord = parsed_json as ProvenanceRecord;
             records.push({ ...provRecord, deviceID, timestamp });
+        }
+        // Todo: if records == [], return 404 not found. 
+        if(records.length == 0) {
+            return {
+                status: 404,
+                jsonBody: "No record found for this key"
+            }
         }
         records.sort((a, b) => b.timestamp - a.timestamp)
         context.log('getProv: records decrypted')
@@ -912,8 +919,8 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         let deviceKey: Uint8Array<ArrayBuffer>;
         let deviceID: string;
         try {
-            deviceKey = decodeKey(request.params.deviceKey);
-            deviceID = await calculateDeviceID(deviceKey);
+            deviceKey = decodeKey(request.params.deviceKey, context);
+            deviceID = await calculateDeviceID(deviceKey, context);
         } catch (error) {
             return { status: 400, jsonBody: "Invalid deviceKey" };
         }
@@ -1136,7 +1143,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
         await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
 
         // Email users if they are subscribed to the group
-        let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+        let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
         if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
 
 

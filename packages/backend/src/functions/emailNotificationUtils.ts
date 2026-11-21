@@ -2,6 +2,7 @@ import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
 import { calculateDeviceID } from "./httpTriggerUtils";
+import * as httpTrigger from './httpTrigger';
 import * as z from 'zod'
 
 const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
@@ -341,10 +342,10 @@ export async function subscribeToNotifications(
          - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
     */
 
-    context.log('SubscribeToNotifications: Called')
+    context.log('SubscribeToNotifications: Called.')
 
     try {
-        context.log('subscribeToNotifications: is email malformed?')
+        context.log('subscribeToNotifications: Is email malformed?')
         const emailValidationResult = z.email().safeParse(email)
         if(!emailValidationResult.success) {
             context.error('subscribeToNotifications: got invalid email')
@@ -355,7 +356,7 @@ export async function subscribeToNotifications(
         }
         context.log('subscribeToNotifications: No.')
 
-        context.log('subscribeToNotifications: can we get the blob client?')
+        context.log('subscribeToNotifications: Can we get the blob client?')
         // Step 1: Setup the blobClient, return API response
         let blobName: string;
         let blobClient: BlockBlobClient;
@@ -380,13 +381,30 @@ export async function subscribeToNotifications(
                 status: 500
             }
         }
-        context.log('subscribeToNotifications: yes.')
+        context.log('subscribeToNotifications: Yes.')
+
+        context.log('subscribeToNotifications: Does the key correspond to a record?')
+        let response = await httpTrigger.getProvenance({ params: { deviceKey: deviceKey } }, context)
+        if(response.status == 404) {
+            return {
+                jsonBody: { message: 'Valid key has no corresponding record'},
+                status: 404
+            }
+        }
+        if(response.status != 200) {
+            return {
+                jsonBody: { message: 'Internal Server Error'},
+                status: 500
+            }
+
+        }
+        context.log('subscribeToNotifications: Yes.')
 
 
         // Step 1/3: Get. Converts legacy in background. Returns at least this: { no_tag: [] }
-        context.log('subscribeToNotifications: getting existing signup data')
+        context.log('subscribeToNotifications: Getting existing signup data...')
         let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
-        context.log('subscribeToNotifications: got existing signup data')
+        context.log('subscribeToNotifications: Got existing signup data.')
 
 
         // If email is already stored return success
@@ -410,7 +428,7 @@ export async function subscribeToNotifications(
         // Step 3/3: Add
         context.log('subscribeToNotifications: preparing to add user to email signup tag bundle')
         const uniqueEmailString = await createNewEmailId()
-        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagSpecificSignupBundle, normalizedEmail, uniqueEmailString, tags)
+        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagSpecificSignupBundle, email, uniqueEmailString, tags)
 
 
         try {
