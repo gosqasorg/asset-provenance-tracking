@@ -139,11 +139,11 @@ export default {
 
         // Only fill in stashed information if we redirected from the offline edits page
         if (isGroup === "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-            this.isPublicKey = this.stashedRecord.isPublicKey
-            this.hasParent = this.stashedRecord.hasParent
+            this.isPublicKey = this.stashedRecord["data"].isPublicKey
+            this.hasParent = this.stashedRecord["data"].hasParent
             this.deviceKey = sessionStorage.getItem("gdt-redirect-key") || '';
-            this.name = this.stashedRecord.deviceName
-            this.description = this.stashedRecord.description
+            this.name = this.stashedRecord["data"].deviceName
+            this.description = this.stashedRecord["data"].description
         }
     },
     computed: {
@@ -221,7 +221,7 @@ export default {
                 if (!validateKey(this.deviceKey)) {
                     this.deviceKey = await makeEncodedDeviceKey();
                 }
-                const response = await postProvenance(this.deviceKey, {
+                const record = {
                     blobType: 'deviceInitializer',
                     deviceName: this.name,
                     description: this.description,
@@ -229,7 +229,8 @@ export default {
                     children_key: '',
                     hasParent: this.hasParent,
                     isPublicKey: this.isPublicKey,
-                }, this.pictures || []);
+                }
+                const response = await postProvenance(this.deviceKey, record, this.pictures || []);
 
                 if (response && this.isChecked && this.textInput) {
                     await postEmail(this.textInput);
@@ -242,8 +243,8 @@ export default {
                 let isGroup = sessionStorage.getItem("gdt-redirect-isGroup");
 
                 if (isGroup == "false" && JSON.stringify(this.stashedRecord) !== '{}' && previousUrl === "/offline-edits") {
-                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled");
-                    removeOfflineRequest(this.deviceKey, "gdt-stash-failed");
+                    stashOfflineRequest(this.deviceKey, "gdt-stash-fulfilled", record);
+                    removeOfflineRequest(this.stashedRecord, "gdt-stash-failed");
                 }
 
                 this.$snackbar.add({
@@ -279,8 +280,13 @@ export default {
                     text: errorMessage
                 });
 
-                // If we're online return to the /gdt page
-                EventBus.emit('isLoading');
+                if (errorMessage.includes("Status 202")) {
+                    // If we're offline go the history page in offline mode
+                    await this.$router.push({ path: `/record/${this.deviceKey}` });
+                } else {
+                    // If we're online return to the /gdt page
+                    EventBus.emit('isLoading');
+                }
             } finally {
                 this.isSubmitting = false;
             }

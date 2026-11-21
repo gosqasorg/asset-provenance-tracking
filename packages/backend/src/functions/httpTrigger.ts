@@ -1,4 +1,4 @@
-// Working
+ // Working
 import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
@@ -103,7 +103,7 @@ export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
         case 32:
             return theKey as Uint8Array<ArrayBuffer>
         default:
-            throw new Error(`Invalid Key Length ${theKey.length}`);
+            throw new Error(`Invalid Key Length ${theKey.length}`, { cause: 400 });
     }
 }
 
@@ -555,6 +555,8 @@ async function uploadProvenance(
     const provRecord = { record, attachments: attachmentIDs };
 
     const data = new TextEncoder().encode(JSON.stringify(provRecord));
+    
+    // Upload does throw error, to be caught by endpoint handler
     const recordID = await upload(containerClient, deviceKey, data, "prov", "application/json", timestamp, undefined, context);
     return { record: recordID, attachments, oversizedAttachments: undefined};
 }
@@ -605,10 +607,10 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
     }
 
     if (response !== undefined && !response.ok) {
-        context.error(`Failed to ${url}: ${response.status} ${response.statusText}`)
-        throw new Error(url + " failed: " + response.status + " " + response.statusText)
+        context.log(`Failed to ${url}: ${response.status} ${response.statusText}`)
+        throw new Error(url + " failed: " + response.status + " " + response.statusText, { cause: 500 })
     } else {
-        throw new Error(`Could not connect to ${url}, check your internet connection and try again`);
+        throw new Error(`Could not connect to ${url}, check your internet connection and try again`, { cause: 500 });
     }
 }
 
@@ -646,6 +648,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
             });
         }
 
+        // This does throw error, to be caught by endpoint handler
         const uploaded = await uploadProvenance(containerClient, key, timestamp, record, attachments, context);
         records.push(uploaded);
     }
@@ -689,84 +692,155 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 
 // --- GETs --- //
 
+export function errorHandler(functionName, error, context) {
+
+  context.error(`Returning unsuccessfully from ${functionName}`)
+
+  if (JSON.stringify(error).includes("ZodError")) {
+    let message = 'Error: Check argument format.'
+    context.error(message)
+    context.error(`${functionName}: returning 400 on zodError`)
+    return {
+        status: 400,
+        jsonBody: { data: error.issues },
+        headers: { "Content-Type": "text/plain" }
+    }
+  }
+
+  // Uncategorizable errors
+  // To be assessed + addressed in upcoming ticket
+  // Validate the error itself
+  if(!('cause' in error)) {
+    const message = `${functionName} returning error without cause. Error: ${JSON.stringify(error)}`
+    context.error(message)
+
+    // During dev, crash everything so we can find errors that don't follow the format of always having a cause.
+    // throw Error(message)
+
+    // During prod, log and return. We can't go down over one error
+    // Note re: duplication: two instances is not a pattern
+    return {
+      status: 500,
+      body: "Internal server error. Not to worry: we stay vigilant for these.",
+      headers: { "Content-Type": "text/plain" }
+    }
+  }
+
+  if(error.cause == 404) {
+    context.error(`Cause: ${error.cause}`)
+    context.error(error.message)
+    return {
+      status: 404,
+      body: "Not found",
+      headers: { "Content-Type": "text/plain" }
+    } 
+  }
+
+  if (error.cause == 400) {
+    context.error(`Cause: ${error.cause}`)
+    context.error(error.message)
+    return { 
+      status: 400,
+      body: error.message,
+      headers: { "Content-Type": "text/plain" },
+      jsonBody: { error: error.message }
+    }
+  }
+
+  // Regarding the lack of conditional on the 500 case:
+  // If the error is ours (500) or any other type we're not catching, which we'd like to highlight as a 500
+  context.error(`${functionName}: experienced 500 internal server error or uncategorized error`)
+  context.error(`Cause: ${error.cause}`)
+  context.error(JSON.stringify(error))
+  const message = "Internal server error. Not to worry: we stay vigilant for these.";
+  return {
+    status: 500,
+    body: message,  // With Viz, we intend to show 500s as a time series + table, much like the first map. 
+    headers: { "Content-Type": "text/plain" },
+    jsonBody: { error: message }
+  }
+}
+
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log("Entering getProvenance()")
-    let deviceKey: Uint8Array<ArrayBuffer>;
-    let deviceID: string;
-    try {
-        deviceKey = decodeKey(request.params.deviceKey);
-        deviceID = await calculateDeviceID(deviceKey);
-    } catch (error) {
-        context.error("Returning from getProvenance(): bad request")
-        return { status: 400, body: error.message };
-    }
-
-    context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
-
-    const containerExists = await containerClient.exists();
-    if (!containerExists) { 
-        context.error("Returning from getProvenance(): bad request");
-        return { 
-            status: 404,
-            jsonBody: []
-        };
-    }
-
-    context.log('getProv: do we exist?')
-    const provExists = await pathExists(containerClient, `prov/${deviceID}`);
-    if (!provExists) {
+    try{
+        context.log("Entering getProvenance()")
+        let deviceKey: Uint8Array<ArrayBuffer>;
+        let deviceID: string;
         try {
+            deviceKey = decodeKey(request.params.deviceKey);
+            deviceID = await calculateDeviceID(deviceKey);
+        } catch (error) {
+            context.error("Returning from getProvenance(): bad request")
+            return { status: 400, body: error.message };
+        }
+   
+        context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
+
+        const containerExists = await containerClient.exists();
+        if (!containerExists) { 
+            context.error("Returning from getProvenance(): bad request");
+            return { 
+                status: 404,
+                jsonBody: []
+            };
+        }
+
+        // Thrown error handled by errorHandler
+        const provExists = await pathExists(containerClient, `prov/${deviceID}`);
+        if (!provExists) {
             await upgradeProvenance(containerClient, deviceKey, context);
-        } catch (error) {
-            context.error('Returning with error from getProvenance(): ', error)
-            if (error.cause == 400) {
-                return { 
-                    status: 400,
-                    jsonBody: { error: error.message }
-                }
-            } else {
-                return {
-                    status: 500,
-                    jsonBody: { error: 'Internal Server Error' }
+        }
+
+      
+        context.log('getProv: attempting to decrypt records')
+        const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
+        for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
+            const blobClient = containerClient.getBlockBlobClient(blob.name);
+            let data: Uint8Array<ArrayBuffer>;
+            let timestamp: number;
+            try {
+                ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
+            } catch (error) {
+                context.error('Returning with error from getProvenance(): ', error)
+                if (error.cause == 500) {
+                    return { 
+                        status: 500,
+                        jsonBody: { error: 'Internal Server Error' }
+                    }
+                } else {
+                    // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
+                    return {
+                        status: 500,
+                        jsonBody: { error: 'Internal Server Error' }
+                    }
                 }
             }
+            const json = new TextDecoder().decode(data);
+            const parsed_json = JSON.parse(json);
+            const provRecord = parsed_json as ProvenanceRecord;
+            records.push({ ...provRecord, deviceID, timestamp });
         }
-    }
-    context.log('getProv: yes.')
+        records.sort((a, b) => b.timestamp - a.timestamp)
+        context.log('getProv: records decrypted')
 
-    context.log('getProv: attempting to decrypt records')
-    const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
-    for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
-        const blobClient = containerClient.getBlockBlobClient(blob.name);
-        let data: Uint8Array<ArrayBuffer>;
-        let timestamp: number;
-        try {
-            ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
-        } catch (error) {
-            context.error('Returning with error from getProvenance(): ', error)
-            if (error.cause == 500) {
-                return { 
-                    status: 500,
-                    jsonBody: { error: 'Internal Server Error' }
-                }
-            } else {
-                // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
-                return {
-                    status: 500,
-                    jsonBody: { error: 'Internal Server Error' }
-                }
-            }
-        }
-        const json = new TextDecoder().decode(data);
-        const parsed_json = JSON.parse(json);
-        const provRecord = parsed_json as ProvenanceRecord;
-        records.push({ ...provRecord, deviceID, timestamp });
+        context.log("Returning successfully from getProvenance()")
+        return { jsonBody: records };
+        
+    } catch (error) {
+        return errorHandler("getProvenance", error, context)
     }
-    records.sort((a, b) => b.timestamp - a.timestamp)
-    context.log('getProv: records decrypted')
+}
 
-    context.log("Returning successfully from getProvenance()")
-    return { jsonBody: records };
+// Headers can only hold plain ASCII text, so encoding filenames incase they have special characters
+// then decoding them on the frontend
+export function encodeAttachmentFilename(filename: string) : {fallback: string; encoded: string } {
+    const encoded = encodeURIComponent(filename); 
+
+    // some tools don't use filename* so a fallback is made where unwanted chars are replaces with an underscore
+    let fallback = filename.replace(/[^a-zA-Z0-9._-]+/g, '_') 
+    fallback = fallback.trim() || 'attachment'; // incase filename is empty
+    
+    return { fallback, encoded };
 }
 
 
@@ -777,13 +851,12 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
     const { data, contentType, filename } = decryptedBlob;
     const headers = new Headers();
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
-
-    // Edge-case where image is attached to a record but not actually stored
     try {
         if (contentType) { headers.append("Content-Type", contentType); }
         if (filename) {
-            headers.append("Content-Disposition", `attachment; filename="${filename}"`);
-            headers.append("Attachment-Name", filename);
+            const { fallback, encoded } = encodeAttachmentFilename(filename);
+            headers.append("Content-Disposition", `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`);
+            headers.append("Attachment-Name", encoded);     
         }
     } catch (error) {
         return { status: 404, body: error.message };
@@ -878,7 +951,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
         const record = JSON5.parse(provenanceRecord);
 
-        // TODO: we need to parse out whether we're using an entry or a record. 
         let condition = "deviceName" in record && (!validateRecordJSON(record, context) && !validateEntryJSON(record, context))
         if (condition) {
             { return { status: 400, jsonBody: { error: "Format of provided JSON is invalid" } }; }
@@ -1156,8 +1228,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
 
         const formData = await request.formData();
         let email; if (typeof (email = formData.get('email')) !== 'string') {
-            throw new Error('postEmail: Unexpected non-string value received')
-            return { status: 404 };
+            throw new Error('postEmail: Unexpected non-string value received', { cause: 404 })
         }
 
         const entity = {
@@ -1726,7 +1797,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
     let totalChildren = n_children + (hasPublicKey ? 1 : 0)
     if (childKeys.length !== totalChildren) {
-        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`);
+        throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`, { cause: 500 });
     }
 
     const groupKey = await makeEncodedDeviceKey()
@@ -1760,7 +1831,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
     });
     if (!groupResponse.ok) {
         const errorBody = await groupResponse.text().catch(() => "");
-        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`);
+        throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`, { cause: 500 });
     }
 
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
@@ -1805,9 +1876,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         const recordStr = formData.get("provenanceRecord"); 
         if (typeof recordStr !== "string") {
             context.error('Throwing error from createGroupHandler')
-            throw new SyntaxError(
-                "Missing provenanceRecord in form data"
-            );
+            throw new Error("Missing provenanceRecord in form data", { cause: 400 });
         }
 
         let theRequest = JSON.parse(recordStr); // contentType: multipart/form-data
@@ -2006,7 +2075,7 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
         const formData = await request.formData();
         const recordStr = formData.get("provenanceRecord");
         if (typeof recordStr !== "string") {
-            throw new SyntaxError("Missing provenanceRecord in form data");
+            throw new Error("Missing provenanceRecord in form data", { cause: 400 });
         }
 
         let theRequest = JSON.parse(recordStr);

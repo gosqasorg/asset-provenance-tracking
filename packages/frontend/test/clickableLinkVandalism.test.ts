@@ -68,7 +68,7 @@ describe('clickableLink: Vandalism Integration Tests', () => {
     it('Valid url', async () => {
         const description = 'Check out https://gosqas.org it is amazing';
 
-        try {
+        //try {
             const deviceKey = await createRecord(description);
             const fetchedDescription = await fetchDescription(deviceKey);
             const html = clickableLink(fetchedDescription) as string;
@@ -79,10 +79,10 @@ describe('clickableLink: Vandalism Integration Tests', () => {
             expect(html).toContain('target="_blank"');
             expect(html).toContain('rel="noopener noreferrer"');
 
-        } catch (error) {
+        /*} catch (error) {
             console.error('(Safe URL Test) Error: ', error);
             throw error;
-        }
+        }*/
     }, timeout);
 
     it('Script tag injected in description is entity-encoded', async () => {
