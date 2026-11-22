@@ -6,9 +6,9 @@
       "isEnabled": true
     },
     "logLevel": {
-      "default": "Trace",
-      "Host.Aggregator": "Error",
-      "Host.Results": "Error",
+      "default": "None",
+      "Host.Aggregator": "None",
+      "Host.Results": "None",
       "Function": "Trace",
       "Host.Function.Console": "Trace"
     },
