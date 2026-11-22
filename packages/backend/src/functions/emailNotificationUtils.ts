@@ -388,6 +388,9 @@ export async function subscribeToNotifications(
         // Tested
         context.log('subscribeToNotifications: Does the key correspond to a record?')
         let response = await httpTrigger.getProvenance({ params: { deviceKey: deviceKey } }, context)
+        context.log('subscribeToNotifications: getProv returned with: ')
+        context.log(response)
+        context.log(response.status)
         if(response.status == 404) {
             return {
                 jsonBody: { message: 'Valid key has no corresponding record'},

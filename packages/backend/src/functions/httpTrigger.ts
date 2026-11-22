@@ -809,7 +809,10 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         context.log('getProv: records decrypted')
 
         context.log("Returning successfully from getProvenance()")
-        return { jsonBody: records };
+        return { 
+            jsonBody: records, 
+            status: 200
+        };
         
     } catch (error) {
         return errorHandler("getProvenance", error, context)
@@ -1835,6 +1838,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         method: "POST",
         body: groupFormData,
     });
+
     if (!groupResponse.ok) {
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`, { cause: 500 });
@@ -1843,7 +1847,11 @@ async function createGroup(context, name, description, n_children: number = 0, c
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
 
-    return groupUrlRecordPage;
+    return {
+        url: groupUrlRecordPage,
+        key: groupKey
+    }
+    
 }
 
 const GroupCreationOrderSchema = z.object({
@@ -1898,13 +1906,16 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasPublicKey = theRequest['hasPublicKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
-        context.log(theGroupRecordPageUrl)
+        let { url, key } = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
+        context.log(url, key)
 
         context.log('Returning successfully from createGroupHandler')
         return {
             status: 200,
-            jsonBody: { groupUrl: theGroupRecordPageUrl },
+            jsonBody: { 
+                groupUrl: url,
+                key: key
+            },
             headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
