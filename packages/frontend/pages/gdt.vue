@@ -33,12 +33,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             />
 
             <!-- <div>Create a Single Asset:</div> -->
-            <div id="create_record" v-if="toggled"><FormsCreateDevice/></div>
+            <div id="create_record" v-if="toggled"><FormsCreateDevice :offline="offline"/></div>
             <!-- <CreateDevice/> -->
             <!-- <div>Or, if you want to create a group of keys:</div> -->
             <!-- <div></div> -->
 
-            <div id="create_group" v-if="!toggled"><FormsCreateContainer/></div>
+            <div id="create_group" v-if="!toggled"><FormsCreateContainer :offline="offline"/></div>
 
             <div class="col" style="text-align: left;">
 
@@ -77,9 +77,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 <script lang="ts">
 import { EventBus } from '~/utils/event-bus';
 import NavButton from '~/components/Buttons/NavButton.vue';
+import { detectOffline } from '~/composables/detectOffline.js';
 
 export default {
     components: { NavButton },
+    setup() {
+        return { 
+            offline: detectOffline()
+        };
+    },
     data() {
         return {
             isLoading: false,

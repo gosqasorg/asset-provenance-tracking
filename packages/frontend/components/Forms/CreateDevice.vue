@@ -28,7 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         <div>
             <input type="text" class="form-control" v-model="name" required placeholder="Record Title" maxlength="500" @keydown.enter.prevent>  
             <textarea id="record-description" v-model="description" required placeholder="Record Description" maxlength="5000" rows="3"></textarea>
-            <div style="display: block;">
+            <div v-if="!offline" style="display: block;">
                 <h4 class="mt-3 mb-3">Record Image (optional)</h4>
                 <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
             </div>
@@ -39,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <!-- Subscribe to tag notifications -->
             <div v-if="onDev">
                 <div class="my-3">
-                    <h4>
+                    <h4 v-if="!offline">
                         <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
                     </h4>
 
@@ -62,7 +62,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Volunteer Feedback Email -->
             <div class="my-3">
-                <h4>
+                <h4 v-if="!offline">
                     <input v-model="isChecked" type="checkbox" @keydown.enter.prevent class="form-check-input" id="notify-all"/> I'm open to providing feedback on my experience with GDT
                 </h4>
                 <div id="feedback-email-input" v-if="isChecked">
@@ -133,6 +133,12 @@ import { useRuntimeConfig } from '#app';
 
 //TODO: add const for max limit of notification subscriptions
 export default {
+    props: {
+        offline: {
+            type: Boolean,
+            default: false
+        },
+    },
     data() {
         const config = useRuntimeConfig()
         return {

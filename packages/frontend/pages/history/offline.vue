@@ -19,7 +19,9 @@ their items while offline.
 -->
 
 <script setup lang="ts">
+import { detectOffline } from '~/composables/detectOffline.js';
     const route = useRoute()
+    const offline = detectOffline();
 </script>
 
 <template>
@@ -60,7 +62,7 @@ their items while offline.
                 <input type="text" class="form-control" v-model="recordKey" required placeholder="Record Key" maxlength="500" @keydown.enter.prevent>  
                 <textarea id="provenance-description" v-model="description"
                     placeholder="Description" maxlength="5000" rows="3"></textarea>
-                <div>
+                <div v-if="!offline">
                     <h5>Image (optional)</h5>
                     <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment"
                         multiple />
