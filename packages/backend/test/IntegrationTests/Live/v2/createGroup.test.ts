@@ -6,7 +6,7 @@ const api_url = baseUrl;
 
 describe("Group Creation Tests", () => {
     // Test public key functionality
-    it("should create a group record with a public key", async () => {
+    it("Create a group record with a public key", async () => {
 		const groupPayload = {
 			deviceName: "group_record_with_public_key",
 			title: "group_record_with_public_key",
@@ -60,7 +60,7 @@ describe("Group Creation Tests", () => {
 		expect(publicKeyRecord.tags).toContain("publickey");
     }, 60000);
 
-	it("should create a group record with tags", async () => {
+	it("Create a group record with tags", async () => {
 		const groupPayload = {
 			deviceName: "group_record_with_tags",
 			title: "group_record_with_tags",
@@ -108,7 +108,7 @@ describe("Group Creation Tests", () => {
 		expect(childKeys.length).toBe(groupPayload.number_of_children);
     }, 60000);
 
-    it("should create a group record with multiple attachments (one image, one PDF file), with multiple children", async () => {
+    it("Create a group record with multiple attachments (one image, one PDF file), with multiple children", async () => {
         const payload = {
             deviceName: "group_record_with_attachments",
             description: "group record with attachents (image and pdf), and with two children",
