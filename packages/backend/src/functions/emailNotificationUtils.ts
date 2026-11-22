@@ -411,6 +411,7 @@ export async function subscribeToNotifications(
         context.log('subscribeToNotifications: Getting existing signup data...')
         let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
         context.log('subscribeToNotifications: Got existing signup data.')
+        context.log(JSON.stringify(tagSpecificSignupBundle))
 
 
         // If email is already stored return success
