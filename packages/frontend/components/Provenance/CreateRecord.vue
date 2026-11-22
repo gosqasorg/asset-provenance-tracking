@@ -41,7 +41,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     {{ childkey1 }}{{ index !== newChildKeys.length - 1 && childkey1.endsWith(',') ? ' ' : '' }}
                 </span>
             </div>
-            <div>
+            <div v-if="!offline">
                 <h5>Image (optional)</h5>
                 <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment"
                     multiple />
@@ -54,19 +54,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </span>
             </div>
             
-            <h4 class="p-1 mt-3" v-if="recordIsGroup">
+            <h4 class="p-1 mt-3" v-if="recordIsGroup && !offline">
                 <input type="checkbox" class="form-check-input" id="send-to-all-children" v-model="sendToAllChildren"/> 
                     Send to all Children
             </h4>
 
-            <h4 class="p-1 mt-0" v-if="recordIsGroup && !hasRecalledRecord">
+            <h4 class="p-1 mt-0" v-if="recordIsGroup && !hasRecalledRecord && !offline">
                 <input type="checkbox" class="form-check-input" id="recall-all" v-model="recallAll"/>
                     Recall all children
             </h4>
 
             <!-- Subscribe to notifications -->
             <div v-if="onDev">
-                <h4 class="p-1 mt-0">
+                <h4 v-if="!offline" class="p-1 mt-0">
                     <input type="checkbox" class="form-check-input" v-model="notify"/> Receive email notifications for this record
                 </h4>
 
@@ -83,7 +83,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 </div>
 
                 <!-- Subscribe to tag notifications -->
-                <h4 class="p-1 my-0">
+                <h4 v-if="!offline" class="p-1 my-0">
                     <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
                 </h4>
 
@@ -218,6 +218,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             type: Boolean,
             default: false,
             required: false,
+        },
+        offline: {
+            type: Boolean,
+            default: false
         }
     },
     computed: {

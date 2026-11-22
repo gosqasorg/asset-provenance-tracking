@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             <input type="text" class="form-control" v-model="name" required placeholder="Group Title" maxlength="500" @keydown.enter.prevent>
             <textarea id="container-description" v-model="description" placeholder="Group Description" maxlength="5000" rows="3"></textarea>
 
-            <h4 class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
-            <input type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
+            <h4 v-if="!offline" class="form-label mt-3 mb-3" for="file">Group Image (optional)</h4>
+            <input v-if="!offline" type="file" class="form-control" accept="*" @change="onFileChange" capture="environment" multiple />
 
 
             <h4 class="mt-3 mb-3">Add Tags (optional)</h4>
@@ -51,7 +51,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             <!-- Subscribe to tag notifications -->
             <div v-if="onDev">
-                <h4 class="p-1 my-0">
+                <h4 v-if="!offline" class="p-1 my-0">
                     <input v-model="notifyTags" type="checkbox" class="form-check-input"/> Receive email notifications for specified tags
                 </h4>
 
@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             </div>            
 
             <!-- Volunteer Feedback Email --> 
-            <h4 class="p-1">
+            <h4 v-if="!offline" class="p-1">
                 <input v-model="isChecked" type="checkbox"  @keydown.enter.prevent class="form-check-input"/> I'm open to providing feedback on my experience with GDT
             </h4>
 
@@ -145,6 +145,12 @@ import Banner from '../Banner.vue';
 import { useRuntimeConfig } from '#app';
 
 export default {
+    props: {
+        offline: {
+            type: Boolean,
+            default: false
+        },
+    },
     data() {
         const config = useRuntimeConfig()
         return {

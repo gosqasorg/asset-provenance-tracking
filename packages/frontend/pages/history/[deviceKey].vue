@@ -21,10 +21,13 @@ their items.
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
+import { detectOffline } from '~/composables/detectOffline.js';
 
 const route = useRoute();
 const recordKey = route.params.deviceKey as string;
 const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}`;
+
+const offline = detectOffline();
 </script>
 
 <template>
@@ -133,7 +136,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 			</section>
 
             <div class="action-buttons">
-	        	<button class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
+	        	<button v-if="!offline" class="btn notif-btn" data-bs-toggle="modal" data-bs-target="#notifModal">Get email notifications</button>
 
 				<ProvenanceDownloadDropdown
 					:downloadQRCodeMethod="downloadQRCode"
@@ -169,7 +172,7 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
               <ProvenanceFeed :recordKey="_recordKey" :provenance="deviceCreationRecord" />
             </section>
             <section id="create-record">
-              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" :hasRecalledRecord="hasRecalledRecord" />
+              <ProvenanceCreateRecord :deviceRecord="deviceRecord" :recordKey="_recordKey" :hasRecalledRecord="hasRecalledRecord" :offline="offline" />
             </section>
 
 			<section id="child-keys">
@@ -195,10 +198,10 @@ const qrCodeUrl = `${useRuntimeConfig().public.frontendUrl}/history/${recordKey}
 					<KeyList v-bind:keys="childKeys" />
 				</div>
 				</div>
-				<CsvFile :recordKey="_recordKey"></CsvFile>
+				<CsvFile v-if="!offline" :recordKey="_recordKey"></CsvFile>
 			</div>
 			
-			<ProvenanceCSV :recordKey="_recordKey"></ProvenanceCSV>
+			<ProvenanceCSV v-if="!offline" :recordKey="_recordKey"></ProvenanceCSV>
 			</section>
 
 		</div>
