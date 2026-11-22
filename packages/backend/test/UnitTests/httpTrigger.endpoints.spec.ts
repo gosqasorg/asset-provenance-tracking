@@ -447,7 +447,6 @@ describe('postVerifyCode', () => {
 
         expect(subscribeToNotifications).toHaveBeenCalledWith(
             expect.anything(),
-            expect.anything(),
             entity.recordKey,
             entity.email,
             tags,
