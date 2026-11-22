@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import { makeEncodedDeviceKey, validateKey } from '../../../../src/utils/keyFuncs';
 import { readFile, writeFile } from 'fs/promises';
 
-const api_url = "https://gosqasbe.azurewebsites.net/api";
-const baseUrl = "https://gosqasbe.azurewebsites.net/api/provenance/";
+
+const api_url = process.env['api_url']//"https://gosqasbe.azurewebsites.net/api";
+const baseUrl = process.env['backend_url']//"https://gosqasbe.azurewebsites.net/api/provenance/";
 
 describe("Creating records with attachments", () => {
 
