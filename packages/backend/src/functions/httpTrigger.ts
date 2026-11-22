@@ -100,7 +100,7 @@ function fnv1(input: Uint8Array): bigint {
 
 function calculateLegacyDeviceID(key: string | Uint8Array): bigint {
     // if key is a string, convert it to a buffer
-    key = typeof key === 'string' ? decodeKey(key) : key;
+    key = typeof key === 'string' ? decodeKey(key, context) : key;
     return fnv1(key);
 }
 
@@ -631,7 +631,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     let deviceKey: Uint8Array<ArrayBuffer>;
     try {
-        deviceKey = decodeKey(request.params.deviceKey);
+        deviceKey = decodeKey(request.params.deviceKey, context);
     } catch (error) {
         return undefined;
     }
@@ -1034,20 +1034,24 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
     /*
      * Send to All Children: Send new record's tags and description to all children
      */
+
+    context.log('notifyChildren: Called.')
     const baseUrl = process.env['backend_url'];
 
     // Confirm that the device key is valid
     const deviceKey = request.params.deviceKey;
     try {
-        decodeKey(request.params.deviceKey);
+        decodeKey(request.params.deviceKey, context);
     } catch (error) {
         return { status: 400, body: error.message };
     }
 
     try {
 
+        context.log('notifyChildren: Attempting to get records')
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
+        context.log('notifyChildren: Got records')
 
         if (records[0].record.tags.includes("sent_to_all_children")) {
             let length = Object.keys(records).length;
@@ -1113,7 +1117,7 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
 
         // Confirm that the device key is valid
         try {
-            decodeKey(request.params.deviceKey);
+            decodeKey(request.params.deviceKey, context);
         } catch (error) {
             return { status: 400, body: error.message };
         }
@@ -1671,7 +1675,7 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
 
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        const deviceKey = decodeKey(request.params.deviceKey);
+        const deviceKey = decodeKey(request.params.deviceKey, context);
         const body = await upgradeProvenance(containerClient, deviceKey, context);
         return { jsonBody: body ?? { "already-converted": true } };
     } catch (error) {
@@ -2011,7 +2015,7 @@ async function createRecord(context, name, description, tags, attachments) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const deviceKey = await makeEncodedDeviceKey();
-    const decodedDeviceKey = decodeKey(deviceKey);
+    const decodedDeviceKey = decodeKey(deviceKey, context);
 
     try {
         const data = {
