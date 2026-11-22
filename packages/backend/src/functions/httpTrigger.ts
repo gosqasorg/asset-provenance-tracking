@@ -1,5 +1,4 @@
  // Working
-import bs58 from 'bs58';
 import JSON5 from 'json5';
 import * as z from "zod";
 import { webcrypto as crypto } from 'node:crypto';
@@ -16,7 +15,7 @@ import { sendEmail } from './sendEmail.js'
 import { VERSION_INFO } from '../version.js';
 import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
-import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
+import { notifySubscribers, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -71,6 +70,9 @@ interface NamedBlob {
 
 /*============== Small Helper Functions (to be moved to forthcoming httpTriggerUtils.ts)  ============*/
 
+
+import { decodeKey, calculateDeviceID, sha256, toHex } from './httpTriggerUtils'
+
 function findDeviceIdFromName(blobName: string): string {
     // blobNames look like: 'gosqas/63f4b781c0688d83d40908ff368fefa6a2fa4cd470216fd83b3d7d4c642578c0/prov/1a771caa4b15a45ae97b13d7a336e1e9c9ec1c91c70f1dc8f7749440c0af8114'
     // where the id is that last part (before the last slash)
@@ -81,37 +83,8 @@ function isEmpty(str) {
     return (!str || str.length === 0 );
 }
 
-async function sha256(data: NodeJS.BufferSource) {
-    const buffer = await crypto.subtle.digest("SHA-256", data);
-    return new Uint8Array(buffer);
-}
-
-export function toHex(data: Uint8Array<ArrayBuffer>): string {
-    return Buffer.from(data).toString("hex");
-}
-
 export function fromHex(hex: string): Uint8Array {
     return new Uint8Array(Buffer.from(hex, 'hex'));
-}
-
-export function decodeKey(key: string): Uint8Array<ArrayBuffer> {
-    const theKey = bs58.decode(key);
-
-    switch (theKey.length) {
-        case 16:
-        case 24:
-        case 32:
-            return theKey as Uint8Array<ArrayBuffer>
-        default:
-            throw new Error(`Invalid Key Length ${theKey.length}`, { cause: 400 });
-    }
-}
-
-export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>): Promise<string> {
-    // if key is a string, convert it to a buffer
-    key = typeof key === 'string' ? decodeKey(key) : key;
-    const hash = await sha256(key);
-    return toHex(hash);
 }
 
 function fnv1(input: Uint8Array): bigint {
@@ -127,7 +100,7 @@ function fnv1(input: Uint8Array): bigint {
 
 function calculateLegacyDeviceID(key: string | Uint8Array): bigint {
     // if key is a string, convert it to a buffer
-    key = typeof key === 'string' ? decodeKey(key) : key;
+    key = typeof key === 'string' ? decodeKey(key, context) : key;
     return fnv1(key);
 }
 
@@ -203,7 +176,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
-        if (!areEqual(fromHex(hash), await sha256(data))) {
+        if (!areEqual(fromHex(hash), await sha256(data, context))) {
             context.error("Returning from decryptBlob() with error: Invalid hash")
             throw new Error(`Invalid Hash ${client.name}`, { cause: 500 });
         }
@@ -410,15 +383,19 @@ async function setStatisticsTotals() {
 /* ----- Time Triggers ----- */
 
 // Once per day update the total record, record entry, and attachment counts
-app.timer('updateRecordCounts', {
-    schedule: `0 0 * * *`,
-    handler: setStatisticsTotals
-})
+// Only on prod
 
-app.timer('livenessChecker', {
-    schedule: '0 0 * * * *', 
-    handler: livenessChecker,
-})
+if(!process.env['backend_url'].includes('local')) {
+    app.timer('updateRecordCounts', {
+        schedule: `0 0 * * *`,
+        handler: setStatisticsTotals
+    })
+
+    app.timer('livenessChecker', {
+        schedule: '0 0 * * * *', 
+        handler: livenessChecker,
+    })
+}
 
 
 /* ===============================================================
@@ -428,16 +405,16 @@ app.timer('livenessChecker', {
 /*==============  Core Utility Functions (to remain in this file)  ============*/
 
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined, context): Promise<string> {
-    const dataHash = toHex(await sha256(data));
+    const dataHash = toHex(await sha256(data, context));
     let deviceID: string;
     try {
-        deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>);
+        deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>, context);
     } catch (error) {
         context.error('Throwing error from upload()')
         throw new Error(`Invalid key provided: ${error.message}`, {cause: 400});
     }
     const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
-    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
+    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource, context));
 
     let blobName;
     if (type === 'prov') {
@@ -598,7 +575,7 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
                 return response;
             }
         } catch (e) {
-            context.log(`Fetch attempt failed: ${url}: ` + e);
+            context.error(`Fetch attempt failed: ${url}: ` + e);
         }
     }
 
@@ -614,8 +591,8 @@ async function fetchWithRetry(context: InvocationContext, url: string, formData?
 /*=================  Core functions invoked by endpoint handlers (endpoint operators)  =====================*/
 
 async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Array<ArrayBuffer>, context) {
-    key = typeof key === 'string' ? decodeKey(key) : key;
-    const deviceID = await calculateDeviceID(key);
+    key = typeof key === 'string' ? decodeKey(key, context) : key;
+    const deviceID = await calculateDeviceID(key, context);
     if (await pathExists(containerClient, `prov/${deviceID}`)) {
         return undefined; // already converted
     }
@@ -654,7 +631,7 @@ async function upgradeProvenance(containerClient: ContainerClient, key: Uint8Arr
 export async function getDecryptedBlob(request: HttpRequest, context: InvocationContext): Promise<DecryptedBlob | undefined> {
     let deviceKey: Uint8Array<ArrayBuffer>;
     try {
-        deviceKey = decodeKey(request.params.deviceKey);
+        deviceKey = decodeKey(request.params.deviceKey, context);
     } catch (error) {
         return undefined;
     }
@@ -679,14 +656,6 @@ export function postProvenanceMiddleware(body: FormData): Boolean {
 
     return JSON.stringify(body).length <= sizeLimit
 }
-
-
-
-/*=================  Endpoints + Endpoint handlers  =====================*/
-
-/* ----- Pseudo handlers (to be split into handler/operator) ----- */
-
-// --- GETs --- //
 
 export function errorHandler(functionName, error, context) {
 
@@ -757,36 +726,46 @@ export function errorHandler(functionName, error, context) {
   }
 }
 
+
+/*=================  Endpoints + Endpoint handlers  =====================*/
+
+/* ----- Pseudo handlers (to be split into handler/operator) ----- */
+
+// --- GETs --- //
+
 export async function getProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try{
         context.log("Entering getProvenance()")
         let deviceKey: Uint8Array<ArrayBuffer>;
         let deviceID: string;
         try {
-            deviceKey = decodeKey(request.params.deviceKey);
-            deviceID = await calculateDeviceID(deviceKey);
+            deviceKey = decodeKey(request.params.deviceKey, context);
+            deviceID = await calculateDeviceID(deviceKey, context);
         } catch (error) {
-            context.error("Returning from getProvenance(): bad request")
-            return { status: 400, body: error.message };
+            context.error("Returning from getProvenance(): invalid deviceKey")
+            context.error(error.message)
+            return { status: 400, jsonBody: "Invalid deviceKey" };
         }
-
+   
         context.log(`getProvenance`, { accountName, deviceKey: request.params.deviceKey, deviceID });
 
         const containerExists = await containerClient.exists();
         if (!containerExists) { 
-            context.error("Returning from getProvenance(): bad request");
+            context.error("getProvenance: detected disconnection from blob storage. Cannot get record. 500.");
             return { 
-                status: 404,
+                status: 500,
                 jsonBody: []
             };
         }
 
-        // 
+        // Thrown error handled by errorHandler
         const provExists = await pathExists(containerClient, `prov/${deviceID}`);
         if (!provExists) {
             await upgradeProvenance(containerClient, deviceKey, context);
         }
 
+      
+        context.log('getProv: attempting to decrypt records')
         const records = new Array<ProvenanceRecord & { deviceID: string, timestamp: number }>();
         for await (const blob of containerClient.listBlobsFlat({ prefix: `prov/${deviceID}` })) {
             const blobClient = containerClient.getBlockBlobClient(blob.name);
@@ -796,12 +775,16 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
                 ({ data, timestamp } = await decryptBlob(blobClient, deviceKey, context));
             } catch (error) {
                 context.error('Returning with error from getProvenance(): ', error)
-                if (error.cause == 500) {
+                if (error.cause == 500) { // 500 specifically
                     return { 
                         status: 500,
                         jsonBody: { error: 'Internal Server Error' }
                     }
-                } else {
+                } else { // Arbitrary other 500s
+                    context.error('getProvenance(): error was: ')
+                    context.error(JSON.stringify(error))
+                    context.error(error.cause)
+                    context.error(error.message)
                     // There may be other types of 500 errors that we want to add logging to as we continue to improve this going forward
                     return {
                         status: 500,
@@ -814,15 +797,26 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
             const provRecord = parsed_json as ProvenanceRecord;
             records.push({ ...provRecord, deviceID, timestamp });
         }
+        // Todo: if records == [], return 404 not found. 
+        if(records.length == 0) {
+            return {
+                status: 404,
+                jsonBody: [],
+                message: "No record found for this key"
+            }
+        }
         records.sort((a, b) => b.timestamp - a.timestamp)
+        context.log('getProv: records decrypted')
 
         context.log("Returning successfully from getProvenance()")
-        return { jsonBody: records };
+        return { 
+            jsonBody: records, 
+            status: 200
+        };
         
     } catch (error) {
         return errorHandler("getProvenance", error, context)
     }
-    
 }
 
 // Headers can only hold plain ASCII text, so encoding filenames incase they have special characters
@@ -839,11 +833,13 @@ export function encodeAttachmentFilename(filename: string) : {fallback: string; 
 
 
 export async function getAttachment(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    const headers = new Headers();
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    if (!decryptedBlob) { 
+        return { status: 404, body: "Not Found", headers} 
+    }
 
     const { data, contentType, filename } = decryptedBlob;
-    const headers = new Headers();
     headers.append("Access-Control-Allow-Headers", "Attachment-Name");
     try {
         if (contentType) { headers.append("Content-Type", contentType); }
@@ -861,10 +857,10 @@ export async function getAttachment(request: HttpRequest, context: InvocationCon
 
 export async function getAttachmentName(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const decryptedBlob = await getDecryptedBlob(request, context);
-    if (!decryptedBlob) { return { status: 404 } }
+    if (!decryptedBlob) { return { status: 404, body: "Not Found"} }
 
     const { filename } = decryptedBlob;
-    return { body: filename };
+    return { status: 200, body: filename };
 };
 
 export async function getNewDeviceKey(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -923,14 +919,19 @@ async function getConnectionStatus(request: HttpRequest, context: InvocationCont
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('postProvenance: Called.')
+    context.log(request)
     try {
         let deviceKey: Uint8Array<ArrayBuffer>;
         let deviceID: string;
         try {
-            deviceKey = decodeKey(request.params.deviceKey);
-            deviceID = await calculateDeviceID(deviceKey);
+            deviceKey = decodeKey(request.params.deviceKey, context);
+            deviceID = await calculateDeviceID(deviceKey, context);
         } catch (error) {
-            return { status: 400, body: error.message };
+            context.error('postProvenance: error: ')
+            context.error(error)
+            context.error(error.message)
+            return { status: 400, jsonBody: "Invalid deviceKey" };
         }
 
         await containerClient.createIfNotExists();
@@ -1016,7 +1017,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         console.error('Returning unsuccessfully from postProvenance')
         if (error instanceof z.ZodError) {
             context.error(`postProvenance: zodError: ${error.message}`)
-            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: error.message },
@@ -1035,22 +1035,26 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
 export async function notifyChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     /*
-    // Send to All Children: Send new record's tags and description to all children
-    */
+     * Send to All Children: Send new record's tags and description to all children
+     */
+
+    context.log('notifyChildren: Called.')
     const baseUrl = process.env['backend_url'];
 
     // Confirm that the device key is valid
     const deviceKey = request.params.deviceKey;
     try {
-        decodeKey(request.params.deviceKey);
+        decodeKey(request.params.deviceKey, context);
     } catch (error) {
         return { status: 400, body: error.message };
     }
 
     try {
 
+        context.log('notifyChildren: Attempting to get records')
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
         const records = await getRecords.json()
+        context.log('notifyChildren: Got records')
 
         if (records[0].record.tags.includes("sent_to_all_children")) {
             let length = Object.keys(records).length;
@@ -1094,9 +1098,10 @@ export async function notifyChildren(request: HttpRequest, context: InvocationCo
             status: 200
         }
     } catch (error) {
-        context.error(`Error sending record entry to all children: ${error}`);
+        context.error(`notifyChildren: Returning with error: : ${error}`);
         return {
-            status: 500
+            status: 500,
+            jsonBody: { message: 'Internal Server Error' }
         }
     }
 }
@@ -1108,52 +1113,54 @@ export async function recall(request: HttpRequest, context: InvocationContext): 
     // Recall: Pin and send new record entry to all children
     */
 
-    const baseUrl = process.env['backend_url'];
-    const deviceKey = request.params.deviceKey;
-
-    // Confirm that the device key is valid
     try {
-        decodeKey(request.params.deviceKey);
-    } catch (error) {
-        return { status: 400, body: error.message };
-    }
 
-    context.log(deviceKey)
-    context.error(deviceKey)
+        const baseUrl = process.env['backend_url'];
+        const deviceKey = request.params.deviceKey;
 
-    // Prevent the record from being recalled more than once
-    let getRecords = await fetch(`${baseUrl}${deviceKey}`)
-    const records = await getRecords.json()
+        // Confirm that the device key is valid
+        try {
+            decodeKey(request.params.deviceKey, context);
+        } catch (error) {
+            return { status: 400, body: error.message };
+        }
 
-    for (let record of records) {
-      if (record.record.tags && (record.record.tags).includes("recall")) {
-        context.error(`Record has already been recalled`);
-              return {
-                  status: 400,
-                  body: "Record has already been recalled"
-              }
-      }
-      }
+        context.log(deviceKey)
+        context.error(deviceKey)
 
-    const formData = await request.formData();
-    const recordStr = formData.get("provenanceRecord"); 
-    const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
-
-    record.tags ??= [];
-    if (!record.tags.includes("recall")) record.tags.push("recall");
-    const tags = record.tags
-    
-    const description = record.description || "";
-
-    await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
-
-    // Email users if they are subscribed to the group
-    let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
-    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
-
-    try {
+        // Prevent the record from being recalled more than once
         let getRecords = await fetch(`${baseUrl}${deviceKey}`)
-        const records = await getRecords.json()
+        let records = await getRecords.json()
+
+        for (let record of records) {
+          if (record.record.tags && (record.record.tags).includes("recall")) {
+            context.error(`Record has already been recalled`);
+                  return {
+                      status: 400,
+                      body: "Record has already been recalled"
+                  }
+          }
+          }
+
+        const formData = await request.formData();
+        const recordStr = formData.get("provenanceRecord"); 
+        const record = JSON5.parse(formData.get("provenanceRecord") as string) || { tags: []};
+
+        record.tags ??= [];
+        if (!record.tags.includes("recall")) record.tags.push("recall");
+        const tags = record.tags
+        
+        const description = record.description || "";
+
+        await addRecordWithTags(baseUrl, deviceKey, tags, "Recalled")
+
+        // Email users if they are subscribed to the group
+        let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
+        if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
+
+        getRecords = await fetch(`${baseUrl}${deviceKey}`)
+        records = await getRecords.json()
 
 
         if (records[0].record.tags.includes("recall")) {
@@ -1240,6 +1247,7 @@ export async function postEmail(request: HttpRequest, context: InvocationContext
         context.error('postEmail: Failed to add feedback volunteer contact info', error.message)
     }
 }
+
 
 export async function postNotificationEmail(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('httpTrigger: entering postNotificationEmail')
@@ -1420,78 +1428,93 @@ export async function getPendingVerification(request: HttpRequest, context: Invo
     }
 }
 
+export async function postVerifyCode(request, context) {
+    /*
+     * Setup for, and call, subscribeToNotifications
+     */ 
+
+    context.log('postVerifyCode: Called.')
+
+    // get email and code
+    const body = await request.json() as any;
+    const token = body.token;
+    const code = body.code;
+
+    context.log('postVerifyCode: Do we have token and code?')
+    if (!token || !code) {
+        context.error('postVerifyCode: No.')
+        context.error('postVerifyCode: returning 400')
+        return {
+            jsonBody: { error: "Token and code required" },
+            status: 400
+        }
+    }
+    context.log('postVerifyCode: Yes.')
+
+    // get the PendingVerifications table
+    const tableUrl = accountName === "devstoreaccount1"
+        ? `http://127.0.0.1:10002/devstoreaccount1`
+        : `https://${accountName}.table.core.windows.net`;
+
+    // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
+    let table = 'PendingEmailVerifications'
+    const credential = new AzureNamedKeyCredential(accountName, accountKey);
+    const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
+    await tableClient.createTable();  // Create if not exist, no error if it does
+
+    // look up directly by partitionKey (token) and rowKey (code)
+    let entity = null;
+    try {
+        entity = await tableClient.getEntity(token, code);
+    } catch {
+        // not found
+    }
+
+    // not found, expired - same generic msg
+    if (!entity || Date.now() > entity.expiresAt) {
+        // Todo: delete row
+        context.error('postVerifyCode: returning 400')
+        return {
+            jsonBody: { error: "Invalid or expired code" },
+            status: 400
+        }
+    }
+
+    // get tags as array of strings if entity exists and has tags. 
+    const tags = typeof entity.tags === 'string'
+        ? z.array(z.string()).parse(JSON.parse(entity.tags))
+        : [];
+
+    await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
+
+    await containerClient.createIfNotExists();
+    context.log('postVerifyCode: Attempting to call subscribeToNotifications')
+    const result = await subscribeToNotifications(
+        containerClient, 
+        entity.recordKey as string, 
+        entity.email as string, 
+        tags, 
+        context
+    );
+    context.log('postVerifyCode: Returned from subscribeToNotifications to postVerifyCode')
+    context.log(result)
+
+    // Todo: delete row from signup table
+
+    return result
+}
+
 // setup TableClient for PendingVerifications
 // on success should call signupForNotifications - cause email is now verfied
-export async function postVerifyCode(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+export async function postVerifyCodeHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering postVerifyCodeHandler')
     try {
-        // get email and code
-        const body = await request.json() as any;
-        const token = body.token;
-        const code = body.code;
-
-        if (!token || !code) {
-            context.error('postVerifyCode: returning 400')
-            return {
-                jsonBody: { error: "Token and code required" },
-                status: 400
-            }
-        }
-
-        // get the PendingVerifications table
-        const tableUrl = accountName === "devstoreaccount1"
-            ? `http://127.0.0.1:10002/devstoreaccount1`
-            : `https://${accountName}.table.core.windows.net`;
-
-        // const tableUrl =  `https://gdtteststorage.table.core.windows.net`
-        let table = 'PendingEmailVerifications'
-        const credential = new AzureNamedKeyCredential(accountName, accountKey);
-        const tableClient = new TableClient(tableUrl, table, credential, { allowInsecureConnection: true })
-        await tableClient.createTable();  // Create if not exist, no error if it does
-
-
-        // look up directly by partitionKey (token) and rowKey (code)
-        let entity = null;
-        try {
-            entity = await tableClient.getEntity(token, code);
-        } catch {
-            // not found
-        }
-
-        // not found, expired - same generic msg
-        if (!entity || Date.now() > entity.expiresAt) {
-            context.error('postVerifyCode: returning 400')
-            return {
-                jsonBody: { error: "Invalid or expired code" },
-                status: 400
-            }
-        }
-
-        // get tags as array of strings if entity exists and has tags. 
-        const tags = typeof entity.tags === 'string'
-            ? z.array(z.string()).parse(JSON.parse(entity.tags))
-            : [];
-
-        await tableClient.updateEntity({ partitionKey: token, rowKey: code, verified: true }, 'Merge');
-
-        // Proof of concept 
-        // on success, delete pending entity and call signupForNotifications
-        await containerClient.createIfNotExists();
-        const response = await subscribeToNotifications(containerClient, entity.recordKey as string, entity.email as string, tags);
-        if (response.status !== 200) {
-            context.error("postVerifyCode: failed to subscribe to notifications")
-            return {
-                jsonBody: {error: "postVerifyCode: failed to subscribe to notifications"},
-                status: response.status || 500
-            }
-        }
-
-        return {
-            jsonBody: {message: "Success", recordKey: entity.recordKey as string},
-            status: 200
-        } 
+        return postVerifyCode(request, context)
     } catch(error) {
+        context.error('Returning with error from postVerifyCodeHandler')
         if (error instanceof z.ZodError) {
-            context.error('postVerifyCode: returning 400')
+            context.error('postVerifyCodeHandler: returning 400')
+            context.error(error.issues)
             return {
                 jsonBody: {error: error.issues},
                 status: 400
@@ -1628,7 +1651,13 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         }
 
         await containerClient.createIfNotExists();
-        const response = await unsubscribeFromNotifications(containerClient, recordKey, emailID, tags); 
+        const response = await unsubscribeFromNotifications(
+            containerClient, 
+            recordKey, 
+            emailID, 
+            tags,
+            context
+        ); 
 
         context.error("Unsubscribed from the record");
         return response;
@@ -1643,14 +1672,13 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
     }
 }
 
-
 /* ----- True Handlers ----- */
 
 // --- GETs --- //
 
 async function upgradeProvenanceHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     try {
-        const deviceKey = decodeKey(request.params.deviceKey);
+        const deviceKey = decodeKey(request.params.deviceKey, context);
         const body = await upgradeProvenance(containerClient, deviceKey, context);
         return { jsonBody: body ?? { "already-converted": true } };
     } catch (error) {
@@ -1658,20 +1686,31 @@ async function upgradeProvenanceHandler(request: HttpRequest, context: Invocatio
     }
 }
 
-
 // --- POSTs --- //
 
 async function notifySubscribersHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Entering notifySubscribersHandler')
     await containerClient.createIfNotExists();
     const formData = await request.formData();
 
     try {
-        return await notifySubscribers(containerClient, request.params.deviceKey, formData, context);
+        const result = await notifySubscribers(
+            containerClient, 
+            request.params.deviceKey, 
+            formData, 
+            context
+        );
+        console.log('Returning successfully from notifySubscribersHandler')
     } catch(error) {
+        console.error('Returning unsuccessfully from notifySubscribersHandler')
+        console.error(error)
+        console.error(error.message)
+        console.error(JSON.stringify(error))
         return {
             status: error.statusCode || 500,
             jsonBody: {
                 error: 'Failed to send email'
+
             }
         }
     }
@@ -1740,6 +1779,7 @@ async function createChildren(context, description: string, number_of_children: 
 }
 
 async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = []) {
+    context.log('createGroup: Called.')
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1759,8 +1799,11 @@ async function createGroup(context, name, description, n_children: number = 0, c
             custom_child_titles.push("")
         }
     };
+
     // Create children first
+    context.log('createGroup: Creating child records...')
     let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
+    context.log('createGroup: ...done.')
     let totalChildren = n_children + (hasPublicKey ? 1 : 0)
     if (childKeys.length !== totalChildren) {
         throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`, { cause: 500 });
@@ -1795,6 +1838,7 @@ async function createGroup(context, name, description, n_children: number = 0, c
         method: "POST",
         body: groupFormData,
     });
+
     if (!groupResponse.ok) {
         const errorBody = await groupResponse.text().catch(() => "");
         throw new Error(`Failed to create group record ${groupKey}: ${groupResponse.status} ${errorBody}`, { cause: 500 });
@@ -1803,7 +1847,11 @@ async function createGroup(context, name, description, n_children: number = 0, c
     let groupUrlRecordPage = `${frontendUrl}/record/${groupKey}`
     context.log(groupUrlRecordPage)
 
-    return groupUrlRecordPage;
+    return {
+        url: groupUrlRecordPage,
+        key: groupKey
+    }
+    
 }
 
 const GroupCreationOrderSchema = z.object({
@@ -1858,13 +1906,16 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
         let hasPublicKey = theRequest['hasPublicKey']
         let tags = theRequest['tags']
         let custom_child_titles = theRequest['children_name']
-        let theGroupRecordPageUrl = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
-        context.log(theGroupRecordPageUrl)
+        let { url, key } = await createGroup(context, title, description, n_children, custom_child_titles, hasPublicKey, tags, attachments)
+        context.log(url, key)
 
         context.log('Returning successfully from createGroupHandler')
         return {
             status: 200,
-            jsonBody: { groupUrl: theGroupRecordPageUrl },
+            jsonBody: { 
+                groupUrl: url,
+                key: key
+            },
             headers: { "Content-Type": "application/json" }
         }
     } catch(error) {
@@ -1904,6 +1955,7 @@ export async function createGroupHandler(request: HttpRequest, context: Invocati
     }
 }
 
+// TODO: Update to new format
 export async function subscribeGroupToChildren(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     context.log("Entering subscribeGroupToChildren")
@@ -1930,7 +1982,7 @@ export async function subscribeGroupToChildren(request: HttpRequest, context: In
         let blobName: string;
         let blobClient: BlockBlobClient;
         try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, groupKey);
+            [blobName, blobClient] = await setupBlobClient(containerClient, groupKey, context);
         } catch (error) {
             context.error(`Error: subscribeGroupToChildren setup failed: ${error.message}`)
             return {
@@ -1974,7 +2026,7 @@ async function createRecord(context, name, description, tags, attachments) {
     const baseUrl = process.env['backend_url'];
     const frontendUrl = process.env['frontend_url'];
     const deviceKey = await makeEncodedDeviceKey();
-    const decodedDeviceKey = decodeKey(deviceKey);
+    const decodedDeviceKey = decodeKey(deviceKey, context);
 
     try {
         const data = {
@@ -2102,74 +2154,88 @@ export async function createRecordHandler(request: HttpRequest, context: Invocat
 }
 
 export async function addEntryHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entering addEntryHandler for /addEntry')
-    // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
-    // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
-    const backendUrl = process.env['backend_url'];
-    const requestClone = request.clone();
-    const deviceKey = requestClone.params.deviceKey;
-    let formData = await requestClone.formData();
-    const attachmentValues = formData.values();
-    const record = JSON.parse(formData.get("provenanceRecord") as string);
+    try {
 
-    // Check the first record entry in the provenance to see if the key is a group or not
-    const provenance = await getProvenance(request, context);
-    if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
-    const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
-    if (!creationRecord) {
-        context.error('addEntryHandler: returning 400')
-        return {
-            status: 400,
-            jsonBody: { error: "Provenance needs to exist before adding entries." }
-        }
-    }
-    const isGroup = Array.isArray(creationRecord.record.children_key);
+        context.log('Entering addEntryHandler for /addEntry')
+        // no longer permanently consumes the body, instead makes a copy of the request object that enables body consumption and reuse
+        // see: https://developer.mozilla.org/en-US/docs/Web/API/Request/clone
+        const backendUrl = process.env['backend_url'];
+        const requestClone = request.clone();
+        const deviceKey = requestClone.params.deviceKey;
+        let formData = await requestClone.formData();
+        const attachmentValues = formData.values();
+        const record = JSON.parse(formData.get("provenanceRecord") as string);
 
-    // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
-    const sendEntryToAllChildren = record.send_to_all_children;
-    if (isGroup && sendEntryToAllChildren) {
-        record.tags.push("sent_to_all_children");
-
-        // Rebuild our formData to include the new tag
-        formData = new FormData();
-        formData.append("provenanceRecord", JSON.stringify(record));
-        
-        for (const attachment of attachmentValues) {
-            if (typeof attachment === 'string') continue;
-            formData.append(attachment.name, attachment);
-        }
-    }
-
-    // TODO: Always call directly if possible. 
-    // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
-    const response = await fetch(`${backendUrl}${deviceKey}`, {
-        method: "POST",
-        body: formData,
-    });
-
-    // If users are subscribed to notifications email them
-    let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
-    if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
-
-    if (response.status !== 200) { return { status: response.status }; }
-    let postProvResponse = await response.json();
-
-    // If we're sending the record to all children call notifyChildren
-    if (isGroup && sendEntryToAllChildren) {
-        const notifChildrenResponse = await notifyChildren(request, context);
-        if (notifChildrenResponse.status !== 200) {
-            context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' + notifChildrenResponse.status)
+        // Check the first record entry in the provenance to see if the key is a group or not
+        const provenance = await getProvenance(request, context);
+        if (provenance.status == 400) { return provenance; } // if the key is invalid return an error
+        const creationRecord = provenance.jsonBody[provenance.jsonBody.length - 1];
+        if (!creationRecord) {
+            context.error('addEntryHandler: returning 400')
             return {
-                status: notifChildrenResponse.status,
-                jsonBody: { error: "Record entry was unable to be sent to children." }
+                status: 400,
+                jsonBody: { error: "Provenance needs to exist before adding entries." }
             }
         }
-    }
+        const isGroup = Array.isArray(creationRecord.record.children_key);
 
-    context.log('Returning successfully from addEntryHandler')
-    return {
-        jsonBody: postProvResponse,
-        headers: { "Content-Type": "application/json" }
+        // If the entry is marked "send_to_all_children" and the key is a group then add the "sent_to_all_children" tag
+        const sendEntryToAllChildren = record.send_to_all_children;
+        if (isGroup && sendEntryToAllChildren) {
+            record.tags.push("sent_to_all_children");
+
+            // Rebuild our formData to include the new tag
+            formData = new FormData();
+            formData.append("provenanceRecord", JSON.stringify(record));
+            
+            for (const attachment of attachmentValues) {
+                if (typeof attachment === 'string') continue;
+                formData.append(attachment.name, attachment);
+            }
+        }
+
+        // TODO: Always call directly if possible. 
+        // Post the new record entry (calling fetch instead of directly calling the function so we can send the updated formData)
+        const response = await fetch(`${backendUrl}${deviceKey}`, {
+            method: "POST",
+            body: formData,
+        });
+
+        // If users are subscribed to notifications email them
+        let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
+        if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
+
+        if (response.status !== 200) { return { status: response.status }; }
+        let postProvResponse = await response.json();
+
+        // If we're sending the record to all children call notifyChildren
+        if (isGroup && sendEntryToAllChildren) {
+            const notifChildrenResponse = await notifyChildren(request, context);
+            if (notifChildrenResponse.status !== 200) {
+                context.error('Returning unsuccessfully from addEntryHandler: could not send to all children, code: ' + notifChildrenResponse.status)
+                return {
+                    status: notifChildrenResponse.status,
+                    jsonBody: { error: "Record entry was unable to be sent to children." }
+                }
+            }
+        }
+
+        context.log('Returning successfully from addEntryHandler')
+        return {
+            jsonBody: postProvResponse,
+            headers: { "Content-Type": "application/json" }
+        }
+    } catch(e) {
+        context.error('addEntryHandler: Error. Returning unsuccessfully. Error is:')
+        context.error(e)
+        context.error(e.message)
+        context.error(JSON.stringify(e))
+
+        return {
+            status: 500,
+            jsonBody: { message: 'Internal Server Error'},
+            headers: { "Content-Type": "application/json" }
+        }
     }
 }
 
@@ -2310,7 +2376,7 @@ app.post("postNotificationEmail", {
 app.post("postVerifyCode", {
     authLevel: 'anonymous',
     route: 'verifyCode',
-    handler: postVerifyCode
+    handler: postVerifyCodeHandler
 })
 
 app.post("notifySubscribers", {

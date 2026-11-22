@@ -1,133 +1,72 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import { BlockBlobClient, ContainerClient } from "@azure/storage-blob";
 import { encode as base58encode } from '@urlpack/base58';
-import { calculateDeviceID } from "./httpTrigger.js";
+import { calculateDeviceID } from "./httpTriggerUtils";
+import * as httpTrigger from './httpTrigger';
+import * as z from 'zod'
+
+const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
 
 const NOTIFICATION_TYPE = 'notificationSignups';
 const FROM_ADDRESS = process.env['SENDER_EMAIL'];
 const SUBJECT = 'GDT Tracking update';
 const BASE_URL = process.env['frontend_url']; // for unsubscribe page
 
-export async function notifySubscribers(containerClient: ContainerClient, deviceKey: string, formData: any, context: InvocationContext): Promise<HttpResponseInit> {
-    context.log('Entered notifySubscribers')
-    const record = JSON.parse(formData.get('provenanceRecord'));
-    const description = record ? record.description : "";
 
-    // Notify users who subscribed to this record.
-    const retrieveNotifEmailResponse = await retrieveNotifEmails(containerClient, deviceKey);
-    const extractedEmails = extractEmailsFromResponse(retrieveNotifEmailResponse);
-    const emailSet = extractedEmails[0] || new Set<string>();
-    const emailIDArray = extractedEmails[1] || [];
-    if (emailSet.size === 0) {
-        context.log("No subscribers found for this record.");
-        return { status: 204 };
-    }
+/* Notes + Status
 
-    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING']) {
-        context.log("COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
-        return;
-    }
+    Status:
+    * Subscribe: working
+    * NotifySubscribers: working
 
-    const displayName: string = FROM_ADDRESS;
-    let index = 0;
-    try {
-        const { sendEmail } = await import('./sendEmail.js'); //  This prevents the top-level code in sendEmail.ts from running at startup.
-        for (const to_email of emailSet) {
-            const unsubscribe_page: string = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${emailIDArray[index]}`;
-            let email_body: string;
-            if(description) {
-                // Non-blank description
-                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>The GDT Team</div>`;
-            } else {
-                // Blank description
-                email_body = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>The GDT Team</div>`;
-            }
-            index++
-            let result = await sendEmail(
-                FROM_ADDRESS,
-                to_email,
-                SUBJECT + ` for record ${deviceKey}`,
-                email_body,
-                displayName,
-                context
-            );
+    Next:
+    * Remove
+    * Unsubscribe
+    * Tests: integration test for postVerifyCode
 
-            if (result.status !== "Succeeded") {
-                throw result.message
-            }
-        }
-        return { status: 200 };
-    } catch (error) {
-        context.error("Error sending email: ", error.statusCode, error);
-        throw error
-    }
-}
+    Todo:
+    * Create ticket: Move calculateDeviceID into its own file, generalUtils.ts, import it here, change the signatures, and also import it in httpTrigger and all others that use it (if any)
+*/
 
-export async function setupBlobClient(containerClient: ContainerClient, deviceKey: string) {
-    // 0: Setup id
-    const deviceID = await calculateDeviceID(deviceKey);
+// ---vvv--- Utiities Functions Section: Begin ---vvv--- //
+
+// TODO: move this into generalUtils.ts, import here and httpTrigger.
+export async function setupBlobClient(
+    containerClient: ContainerClient, 
+    deviceKey: string,
+    context: InvocationContext) 
+{
+    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
+
+    context.log('setupBlobClient: Called')
+    // 0: Setup id         // Transitively throws error originating in decodeKey
+    const deviceID = await calculateDeviceID(deviceKey, context);
 
     // 1: Setup blob name & client
     const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
+    context.log('setupBlobClient: attempting to get BlockBlobClient')
     const blobClient = containerClient.getBlockBlobClient(blobName);
+    context.log('setupBlobClient: got BlockBlobClient')
 
     // 2: Return blob content (so we can read existing content, merge email list, write back)
+    context.log('setupBlobClient: success. Returning.')
     return [blobName, blobClient] as const;
 }
 
-export async function getExistingEmails(blobClient: BlockBlobClient) {
-    // Get all the emails and ids currently stored in the blob
-    let existingEmails: string[] = [];
-    let existingEmailIDs: string[] = [];
-    const exists = await blobClient.exists();
+async function uploadBlob(
+    containerClient: ContainerClient, 
+    blobName: string, 
+    tagBundle,
+    context
+) {
+    context.log('uploadBlob: Called')
 
-    if (exists) {
-        const buffer = await blobClient.downloadToBuffer();
-        const text = buffer.toString("utf8");
-
-        if (text) {
-            const parsed = JSON.parse(text) as any;
-            const emailsFromBlob = parsed?.email;
-            if (Array.isArray(emailsFromBlob)) {
-                existingEmails = emailsFromBlob.filter(email => {
-                    return typeof email === "string";
-                });
-            }
-
-            const emailIDsFromBlob = parsed?.email_id;
-            if (Array.isArray(emailIDsFromBlob)) {
-                existingEmailIDs = emailIDsFromBlob.filter(id => {
-                    return typeof id === "string";
-                });
-            }
-        }
-    }
-
-    const emailSet = new Set(
-        existingEmails
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    const emailIDSet = new Set(
-        existingEmailIDs
-        .map(s => s.trim())
-        .filter(Boolean)
-    );
-
-    return [emailSet, emailIDSet] as const;
-}
-
-async function uploadBlob(containerClient: ContainerClient, blobName: string, emailSet: Set<string>, emailIDSet: Set<string>, tags: string[]) {
     // Setup data to upload
-    const payloadObj = { email: Array.from(emailSet), email_id: Array.from(emailIDSet), tags};
-    const data = JSON.stringify(payloadObj);
+    const data = JSON.stringify(tagBundle);
 
     const uploadOptions = {
         tier: "Cool",
-        blobHTTPHeaders: {
-            blobContentType: "application/json; charset=utf-8",
-        },
+        blobHTTPHeaders: { blobContentType: "application/json; charset=utf-8" }
     };
 
     // Note: do not reformat; leave as commented
@@ -139,218 +78,14 @@ async function uploadBlob(containerClient: ContainerClient, blobName: string, em
     )).response._response.status
 
     if (status < 300 && status >= 200) {
-        return {
-            jsonBody: { message: "Success",
-                        name: blobName },
-            status: 200
+        context.log('Returning without error from uploadBlob')
+        return { 
+            jsonBody: { message: "Success", name: blobName },
+            status: 200 
         }
-        // TODO: have frontend display in snackbar for status 4xx
-        // This means nothing for now since we're not validating that what we're being handed is an email.
     } else {
-        throw new Error()
-    }
-}
-
-export async function subscribeToNotifications(containerClient: ContainerClient, deviceKey: string, email: string, tags: string[] = []) {
-    /*
-       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
-       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
-
-       Master docs here:
-       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
-
-       * The BlockBlobUploadOptions Interface is where storage tier is set.
-         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
-    */
-
-    let keysToCheck = [deviceKey];
-
-    // Confirm the email exists
-    const normalizedEmail = (email ?? "").trim().toLowerCase();
-    if (!normalizedEmail) {
-        return { jsonBody: { message: "Email not provided" }, status: 404 };
-    }
-
-    // Loop through record/children keys and subscribe to all of them
-    while (keysToCheck.length != 0) {
-        // Add any children of the current key to the list to subscribe to
-        let key = keysToCheck[0];
-        let uniqueChildKeys: string[];
-        try {
-            uniqueChildKeys = await getChildKeys(key, deviceKey);
-        } catch (error) {
-            return {
-                jsonBody: { message: `subscribeToNotifications failed to get child keys: ${error.message}` },
-                status: 400
-            }
-        }
-        keysToCheck = keysToCheck.concat(uniqueChildKeys);
-
-        // Setup the blobClient and get emails subscribed to the record
-        let blobName: string;
-        let blobClient: BlockBlobClient;
-        try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, key);
-        } catch (error) {
-            return {
-                jsonBody: { message: `subscribeToNotifications setup failed: ${error.message}` },
-                status: 400
-            }
-        }
-
-        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
-
-        // Add the specified email to the set, if the email was already stored then move on to the next key to check
-        if (emailSet.has(normalizedEmail)) {
-            keysToCheck.shift();
-            continue;
-        }
-
-        emailSet.add(normalizedEmail);
-
-        // Generate a unique string id to represent the new email
-        const emailID = await crypto.subtle.generateKey(
-            {
-            name: "AES-CBC",
-            length: 256
-            },
-            true,
-            ['encrypt', 'decrypt']
-        );
-
-        const buffer = await crypto.subtle.exportKey("raw", emailID);
-        const emailIDString = base58encode(new Uint8Array(buffer));
-        emailIDSet.add(emailIDString);
-
-        try {
-            // Update our stored emails to include the new email/id
-            uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
-        } catch(error) {
-            return {
-                jsonBody: {message: 'Failed to subscribe to email notifications'},
-                status: 500
-            }
-        }
-
-        keysToCheck.shift();
-    }
-
-    return {
-        jsonBody: { message: "Success" },
-        status: 200
-    }
-}
-
-export async function unsubscribeFromNotifications(containerClient: ContainerClient, deviceKey: string, emailID: string, tags: string[] = []) {
-    // Setup the blobClient
-    let blobName: string;
-    let blobClient: BlockBlobClient;
-    try {
-        [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey);
-    } catch (error) {
-        return {
-            jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
-            status: 400
-        }
-    }
-    
-    // Get the email that corresponds to the given email id
-    let keysToCheck = [deviceKey];
-    const [emailSet, emailIDSet] = await getExistingEmails(blobClient);
-
-    // Confirm the emailID/email exists
-    const emailIndex = Array.from(emailIDSet).indexOf(emailID);
-    if (emailIndex < 0) {
-        return { jsonBody: { message: "Email not found in the database" }, status: 200 };
-    }
-    const existingEmails = Array.from(emailSet);
-    const email = existingEmails[emailIndex];
-    const normalizedEmail = (email ?? "").trim().toLowerCase();
-
-    // Loop through record/children keys and unsubscribe from all of them
-    while (keysToCheck.length != 0) {
-        // Add any children of the current key to the list to unsubscribe from
-        let key = keysToCheck[0];
-        let uniqueChildKeys = await getChildKeys(key, deviceKey);
-        keysToCheck = keysToCheck.concat(uniqueChildKeys);
-
-        // Setup the blobClient and get emails subscribed to the record
-        let blobName: string;
-        let blobClient: BlockBlobClient;
-        try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, key);
-        } catch (error) {
-            return {
-                jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
-                status: 400
-            }
-        }
-
-        let [emailSet, emailIDSet] = await getExistingEmails(blobClient);
-
-        // Check if the email is subscribed to the child record
-        const emailIndex = Array.from(emailSet).indexOf(email);
-        if (emailIndex < 0) {
-            keysToCheck.shift();
-            continue
-        }
-
-        // Get the child record's id
-        const existingEmailIDs = Array.from(emailIDSet);
-        const emailID = existingEmailIDs[emailIndex];
-
-        // Remove the specified email and id from the set
-        emailSet.delete(normalizedEmail);
-        emailIDSet.delete(emailID);
-
-        try {
-            // Update our stored emails to no longer include the specified email/id
-            uploadBlob(containerClient, blobName, emailSet, emailIDSet, tags);
-        } catch(error) {
-            return {
-                jsonBody: {message: 'Failed to unsubscribe from email notifications'},
-                status: 500
-            }
-        }
-
-        keysToCheck.shift();
-    }
-
-    return {
-        jsonBody: { message: "Success",
-                    name: blobName },
-        status: 200
-    }
-}
-
-export async function retrieveNotifEmails(containerClient: ContainerClient, key: string) {
-    // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-download-javascript?tabs=javascript
-    let deviceID: string;
-    try {
-        deviceID = await calculateDeviceID(key);
-    } catch (error) {
-        return {
-            jsonBody: { message: error.message },
-            status: 400
-        }
-    }
-    const blobName = `${NOTIFICATION_TYPE}/${deviceID}`
-
-    try {
-        const blobClient = containerClient.getBlobClient(blobName);
-        const downloadResponse = await blobClient.download();
-        const downloaded = await streamToString(downloadResponse.readableStreamBody);
-        console.log('Downloaded blob content:', downloaded.toString());
-
-        return {
-            jsonBody: { message: downloaded},
-            status: 200
-        }
-    } catch(error) {
-        return {
-            jsonBody: {message: error.message},
-            status: 500,
-        }
+        context.log('uploadBlob: throwing new error')
+        throw new Error('Internal Server Error', {cause: 500})
     }
 }
 
@@ -367,46 +102,544 @@ async function streamToString(readableStream) {
     });
 }
 
-export function extractEmailsFromResponse(response: any) {
-    const emailSet = new Set<string>();
-    const emailIDArray = new Array<string>();
-    if (!response || (response.status !== 200) || !response.jsonBody || !response.jsonBody.message) {
-        return emailSet;
-    }
-    try {
-        const parsed = JSON.parse(response.jsonBody.message);
-        let emails = parsed.email
-        let emailIDs = parsed.email_id
-        emails.forEach((e: string) => emailSet.add(e));
-        emailIDs.forEach((e: string) => emailIDArray.push(e));
-    } catch (error) {
-        console.log("Failed to extract emails:", error.message)
-    }
-    return [emailSet, emailIDArray];
+async function createNewEmailId() {
+    const uniqueString = await crypto.subtle.generateKey(
+        { name: "AES-CBC", length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
+
+    const buffer = await crypto.subtle.exportKey("raw", uniqueString);
+    const uniqueEmailString = base58encode(new Uint8Array(buffer));
+
+    return uniqueEmailString
 }
 
-async function getChildKeys(key: string, groupKey: string): Promise<string[]> {
-    const baseUrl = process.env['backend_url'];
-    let getKey = await fetch(`${baseUrl}${key}`);
-    const provenance = await getKey.json();
+function signupIsLegacyFormat(parsed, context) {
+    context.log(`signupIsLegacyFormat: called with: ${parsed}`)
+    let result: boolean = false
 
-    let childKeys: string[] = []
+    // If tag-specific, we're done
+    // 'email', 'email_id' could be tags a user chooses
+    if('no_tag' in parsed) {
+        return false
+    }
 
-    for (const p of provenance) {
-        const child = p.record.children_key; // Can be "" if not a group or string[] if a group
-        // child may be undefined or an empty array
-        if (!child || !child.length || child == '') {
-            continue;
+    // If we don't have 
+    // email, email_id, length 2, arrays nonempty, arrays not of strings, then
+    // something has gone wrong. Throw error to original API caller.
+    let keys = Object.keys(parsed)
+    let condition = (
+        'email' in keys &&
+        'email_id' in keys &&
+        keys.length == 2 &&
+        parsed.email.length > 0 &&
+        parsed.email_id.length > 0 &&
+        typeof([parsed.email[0]]) == 'string' &&  // Just checking one
+        typeof([parsed.email_id[0]]) == 'string'
+    )
+
+    if( !condition ) {
+        let message = (
+            'emailNotificationUtils.ts:signupIsLegacyFormat: ' +
+            'variable "parsed" evaluating as neither legacy nor modern format.' +
+            'Called with: --- vvv ---\n' +
+            `${JSON.stringify(parsed)}` +
+            '             --- ^^^ ---\n' 
+        )
+        context.error(message)
+        throw new Error(message, {cause: 500})
+    }
+
+    context.log('Returning without error from signupIsLegacyFormat')
+    return condition
+}
+
+function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags, context) {
+    context.log('AddTagSpecificSignupDataToBundle: Called')
+    context.log(the_bundle)
+
+    if(!theTags.length) {
+        the_bundle.no_tag.push({
+            email: theEmail,
+            id: theEmailId
+        })
+
+        context.log('AddTagSpecificSignupDataToBundle: Returning successfully: user selected: no tag filtering')
+        return the_bundle
+    }
+
+    for(let i = 0; i < theTags.length; i++) {
+        if(!(theTags[i] in the_bundle)) {
+            the_bundle[theTags[i]] = [{
+                email: theEmail,
+                id: theEmailId
+            }]
+        } else {
+            the_bundle[theTags[i]].push({
+                email: theEmail,
+                id: theEmailId
+            })
         }
-        childKeys = [...childKeys, ...child];
     }
 
-    let childrenKeys = Array.from(new Set(childKeys));
+    console.log('AddTagSpecificSignupDataToBundle: Returning with success: tag filtering applied')
+    return the_bundle 
+}
 
-    // Remove group key if it's stored to prevent infinite loops
-    if (childrenKeys.includes(groupKey.toString())) {
-        childrenKeys.splice(childrenKeys.indexOf(groupKey.toString()), 1);
+export async function getExistingEmails(
+    blobClient: BlockBlobClient,
+    context: InvocationContext
+) {
+    context.log('GetExistingEmails: Called')
+
+    let theTagBundle = { no_tag: [] }
+
+    // No blob may yet exist for this record: someone must be the first signup.
+    if(!(await blobClient.exists())) { 
+        context.log('getExistingEmails: blob does not exist. Returning initial / default tag bundle')
+        return theTagBundle 
     }
 
-    return childrenKeys
+
+    let buffer;
+    context.log('getExistingEmails: attempting to get blob')
+    try{
+        buffer = await blobClient.downloadToBuffer();
+    } catch(error) { 
+        context.error('getExistingEmails: downloadToBuffer failed. Error is:')
+        context.error(error)
+        context.error(JSON.stringify(error))
+        throw new Error('Internal Server Error', {cause:500})
+    }
+    context.log('getExistingEmails: got blob')
+
+
+    const text = buffer.toString("utf8");
+    if(!text) { 
+        context.log('getExistingEmails: blob is null, returning default signup tag bundle')
+        return theTagBundle 
+    }
+    
+
+    context.log('getExistingEmails: calling detectAndConvertLegacyEmailSignup')
+    let signups = detectAndConvertLegacyEmailSignup(JSON.parse(text), context)
+    context.log('getExistingEmails: returned from detectAndConvertLegacyEmailSignup')
+
+    signups = 'no_tag' in signups? signups : {...theTagBundle, ...signups}
+    context.log('getExistingEmails: success. Returning.')
+    return signups
+}
+
+function getTagsFromSignupBundle(bundle, email, context) {
+    let tags = []
+    for(let tag in bundle) {
+
+        // signup: {email: "foo@bar.baz", id: 12345}
+        for(let a_signup of bundle[tag]) {
+
+            if(a_signup.email != email) {
+                continue
+            }
+
+            if(tags.indexOf(tag) < 0) {
+                tags.push(tag)
+            }
+        }
+    }
+    
+    return tags
+}
+
+function getEmailGivenEmailID(id, bundle) {
+
+    for(let tag in bundle) {
+        for(let someSignup of bundle[tag]) {
+            if(id == someSignup.id) {
+                return someSignup.email
+            }
+        }
+    }
+
+    return true
+}
+
+function emailIsSignedUp(email, bundle) {
+
+    for(let tag in bundle) {
+        for(let a_signup of bundle[tag]) {
+            if(email == a_signup.email) {
+                return true
+            }
+        }
+    }
+
+    return false
+}
+
+function getSubscribedEmailsForTheseTags(the_bundle, tags) {
+    let pairs = [...the_bundle.no_tag]  // They start as [{ email: ..., id: ... } ...], ie, pairs
+
+    for(let tag in the_bundle) {
+        if( ! tags.includes(tag)) { continue }
+        pairs = [...pairs, ...the_bundle[tag]]
+    }
+
+    return [...(new Set(pairs))]
+}
+
+function convertLegacyEmailSignup(theEmailSet, theEmailIdSet) {
+    /*
+        Does this: emailset, emailidset --> { no_tag: [{pair}, {pair}, ... ] }
+    */
+
+    let theTagBundle = { no_tag: [] }
+
+    for(let i = 0; i < theEmailSet.length; i++) {
+        let pair = { email: theEmailSet[i], id: theEmailIdSet[i] }
+        theTagBundle['no_tag'].push(pair)
+    }
+
+    return theTagBundle
+}
+
+function detectAndConvertLegacyEmailSignup(parsed, context) {
+    /*
+     * Before tag specific signup, data was: { email: [email_array], email_id: [email_id_array] }
+     */
+    
+    return signupIsLegacyFormat(parsed, context) ? convertLegacyEmailSignup(parsed.email, parsed.email_id) : parsed
+}
+
+
+// ---^^^--- Utiities Functions Section: End ---^^^--- //
+
+
+// -------vvv------- Core operations -------vvv------- //    
+
+
+function removeEmailFromTagBundle(the_bundle, theEmail, context) {
+    context.log('removeEmailFromTagBundle: Called.')
+
+    for(let tag in the_bundle) {
+        let currTag = the_bundle[tag]
+        currTag = currTag.filter((pair) => pair.email !== theEmail)
+        the_bundle[tag] = currTag
+    }
+
+    let result = cleanupEmptyTagsFromSignupData(the_bundle)
+    context.log('removeEmailFromTagBundle: return success.')
+    return result
+}
+
+function cleanupEmptyTagsFromSignupData(signups) {
+    for(let tag in signups) {
+        if(tag != 'no_tag' && !signups[tag].length) {
+            // Do not permit the signup data to be polluted with chaff
+            delete signups[tag]
+        }
+    }
+
+    return signups
+} 
+
+// Status: Ready for removeEmailFromTagBundle. Working otherwise.
+export async function subscribeToNotifications(
+    containerClient: ContainerClient, 
+    deviceKey: string, 
+    email: string, 
+    tags: string[] = [],
+    context
+) {
+    /*
+       Note: this is not a general-purpose function. This proof-of-concept exclusively adds new key-value pairs where no key yet exists.
+       We look up the blob using the devicekey, and the blobid, which is just a hash of the data. So we can hash the email.
+
+       Master docs here:
+       // https://learn.microsoft.com/en-us/javascript/api/@azure/storage-blob/containerclient?view=azure-node-latest#@azure-storage-blob-containerclient-uploadblockblob
+
+       * The BlockBlobUploadOptions Interface is where storage tier is set.
+         - https://learn.microsoft.com/en-us/javascript/api/%40azure/storage-blob/blockblobuploadoptions?view=azure-node-latest
+    */
+
+    context.log('SubscribeToNotifications: Called.')
+
+    try {
+        // Tested
+        context.log('subscribeToNotifications: Is email malformed?')
+        const emailValidationResult = z.email().safeParse(email)
+        if(!emailValidationResult.success) {
+            context.error('subscribeToNotifications: got invalid email')
+            return {
+                jsonBody: { message: emailValidationResult.error.issues },
+                status: 400
+            }
+        }
+        context.log('subscribeToNotifications: No.')
+
+        // Tested
+        context.log('subscribeToNotifications: Can we get the blob client?')
+        // Step 1: Setup the blobClient, return API response
+        let blobName: string;
+        let blobClient: BlockBlobClient;
+        try {
+            [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context);
+        } catch (error) {
+            context.error('subscribeToNotifications: returning with error')
+            let message = `subscribeToNotifications setup failed: ${error.message}`
+            context.error(message)
+
+            if('cause' in error && error.cause == 400) {
+                return {
+                    jsonBody: { message: error.message },
+                    status: 400
+                }
+            }
+
+            context.error('subscribeToNotifications: unidentified error detected')
+            context.error(error)
+            return {
+                jsonBody: { message: 'Internal Server Error'},
+                status: 500
+            }
+        }
+        context.log('subscribeToNotifications: Yes.')
+
+        // Tested
+        context.log('subscribeToNotifications: Does the key correspond to a record?')
+        let response = await httpTrigger.getProvenance({ params: { deviceKey: deviceKey } }, context)
+        context.log('subscribeToNotifications: getProv returned with: ')
+        context.log(response)
+        context.log(response.status)
+        if(response.status == 404) {
+            return {
+                jsonBody: { message: 'Valid key has no corresponding record'},
+                status: 404
+            }
+        }
+        if(response.status != 200) {
+            return {
+                jsonBody: { message: 'Internal Server Error'},
+                status: 500
+            }
+
+        }
+        context.log('subscribeToNotifications: Yes.')
+
+
+        // Step 1/3: Get. Converts legacy in background. Returns at least this: { no_tag: [] }
+        context.log('subscribeToNotifications: Getting existing signup data...')
+        let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
+        context.log('subscribeToNotifications: Got existing signup data.')
+
+        // Tested
+        context.log('subscribeToNotifications: is this email already subscribed, with these exact tags?')
+        // If email is already stored return success
+        let condition = (
+            JSON.stringify(tags.concat(['no_tag']))
+            == 
+            JSON.stringify(getTagsFromSignupBundle(tagSpecificSignupBundle, email, context))
+        )
+        if(condition) {
+            context.log('subscribeToNotifications: email is already signed up for this exact set of tags. Nothing to do. 304 success')
+            return {
+                jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
+                status: 304,
+            };
+        }
+        context.log('subscribeToNotifications: No.')
+
+
+        // Step 2/3: Remove
+        context.log('subscribeToNotifications: cleaning the slate of the present email signup, if any')
+        tagSpecificSignupBundle = removeEmailFromTagBundle(tagSpecificSignupBundle, email, context)
+        context.log('subscribeToNotifications: email removed from signup data')
+        
+
+        // Step 3/3: Add
+        context.log('subscribeToNotifications: Preparing to add user to email signup tag bundle')
+        const uniqueEmailString = await createNewEmailId()
+        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagSpecificSignupBundle, email, uniqueEmailString, tags, context)
+        context.log('subscribeToNotifications: user added: ')
+
+        try {
+            context.log('subscribeToNotifications: Attempting to store')
+
+            // Update our stored emails to include the new email/id
+            await uploadBlob(containerClient, blobName, tagSpecificSignupBundle, context)
+
+            context.log('subscribeToNotifications: Success. Returning without error')
+            return { 
+                jsonBody: { message: "Success" }, 
+                status: 200 
+            };
+
+        } catch(error) {
+            context.error('subscribeToNotifications: Returning with error:')
+            context.error(error.message)
+            context.error(JSON.stringify(error))
+
+            return {
+                jsonBody: { message: 'Failed to subscribe to email notifications' },
+                status: 500,
+            }
+        }
+
+    } catch(error) {
+        context.error('subscribeToNotifications: Returning with error from subscribeToNotifications')
+        context.error(error.message)
+        context.error(JSON.stringify(error))
+        return {
+            jsonBody: { message: 'Failed to subscribe to email notifications' },
+            status: 500,
+        }
+    }
+}
+
+
+// Todo: update call to uploadBlob, follow example in subscribe
+// Todo: Convert to new return type of getExistingEmails
+export async function unsubscribeFromNotifications(
+    containerClient: ContainerClient, 
+    deviceKey: string, 
+    emailID: string, 
+    tags: string[] = [],
+    context
+) {
+
+    // Step 1: Ensure we're being called correctly
+    let blobName: string;
+    let blobClient: BlockBlobClient;
+    try {
+        [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context);
+    } catch (error) {
+        return {
+            jsonBody: { message: `unsubscribeFromNotifications setup failed: ${error.message}` },
+            status: 400
+        }
+    }
+    const exists = await blobClient.exists();
+
+    // WORKING ON
+    // Edit this, and what follows, to take the tagBundle ie { no_tag: [emails], tag1: [], ... }
+    //let [emailSet, emailIDSet] = await getExistingEmails(exists, blobClient);
+    let bundle = await getExistingEmails(blobClient, context); 
+
+    // Confirm the emailID exists and convert it to an email
+    //const emailIndex = Array.from(emailIDSet).indexOf(emailID);
+    //if (emailIndex < 0) {
+    let email;
+    if( email = getEmailGivenEmailID(emailID, bundle) ) {
+        return { 
+            jsonBody: { message: "Already unsubscribed: Email not found in the database." }, 
+            status: 304 
+        };
+    } // So we have the email
+    const normalized = (email ?? "").trim().toLowerCase();
+
+    // Step 2: Remove
+    // let bundleAfterRemoving = removeEmailFromTagBundle(tagBundleNoTagsOnly)
+
+
+    // Remove the specified email from the set
+    if(emailIsSignedUp(normalized, bundleAfterRemoving)) {
+        context.error('unsubscribeFromNotifications: Error: Failed to unsubscribe!')
+        return {
+            jsonBody: {message: 'Internal Server Error'},
+            status: 500,
+        }
+    }
+
+    // Step 3: Upload
+    try {
+        // Update our stored emails to no longer include the specified email/id
+        context.log('Attempting upload')
+        await uploadBlob(containerClient, blobName, bundleAfterRemoving, context);
+        context.log('Returning without error from unSubscribeFromNotifications')
+        return {
+            jsonBody: { message: "Success. Email has been unsubscribed." },
+            status: 200,
+        };
+    } catch(error) {
+        return {
+            jsonBody: {message: 'Internal Server Error'},
+            status: 500,
+        }
+    }
+}
+
+
+export async function notifySubscribers(
+    containerClient: ContainerClient, 
+    deviceKey: string,
+    formData: any, 
+    context: InvocationContext
+): Promise<HttpResponseInit> {
+    context.log('notifySubscribers: called')
+
+    const record = JSON.parse(formData.get('provenanceRecord'));
+    context.log('notifySubscribers: Provenance record is:')
+    context.log(JSON.stringify(record))
+    const description = record ? record.description : "";
+
+    context.log('notifySubscribers: Attempting to setup blob client')
+    const [blobName, blobClient] = await setupBlobClient(containerClient, deviceKey, context)
+    context.log('notifySubscribers: Blob client set up')
+
+    context.log('notifySubscribers: Attempting to get existing signup data.')
+    const emailSignups = await getExistingEmails(blobClient, context) // TODO: left off here: try it. Will need this function to be updated to tag-specificity
+    context.log(`notifySubscribers: Got existing signup data: ${JSON.stringify(emailSignups)}`)
+
+    if(Object.keys(emailSignups).length == 1 && emailSignups['no_tag'].length == 0) {
+        context.log("notifySubscribers: No subscribers found for this record.");
+        return { status: 204 };
+    }
+
+    if (!process.env['COMMUNICATION_SERVICES_CONNECTION_STRING'] && !process.env['backend_url'].includes('local')) {
+        context.log("notifySubscribers: COMMUNICATION_SERVICES_CONNECTION_STRING not set. Skipping sendEmail.");
+        return;
+    }
+
+    context.log(JSON.stringify(record.tags))  // either list of strings, or empty.
+    let emailsAndIds = getSubscribedEmailsForTheseTags(emailSignups, record.tags)
+
+    context.log('notifySubscribers: Attempting to send email.')
+
+    let result;
+    let email_body: string;
+    let unsubscribe_page: string;
+    let message_for_blank_description = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update. To see it, visit the record by clicking the link above.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+    let message_for_non_blank_description = `<div>Hello GDT User,<br><br>You are receiving this message because you are signed up for updates to the following record:<br><a href="${BASE_URL}/history/${deviceKey}">${BASE_URL}/history/${deviceKey}</a><br><br>This record has received an update: ${description}.</div><br><div>Click <a href="${unsubscribe_page}">here</a> if you wish to unsubscribe.<br><br>Best regards,<br>Global Distributed Tracking</div>`;
+
+    for (const pair of emailsAndIds) {
+
+        unsubscribe_page = `${BASE_URL}/history/unsubscribe/${deviceKey}?id=${pair.id}`;
+        email_body = description ? message_for_non_blank_description : message_for_blank_description
+
+        try {
+            context.log('notifySubscribers: calling sendEmail')
+            result = await sendEmail(
+                FROM_ADDRESS, 
+                pair.email, 
+                SUBJECT + ` for record ${deviceKey}`, 
+                email_body, 
+                FROM_ADDRESS, 
+                context
+            );
+            context.log('notifySubscribers: returned from sendEmail')
+        } catch (error) {
+            context.error("notifySubscribers: call to sendEmail threw error: ", 
+                error.statusCode, error.message, error, JSON.stringify(error));
+            throw new Error('Internal Server Error', {cause: 500})
+        }
+
+        if (result.status !== "Succeeded") {
+            context.error(`notifySubscribers: result.status is not success, rather it is: ${result.status}`)
+            context.error(JSON.stringify(result))
+            throw new Error(result.message, { cause: 500 })
+        }
+    }
+
+    context.log('notifySubscribers: Returning successfully')
+    return { status: 200 };
 }

@@ -23,10 +23,8 @@ describe("Group of tests", () => {
 */
 
 let timeout= 30000;
-let api_url = "https://gosqasbe.azurewebsites.net/api";
+let api_url = process.env['api_url']
 let baseUrl = api_url + '/provenance/'
-//api_url = "http://localhost:7071/api"
-//baseUrl = api_url + '/provenance/'
 
 // question for Vincent why put create a variable, is it to clean code?
 // from Vincent: the question is unclear, rephrase?

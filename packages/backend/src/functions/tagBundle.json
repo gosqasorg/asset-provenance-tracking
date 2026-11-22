@@ -1,0 +1,46 @@
+{
+  "no_tag": [
+    {
+      "email": 1,
+      "id": "a"
+    },
+    {
+      "email": 2,
+      "id": "b"
+    },
+    {
+      "email": 3,
+      "id": "c"
+    }
+  ],
+  "bamboo": [
+    {
+      "email": "foo@bar.com",
+      "id": "12345"
+    },
+    {
+      "email": "foo@bar.com",
+      "id": "12345"
+    }
+  ],
+  "observer": [
+    {
+      "email": "foo@bar.com",
+      "id": "12345"
+    },
+    {
+      "email": "foo@bar.com",
+      "id": "12345"
+    }
+  ],
+  "wizard": [
+    {
+      "email": "foo@bar.com",
+      "id": "12345"
+    },
+    {
+      "email": "foo@bar.com",
+      "id": "12345"
+    }
+  ]
+}
