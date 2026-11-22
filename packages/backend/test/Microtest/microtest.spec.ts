@@ -62,7 +62,7 @@ describe('MicroTestLand', () => {
 
   const context = console
 
-  it("400 invalid key + malformed email", async () => {
+  it("400 invalid key + malformed email + valid key but no record attached to it", async () => {
 
     // containerClient, deviceKey, email, tags, context
     let testCases = [
@@ -79,24 +79,7 @@ describe('MicroTestLand', () => {
       expect(response.status).toBe(testResult)
     }
 
-  })  // End of it()
-
-  it("400 invalid key", async () => {
-
-    // containerClient, deviceKey, email, tags, context
-    let testCases = [
-      //[200, ['1234567891123456789112', 'foo@bar.com', []]],       
-
-    ]
-
-    let response, testCase, testResult
-    for(let [testResult, testCase] of testCases) { 
-      console.log(testResult, testCase)
-      response = await subscribeToNotifications(containerClient, ...testCase, console)
-      expect(response.status).toBe(testResult)
-    }
-
-  })  // End of it()
+  })
 
 });   // End of describe()
 

@@ -345,6 +345,7 @@ export async function subscribeToNotifications(
     context.log('SubscribeToNotifications: Called.')
 
     try {
+        // Tested
         context.log('subscribeToNotifications: Is email malformed?')
         const emailValidationResult = z.email().safeParse(email)
         if(!emailValidationResult.success) {
@@ -356,7 +357,7 @@ export async function subscribeToNotifications(
         }
         context.log('subscribeToNotifications: No.')
 
-
+        // Tested
         context.log('subscribeToNotifications: Can we get the blob client?')
         // Step 1: Setup the blobClient, return API response
         let blobName: string;
@@ -384,10 +385,7 @@ export async function subscribeToNotifications(
         }
         context.log('subscribeToNotifications: Yes.')
 
-        // TODO: Left off here
-        // Add check: blobclient.exists. If not, there's nothing we can do. 
-
-
+        // Tested
         context.log('subscribeToNotifications: Does the key correspond to a record?')
         let response = await httpTrigger.getProvenance({ params: { deviceKey: deviceKey } }, context)
         if(response.status == 404) {
