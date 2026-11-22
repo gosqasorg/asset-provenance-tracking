@@ -186,6 +186,17 @@ console.log(bundle)
 let these_emails = getEmailsForTheseTags(bundle, ['wizard', 'bamboo', 'foobar'])
 console.log(these_emails)
 
+function cleanupEmptyTagsFromSignupData(signups) {
+    for(let tag in signups) {
+        if(tag != 'no_tag' && !signups[tag].length) {
+            // Do not permit the signup data to be polluted with chaff
+            delete signups[tag]
+        }
+    }
+
+    return signups
+} 
+
 function removeTagSpecificDataFromBundle(the_bundle, theEmail) {
 
     // We may want to remove this, depending on the context.
@@ -202,7 +213,7 @@ function removeTagSpecificDataFromBundle(the_bundle, theEmail) {
         the_bundle[tag] = currTag
     }
 
-    return the_bundle
+    return cleanupEmptyTagsFromSignupData(the_bundle)
 }
 
 console.log('\n\n--- removeEmail test ---\n')
@@ -212,16 +223,7 @@ console.log('\n\nResult:\n')
 bundle = removeTagSpecificDataFromBundle(bundle, "foo@bar.com")
 console.log(bundle)
 
-function cleanupEmptyTagsFromSignupData(signups) {
-    for(let tag in signups) {
-        if(tag != 'no_tag' && !signups[tag].length) {
-            // Do not permit the signup data to be polluted with chaff
-            delete signups[tag]
-        }
-    }
 
-    return signups
-} 
 
 console.log('\n\n--- cleanupEmptyTags test ---\n')
 console.log('Cleaning up empty tags from: \n')
