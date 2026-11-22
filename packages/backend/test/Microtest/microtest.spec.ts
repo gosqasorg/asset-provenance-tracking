@@ -64,7 +64,7 @@ describe('MicroTestLand', () => {
   const api_url = process.env['api_url']
 
 
-  it("400 invalid key + malformed email + valid key but no record attached to it", async () => {
+  it("400: Invalid key + Malformed email + Valid key but no record attached to it", async () => {
     // containerClient, deviceKey, email, tags, context
     let testCases = [
       [400, ['0OIL',                   'invalid email', []]],     // Invalid email
@@ -82,7 +82,7 @@ describe('MicroTestLand', () => {
   })
 
 
-  it("Already subscribed", async () => {
+  it("304 Already Subscribed", async () => {
     // Step 1: Create a group
     const groupPayload = {
       deviceName: "group_record_with_public_key",
@@ -116,7 +116,6 @@ describe('MicroTestLand', () => {
       response = await subscribeToNotifications(containerClient, ...testCase, console)
       expect(response.status).toBe(testResult)
     }
-
   })
 
 });   // End of describe()

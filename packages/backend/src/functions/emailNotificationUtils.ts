@@ -155,8 +155,9 @@ function signupIsLegacyFormat(parsed, context) {
     return condition
 }
 
-function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags) {
-    console.log('AddTagSpecificSignupDataToBundle: Called')
+function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theTags, context) {
+    context.log('AddTagSpecificSignupDataToBundle: Called')
+    context.log(the_bundle)
 
     if(!theTags.length) {
         the_bundle.no_tag.push({
@@ -164,7 +165,7 @@ function addTagSpecificSignupDataToBundle(the_bundle, theEmail, theEmailId, theT
             id: theEmailId
         })
 
-        console.log('AddTagSpecificSignupDataToBundle: Returning successfully: user selected: no tag filtering')
+        context.log('AddTagSpecificSignupDataToBundle: Returning successfully: user selected: no tag filtering')
         return the_bundle
     }
 
@@ -228,11 +229,6 @@ export async function getExistingEmails(
     signups = 'no_tag' in signups? signups : {...theTagBundle, ...signups}
     context.log('getExistingEmails: success. Returning.')
     return signups
-}
-
-// Todo: to be called ~line 391 and 485 in subscribe and unsubscribe.
-function removeEmailFromTagBundle(tagBundle) {
-    // this should take the entire tag bundle, not just the no tags only one
 }
 
 function getTagsFromSignupBundle(bundle, email, context) {
@@ -321,6 +317,31 @@ function detectAndConvertLegacyEmailSignup(parsed, context) {
 
 // -------vvv------- Core operations -------vvv------- //    
 
+
+function removeEmailFromTagBundle(the_bundle, theEmail, context) {
+    context.log('removeEmailFromTagBundle: Called.')
+
+    for(let tag in the_bundle) {
+        let currTag = the_bundle[tag]
+        currTag = currTag.filter((pair) => pair.email !== theEmail)
+        the_bundle[tag] = currTag
+    }
+
+    let result = cleanupEmptyTagsFromSignupData(the_bundle)
+    context.log('removeEmailFromTagBundle: return success.')
+    return result
+}
+
+function cleanupEmptyTagsFromSignupData(signups) {
+    for(let tag in signups) {
+        if(tag != 'no_tag' && !signups[tag].length) {
+            // Do not permit the signup data to be polluted with chaff
+            delete signups[tag]
+        }
+    }
+
+    return signups
+} 
 
 // Status: Ready for removeEmailFromTagBundle. Working otherwise.
 export async function subscribeToNotifications(
@@ -411,15 +432,14 @@ export async function subscribeToNotifications(
         let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
         context.log('subscribeToNotifications: Got existing signup data.')
 
-
+        // Tested
+        context.log('subscribeToNotifications: is this email already subscribed, with these exact tags?')
         // If email is already stored return success
         let condition = (
             JSON.stringify(tags.concat(['no_tag']))
             == 
             JSON.stringify(getTagsFromSignupBundle(tagSpecificSignupBundle, email, context))
         )
-        
-
         if(condition) {
             context.log('subscribeToNotifications: email is already signed up for this exact set of tags. Nothing to do. 304 success')
             return {
@@ -427,21 +447,20 @@ export async function subscribeToNotifications(
                 status: 304,
             };
         }
-        context.log('subscribeToNotifications: Existing data retrieved or default created.')
+        context.log('subscribeToNotifications: No.')
 
 
-        context.log('subscribeToNotifications: cleaning the slate of the present email signup, if any')
         // Step 2/3: Remove
-        // Note: this call should be moved into addTagSpecificSignupDataToBundle()
-        // tagBundle = removeEmailFromTagBundle(tagSpecificSignupBundle, email)
+        context.log('subscribeToNotifications: cleaning the slate of the present email signup, if any')
+        tagSpecificSignupBundle = removeEmailFromTagBundle(tagSpecificSignupBundle, email, context)
         context.log('subscribeToNotifications: email removed from signup data')
         
 
         // Step 3/3: Add
-        context.log('subscribeToNotifications: preparing to add user to email signup tag bundle')
+        context.log('subscribeToNotifications: Preparing to add user to email signup tag bundle')
         const uniqueEmailString = await createNewEmailId()
-        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagSpecificSignupBundle, email, uniqueEmailString, tags)
-
+        tagSpecificSignupBundle = addTagSpecificSignupDataToBundle(tagSpecificSignupBundle, email, uniqueEmailString, tags, context)
+        context.log('subscribeToNotifications: user added: ')
 
         try {
             context.log('subscribeToNotifications: Attempting to store')
