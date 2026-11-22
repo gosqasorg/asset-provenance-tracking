@@ -219,7 +219,6 @@ describe ("Send to All Children Tests", () => {
 
     }, 60000);
 
-
     it("Should use default 'Sent from Group' description when entry has no description", async() => {
         // Create the group/children
         const payload = {
