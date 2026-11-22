@@ -63,7 +63,7 @@ describe('MicroTestLand', () => {
   const context = console
   const api_url = process.env['api_url']
 
-/*
+
   it("400 invalid key + malformed email + valid key but no record attached to it", async () => {
     // containerClient, deviceKey, email, tags, context
     let testCases = [
@@ -80,7 +80,7 @@ describe('MicroTestLand', () => {
       expect(response.status).toBe(testResult)
     }
   })
-*/
+
 
   it("Already subscribed", async () => {
     // Step 1: Create a group
@@ -107,7 +107,6 @@ describe('MicroTestLand', () => {
     // Step 2: Try to subscribe to it, get 200
     let testCases = [
       [200, [responseJson.key, 'foo@bar.com', []]],    // 200: Allegedly signed up (futher testing to come)
-      // TODO: Left off here, erroneously returning non-304 not modified
       [304, [responseJson.key, 'foo@bar.com', []]],    // 200: Same record already signed up
     ]
 

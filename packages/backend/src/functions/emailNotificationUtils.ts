@@ -235,8 +235,7 @@ function removeEmailFromTagBundle(tagBundle) {
     // this should take the entire tag bundle, not just the no tags only one
 }
 
-function getTagsFromSignupBundle(email, bundle) {
-
+function getTagsFromSignupBundle(bundle, email, context) {
     let tags = []
     for(let tag in bundle) {
 
@@ -411,11 +410,17 @@ export async function subscribeToNotifications(
         context.log('subscribeToNotifications: Getting existing signup data...')
         let tagSpecificSignupBundle = await getExistingEmails(blobClient, context); 
         context.log('subscribeToNotifications: Got existing signup data.')
-        context.log(JSON.stringify(tagSpecificSignupBundle))
 
 
         // If email is already stored return success
-        if( (await blobClient.exists()) && tags.concat(['no_tag']) == getTagsFromSignupBundle(tagSpecificSignupBundle, email)) {
+        let condition = (
+            JSON.stringify(tags.concat(['no_tag']))
+            == 
+            JSON.stringify(getTagsFromSignupBundle(tagSpecificSignupBundle, email, context))
+        )
+        
+
+        if(condition) {
             context.log('subscribeToNotifications: email is already signed up for this exact set of tags. Nothing to do. 304 success')
             return {
                 jsonBody: { message: "Already signed up with this collection of tags (including none)", name: blobName },
