@@ -801,7 +801,8 @@ export async function getProvenance(request: HttpRequest, context: InvocationCon
         if(records.length == 0) {
             return {
                 status: 404,
-                jsonBody: "No record found for this key"
+                jsonBody: [],
+                message: "No record found for this key"
             }
         }
         records.sort((a, b) => b.timestamp - a.timestamp)
