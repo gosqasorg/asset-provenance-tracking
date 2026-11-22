@@ -176,7 +176,7 @@ async function decryptBlob(client: BlockBlobClient, deviceKey: Uint8Array<ArrayB
     const data = await decrypt(deviceKey, saltBuffer as Uint8Array<ArrayBuffer>, buffer as Uint8Array<ArrayBuffer>);
     const hash = props.metadata?.["gdthash"];
     if (hash) {
-        if (!areEqual(fromHex(hash), await sha256(data))) {
+        if (!areEqual(fromHex(hash), await sha256(data, context))) {
             context.error("Returning from decryptBlob() with error: Invalid hash")
             throw new Error(`Invalid Hash ${client.name}`, { cause: 500 });
         }
@@ -405,7 +405,7 @@ if(!process.env['backend_url'].includes('local')) {
 /*==============  Core Utility Functions (to remain in this file)  ============*/
 
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined, context): Promise<string> {
-    const dataHash = toHex(await sha256(data));
+    const dataHash = toHex(await sha256(data, context));
     let deviceID: string;
     try {
         deviceID = await calculateDeviceID(deviceKey as Uint8Array<ArrayBuffer>, context);
@@ -414,7 +414,7 @@ export async function upload(client: ContainerClient, deviceKey: Uint8Array, dat
         throw new Error(`Invalid key provided: ${error.message}`, {cause: 400});
     }
     const { salt, encryptedData } = await encrypt(deviceKey as Uint8Array<ArrayBuffer>, data);
-    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource));
+    const blobID = toHex(await sha256(encryptedData as NodeJS.BufferSource, context));
 
     let blobName;
     if (type === 'prov') {
