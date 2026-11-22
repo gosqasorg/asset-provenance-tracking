@@ -24,7 +24,7 @@ describe("Group of tests", () => {
 */
 
 
-const api_url = "https://gosqasbe.azurewebsites.net/api";
+const api_url = process.env['api_url']//"https://gosqasbe.azurewebsites.net/api";
 
 describe("Group Creation Tests", () => {
 	// The most basic possible test

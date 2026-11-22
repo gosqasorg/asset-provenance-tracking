@@ -916,6 +916,8 @@ async function getConnectionStatus(request: HttpRequest, context: InvocationCont
 // --- POSTS --- //
 
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('postProvenance: Called.')
+    context.log(request)
     try {
         let deviceKey: Uint8Array<ArrayBuffer>;
         let deviceID: string;
@@ -923,6 +925,9 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             deviceKey = decodeKey(request.params.deviceKey, context);
             deviceID = await calculateDeviceID(deviceKey, context);
         } catch (error) {
+            context.error('postProvenance: error: ')
+            context.error(error)
+            context.error(error.message)
             return { status: 400, jsonBody: "Invalid deviceKey" };
         }
 
@@ -1009,7 +1014,6 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         console.error('Returning unsuccessfully from postProvenance')
         if (error instanceof z.ZodError) {
             context.error(`postProvenance: zodError: ${error.message}`)
-            context.error('createGroupHandler: returning 400')
             return {
                 status: 400,
                 jsonBody: { data: error.message },
@@ -1768,6 +1772,7 @@ async function createChildren(context, description: string, number_of_children: 
 }
 
 async function createGroup(context, name, description, n_children: number = 0, custom_child_titles: string[], hasPublicKey: boolean, tags: string[], attachments: NamedBlob[] = []) {
+    context.log('createGroup: Called.')
     const frontendUrl = process.env['frontend_url'];
     const backendUrl = process.env['backend_url'];
 
@@ -1787,8 +1792,11 @@ async function createGroup(context, name, description, n_children: number = 0, c
             custom_child_titles.push("")
         }
     };
+
     // Create children first
+    context.log('createGroup: Creating child records...')
     let childKeys = await createChildren(context, description, n_children, custom_child_titles, hasPublicKey, tags)
+    context.log('createGroup: ...done.')
     let totalChildren = n_children + (hasPublicKey ? 1 : 0)
     if (childKeys.length !== totalChildren) {
         throw new Error(`Failed to create all child records: expected ${totalChildren}, got ${childKeys.length}`, { cause: 500 });

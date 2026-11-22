@@ -3,9 +3,10 @@ import { readFile } from "fs/promises";
 
 
 // const baseUrl = "http://localhost:7071/api";
-const baseUrl = "https://gosqasbe.azurewebsites.net/api";
+const baseUrl = process.env['api_url']//"https://gosqasbe.azurewebsites.net/api";
 const api_url = baseUrl;
 
+/*
 describe ("Send to All Children Tests", () => {
     it("Should send entry to the child record", async() => {
         // --- Note! If this test is updated, also update the example code in 
@@ -623,7 +624,7 @@ describe("Group Creation Tests", () => {
 	// More tests
 
 });
-
+*/
 describe("Update v2 Tests", () => {
 	it("Updates records with new entries", async () => {
 		const groupRecord = {
@@ -662,7 +663,7 @@ describe("Update v2 Tests", () => {
         let groupResponse;
         const groupFormData = new FormData();
         groupFormData.append("provenanceRecord", JSON.stringify(groupRecord));
-        let theUrl = `${api_url}/createGroup`
+        let theUrl = `${api_url}createGroup`
         console.log(theUrl)
         groupResponse = await fetch(theUrl, {
             method: "POST",

@@ -16,7 +16,7 @@ export async function calculateDeviceID(key: string | Uint8Array<ArrayBuffer>, c
 }
 
 export function decodeKey(key: string, context): Uint8Array<ArrayBuffer> {
-    context.log('decodeKey: Called.')
+    context.log('decodeKey: Called with: ' + key)
     // Can throw 'Non-base58 character'
     let theKey;
     try {
