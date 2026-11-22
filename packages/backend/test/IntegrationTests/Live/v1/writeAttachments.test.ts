@@ -29,19 +29,19 @@ describe("Creating records with attachments", () => {
 				isPublicKey: false,
 			}
 			const formData = new FormData();
-    	formData.append("provenanceRecord", JSON.stringify(data));
+        	formData.append("provenanceRecord", JSON.stringify(data));
 
-        const buffer = await readFile('./test/attachments/a200.jpg');
-		const blob = new Blob([buffer], { type: 'image/jpeg' });
-		formData.append('kirby.png', blob);
+            const buffer = await readFile('./test/attachments/a200.jpg');
+    		const blob = new Blob([buffer], { type: 'image/jpeg' });
+    		formData.append('kirby.png', blob);
 
-		const postResponse = await fetch(fullUrl, {
-			method: "POST",
-			body: formData,
-		});
+    		const postResponse = await fetch(fullUrl, {
+    			method: "POST",
+    			body: formData,
+    		});
 
-        expect(postResponse.status).toBe(200)
-		expect(postResponse.ok).toBe(true);
+            expect(postResponse.status).toBe(200)
+    		expect(postResponse.ok).toBe(true);
 
 		} catch (error) {
 			console.error("(Create POST Test) Error creating a record: " + error); 
@@ -299,4 +299,6 @@ describe("Creating records with attachments", () => {
             throw error;
         }
     }, 600000);
+
+
 });

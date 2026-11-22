@@ -812,6 +812,7 @@ describe("Group Creation Tests", () => {
 				method: "POST",
 				body: groupFormData,
 			});
+			console.log(postResponse)
 			expect(postResponse.ok).toBe(true)
 		} catch (error) {
 			console.error("(Create POST Test) Error creating group with multiple attachments: " + error)
