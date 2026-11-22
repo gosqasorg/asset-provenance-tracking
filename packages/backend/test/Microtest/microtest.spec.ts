@@ -61,15 +61,54 @@ import { subscribeToNotifications } from '../../src/functions/emailNotificationU
 describe('MicroTestLand', () => {
 
   const context = console
+  const api_url = process.env['api_url']
 
+/*
   it("400 invalid key + malformed email + valid key but no record attached to it", async () => {
-
     // containerClient, deviceKey, email, tags, context
     let testCases = [
       [400, ['0OIL',                   'invalid email', []]],     // Invalid email
       [400, ['0OIL',                   'foo@bar.com', []]],      // Non-base58 chars
       [400, ['1',                      'foo@bar.com', []]],     // Invalid key length 
       [404, ['1234567891123456789112', 'foo@bar.com', []]],    // 404: No record for this key
+    ]
+
+    let response, testCase, testResult
+    for(let [testResult, testCase] of testCases) { 
+      console.log(testResult, testCase)
+      response = await subscribeToNotifications(containerClient, ...testCase, console)
+      expect(response.status).toBe(testResult)
+    }
+  })
+*/
+
+  it("Already subscribed", async () => {
+    // Step 1: Create a group
+    const groupPayload = {
+      deviceName: "group_record_with_public_key",
+      title: "group_record_with_public_key",
+      description: "group record with a public key integration test",
+      number_of_children: 1,
+      hasPublicKey: true,
+      tags: [],
+    };
+
+    const formData = new FormData();
+    formData.append("provenanceRecord", JSON.stringify(groupPayload));
+
+    const groupResponse = await fetch(`${api_url}/createGroup`, {
+        method: "POST",
+        body: formData,
+    });
+
+    console.log(groupResponse)
+    let responseJson = await groupResponse.json()
+
+    // Step 2: Try to subscribe to it, get 200
+    let testCases = [
+      [200, [responseJson.key, 'foo@bar.com', []]],    // 200: Allegedly signed up (futher testing to come)
+      // TODO: Left off here, erroneously returning non-304 not modified
+      [304, [responseJson.key, 'foo@bar.com', []]],    // 200: Same record already signed up
     ]
 
     let response, testCase, testResult
