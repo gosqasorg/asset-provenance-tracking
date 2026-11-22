@@ -1479,7 +1479,6 @@ export async function postVerifyCode(request, context) {
     context.log('postVerifyCode: Attempting to call subscribeToNotifications')
     const result = await subscribeToNotifications(
         containerClient, 
-        calculateDeviceID, 
         entity.recordKey as string, 
         entity.email as string, 
         tags, 
@@ -1642,7 +1641,6 @@ export async function deleteNotificationEmail(request: HttpRequest, context: Inv
         await containerClient.createIfNotExists();
         const response = await unsubscribeFromNotifications(
             containerClient, 
-            calculateDeviceID, 
             recordKey, 
             emailID, 
             tags,
@@ -1686,7 +1684,6 @@ async function notifySubscribersHandler(request: HttpRequest, context: Invocatio
     try {
         const result = await notifySubscribers(
             containerClient, 
-            calculateDeviceID, 
             request.params.deviceKey, 
             formData, 
             context
@@ -1961,7 +1958,7 @@ export async function subscribeGroupToChildren(request: HttpRequest, context: In
         let blobName: string;
         let blobClient: BlockBlobClient;
         try {
-            [blobName, blobClient] = await setupBlobClient(containerClient, calculateDeviceID, groupKey, context);
+            [blobName, blobClient] = await setupBlobClient(containerClient, groupKey, context);
         } catch (error) {
             context.error(`Error: subscribeGroupToChildren setup failed: ${error.message}`)
             return {
@@ -2181,7 +2178,7 @@ export async function addEntryHandler(request: HttpRequest, context: InvocationC
         });
 
         // If users are subscribed to notifications email them
-        let emailResponse = await notifySubscribers(containerClient, calculateDeviceID, deviceKey, formData, context);
+        let emailResponse = await notifySubscribers(containerClient, deviceKey, formData, context);
         if (emailResponse.status != 200 && emailResponse.status != 204) { return { status: emailResponse.status } }
 
         if (response.status !== 200) { return { status: response.status }; }
