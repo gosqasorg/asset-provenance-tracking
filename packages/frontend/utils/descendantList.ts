@@ -118,13 +118,11 @@ export async function addChildKeys(recordKey: any, record: any, childKeys: strin
                 console.log(`Child record ${childKey} could not be added.`);
                 badRecords.push(childKey);
             } else {
-                const response = await postProvenance(childKey, {
+                await postProvenance(childKey, {
                     blobType: 'deviceRecord',
                     description:  "Added to group",
                     hasParent: true,
                 }, []);
-
-                console.log("Updated records: ", response);
             }
         }
         catch (error) {
@@ -155,21 +153,18 @@ export async function addToGroup(childKey: string, groupKey: string, records: an
         // records[0].record.hasParent = true;
 
         // Inform child it has been added to a group
-        const response2 = await postProvenance(childKey, {
+        await postProvenance(childKey, {
             blobType: 'deviceRecord',
             description:  "Added to group",
             hasParent: true,
         }, attachments || []);
 
         // Add child to group
-        const response = await postProvenance(groupKey, {
+        await postProvenance(groupKey, {
             blobType: 'deviceRecord',
             description:  "Child added to group",
             children_key: [`${childKey}`],
         }, attachments || []);
-
-        // const response = await postProvenance(recordKey, records, []);
-        console.log("Updated records: ", response);
     } catch (error) {
         console.error(`Error updating record ${groupKey}: ${error}`);
     }

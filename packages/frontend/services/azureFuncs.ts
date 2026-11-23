@@ -13,7 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { validateKey } from "~/utils/keyFuncs";
+import { validateKey, sha256, toHex } from "~/utils/keyFuncs";
+import { Buffer } from "buffer";
 
 // Feature flag to turn ON/OFF Offline Mode features while in development (false == features disabled)
 // If we're not on prod turn offline features on
@@ -92,7 +93,7 @@ export async function postProvenance(deviceKey: string, record: any, attachments
     const fullUrl = baseUrl + "/provenance/" + deviceKey;
     try {
         let response = await fetchUrl(fullUrl, formData);
-        return await response.json() as { record: string, attachments?: string[] };
+        return await response.json();
     } catch (error) {
         // If we're offline stash the record to create later
         if (offlineModeFeatureFlag && error && error.toString().includes("Could not connect")) {
@@ -297,15 +298,19 @@ export async function offlineQueueConsumerWorker() {
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(record));
             const response = await fetchUrl(fullUrl, formData);
-            const postedRecord = await response.json();
+            const responseHex = await response.json();
+
+            // Attempt to hash the record we sent and compare it to the returned hash
+            const arrayBuffer = Buffer.from(JSON.stringify(record));
+            const hash = await sha256(arrayBuffer);
+            const hex = toHex(hash);
 
             // NOTE: new edge case (very uncommon) where a record is created between record creation/check, causing check to fail (since it looks only at the most recent)
                 // Fix in future could be using the stashed timestamp when posting, that way we can look at the entire provenance and have a unique field to check
-                    // If we use this fix then we'll want to remove hash, or use a hash that can be reversed, so we can see if the whole provenance contains our record without hashing all of them (not sha256)
+                    // If we use this fix then we'll want to remove hash so we can see if the whole provenance contains our record without hashing all of them (not sha256)
             
-            // TODO: without implementing the above comparing hashes will always fail (timestamp is different so no match)
             // Confirm that the record posted by postProvenance is the same as the record from the stash
-            if (JSON.stringify(postedRecord.record) != JSON.stringify(record)) {
+            if (responseHex != hex) {
                 throw new Error("Posted record does not match queued record");
             }
 

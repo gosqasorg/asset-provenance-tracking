@@ -13,7 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import {encode as base58encode } from '@urlpack/base58'
+import { encode as base58encode } from '@urlpack/base58';
+import { Buffer } from "buffer";
 
 export async function makeDeviceKey(): Promise<Uint8Array> {
   const key = await crypto.subtle.generateKey({
@@ -43,4 +44,13 @@ export async function makeEncodedDeviceKey(): Promise<string> {
 export function validateKey(key: string): boolean {
   const alphanumericRegex = /^[a-zA-Z0-9]+$/;
   return typeof key === 'string' && key.length === 22 && alphanumericRegex.test(key);
+}
+
+export async function sha256(data: NodeJS.BufferSource) {
+    const buffer = await crypto.subtle.digest("SHA-256", data);
+    return new Uint8Array(buffer);
+}
+
+export function toHex(data: Uint8Array<ArrayBuffer>): string {
+    return Buffer.from(data).toString("hex");
 }

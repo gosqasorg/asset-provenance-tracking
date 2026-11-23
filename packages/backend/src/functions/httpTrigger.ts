@@ -680,7 +680,6 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 
 // --- POSTS --- //
 
-// *TODO: Once hashing works implement and look at/test all instances of postProvenance with the new return value
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const deviceKey = decodeKey(request.params.deviceKey);
@@ -751,16 +750,13 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
     const response = await getProvenance(request, context);
     const provenance = response.jsonBody;
 
-    // TODO: We need to allow postProvenance to use stashed timestamps, otherwise comapring hashes to stashed will fail
     // Hash the most recent request and return it
-    const arrayBuffer = Buffer.from(JSON.stringify(provenance[0]));
+    const arrayBuffer = Buffer.from(JSON.stringify(provenance[0].record));
     const hash = await sha256(arrayBuffer);
     const hex = toHex(hash);
-    context.error("hex value (also used for deviceID)", hex);
   
-    // TODO: Return hash instead once postProv can use stashed 
-    // Return the most recent request
-    return { jsonBody: provenance[0] ?? { converted: true }};
+    // Return the hash of the most recent request
+    return { jsonBody: hex ?? { converted: true }};
 }
 
 export function validateRecordJSON(json: any) {
