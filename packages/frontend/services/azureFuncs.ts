@@ -280,8 +280,6 @@ export async function offlineQueueConsumerWorker() {
     }
 
     while (workerIsActive == 'true') {
-        let response = undefined;
-
         // If a new instance of the worker was opened close this one
         workerIsActive = localStorage.getItem('gdt-offline-worker-active') || 'false';
 
@@ -298,22 +296,26 @@ export async function offlineQueueConsumerWorker() {
             const fullUrl = baseUrl + "/provenance/" + deviceKey;
             const formData = new FormData();
             formData.append("provenanceRecord", JSON.stringify(record));
-            response = await fetchUrl(fullUrl, formData);
+            const response = await fetchUrl(fullUrl, formData);
+            const postedRecord = await response.json();
 
-            // Attempt to get the new request to confirm it posted successfully
-            await fetchUrl(fullUrl);
+            // NOTE: new edge case (very uncommon) where a record is created between record creation/check, causing check to fail (since it looks only at the most recent)
+                // Fix in future could be using the stashed timestamp when posting, that way we can look at the entire provenance and have a unique field to check
+                    // If we use this fix then we'll want to remove hash, or use a hash that can be reversed, so we can see if the whole provenance contains our record without hashing all of them (not sha256)
+            
+            // TODO: without implementing the above comparing hashes will always fail (timestamp is different so no match)
+            // Confirm that the record posted by postProvenance is the same as the record from the stash
+            if (JSON.stringify(postedRecord.record) != JSON.stringify(record)) {
+                throw new Error("Posted record does not match queued record");
+            }
 
             stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
             removeFirstQueueItem();
 
         } catch (error) {
-            if (!response && error && error.toString().includes("Could not connect")) {
+            if (error && error.toString().includes("Could not connect")) {
                 // If we're offline and post did not succeed leave the request in the queue
                 await new Promise((r) => setTimeout(r, 5000));
-            } else if (response && error && error.toString().includes("Could not connect")) {
-                // If we're offline and post did succeed then move the request to fulfilled
-                stashOfflineRequest(deviceKey, "gdt-stash-fulfilled");
-                removeFirstQueueItem();
             } else {
                 // If we're online and experienced a failure move the request to failed
                 stashOfflineRequest(deviceKey, "gdt-stash-failed", record);

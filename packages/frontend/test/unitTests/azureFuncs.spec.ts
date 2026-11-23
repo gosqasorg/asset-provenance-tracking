@@ -219,6 +219,7 @@ describe("Get/Remove First Queued Request", async() => {
   });
 });
 
+// TODO: review these tests and remove irrelevant ones!
 describe("Offline Worker Spotty Connection Tests", async() => {
   // Wait for the offline worker to start
   offlineQueueConsumerWorker();

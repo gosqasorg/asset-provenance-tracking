@@ -7,7 +7,7 @@ import { webcrypto as crypto } from 'node:crypto';
 // Azure
 import { ClientSecretCredential } from "@azure/identity";
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables'
-import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils'
+import { isImage, imageIsNotPermitted } from './azureContentModerationAPIUtils.js'
 import { app, HttpRequest, HttpResponseInit, InvocationContext, Timer } from "@azure/functions";
 import { BlockBlobClient, ContainerClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
@@ -680,6 +680,7 @@ export async function getVersion(request: HttpRequest, context: InvocationContex
 
 // --- POSTS --- //
 
+// *TODO: Once hashing works implement and look at/test all instances of postProvenance with the new return value
 export async function postProvenance(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
 
     const deviceKey = decodeKey(request.params.deviceKey);
@@ -705,6 +706,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
 
     // -- Handle Attachments -- // 
 
+    // TODO (ALT OPTION): have timestamp be either an optional field from request or the current time, then return the whole provenance to compare?
     // https://stackoverflow.com/questions/9756120/how-do-i-get-a-utc-timestamp-in-javascript#comment73511758_9756120
     const timestamp = new Date().getTime();
     const attachments = new Array<NamedBlob>();
@@ -744,8 +746,21 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
             }
         }
     }
+
+    // Make get request to confirm the record was created
+    const response = await getProvenance(request, context);
+    const provenance = response.jsonBody;
+
+    // TODO: We need to allow postProvenance to use stashed timestamps, otherwise comapring hashes to stashed will fail
+    // Hash the most recent request and return it
+    const arrayBuffer = Buffer.from(JSON.stringify(provenance[0]));
+    const hash = await sha256(arrayBuffer);
+    const hex = toHex(hash);
+    context.error("hex value (also used for deviceID)", hex);
   
-    return { jsonBody: body ?? { converted: true}};
+    // TODO: Return hash instead once postProv can use stashed 
+    // Return the most recent request
+    return { jsonBody: provenance[0] ?? { converted: true }};
 }
 
 export function validateRecordJSON(json: any) {
