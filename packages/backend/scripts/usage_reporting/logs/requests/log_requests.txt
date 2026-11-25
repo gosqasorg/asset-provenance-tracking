@@ -1,0 +1,56 @@
+
+===** Recent Requests **===
+{
+  "tables": [
+    {
+      "name": "PrimaryResult",
+      "columns": [
+        {
+          "name": "ClientCountryOrRegion",
+          "type": "string"
+        }
+      ],
+      "rows": [
+        [
+          "United States"
+        ],
+        [
+          "Trinidad And Tobago"
+        ],
+        [
+          ""
+        ],
+        [
+          "China"
+        ],
+        [
+          "Singapore"
+        ],
+        [
+          "Poland"
+        ],
+        [
+          "Lebanon"
+        ],
+        [
+          "India"
+        ],
+        [
+          "Ireland"
+        ],
+        [
+          "France"
+        ],
+        [
+          "Canada"
+        ],
+        [
+          "South Africa"
+        ],
+        [
+          "Hong Kong"
+        ]
+      ]
+    }
+  ]
+}
