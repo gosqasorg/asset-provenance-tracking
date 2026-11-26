@@ -68,7 +68,7 @@ interface LocationStat {
     requests: number;
     failed: number;
     responseTime: number;
-    weeks: Object;
+    weeks: {};
 }
 
 // Zod Schema

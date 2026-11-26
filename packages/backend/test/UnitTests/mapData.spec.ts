@@ -47,8 +47,6 @@ describe('Map Queries', async() => {
         await mapData.mapRefresh(context)
 
         const countryData = mapData.getCountryStats()['US']
-        console.log(countryData.weeks)
-        console.log(countryData.weeks['2026-09-07'])
         expect(countryData.requests).toBe(5)
         expect(countryData.failed).toBe(5)
         expect(countryData.responseTime).toBe(225)
