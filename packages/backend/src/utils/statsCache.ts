@@ -116,7 +116,7 @@ class StatsCache {
 
 
     // Updater Functions that get called by the timer trigger below to update the cache storage variables
-    async updateTotals(containerClient: ContainerClient) : Promise<void> {
+    async updateTotals(containerClient: ContainerClient, context) : Promise<void> {
         const containerExists = await containerClient.exists();
         let totalRecords = 0;
         let totalAttachments = 0;
@@ -137,7 +137,7 @@ class StatsCache {
         this.totals = { totalRecords, totalDevices: uniqueRecords.size, totalAttachments };    
     }
 
-    async updateStats() : Promise<void> {
+    async updateStats(context) : Promise<void> {
         let token = await getToken();
 
         const timesToCheck = ['ago(1h)', 'ago(24h)', 'ago(7d)']
@@ -271,11 +271,25 @@ class StatsCache {
     async usageRefresh(context: InvocationContext): Promise<void> {
         context.log('Refreshing usage stats cache');
 
-        this.updateTotals(containerClient)
-        this.updateStats()
-        this.updateBrowser(context)
-        this.updateFailureStats(context)
-        this.setBlobStatistics(context)
+        context.log('Refreshing totals')
+        await this.updateTotals(containerClient, context)
+        context.log('Done')
+
+        context.log('Refreshing stats')
+        await this.updateStats(context)
+        context.log('Done')
+
+        context.log('Refreshing browser stats')
+        await this.updateBrowser(context)
+        context.log('Done')
+
+        context.log('Refreshing failure stats')
+        await this.updateFailureStats(context)
+        context.log('Done')
+
+        context.log('Refreshing blob statistics')
+        await this.setBlobStatistics(context)
+        context.log('Done')
 
         context.log('Usage stats cache refreshed');
     }
@@ -289,11 +303,11 @@ class StatsCache {
 
         context.log('setBlobStatistics: Called')
 
-        if(theStatistics) {// TODO: add timestamp check
+        if(this.blobStatistics) {// TODO: add timestamp check
             context.log('setBlobStatistics: statistics already set! returning preexisting value')
-            context.log(theStatistics)
+            context.log(this.blobStatistics)
             context.log('setBlobStatistics: ^^^ preexisting stats value')
-            return theStatistics
+            return this.blobStatistics
         }
         context.log('setBlobStatistics: statistics not set. Initializing...')
 
@@ -334,7 +348,7 @@ class StatsCache {
         let pageSize = 2 ** 8
         let promises = []
         for await (page of containerClient.listBlobsFlat().byPage({ maxPageSize: pageSize })) {
-            promises.push(getDataForPageOfBlobs(page.segment.blobItems, pageNumber, pageSize, context))  // Deliberately not awaited to parallelize longrunning async calls
+            promises.push(this.getDataForPageOfBlobs(page.segment.blobItems, pageNumber, pageSize, context))  // Deliberately not awaited to parallelize longrunning async calls
             context.log(`Processing initiated for blobs ${pageNumber * pageSize} - ${++pageNumber * pageSize}`)
         }
         context.log('setBlobStatistics: Blob metadata aggregated.')
@@ -395,7 +409,23 @@ export const usageStatsCache = new StatsCache();
 app.timer('refreshUsageStats', {
     schedule: '0 0 * * * *',
     runOnStartup: true,
-    handler: (myTimer, context) => { usageStatsCache.usageRefresh(context) },
+    handler: async (myTimer, context) => { 
+        try {
+            await new Promise(r => setTimeout(r, 15000));  // Lag so as not to collide with others on startup
+            await usageStatsCache.usageRefresh(context) 
+        } catch(error) {
+            context.error(JSON.stringify(error))
+        }
+    }
+});
+
+app.timer('setServerResponseStats', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: async (myTimer, context) => { 
+        await new Promise(r => setTimeout(r, 600000));  // Lag so as not to collide with others on startup
+        await setServerResponseStats(context) 
+    }
 });
 
 // Timer trigger and endpoint to get and return server response statistics
@@ -434,12 +464,6 @@ async function setServerResponseStats(context: InvocationContext): Promise<void>
         context.error("setServerResponseStats error:", error);
     }
 }
-
-app.timer('setServerResponseStats', {
-    schedule: '0 0 * * * *',
-    runOnStartup: true,
-    handler: (myTimer, context) => { setServerResponseStats(context) }
-});
 
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     return { body: JSON.stringify(serverResponseTimes), status: 200 };

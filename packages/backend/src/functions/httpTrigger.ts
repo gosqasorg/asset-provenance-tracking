@@ -420,6 +420,14 @@ app.timer('livenessChecker', {
     handler: livenessChecker,
 })
 
+/*
+// Timer trigger to refresh usage stats every hour, and on startup.
+app.timer('refreshUsageStats', {
+    schedule: '0 0 * * * *',
+    runOnStartup: true,
+    handler: (myTimer, context) => { usageStatsCache.usageRefresh(context) },
+});
+*/
 
 /* ===============================================================
    ============= Section 2 of 2: API =============================
@@ -447,6 +455,7 @@ export async function getBlobStatisticsHandler(request: HttpRequest, context: In
         headers: { "Content-Type": "application/json"}
     };
 };
+
 
 
 app.post("getBlobStatistics", {
@@ -919,8 +928,11 @@ export async function getStatistics(request: HttpRequest, context: InvocationCon
     const queryStats = usageStatsCache.getQueryStats();
     const totals = usageStatsCache.getTotals();
 
+    const toReturn = { ...queryStats, ...totals }
+    context.log('getStatistics: returning ' + JSON.stringify(toReturn))
+
     return {
-        jsonBody: { ...queryStats, ...totals },
+        jsonBody: toReturn,
         headers: { "Content-Type": "application/json" }
     }; 
 };
@@ -1043,7 +1055,7 @@ export async function postProvenance(request: HttpRequest, context: InvocationCo
         return { jsonBody: body ?? { converted: true}};
 
     } catch(error) { 
-        console.error('Returning unsuccessfully from postProvenance')
+        context.error('Returning unsuccessfully from postProvenance')
         if (error instanceof z.ZodError) {
             context.error(`postProvenance: zodError: ${error.message}`)
             context.error('createGroupHandler: returning 400')

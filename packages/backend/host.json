@@ -6,16 +6,15 @@
       "isEnabled": true
     },
     "logLevel": {
-      "default": "Trace",
-      "Host.Aggregator": "Error",
-      "Host.Results": "Error",
+      "default": "Critical",
+      "Host.Aggregator": "Critical",
+      "Host.Results": "Critical",
       "Function": "Trace",
       "Host.Function.Console": "Trace"
     },
     "applicationInsights": {
       "samplingSettings": {
-        "isEnabled": true,
-        "maxTelemetryItemsPerSecond" : 20
+        "isEnabled": false
       }
     }
   },
