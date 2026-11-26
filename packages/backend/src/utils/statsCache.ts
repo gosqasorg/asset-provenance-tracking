@@ -8,6 +8,12 @@ const appRegistrationId = process.env["AZURE_CLIENT_ID"];
 const secretValue = process.env["AZURE_CLIENT_SECRET"];
 const workspaceId = process.env["AZURE_WORKSPACE_ID"];
 
+// Todo: Create ticket to resolve the below:
+// Todo: Rename this file "LogAnalyticsAPIUtils"
+// Todo: Note in this file what data is available. 
+// Todo: move time trigger and endpoint into httpTrigger
+// Todo: Statscache Getters: We can never return blank data. Must check to see if they are null before returning. If their data value is null, kick off an unawaited call to get the data, and return an error with the message "loading". In frontend, catch this and display "Loading", and poll. 
+
 // Helper Function 
 async function getToken(): Promise<string> {
     const credential = new ClientSecretCredential(directoryId, appRegistrationId, secretValue);
@@ -45,11 +51,24 @@ export function findDeviceIdFromName(blobName: string): string {
 }
 
 class StatsCache {
+    /*
+     * To add data to the cache:
+     * 1. Write a function that gets the data
+     * 2. Add a new instance variable to hold said data
+     * 3. Edit the function to set the instance variable
+     * 4. Add a call to the function to usageRefresh, below
+     * 5. Add a getter
+     */
+
+
     // Cache storage variables
     private totals = { totalRecords: 0, totalDevices: 0, totalAttachments: 0 };;
     private queryStats = null;
     private browserStats = [];
     private failureStats = null;
+    private blobStatistics = null;
+    private blobStatisticsSetterIsRunning = false;
+
 
     // Getters
     getTotals()  {
@@ -67,6 +86,34 @@ class StatsCache {
     getFailureStats() {
         return this.failureStats;
     }
+
+    getBlobStats(context) {
+        context.log('StatsCache.getBlobStats: Called.')
+        if(this.blobStatistics) {
+            context.log(`StatsCache.getBlobStats: blobStatistics is populated! Returning successfully`)
+            return {
+                data: this.blobStatistics,
+                status: 200,
+                message: 'Success'
+            }
+        }
+        context.log('StatsCache.getBlobStats: blobStatistics is null.')
+        context.log('StatsCache.getBlobStats: is setBlobStatistics running?')
+        context.log(`StatsCache.getBlobStats: ${this.blobStatisticsSetterIsRunning ? "Yes" : "No"}.`)
+
+        if(!this.blobStatisticsSetterIsRunning) {
+            context.log(`StatsCache.getBlobStats: kicking off setBlobStatistics()`)
+            this.setBlobStatistics()
+        }
+
+        context.log(`StatsCache.getBlobStats: 204 No Content`)
+        return {
+            status: 204,
+            message: 'No Content',
+            jsonBody: "You happened to catch us during startup. Try back in a few minutes."
+        }
+    }
+
 
     // Updater Functions that get called by the timer trigger below to update the cache storage variables
     async updateTotals(containerClient: ContainerClient) : Promise<void> {
@@ -228,8 +275,116 @@ class StatsCache {
         this.updateStats()
         this.updateBrowser(context)
         this.updateFailureStats(context)
+        this.setBlobStatistics(context)
 
         context.log('Usage stats cache refreshed');
+    }
+
+    // Todo: see inside function
+    async setBlobStatistics(context) {
+        if(this.blobStatisticsSetterIsRunning) {
+            return 
+        }
+        this.blobStatisticsSetterIsRunning = true
+
+        context.log('setBlobStatistics: Called')
+
+        if(theStatistics) {// TODO: add timestamp check
+            context.log('setBlobStatistics: statistics already set! returning preexisting value')
+            context.log(theStatistics)
+            context.log('setBlobStatistics: ^^^ preexisting stats value')
+            return theStatistics
+        }
+        context.log('setBlobStatistics: statistics not set. Initializing...')
+
+        let i = 0
+        context.log(`setBlobStatistics: ${++i}`)
+
+        context.log(`setBlobStatistics: does container exist?`)
+        let containerExists;
+        try {
+            containerExists = await containerClient.exists();
+        } catch(error) {
+            context.error('setBlobStatistics: Encountered unexpected error! Details to follow:')
+            context.error('setBlobStatistics: Note: it may be incorrect env vars leading to an auth fail')
+            context.error(error)
+            context.error(error.message)
+            context.error(JSON.stringify(error))
+            return undefined // Calling context needs undefined
+        }
+        if (!containerExists) { 
+            context.log(`setBlobStatistics: No. Exiting.`)
+            return undefined // Calling context needs undefined 
+        }
+
+        // Not sure who these comments are from
+        // Build up a JSON return value
+        // NOTE: We seem to have to read the properties of the blob to get the
+        // metadata.  There is a field called "metadata" on the blob itself
+        // which does not contain our metadata. I don't know if this is terribly
+        // expensive, or if we could improve it. I insist we should not worry about
+        // performance until we measure it to be a problem, but this is an "orang flag"--
+        // some caution around this issue is warranted.
+
+        context.log(`setBlobStatistics: Aggregating blob metadata...`)
+        //for await (const blob of containerClient.listBlobsFlat()) {
+        let page
+        let blob
+        let pageNumber = 1
+        let pageSize = 2 ** 8
+        let promises = []
+        for await (page of containerClient.listBlobsFlat().byPage({ maxPageSize: pageSize })) {
+            promises.push(getDataForPageOfBlobs(page.segment.blobItems, pageNumber, pageSize, context))  // Deliberately not awaited to parallelize longrunning async calls
+            context.log(`Processing initiated for blobs ${pageNumber * pageSize} - ${++pageNumber * pageSize}`)
+        }
+        context.log('setBlobStatistics: Blob metadata aggregated.')
+
+        context.log('Unpacking blob data')
+        const records = [];
+        for(const promise of promises) {
+            records.push(...(await promise))
+        }
+        context.log(`setBlobStatistics: ${JSON.stringify(records)}`)
+        context.log(`setBlobStatistics: got data for ${records.length} blobs`)
+        context.log('setBlobStatistics: Returning successfully.')
+        this.blobStatistics = records
+        this.blobStatisticsSetterIsRunning = false
+    }
+
+    async getDataForPageOfBlobs(blobItems, pageNumber, pageSize, context) {
+        let i = 0;
+        let blob;
+        const records = []
+        for(blob of blobItems) {
+            const blobClient = containerClient.getBlockBlobClient(blob.name);
+            const props = await blobClient.getProperties();
+            const metadata = props.metadata;
+            context.log(JSON.stringify(props.metadata))
+            context.log(JSON.stringify(props))
+
+            context.log(`setBlobStatistics: batch: ${pageNumber}. Item: ${++i + pageNumber * pageSize}, Type: ${blob.name.includes('ttachment') ? "Attachment" : "Record"}, Timestamp: ${metadata.gdttimestamp}`)
+
+            // Not sure who these comments are from
+            // now we want to build up an object that we can return as statistics
+            // that inlcudes the id and the timestamp, though really the timestamp
+            // is enough. We would like to distinguish the additon of a device
+            // from the addition of new provenance, I supoose.
+            //const id = findDeviceIdFromName(blob.name);
+
+            // Not sure who these comments are from
+            // We could do some sorting in this function, but that is more or less
+            // easily done by whomever is using this. So I think it better to just
+            // return the data in  a fairly raw form, as an array of {timestamp, id} tuples.
+            // Eventually, this function may have to only look back X days or X hours,
+            // but until it gets unwieldy we can return everything.
+            // I think the proper way to test this is to build a test program that
+            // puts 1000s of objects into the database and see where performance becomes a problem.
+            records.push({ 
+                timestamp: metadata.gdttimestamp, 
+                type: `${blob.name.includes('ttachment') ? "Attachment" : "Record"}`
+            });
+        }
+        return records
     }
 
 }
@@ -240,7 +395,7 @@ export const usageStatsCache = new StatsCache();
 app.timer('refreshUsageStats', {
     schedule: '0 0 * * * *',
     runOnStartup: true,
-    handler: (_myTimer, context) => usageStatsCache.usageRefresh(context),
+    handler: (myTimer, context) => { usageStatsCache.usageRefresh(context) },
 });
 
 // Timer trigger and endpoint to get and return server response statistics
@@ -283,7 +438,7 @@ async function setServerResponseStats(context: InvocationContext): Promise<void>
 app.timer('setServerResponseStats', {
     schedule: '0 0 * * * *',
     runOnStartup: true,
-    handler: (_myTimer, context) => setServerResponseStats(context)
+    handler: (myTimer, context) => { setServerResponseStats(context) }
 });
 
 async function getServerResponseStats(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {

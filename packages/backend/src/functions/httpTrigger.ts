@@ -425,6 +425,36 @@ app.timer('livenessChecker', {
    ============= Section 2 of 2: API =============================
 /* =============================================================== */
 
+
+
+// Dev
+let theStatistics
+let theStatisticsUpdatedTimestamp
+
+
+
+export async function getBlobStatisticsHandler(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('getStatistics: Called')
+
+    context.log('getStatistics: attempting to get statistics')
+    let statsResponse = await usageStatsCache.getBlobStats(context)
+
+    context.log('getStatistics: got statistics')
+
+    return {
+        jsonBody: statsResponse.data,
+        status: statsResponse.status,
+        headers: { "Content-Type": "application/json"}
+    };
+};
+
+
+app.post("getBlobStatistics", {
+    authLevel: 'anonymous',
+    route: 'getBlobStatistics',
+    handler: getBlobStatisticsHandler
+})
+
 /*==============  Core Utility Functions (to remain in this file)  ============*/
 
 export async function upload(client: ContainerClient, deviceKey: Uint8Array, data: NodeJS.BufferSource, type: 'attach' | 'prov', contentType: string, timestamp: number, fileName: string | undefined, context): Promise<string> {
