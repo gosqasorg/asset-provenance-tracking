@@ -17,6 +17,7 @@ import { VERSION_INFO } from '../version.js';
 import { usageStatsCache } from '../utils/statsCache.js';
 import { makeEncodedDeviceKey } from '../utils/keyFuncs.js';
 import { notifySubscribers, retrieveNotifEmails, subscribeToNotifications, unsubscribeFromNotifications, getExistingEmails, setupBlobClient } from './emailNotificationUtils.js';
+import { mapData } from '../utils/mapData.js'
 
 // To deploy this project from the command line, you need:
 //  * Azure CLI : https://learn.microsoft.com/en-us/cli/azure/
@@ -884,6 +885,51 @@ export async function getNewDeviceKey(request: HttpRequest, context: InvocationC
         }
     }
 }
+
+export async function getRequestStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting requests statistics')
+    try {
+        const rows = mapData.getRequestStats();
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
+export async function getCountryStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting country statistics')
+    try {
+        const rows = mapData.getCountryStats(); 
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
+export async function getStateStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting state statistics')
+    try {
+        const rows = mapData.getStateStats(); 
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
+export async function getCityStats(_request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+    context.log('Collecting city statistics')
+    try {
+        const rows = mapData.getCityStats(); 
+        return { body: JSON.stringify(rows), status: 200, headers: { 'Content-Type': 'application/json'} };
+    } catch (error) {
+        context.error("getRequestStats error: ", error)
+        return { body: "Error fetching requests stats", status: 500 }
+    }
+}
+
 
 export async function getStatistics(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const queryStats = usageStatsCache.getQueryStats();
@@ -2323,4 +2369,23 @@ app.post("subscribeGroupToChildren", {
     authLevel: 'anonymous',
     route: 'subscribeGroupToChildren',
     handler: subscribeGroupToChildren
+})
+
+
+app.get("getCountryStats", {
+    authLevel: 'anonymous',
+    route: 'stats/country',
+    handler: getCountryStats
+})
+
+app.get("getStateStats", {
+    authLevel: 'anonymous',
+    route: 'stats/state',
+    handler: getStateStats
+})
+
+app.get("getCityStats", {
+    authLevel: 'anonymous',
+    route: 'stats/city',
+    handler: getCityStats
 })

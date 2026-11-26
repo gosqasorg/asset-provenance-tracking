@@ -1,0 +1,311 @@
+{
+  "CA|british columbia|vancouver": [
+    -123.113952,
+    49.2608724
+  ],
+  "US|arizona|tucson": [
+    -110.974847,
+    32.2228765
+  ],
+  "US|illinois|chicago": [
+    -87.6244212,
+    41.8755616
+  ],
+  "US|california|temecula": [
+    -117.147366,
+    33.4946353
+  ],
+  "US|virginia|boydton": [
+    -78.3882002,
+    36.6673066
+  ],
+  "US|maryland|temple hills": [
+    -76.9455296,
+    38.8140024
+  ],
+  "US|virginia|washington": [
+    -78.1593468,
+    38.7129721
+  ],
+  "US|wyoming|cheyenne": [
+    -104.820246,
+    41.139981
+  ],
+  "US|california|san jose": [
+    -121.890591,
+    37.3361663
+  ],
+  "US|massachusetts|wakefield": [
+    -71.0728306,
+    42.506484
+  ],
+  "US|iowa|des moines": [
+    -93.6249494,
+    41.5868654
+  ],
+  "US|arizona|phoenix": [
+    -112.074141,
+    33.4484367
+  ],
+  "US|north carolina|durham": [
+    -78.9018053,
+    35.996653
+  ],
+  "FR|paris|paris": [
+    2.320041,
+    48.8588897
+  ],
+  "PS|nablus|nablus": [
+    35.20329,
+    31.92157
+  ],
+  "US|north carolina|raleigh": [
+    -78.6390989,
+    35.7803977
+  ],
+  "US|new jersey|wayne": [
+    -74.2376802,
+    40.9491723
+  ],
+  "US|texas|dallas": [
+    -96.7968559,
+    32.7762719
+  ],
+  "US|california|mountain view": [
+    -122.0832101,
+    37.3893889
+  ],
+  "US|massachusetts|quincy": [
+    -71.0037374,
+    42.2509914
+  ],
+  "US|massachusetts|peabody": [
+    -70.9286609,
+    42.5278731
+  ],
+  "US|california|los angeles": [
+    -118.242766,
+    34.0536909
+  ],
+  "US|texas|beaumont": [
+    -94.0984277,
+    30.0829344
+  ],
+  "SG|central singapore|singapore": [
+    103.7766186,
+    1.2959845
+  ],
+  "US|washington|quincy": [
+    -119.8535054,
+    47.2343673
+  ],
+  "CA|ontario|london": [
+    -81.2496068,
+    42.9836747
+  ],
+  "FR|seine-et-marne|savigny-le-temple": [
+    2.5798953,
+    48.5958681
+  ],
+  "US|new york|new york": [
+    -74.0060152,
+    40.7127281
+  ],
+  "US|texas|austin": [
+    -97.7436995,
+    30.2711286
+  ],
+  "FR|essonne|orsay": [
+    2.187457,
+    48.699184
+  ],
+  "FR|essonne|gif-sur-yvette": [
+    2.134529,
+    48.7018823
+  ],
+  "US|ohio|columbus": [
+    -83.0007065,
+    39.9622601
+  ],
+  "US|nevada|las vegas": [
+    -115.1484131,
+    36.1674263
+  ],
+  "PS|gaza|gaza": [
+    34.4581358,
+    31.5128679
+  ],
+  "FR|morbihan|saint-ave": [
+    -2.7358875,
+    47.6903849
+  ],
+  "FR|val-de-marne|villejuif": [
+    2.3633048,
+    48.7921098
+  ],
+  "FR|haute-savoie|seynod": [
+    6.0992785,
+    45.8880398
+  ],
+  "US|new jersey|ramsey": [
+    -74.1409771,
+    41.0573188
+  ],
+  "US|colorado|florence": [
+    -105.1185988,
+    38.3902777
+  ],
+  "DE|nordrhein-westfalen|koeln": [
+    6.959974,
+    50.938361
+  ],
+  "CA|ontario|toronto": [
+   -79.383184, 
+   43.653226 
+  ],
+  "CN|beijing shi|beijing": [
+    116.39723, 
+    39.9075
+  ],
+  "CN|beijing shi|zhongguancun": [
+    116.315506, 
+    39.983246
+  ],
+  "FR|val-de-marne|arcueil": [
+    2.334955, 
+    48.80486
+  ],
+  "HK|hong kong|aberdeen": [
+    114.1510, 
+    22.2420
+  ],
+  "IN|karnataka|marathahalli": [
+    77.699766, 
+    12.951198
+  ],
+  "IN|maharashtra|pune": [
+    73.85674, 
+    18.52043
+  ],
+  "IE|dublin|dublin": [
+    -6.266155,
+     53.350140
+  ],
+  "LB|liban-sud|saidoun": [
+    35.50921, 
+    33.89427
+  ],
+  "LB|mont-liban|mar elias": [
+    35.50921, 
+    33.89427
+  ],
+  "PL|pomorskie|starogard gdanski": [
+    18.53102,
+    53.96619
+  ],
+  "ZA|gauteng|sandton": [
+    28.05670,
+    -26.10757
+  ],
+  "TT|port-of-spain|port-of-spain": [
+    -61.52121,
+    10.67107
+  ],
+  "GB|norfolk|sprowston": [
+    1.31830,
+    52.65840
+  ],
+  "US|arizona|el mirage": [
+    -112.32460,
+    33.61310
+  ],
+  "US|virginia|sandston": [
+    -77.31550,
+    37.52320
+  ],
+  "US|virginia|ashburn": [
+    -77.48744,
+    39.04376
+  ],
+  "US|texas|el paso": [
+    -106.48502,
+    31.76188
+  ],
+  "US|new jersey|ridgewood": [
+    -74.11653,
+    40.97926
+  ],
+  "US|new jersey|newark": [
+    -74.17237,
+    40.73566
+  ],
+  "US|new jersey|pequannock": [
+    -74.29432,
+    40.94649
+  ],
+  "US|missouri|republic": [
+    -93.48019,
+    37.12005
+  ],
+  "US|massachusetts|west springfield": [
+    -72.62037,
+    42.10704
+  ],
+  "US|california|cerritos": [
+    -118.06479,
+    33.85835
+  ],
+  "US|california|fresno": [
+    -119.78712,
+    36.73779
+  ],
+  "US|california|garden grove": [
+    -117.93799,
+    33.77427
+  ],
+  "US|california|half moon bay": [
+    -122.42859,
+    37.46355
+  ],
+  "US|california|menlo park": [
+    -122.18173,
+    37.45296
+  ],
+  "US|california|oakland": [
+    -122.27125,
+    37.80436
+  ],
+  "US|california|redwood city": [
+    -122.23635,
+    37.48522
+  ],
+  "US|california|santa clara": [
+    -121.95524,
+    37.35411
+  ],
+  "US|massachusetts|cambridge": [
+    -71.10973,
+    42.37362
+  ],
+  "US|iowa|council bluffs": [
+    -95.86083,
+    41.26194
+  ],
+  "US|california|union city": [
+    -122.01913,
+    37.59339
+  ],
+  "US|california|vallejo": [
+    -122.25664,
+    38.10409
+  ],
+  "US|illinois|northlake": [
+    -87.89562,
+    41.91142
+  ],
+  "US|delaware|wilmington": [
+    -75.54839,
+    39.74466
+  ]
+
+}

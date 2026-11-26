@@ -66,7 +66,7 @@ export async function getAttachment(baseUrl: string, deviceKey: string, attachme
         }
 
         const response = await fetch(`${baseUrl}/attachment/${deviceKey}/${attachmentID}`, {
-            method: "GET",
+           method: "GET",
         });
 
         const blob = await response.blob();
@@ -579,5 +579,73 @@ export async function subscribeGroupToChildren(groupKey: string, childKey: strin
     if (response.status != 200) {
         console.log("subscribeGroupToChildren Error:", response)
         throw new Error('subscribeGroupToChildren: Failed to subscribe group emails to new children')
+    }
+}
+
+export async function getRequestStats() {
+    
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/requests", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
+    } catch (error) {
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}
+
+export async function getCountryStats() {
+    
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/country", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
+    } catch (error) {
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}
+
+export async function getStateStats() {
+    
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/state", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
+    } catch (error) {
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
+    }
+}
+
+export async function getCityStats() {
+    
+        const baseUrl = useRuntimeConfig().public.baseUrl;
+        const response = await fetch(baseUrl + "/stats/city", {
+            method: 'GET',
+        });
+
+        const stats = await response.text()
+        if (!stats) throw new Error(`Empty response (status ${response.status})`)
+    
+    try {     
+        return JSON.parse(stats);
+    } catch (error) {
+        throw new Error(`Server error (status ${response.status}): ${stats.slice(0, 200)}`)
     }
 }
